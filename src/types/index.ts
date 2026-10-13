@@ -479,6 +479,16 @@ export interface Order {
   refundRequestedAt?: string;
   refundProcessedAt?: string;
   refundAdminNotes?: string;
+  /**
+   * Pre-approval refund trail (Refund & Cancellation Policy: 90% back if the
+   * order is refunded BEFORE admin approval; non-refundable once approved).
+   * All four values are computed server-side by api/refunds.php.
+   */
+  refundPercent?: number | null;
+  refundAmount?: number | null;
+  refundCurrency?: string | null;
+  /** refundProcessedAt + 3 working days — the settlement date shown to the customer. */
+  refundDeadline?: string | null;
   ipAddress?: string;
   isIpBanned?: boolean;
   groupId?: string;
@@ -498,6 +508,36 @@ export interface BannedIpEntry {
   reason: string;
   bannedBy: string;
   bannedAt: string;
+}
+
+/**
+ * The server's answer to one-click refund call (api/admin/index.php
+ * `process-refund`). Every money value is computed by api/refunds.php at the
+ * policy percentage — the admin portal only displays them.
+ */
+export interface RefundResult {
+  orderIds: string[];
+  orderNumbers: string[];
+  /** True when one click refunded every chart of a family bundle. */
+  wholeGroup: boolean;
+  /** 90 before admin approval; a refund after approval is refused instead. */
+  percent: number;
+  /** Amount returned to the customer (percent of amountPaid). */
+  amount: number;
+  /** What the customer originally paid. */
+  amountPaid: number;
+  /** The non-refundable 10% gateway/processing share. */
+  feeRetained: number;
+  currency: string;
+  /** Working days the customer is told to allow. */
+  workingDays: number;
+  processedAt: string;
+  /** refundProcessedAt + working days (weekends/holidays excluded). */
+  deadline: string;
+  /** Human label for the deadline, e.g. "19 Oct 2026". */
+  deadlineLabel: string;
+  emailSent: boolean;
+  emailMessage?: string;
 }
 
 export interface RefundRecord {

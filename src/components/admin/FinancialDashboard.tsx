@@ -122,7 +122,8 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
             FJD ${(report?.totalRefundsFJD ?? 0).toFixed(2)}
           </div>
           <div className="text-[11px] text-slate-400">
-            {report?.refundsCount || report?.totalRefundsCount || 0} pre-approval cancellations
+            {report?.refundsCount || report?.totalRefundsCount || 0} pre-approval 90% refunds
+            {(report?.pendingRefundsCount || 0) > 0 ? ` • ${report?.pendingRefundsCount} awaiting refund` : ''}
           </div>
         </div>
 

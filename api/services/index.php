@@ -55,6 +55,14 @@ function astro_order_to_client_array($r) {
         'hasInvoice' => (bool)($r['has_invoice'] ?? 0),
         'adminNotes' => $r['admin_notes'] ?? null,
         'refundStatus' => $r['refund_status'] ?? null,
+        'refundReason' => $r['refund_reason'] ?? null,
+        // Pre-approval 90% refund trail: the customer dashboard shows the amount
+        // and the 3-working-day settlement date once the admin has approved it.
+        'refundPercent' => isset($r['refund_percent']) ? floatval($r['refund_percent']) : null,
+        'refundAmount' => isset($r['refund_amount']) ? floatval($r['refund_amount']) : null,
+        'refundCurrency' => $r['refund_currency'] ?? null,
+        'refundProcessedAt' => $r['refund_processed_at'] ?? null,
+        'refundDeadline' => $r['refund_deadline'] ?? null,
         'createdAt' => $r['created_at'],
         'updated_at' => $r['updated_at']
     ];
@@ -892,6 +900,11 @@ if ((strpos($path, 'payment/verify-session') !== false || $action === 'verify-pa
 }
 
 // 5a. POST /api/services/orders/:id/cancel (User or Admin cancels order)
+//
+// REFUND POLICY GUARD: a PAID order is not cancelled here, because cancelling
+// would leave the customer's 90% pre-approval refund unrecorded. The customer
+// is told to write to admin@astrosivam.com so the administrator can approve the
+// refund with one click. Unpaid (free beta / unverified) orders cancel freely.
 if ((preg_match('/services\/orders\/([^\/]+)\/cancel/', $path, $matches) || $action === 'cancel-order') && $method === 'POST') {
     $body = getJsonBody();
     $orderId = !empty($matches[1]) ? $matches[1] : ($body['orderId'] ?? $_GET['id'] ?? '');
@@ -908,6 +921,17 @@ if ((preg_match('/services\/orders\/([^\/]+)\/cancel/', $path, $matches) || $act
 
     if ($order['user_id'] !== $user['id'] && ($user['role'] ?? '') !== 'admin') {
         jsonResponse(['success' => false, 'message' => 'Access denied'], 403);
+    }
+
+    require_once __DIR__ . '/../refunds.php';
+    if ((float) ($order['amount'] ?? 0) > 0
+        && (int) ($order['payment_confirmed'] ?? 0) === 1
+        && !astro_refund_is_already_refunded($order)) {
+        jsonResponse([
+            'success' => false,
+            'code' => 'PAID_ORDER_REQUIRES_REFUND',
+            'message' => 'Order #' . $order['order_number'] . ' has been paid, so it cannot be cancelled here. Email admin@astrosivam.com with this order number to cancel before approval: a paid order cancelled before approval is refunded at 90% of the amount paid, and the refund is settled within 3 working days.'
+        ], 409);
     }
 
     $upd = $pdo->prepare("UPDATE orders SET status = 'CANCELLED', admin_notes = ?, refund_reason = ?, updated_at = NOW() WHERE id = ?");

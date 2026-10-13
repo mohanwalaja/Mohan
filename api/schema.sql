@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
   `currency` VARCHAR(8) NOT NULL DEFAULT 'FJD',
   `service_mode` ENUM('FREE_BETA', 'PAID') NOT NULL DEFAULT 'PAID',
-  `status` ENUM('PENDING', 'PROCESSING', 'COMPLETED', 'REJECTED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
+  `status` ENUM('PENDING', 'PENDING_APPROVAL', 'PENDING_PAYMENT_VERIFICATION', 'PROCESSING', 'COMPLETED', 'GENERATED', 'REJECTED', 'CANCELLED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
   `payment_method` VARCHAR(32) NULL,
   `payment_reference` VARCHAR(191) NULL,
   `payment_intent_id` VARCHAR(80) NULL,
@@ -80,12 +80,23 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `admin_notes` TEXT NULL,
   `refund_status` ENUM('NONE', 'REQUESTED', 'REFUNDED', 'REJECTED') NOT NULL DEFAULT 'NONE',
   `refund_reason` TEXT NULL,
+  -- Pre-approval 90% refund trail (see api/migrations/009_refund_workflow.sql):
+  -- refund_percent/refund_amount/refund_currency are computed server-side,
+  -- refund_processed_at is the one-click approval instant and refund_deadline is
+  -- processed_at + 3 working days (the customer-facing settlement promise).
+  `refund_percent` DECIMAL(5, 2) NULL,
+  `refund_amount` DECIMAL(10, 2) NULL,
+  `refund_currency` VARCHAR(8) NULL,
+  `refund_processed_at` DATETIME NULL,
+  `refund_deadline` DATETIME NULL,
+  `refund_admin_notes` TEXT NULL,
   `ip_address` VARCHAR(64) NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX `idx_orders_user_id` (`user_id`),
   INDEX `idx_orders_group_id` (`group_id`),
   INDEX `idx_orders_status` (`status`),
+  INDEX `idx_orders_refund_status` (`refund_status`),
   INDEX `idx_orders_service_type` (`service_type`),
   INDEX `idx_orders_ip` (`ip_address`),
   INDEX `idx_orders_created_at` (`created_at`)

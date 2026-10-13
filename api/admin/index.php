@@ -168,6 +168,14 @@ if (strpos($path, 'admin/orders') !== false && $method === 'GET' && !preg_match(
             'adminNotes' => $r['admin_notes'],
             'refundStatus' => $r['refund_status'],
             'refundReason' => $r['refund_reason'],
+            // Pre-approval 90% refund trail (one-click refund). The portal shows
+            // the amount and the 3-working-day settlement deadline to the admin.
+            'refundPercent' => isset($r['refund_percent']) ? floatval($r['refund_percent']) : null,
+            'refundAmount' => isset($r['refund_amount']) ? floatval($r['refund_amount']) : null,
+            'refundCurrency' => $r['refund_currency'] ?? null,
+            'refundProcessedAt' => $r['refund_processed_at'] ?? null,
+            'refundDeadline' => $r['refund_deadline'] ?? null,
+            'refundAdminNotes' => $r['refund_admin_notes'] ?? null,
             'createdAt' => $r['created_at'],
             'updated_at' => $r['updated_at'],
             'updatedAt' => $r['updated_at'] ?? $r['created_at']
@@ -795,7 +803,16 @@ if (preg_match('/admin\/orders\/([^\/]+)\/reject/', $path, $matches) && $method 
 }
 
 // 3b. POST /api/admin/orders/:id/cancel
+//
+// REFUND POLICY GUARD: cancelling is for orders with nothing to return (free
+// beta / unverified payment). A PAID order must go through the one-click
+// pre-approval refund instead, because a bare cancel would move the money to
+// CANCELLED without ever returning the customer's 90% — the order then leaves
+// the admin list un-refunded and is easy to forget. Refuse and point at the
+// refund action.
 if (preg_match('/admin\/orders\/([^\/]+)\/cancel/', $path, $matches) && $method === 'POST') {
+    require_once __DIR__ . '/../refunds.php';
+
     $orderId = $matches[1];
     $body = getJsonBody();
     $reason = trim($body['reason'] ?? 'Cancelled by administrator');
@@ -806,6 +823,14 @@ if (preg_match('/admin\/orders\/([^\/]+)\/cancel/', $path, $matches) && $method 
 
     if (!$order) {
         jsonResponse(['success' => false, 'message' => 'Order not found'], 404);
+    }
+
+    if ((float) ($order['amount'] ?? 0) > 0 && (int) ($order['payment_confirmed'] ?? 0) === 1 && !astro_refund_is_already_refunded($order)) {
+        jsonResponse([
+            'success' => false,
+            'code' => 'PAID_ORDER_REQUIRES_REFUND',
+            'message' => 'Order #' . $order['order_number'] . ' was paid, so cancelling it would keep the customer\'s money without a refund. Use the one-click Refund 90% button instead: it cancels the order, returns 90% (' . astro_refund_money(astro_refund_amount_for_order($order), $order['currency']) . ') and records the 3-working-day settlement date.'
+        ], 409);
     }
 
     $upd = $pdo->prepare("UPDATE orders SET status = 'CANCELLED', admin_notes = ?, refund_reason = ?, updated_at = NOW() WHERE id = ?");
@@ -836,11 +861,38 @@ if (preg_match('/admin\/orders\/([^\/]+)$/', $path, $matches) && $method === 'DE
     jsonResponse(['success' => true, 'message' => "Order #{$order['order_number']} permanently deleted."]);
 }
 
-// 3d. POST /api/admin/orders/:id/process-refund
+// 3d. POST /api/admin/orders/:id/process-refund — ONE-CLICK PRE-APPROVAL REFUND (90%).
+//
+// THE ONE-CLICK CONTRACT: the admin portal sends exactly one request and no
+// amount. The percentage, the refundable amount and the 3-working-day
+// settlement deadline are computed here by api/refunds.php, because an amount
+// typed by hand is an amount that can be typed wrong, and because the policy
+// numbers must live in exactly one place.
+//
+// POLICY ENFORCEMENT (see api/refunds.php):
+//   • NOT yet approved (PENDING / PENDING_APPROVAL / PENDING_PAYMENT_
+//     VERIFICATION / CANCELLED) and paid  ->  90% refund, 10% gateway fee kept.
+//   • Already approved and delivered (APPROVED / GENERATED / PROCESSING /
+//     COMPLETED) -> the order IS the delivered personalised product. Refused
+//     with HTTP 409: the portal must not offer a refund the policy declines.
+//   • Nothing was ever charged (free-beta or unverified manual payment) ->
+//     HTTP 400, there is no money to return.
+//   • Already refunded -> idempotent 200 so a double click cannot refund twice.
+//
+// A family/multi-chart bundle lives in ONE group_id with one payment. Passing
+// `refundGroup: true` refunds every member of the group in one click, but only
+// when every member is still pre-approval — a partially delivered bundle is
+// refused rather than half-refunded.
 if (preg_match('/admin\/orders\/([^\/]+)\/process-refund/', $path, $matches) && $method === 'POST') {
+    require_once __DIR__ . '/../refunds.php';
+
     $orderId = $matches[1];
     $body = getJsonBody();
-    $notes = trim($body['adminNotes'] ?? 'Refund processed by administrator.');
+    $refundWholeGroup = !empty($body['refundGroup']);
+    $notes = isset($body['adminNotes']) ? trim((string) $body['adminNotes']) : astro_refund_one_click_note();
+    if ($notes === '') {
+        $notes = astro_refund_one_click_note();
+    }
 
     $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ? LIMIT 1");
     $stmt->execute([$orderId]);
@@ -850,12 +902,179 @@ if (preg_match('/admin\/orders\/([^\/]+)\/process-refund/', $path, $matches) && 
         jsonResponse(['success' => false, 'message' => 'Order not found'], 404);
     }
 
-    $upd = $pdo->prepare("UPDATE orders SET status = 'REFUNDED', refund_status = 'REFUNDED', admin_notes = ?, updated_at = NOW() WHERE id = ?");
-    $upd->execute([$notes, $orderId]);
+    // Collect every order row this one click is responsible for.
+    $targets = array($order);
+    $wholeGroupRefund = false;
+    if ($refundWholeGroup && !empty($order['group_id'])) {
+        $gStmt = $pdo->prepare("SELECT * FROM orders WHERE group_id = ? ORDER BY group_order_index ASC, id ASC");
+        $gStmt->execute([$order['group_id']]);
+        $groupRows = $gStmt->fetchAll();
+        if (count($groupRows) > 1) {
+            $targets = $groupRows;
+            $wholeGroupRefund = true;
+        }
+    }
 
-    logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'ORDER_REFUNDED', "Processed refund for order #{$order['order_number']}");
+    // Guard 1 — split the bundle into the rows still to refund and the rows
+    // that actually hold money. A family bundle may legitimately contain one
+    // FREE_BETA chart (the free first report of the bundle): it must be marked
+    // refunded with the rest, but it contributes no money.
+    $refundTargets = array();
+    $payableTargets = array();
+    foreach ($targets as $target) {
+        if (astro_refund_is_already_refunded($target)) {
+            continue;
+        }
+        $refundTargets[] = $target;
+        if ((float) ($target['amount'] ?? 0) > 0) {
+            $payableTargets[] = $target;
+        }
+    }
 
-    jsonResponse(['success' => true, 'message' => "Refund for order #{$order['order_number']} recorded as completed."]);
+    if (empty($refundTargets)) {
+        $already = $targets[0];
+        $alreadyAmount = isset($already['refund_amount']) ? (float) $already['refund_amount'] : 0.0;
+        jsonResponse([
+            'success' => true,
+            'alreadyRefunded' => true,
+            'message' => 'Order #' . $already['order_number'] . ' was already refunded.'
+                . ($alreadyAmount > 0 ? ' ' . astro_refund_money($alreadyAmount, $already['refund_currency'] ?? $already['currency'] ?? '') . ' was returned to the customer.' : '')
+        ]);
+    }
+
+    if (empty($payableTargets)) {
+        jsonResponse([
+            'success' => false,
+            'message' => 'Order #' . $refundTargets[0]['order_number'] . ' has no captured payment, so there is nothing to refund.'
+        ], 400);
+    }
+
+    // Guard 2 — the policy: once approved (report generated + emailed), the
+    // order is completed and is NOT refundable. For a bundle this also refuses a
+    // half-delivered group instead of partially refunding it, so one click can
+    // never leave the group with mixed Refunded/Completed members.
+    foreach ($refundTargets as $target) {
+        if (!astro_refund_status_is_delivered($target['status'] ?? '')) {
+            continue;
+        }
+        jsonResponse([
+            'success' => false,
+            'code' => $wholeGroupRefund ? 'REFUND_GROUP_PARTIALLY_DELIVERED' : 'REFUND_AFTER_APPROVAL_BLOCKED',
+            'message' => 'Order #' . $target['order_number'] . ' was approved and the PDF report was emailed, so it is completed and non-refundable under the refund policy. Only orders cancelled BEFORE admin approval qualify for the '
+                . (int) ASTRO_REFUND_PERCENT_PRE_APPROVAL . '% refund.'
+        ], 409);
+    }
+
+    // Compute the money, server-side, at the policy percentage.
+    $percent = (float) ASTRO_REFUND_PERCENT_PRE_APPROVAL;
+    $amountPaid = 0.0;
+    $refundAmount = 0.0;
+    $refundIds = array();
+    $refundNumbers = array();
+    foreach ($payableTargets as $target) {
+        $amountPaid += (float) ($target['amount'] ?? 0);
+        $refundAmount += astro_refund_amount_for_order($target);
+    }
+    foreach ($refundTargets as $target) {
+        $refundIds[] = $target['id'];
+        $refundNumbers[] = $target['order_number'];
+    }
+    $amountPaid = round($amountPaid, 2);
+    $refundAmount = round($refundAmount, 2);
+    $feeRetained = round($amountPaid - $refundAmount, 2);
+    $currency = (string) ($payableTargets[0]['currency'] ?? 'FJD');
+    $deadline = astro_refund_settle_deadline_sql();
+    $deadlineLabel = astro_refund_settle_deadline_label($deadline);
+    $processedAt = date('Y-m-d H:i:s');
+    $reason = astro_refund_policy_reason($payableTargets[0]);
+
+    foreach ($refundTargets as $target) {
+        $upd = $pdo->prepare("UPDATE orders SET status = 'REFUNDED', refund_status = 'REFUNDED', refund_percent = ?, refund_amount = ?, refund_currency = ?, refund_reason = ?, refund_processed_at = ?, refund_deadline = ?, refund_admin_notes = ?, admin_notes = ?, updated_at = NOW() WHERE id = ?");
+        $upd->execute([
+            astro_refund_percent_for_order($target),
+            astro_refund_amount_for_order($target),
+            $target['currency'] ?? $currency,
+            $reason,
+            $processedAt,
+            $deadline,
+            $notes,
+            $notes,
+            $target['id']
+        ]);
+    }
+
+    // Tell the customer (best effort: a mail outage must never hide a refund
+    // that the money path already committed).
+    $emailSent = false;
+    $emailMessage = '';
+    try {
+        $sStmt = $pdo->query("SELECT * FROM system_settings ORDER BY id ASC LIMIT 1");
+        $sRow = $sStmt->fetch();
+        $emailSettings = $sRow ? json_decode($sRow['email_settings'], true) : [];
+        $refundEmail = array(
+            'amount' => $refundAmount,
+            'amountPaid' => $amountPaid,
+            'feeRetained' => $feeRetained,
+            'percent' => $percent,
+            'currency' => $currency,
+            'workingDays' => (int) ASTRO_REFUND_WORKING_DAYS,
+            'deadlineLabel' => $deadlineLabel,
+            'bundleSize' => count($refundTargets),
+        );
+        $mailResult = AstroMailer::sendEmailWithAttachments(
+            $refundTargets[0]['user_email'],
+            $refundTargets[0]['user_name'],
+            'ASTRO SIVAM: Refund approved for order #' . $refundTargets[0]['order_number'] . ' — settles within ' . (int) ASTRO_REFUND_WORKING_DAYS . ' working days',
+            astro_refund_customer_email_html($refundTargets[0], $refundEmail),
+            [],
+            is_array($emailSettings) ? $emailSettings : [],
+            astro_inline_logo_attachment()
+        );
+        $emailSent = !empty($mailResult['success']);
+        $emailMessage = (string) ($mailResult['message'] ?? '');
+    } catch (\Throwable $mailError) {
+        $emailMessage = $mailError->getMessage();
+    }
+
+    $summary = 'Refund approved for order #' . $refundTargets[0]['order_number']
+        . ($wholeGroupRefund ? ' (all ' . count($refundTargets) . ' charts in the family bundle)' : '')
+        . ': ' . astro_refund_money($refundAmount, $currency) . ' (' . rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.') . '% of '
+        . astro_refund_money($amountPaid, $currency) . '). Settles within ' . (int) ASTRO_REFUND_WORKING_DAYS . ' working days, on or before '
+        . $deadlineLabel . '.';
+
+    logAudit(
+        $pdo,
+        $admin['id'],
+        $admin['name'],
+        'admin',
+        'ORDER_REFUNDED',
+        'One-click pre-approval refund for order #' . implode(', #', $refundNumbers)
+            . ' — ' . astro_refund_money($refundAmount, $currency) . ' of ' . astro_refund_money($amountPaid, $currency)
+            . ' (' . rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.') . '%), settles by ' . $deadlineLabel
+            . ', customer email ' . ($emailSent ? 'sent' : 'failed')
+    );
+
+    jsonResponse([
+        'success' => true,
+        'oneClick' => true,
+        'message' => $summary,
+        'refund' => [
+            'orderIds' => array_values($refundIds),
+            'orderNumbers' => array_values($refundNumbers),
+            'wholeGroup' => $wholeGroupRefund,
+            'percent' => $percent,
+            'amount' => $refundAmount,
+            'amountPaid' => $amountPaid,
+            'feeRetained' => $feeRetained,
+            'currency' => $currency,
+            'workingDays' => (int) ASTRO_REFUND_WORKING_DAYS,
+            'processedAt' => $processedAt,
+            'deadline' => $deadline,
+            'deadlineLabel' => $deadlineLabel,
+            'emailSent' => $emailSent,
+            'emailMessage' => $emailMessage
+        ]
+    ]);
 }
 
 // ===================================================================
@@ -885,7 +1104,13 @@ if (preg_match('/family-orders\/([^\/]+)\/resend-email/', $path, $matches) && $m
 
 
 // 3g. POST /api/admin/family-orders/:groupId/cancel
+//
+// REFUND POLICY GUARD: same rule as the single-order cancel above — a paid
+// bundle must be refunded (one click refunds every chart) rather than cancelled
+// with the money left behind.
 if (preg_match('/family-orders\/([^\/]+)\/cancel/', $path, $matches) && $method === 'POST') {
+    require_once __DIR__ . '/../refunds.php';
+
     $groupId = $matches[1];
     $body = getJsonBody();
     $reason = trim($body['reason'] ?? 'Cancelled by administrator');
@@ -896,6 +1121,20 @@ if (preg_match('/family-orders\/([^\/]+)\/cancel/', $path, $matches) && $method 
 
     if (empty($groupOrders)) {
         jsonResponse(['success' => false, 'message' => 'Family order group not found'], 404);
+    }
+
+    $paidGroupTotal = 0.0;
+    foreach ($groupOrders as $member) {
+        if ((float) ($member['amount'] ?? 0) > 0 && (int) ($member['payment_confirmed'] ?? 0) === 1 && !astro_refund_is_already_refunded($member)) {
+            $paidGroupTotal += (float) $member['amount'];
+        }
+    }
+    if ($paidGroupTotal > 0) {
+        jsonResponse([
+            'success' => false,
+            'code' => 'PAID_ORDER_REQUIRES_REFUND',
+            'message' => 'This family bundle was paid, so cancelling it would keep the customer\'s money without a refund. Use the one-click Refund 90% button instead: it refunds every chart in the bundle at once and records the 3-working-day settlement date.'
+        ], 409);
     }
 
     $upd = $pdo->prepare("UPDATE orders SET status = 'CANCELLED', admin_notes = ?, refund_reason = ?, updated_at = NOW() WHERE group_id = ?");

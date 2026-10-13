@@ -1,4 +1,4 @@
-import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession } from '../types';
+import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession } from '../types';
 
 export function getApiBase(): string {
   // Always default to relative '/api' in browser contexts.
@@ -1416,11 +1416,29 @@ export const api = {
     return safeJson(res);
   },
 
-  async processRefund(id: string, adminNotes?: string): Promise<{ success: boolean; message: string; order?: Order }> {
+  /**
+   * ONE-CLICK refund (Refund & Cancellation Policy).
+   *
+   * Before admin approval the order is refundable at 90% (the remaining 10% is
+   * the non-refundable gateway fee) and settles within 3 working days; after
+   * approval the order is completed and the API refuses with HTTP 409.
+   *
+   * No amount is ever sent: the server computes the percentage, the amount and
+   * the settlement deadline (api/refunds.php), so a mistyped figure can never
+   * reach the money path. `refundGroup` refunds every chart of a family bundle
+   * in the same click.
+   */
+  async processRefund(
+    id: string,
+    options: { adminNotes?: string; refundGroup?: boolean } = {}
+  ): Promise<{ success: boolean; message: string; alreadyRefunded?: boolean; refund?: RefundResult }> {
     const res = await fetch(`${API_BASE}/admin/orders/${id}/process-refund`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ adminNotes })
+      body: JSON.stringify({
+        adminNotes: options.adminNotes,
+        refundGroup: options.refundGroup === true
+      })
     });
     return safeJson(res);
   },

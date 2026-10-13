@@ -491,7 +491,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                 {data?.kpis.totalCompletedOrders || 165} Reports Dispatched
               </div>
               <div className="text-[10px] text-slate-500 mt-1">
-                Zero chargeback rate with 48-hour customer protection
+                90% one-click pre-approval refunds settled within 3 working days
               </div>
             </div>
           </div>

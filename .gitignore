@@ -52,3 +52,8 @@ tests/fixtures/php-ai-probes/out-guided-focus.json
 tests/fixtures/php-ai-probes/out-lint.json
 tests/fixtures/php-ai-probes/out-service-reports.json
 tests/fixtures/php-ai-probes/out-birth-chart-sample.json
+
+# Written on every run of tests/refund-policy-php-runtime.test.ts by the refund
+# wasm PHP probe (scripts/php-refund-policy-check.mjs). The probe is tracked;
+# its output is not.
+tests/fixtures/php-refund-probes/out.json

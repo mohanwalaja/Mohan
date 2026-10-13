@@ -12,6 +12,15 @@ const testFiles = [
   // (claim the payment intent before inserting order rows) against silent
   // refactors that no runtime test in this sandbox can reach.
   'tests/checkout-idempotency-contract.test.ts',
+  // Same reason, money leaving instead of entering: the 90% pre-approval
+  // refund, its 3-working-day settlement promise and the refusal to refund an
+  // approved (delivered) order must stay identical in the policy engine, the
+  // one-click admin handler, the admin portal and the customer-facing page.
+  'tests/refund-policy-contract.test.ts',
+  // Same policy, but EXECUTED in a real PHP runtime when the optional
+  // php-wasm dev dependency is installed (it SKIPs otherwise): the 90% split
+  // and the 3-working-day calendar are arithmetic, and arithmetic must be run.
+  'tests/refund-policy-php-runtime.test.ts',
   // Executes the backup script against a stubbed mysqldump: proves the marker,
   // the retention rotation and the "a failed dump cannot look like a backup"
   // failure path, none of which a code-reading review would catch.

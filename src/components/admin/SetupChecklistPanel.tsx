@@ -250,15 +250,16 @@ export const SetupChecklistPanel: React.FC<SetupChecklistPanelProps> = ({
     {
       id: 'chk-pay-4',
       category: 'PAYMENT',
-      title: 'Cancellation & 48-Hour Refund Engine',
-      description: 'Automated policy handling full customer refunds within 48h for pre-approval order cancellations.',
+      title: 'Pre-Approval 90% Refund Engine',
+      description: 'One-click admin refund of 90% for orders cancelled before approval (the 10% balance is the non-refundable gateway fee), settled within 3 working days.',
       isDone: true,
       indicator: '✓',
       statusText: 'Active & Enforced',
       tab: 'orders',
       details: [
-        { label: 'Pre-Approval SLA', valid: true, value: '100% Refundable' },
-        { label: 'Post-Approval SLA', valid: true, value: 'Archived / Non-refundable' }
+        { label: 'Pre-Approval Refund', valid: true, value: '90% — One-Click in Admin' },
+        { label: 'Settlement SLA', valid: true, value: '3 Working Days' },
+        { label: 'Post-Approval', valid: true, value: 'Completed / Non-refundable' }
       ]
     },
 

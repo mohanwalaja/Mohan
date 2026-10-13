@@ -21,6 +21,7 @@ function getDbConnection() {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         $pdo->exec("SET NAMES 'utf8mb4'");
         astro_ensure_auth_security_schema($pdo);
+        astro_ensure_refund_schema($pdo);
         return $pdo;
     } catch (PDOException $e) {
         error_log("Database connection error: " . $e->getMessage());
@@ -58,6 +59,65 @@ function astro_ensure_auth_security_schema($pdo) {
         }
     } catch (Exception $e) {
         error_log('ASTRO SIVAM: auth security schema check failed - ' . $e->getMessage());
+    }
+}
+
+/**
+ * Adds the refund-workflow columns and widens the `orders.status` enum so the
+ * one-click pre-approval refund can be recorded.
+ *
+ * WHY THE ENUM CHANGE: api/schema.sql originally declared
+ *   status ENUM('PENDING','PROCESSING','COMPLETED','REJECTED','CANCELLED')
+ * but the refund path has to store 'REFUNDED'. On a strict-mode MySQL that
+ * write fails (or, worse, stores an empty string), which would silently lose
+ * the refund state and let the customer's AI-chat entitlement stay alive.
+ * Widening the enum is idempotent and safe: existing values keep their index.
+ *
+ * Idempotent: it runs once per process and only issues DDL that is missing.
+ * Mirrors api/migrations/009_refund_workflow.sql, so an installation that has
+ * not been migrated by hand still works.
+ */
+function astro_ensure_refund_schema($pdo) {
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $done = true;
+
+    $columns = array(
+        'refund_percent' => "ALTER TABLE orders ADD COLUMN refund_percent DECIMAL(5,2) NULL AFTER refund_reason",
+        'refund_amount' => "ALTER TABLE orders ADD COLUMN refund_amount DECIMAL(10,2) NULL AFTER refund_percent",
+        'refund_currency' => "ALTER TABLE orders ADD COLUMN refund_currency VARCHAR(8) NULL AFTER refund_amount",
+        'refund_processed_at' => "ALTER TABLE orders ADD COLUMN refund_processed_at DATETIME NULL AFTER refund_currency",
+        'refund_deadline' => "ALTER TABLE orders ADD COLUMN refund_deadline DATETIME NULL AFTER refund_processed_at",
+        'refund_admin_notes' => "ALTER TABLE orders ADD COLUMN refund_admin_notes TEXT NULL AFTER refund_deadline",
+    );
+
+    try {
+        $rows = $pdo->query("SHOW COLUMNS FROM `orders`")->fetchAll(PDO::FETCH_ASSOC);
+        $existing = array();
+        $statusType = '';
+        foreach ($rows as $row) {
+            $existing[] = $row['Field'];
+            if ($row['Field'] === 'status') {
+                $statusType = (string) $row['Type'];
+            }
+        }
+
+        foreach ($columns as $name => $sql) {
+            if (!in_array($name, $existing, true)) {
+                $pdo->exec($sql);
+            }
+        }
+
+        if ($statusType !== '' && stripos($statusType, "'REFUNDED'") === false) {
+            $pdo->exec("ALTER TABLE `orders` MODIFY COLUMN `status` ENUM("
+                . "'PENDING','PENDING_APPROVAL','PENDING_PAYMENT_VERIFICATION','PROCESSING',"
+                . "'COMPLETED','GENERATED','REJECTED','CANCELLED','REFUNDED'"
+                . ") NOT NULL DEFAULT 'PENDING'");
+        }
+    } catch (Exception $e) {
+        error_log('ASTRO SIVAM: refund schema check failed - ' . $e->getMessage());
     }
 }
 

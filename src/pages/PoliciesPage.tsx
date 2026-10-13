@@ -25,7 +25,7 @@ const POLICY_META = {
   },
   refund: {
     title: 'Refund & Cancellation Policy | ASTRO SIVAM',
-    description: 'Review our policy on refunds and cancellations for personalized astrological calculations and digital PDF deliverables.',
+    description: 'Before admin approval, cancel and receive a 90% refund in 3 working days. Once your personalised PDF report is approved and emailed, the order is completed and non-refundable.',
     canonical: 'https://astrosivam.com/refund-policy'
   }
 };
@@ -177,28 +177,92 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
             <p>
               When placing a paid order, clients must submit their transaction reference/receipt number. The order is reviewed by the administrator before calculations are finalized and dispatched.
             </p>
+            <p>
+              Until that review is completed the order is still changeable: cancelling before admin approval entitles you to a <strong>90% refund</strong>, settled within <strong>3 working days</strong>. Once approved and emailed, the order is completed and non-refundable. See our <button type="button" onClick={() => onNavigate('policy-refund')} className="text-amber-700 dark:text-amber-400 font-semibold underline cursor-pointer">Refund &amp; Cancellation Policy</button> for the full details.
+            </p>
           </div>
         )}
 
         {type === 'refund' && (
           <div className="space-y-4">
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-              Refund & Cancellation Policy
+              Refund &amp; Cancellation Policy
             </h2>
-            <p className="text-xs text-slate-500">Last updated: January 2026</p>
+            <p className="text-xs text-slate-500">Last updated: October 2026</p>
+
+            <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 sm:p-5 space-y-1.5">
+              <p className="font-bold text-emerald-900 dark:text-emerald-200 text-sm">
+                The short version
+              </p>
+              <p className="text-emerald-900/90 dark:text-emerald-200/90">
+                <strong>Before admin approval</strong> — you may cancel and receive a <strong>90% refund</strong> of the amount paid. The remaining 10% is the non-refundable payment-gateway / processing fee that we are charged even when an order is refunded.
+              </p>
+              <p className="text-emerald-900/90 dark:text-emerald-200/90">
+                <strong>After admin approval</strong> — your personalised PDF report and tax invoice have been generated and emailed, so the order is <strong>completed and non-refundable</strong>.
+              </p>
+              <p className="text-emerald-900/90 dark:text-emerald-200/90">
+                Refunds are processed within <strong>3 working days</strong> (Monday to Friday, public holidays excluded) to your original payment method.
+              </p>
+            </div>
 
             <h3 className="font-bold text-slate-900 dark:text-white text-base pt-2">
-              1. Digital Personalized Services
+              1. Before Admin Approval — 90% Refund
             </h3>
             <p>
-              Because our astrological horoscopes, matrimonial matching reports, baby naming certificates, and Subha Muhurtham date reports are uniquely generated and custom-calculated digital products, orders that have already been generated and emailed cannot be refunded.
+              Every paid order passes a manual verification step. Until our administrator approves the order and generates your report, nothing has been calculated, printed or dispatched, so the order can still be cancelled. If you cancel at this stage, <strong>90% of the amount you paid is refunded</strong>. The retained 10% covers bank, card-network and wallet charges (PayPal, card, UPI/GPay) that are not returned to us when a transaction is refunded.
             </p>
 
             <h3 className="font-bold text-slate-900 dark:text-white text-base pt-2">
-              2. Cancellation Before Generation
+              2. After Admin Approval — Order Completed, Non-Refundable
             </h3>
             <p>
-              If you discover an error in your birth details prior to admin verification and report generation, you may contact admin@astrosivam.com immediately to correct your input coordinates at no additional charge.
+              Your horoscope, matrimonial matching report, baby naming certificate or Subha Muhurtham date report is uniquely calculated for your birth details and is delivered as a personalised digital PDF. Once the administrator has approved the order and the report and tax invoice have been emailed to you, the order is <strong>completed</strong>. Because the product is personalised, delivered and cannot be returned, <strong>no refund or cancellation is available after approval</strong>.
+            </p>
+
+            <h3 className="font-bold text-slate-900 dark:text-white text-base pt-2">
+              3. Refund Processing Time — 3 Working Days
+            </h3>
+            <p>
+              Once a refund is approved it is completed within <strong>3 working days</strong>, counted in working days only (Saturday, Sunday and public holidays are excluded). The money is returned to the <strong>same payment method and in the same currency</strong> you paid with — PayPal, credit/debit card, UPI/GPay or your wallet. Your bank or wallet provider may take one further working day to display the credit on your statement.
+            </p>
+
+            <h3 className="font-bold text-slate-900 dark:text-white text-base pt-2">
+              4. Wrong Birth Details Before Approval
+            </h3>
+            <p>
+              If you discover an error in your birth date, birth time or birthplace before approval, contact us immediately at <a href="mailto:admin@astrosivam.com" className="text-amber-700 dark:text-amber-400 font-semibold underline">admin@astrosivam.com</a> with your order number. Input corrections made before the report is generated are free of charge, and no refund is needed — we simply recalculate your chart with the corrected details.
+            </p>
+
+            <h3 className="font-bold text-slate-900 dark:text-white text-base pt-2">
+              5. How to Request a Refund
+            </h3>
+            <p>
+              Email <a href="mailto:admin@astrosivam.com" className="text-amber-700 dark:text-amber-400 font-semibold underline">admin@astrosivam.com</a> from your registered email address, quoting your <strong>order number</strong> (it starts with <span className="font-mono">ASTRO-</span>) and the reason for cancellation. Our team verifies that the order has not yet been approved, then approves the 90% refund in a single click from the admin dashboard — no further paperwork, no forms to sign. You will receive a refund confirmation email with the exact amount and the expected settlement date.
+            </p>
+
+            <h3 className="font-bold text-slate-900 dark:text-white text-base pt-2">
+              6. Free Beta Reports
+            </h3>
+            <p>
+              Free beta reports (the first report offered free of charge under the beta programme) carry no payment, so no refund arises. They may be cancelled at any time before approval.
+            </p>
+
+            <h3 className="font-bold text-slate-900 dark:text-white text-base pt-2">
+              7. Duplicate or Failed Payments
+            </h3>
+            <p>
+              If a payment was deducted twice, or money left your account without an order being created, contact us with the transaction reference. Verified duplicate or orphaned payments are returned in full (100%), since no service was ordered or delivered.
+            </p>
+
+            <h3 className="font-bold text-slate-900 dark:text-white text-base pt-2">
+              8. Chargebacks
+            </h3>
+            <p>
+              Please contact us before asking your bank or card provider to raise a chargeback. Once a report has been emailed, a chargeback raised for a delivered personalised digital product will be contested with the delivery records (the dated email, the generated PDF report and the tax invoice) we retain for every order.
+            </p>
+
+            <p className="text-xs text-slate-500 pt-2">
+              This policy is governed by the laws of Fiji and applies to all ASTRO SIVAM orders placed on astrosivam.com. For any clarification, write to <a href="mailto:admin@astrosivam.com" className="text-amber-700 dark:text-amber-400 font-semibold underline">admin@astrosivam.com</a>.
             </p>
           </div>
         )}

@@ -104,6 +104,12 @@ if ($method === 'GET') {
                 'adminNotes' => $m['admin_notes'] ?? null,
                 'refundStatus' => $m['refund_status'] ?? 'NONE',
                 'refundReason' => $m['refund_reason'] ?? null,
+                'refundPercent' => isset($m['refund_percent']) ? floatval($m['refund_percent']) : null,
+                'refundAmount' => isset($m['refund_amount']) ? floatval($m['refund_amount']) : null,
+                'refundCurrency' => $m['refund_currency'] ?? null,
+                'refundProcessedAt' => $m['refund_processed_at'] ?? null,
+                'refundDeadline' => $m['refund_deadline'] ?? null,
+                'refundAdminNotes' => $m['refund_admin_notes'] ?? null,
                 'createdAt' => $m['created_at'],
                 'updatedAt' => $m['updated_at'] ?? $m['created_at']
             ];
@@ -145,6 +151,12 @@ if ($method === 'GET') {
             'adminNotes' => $primary['admin_notes'] ?? null,
             'refundStatus' => $primary['refund_status'] ?? 'NONE',
             'refundReason' => $primary['refund_reason'] ?? null,
+            'refundPercent' => isset($primary['refund_percent']) ? floatval($primary['refund_percent']) : null,
+            'refundAmount' => isset($primary['refund_amount']) ? floatval($primary['refund_amount']) : null,
+            'refundCurrency' => $primary['refund_currency'] ?? null,
+            'refundProcessedAt' => $primary['refund_processed_at'] ?? null,
+            'refundDeadline' => $primary['refund_deadline'] ?? null,
+            'refundAdminNotes' => $primary['refund_admin_notes'] ?? null,
             'createdAt' => $primary['created_at'],
             'updatedAt' => $primary['updated_at'] ?? $primary['created_at'],
             'members' => $formattedMembers
