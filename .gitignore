@@ -12,6 +12,12 @@ muhurtham_preview_p2_month.png
 .env*
 !.env.example
 dist/
+# Scratch build outputs (e.g. `vite build --outDir dist-scratch`): Tailwind v4's
+# automatic content scanner and tests/retired-branding-guard read every
+# non-ignored directory, so a stray build tree silently changes the generated
+# CSS and thus content hashes of a real build (seen while bisecting the
+# __VITE_PRELOAD__ incident).
+dist-*/
 dist.zip
 public/dist.zip
 public/dist_and_api.zip

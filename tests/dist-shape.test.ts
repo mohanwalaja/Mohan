@@ -16,6 +16,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { brotliDecompressSync, gunzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -79,6 +80,31 @@ check('the zip packer asserts the cPanel root folder list', () => {
   );
 });
 
+check('the pre-compress plugin compresses final bytes in writeBundle, never in generateBundle', () => {
+  // The 2026-10-13 astrosivam.com outage: compressing inside generateBundle ran
+  // before vite:build-import-analysis replaced the `__VITE_PRELOAD__` dynamic
+  // import placeholder, so the .br/.gz siblings shipped a free `__VITE_PRELOAD__`
+  // identifier. Production .htaccess negotiates every .js request to those
+  // siblings → ReferenceError on every lazy route, while
+  // `grep __VITE_PRELOAD__ dist/assets/*.js` on the clean raw files found nothing.
+  const compress = read('vite-plugin-compress.ts');
+  assert.match(
+    compress,
+    /writeBundle\s*\(/,
+    'compression must run in writeBundle (after every generateBundle hook has run and Rollup wrote the final files)',
+  );
+  assert.doesNotMatch(
+    compress,
+    /\bgenerateBundle\s*\(/,
+    'compressing inside generateBundle re-opens the __VITE_PRELOAD__ leak into the .br/.gz siblings',
+  );
+  assert.match(
+    compress,
+    /readFileSync/,
+    'the compression input must be the bytes on disk, not in-memory chunk objects another plugin may still mutate',
+  );
+});
+
 // ---------------------------------------------------------------------------
 // 2. Built-output guarantees (run when dist/ exists — after `npm run build`).
 // ---------------------------------------------------------------------------
@@ -132,6 +158,45 @@ check('every lazy route chunk exists inside dist/assets (no chunk 404 = no white
     const found = files.some((f) => f.startsWith(`${page}-`) || f.startsWith(`${page}.`));
     assert.ok(found, `no chunk emitted for lazy route ${page} (looked for assets/${page}-*.js)`);
   }
+});
+
+check('no shipped JS contains a free __VITE_PRELOAD__ identifier (raw files AND .br/.gz siblings)', () => {
+  // Regression gate for the 2026-10-13 production outage. The identifier never
+  // exists in the raw .js files — it is frozen into the pre-compressed
+  // siblings, which is exactly what cPanel's .htaccess serves. grep(1) over
+  // dist/ cannot see it (brotli/gzip are binary), so decompress every sibling
+  // and scan that too.
+  const offenders: string[] = [];
+  const scan = (label: string, text: string) => {
+    if (text.includes('__VITE_PRELOAD__')) offenders.push(label);
+  };
+  const TEXTY = /\.(js|mjs|cjs|css|html|json|svg|txt|xml|webmanifest)$/;
+  const walk = (dir: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(p);
+        continue;
+      }
+      try {
+        if (entry.name.endsWith('.br')) {
+          scan(`${p} (decompressed .br)`, brotliDecompressSync(fs.readFileSync(p)).toString('utf8'));
+        } else if (entry.name.endsWith('.gz')) {
+          scan(`${p} (decompressed .gz)`, gunzipSync(fs.readFileSync(p)).toString('utf8'));
+        } else if (TEXTY.test(entry.name)) {
+          scan(p, fs.readFileSync(p, 'utf8'));
+        }
+      } catch (err) {
+        offenders.push(`${p} (could not be scanned: ${String(err)})`);
+      }
+    }
+  };
+  walk(distDir);
+  assert.deepEqual(
+    offenders,
+    [],
+    `free __VITE_PRELOAD__ placeholder found in shipped output — the browser would throw ReferenceError on every lazy route (cPanel serves the .br/.gz siblings): ${offenders.join(', ')}`,
+  );
 });
 
 console.log(`\nDist shape contract passed (${passed} checks).`);

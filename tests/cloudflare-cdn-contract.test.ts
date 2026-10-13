@@ -143,6 +143,10 @@ check('the runbook pins the settings that break the app when wrong', () => {
   const topics: Array<[RegExp, string]> = [
     [/Full \(strict\)/i, 'SSL mode: Flexible breaks Secure cookies and redirects'],
     [/Rocket Loader/i, 'must stay OFF: it rewrites scripts and breaks the CSP'],
+    // Auto Minify must be an explicit mandate to keep it OFF for JS, not a
+    // hand-wave: edge minification rewrites ES modules and breaks Vite lazy
+    // chunks (the __VITE_PRELOAD__ class of failure).
+    [/Auto Minify \| \*\*OFF\*\* for JavaScript/i, 'Auto Minify must be mandated OFF for JS — edge minification breaks Vite code-split chunks'],
     [/Email Obfuscation/i, 'must stay OFF: it injects markup into the page'],
     [/Brotli/i, 'edge compression'],
     [/Auto Accept/i, 'with the documented caveat'],

@@ -34,7 +34,7 @@ wrong. Check `https://<origin-ip>/` directly with `openssl s_client` first.
 | Auto Accept | On, **with care** | makes the edge request/accept one encoding so the cache holds a single variant, then re-encodes per client. If you see a client receiving unreadable JS after enabling it, that is a `Vary`/encoding mismatch: the §4 rules are the fix, and the monitor's API check plus the Playwright smoke test will catch a broken bundle. |
 | Rocket Loader | **OFF** | it rewrites and defers scripts from the edge; our CSP (`script-src 'self' …`) blocks the injected loader, and deferring app scripts breaks the report renderer's timing |
 | Email Obfuscation | **OFF** | it injects markup/scripts into HTML; nothing in the app needs it and it fights the CSP |
-| Auto Minify | **n/a** | deprecated; Vite already minifies |
+| Auto Minify | **OFF** for JavaScript (the dashboard feature is deprecated/removed — if your zone still exposes it, it must stay unticked for JS) | Cloudflare's edge minifier **rewrites ES modules**, and Vite's code-split output depends on exact module semantics (dynamic-import preload helper, side-effect order). Edge-minified JS has broken Vite lazy chunks before — never let anything between Cloudflare and the origin re-minify what Vite already minified |
 | HTTP/3, 0-RTT, Early Hints | On | free wins for TTFB; the app does not depend on request ordering |
 | Web Analytics (optional) | if enabled, update the CSP | add `https://static.cloudflareinsights.com` to `script-src` and `https://cloudflareinsights.com` to `connect-src` in `public/.htaccess`. It is **not** in the policy today, so the beacon is blocked until you add it. |
 
@@ -116,6 +116,15 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache
 
 Use a **scoped** token (Zone → Cache Purge → Purge), never a global API key.
 If you skip Rule 3 entirely, no purge step is needed.
+
+**Hotfix rule: purge EVERYTHING after deploying a fix** (`Purge Everything` in
+Caching → Configuration, or `--data '{"purge_everything":true}'`). An edge or
+browser cache can keep handing out a previously-cached body — and after a
+build-tooling fix (e.g. the 2026-10-13 `__VITE_PRELOAD__` incident, where the
+poisoned bytes lived in the pre-compressed `.br` siblings negotiated *under*
+the `.js` URL) the fix is only real once every cached copy of the old response
+is gone. Old 1-year `Expires` on `/assets/*` means a missed purge can mask a
+fixed deploy for up to a year.
 
 ## 6. Origin exposure (optional hardening)
 

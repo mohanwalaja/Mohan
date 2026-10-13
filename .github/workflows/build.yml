@@ -169,6 +169,81 @@ jobs:
       - name: Build production output for the preview smoke
         run: npm run build
 
+      # Built-output contract against the real dist/ (the `tests` job has no
+      # build, so its built-output section skips): deploy shape AND the
+      # __VITE_PRELOAD__ marker scan across raw files + decompressed .br/.gz
+      # siblings — the exact bytes cPanel's .htaccess negotiates to production.
+      - name: Built-output contract (dist shape + no free __VITE_PRELOAD__)
+        run: npx tsx tests/dist-shape.test.ts
+
+      # Definitive deployed-vs-local forensics (advisory: production lags PR
+      # builds by design). CI runners have internet; the sandbox does not.
+      # Prints size+sha256 of the local index chunk, of its decompressed .br
+      # sibling, and of what https://astrosivam.com actually serves — and
+      # warns loudly if the deployed body still carries a free
+      # __VITE_PRELOAD__ placeholder (the 2026-10-13 outage signature).
+      - name: Production forensics — deployed chunk vs local build (advisory)
+        continue-on-error: true
+        run: |
+          set -u
+          INDEX_JS=$(ls dist/assets/index-*.js | head -1)
+          BASE=$(basename "$INDEX_JS")
+          sha() { sha256sum "$1" | cut -d' ' -f1; }
+          size() { stat -c%s "$1"; }
+          echo "local raw .js : $BASE size=$(size "$INDEX_JS") sha256=$(sha "$INDEX_JS")"
+          echo "local raw marker count: $(grep -ao '__VITE_PRELOAD__' "$INDEX_JS" | wc -l | tr -d ' ')"
+          if [ -f "$INDEX_JS.br" ]; then
+            node -e "const z=require('zlib'),fs=require('fs');fs.writeFileSync('/tmp/local-index.br.js',z.brotliDecompressSync(fs.readFileSync(process.argv[1])))" "$INDEX_JS.br"
+            echo "local .br decompressed: size=$(size /tmp/local-index.br.js) sha256=$(sha /tmp/local-index.br.js)"
+            echo "local .br marker count: $(grep -ao '__VITE_PRELOAD__' /tmp/local-index.br.js | wc -l | tr -d ' ')"
+          fi
+          # What the world gets with a Brotli-capable browser (production
+          # .htaccess internally rewrites .js → .js.br on this header).
+          HTTP=$(curl -sS -D /tmp/prod-br.headers -o /tmp/prod-br.body -H 'Accept-Encoding: br' -w '%{http_code}' "https://astrosivam.com/assets/$BASE" || echo "curl-failed")
+          echo "production HTTP (Accept-Encoding: br): $HTTP"
+          if [ "$HTTP" = "200" ]; then
+            if grep -qi '^content-encoding: br' /tmp/prod-br.headers; then
+              node -e "const z=require('zlib'),fs=require('fs');fs.writeFileSync('/tmp/prod-index.js',z.brotliDecompressSync(fs.readFileSync('/tmp/prod-br.body')))" || cp /tmp/prod-br.body /tmp/prod-index.js
+            else
+              cp /tmp/prod-br.body /tmp/prod-index.js
+            fi
+            echo "production body: size=$(size /tmp/prod-index.js) sha256=$(sha /tmp/prod-index.js)"
+            PROD_MARKERS=$(grep -ao '__VITE_PRELOAD__' /tmp/prod-index.js | wc -l | tr -d ' ')
+            echo "production marker count: $PROD_MARKERS"
+            if [ "$PROD_MARKERS" != "0" ]; then
+              echo "::warning title=Production serves a free __VITE_PRELOAD__::https://astrosivam.com/assets/$BASE still contains $PROD_MARKERS unreplaced placeholder(s) — every lazy route is broken for Brotli clients. Redeploy the fixed dist.zip and purge the Cloudflare cache."
+            fi
+            if cmp -s /tmp/prod-index.js "$INDEX_JS"; then
+              echo "production body is byte-identical to this build's raw $BASE"
+            else
+              echo "::warning title=Deployed chunk differs from this build::$BASE on production is not byte-identical to the local build (expected before deploy; after deploying this build it means stale cache)."
+            fi
+          else
+            echo "Not deployed yet or unreachable (HTTP $HTTP) — expected for PR builds and during rollback."
+          fi
+          # One-off incident forensics (2026-10-13 outage): while production
+          # still runs the broken deploy, verify what Brotli-capable browsers
+          # actually receive for the poisoned chunk. An identity fetch would
+          # lie — Apache only rewrites to the .br sibling on the br header,
+          # and the raw file was always clean.
+          OLD_NAME=index-CvPoQHlu.js
+          OLD_HTTP=$(curl -sS -D /tmp/inc-br.headers -o /tmp/inc-br.body -H 'Accept-Encoding: br' -w '%{http_code}' "https://astrosivam.com/assets/$OLD_NAME" || echo "curl-failed")
+          echo "incident chunk $OLD_NAME (Accept-Encoding: br): HTTP $OLD_HTTP"
+          if [ "$OLD_HTTP" = "200" ]; then
+            if grep -qi '^content-encoding: br' /tmp/inc-br.headers; then
+              node -e "const z=require('zlib'),fs=require('fs');fs.writeFileSync('/tmp/inc-index.js',z.brotliDecompressSync(fs.readFileSync('/tmp/inc-br.body')))" || cp /tmp/inc-br.body /tmp/inc-index.js
+            else
+              cp /tmp/inc-br.body /tmp/inc-index.js
+            fi
+            INC_MARKERS=$(grep -ao '__VITE_PRELOAD__' /tmp/inc-index.js | wc -l | tr -d ' ')
+            echo "incident chunk body: size=$(size /tmp/inc-index.js) sha256=$(sha /tmp/inc-index.js) marker count: $INC_MARKERS"
+            if [ "$INC_MARKERS" != "0" ]; then
+              echo "::warning title=Production still serves the poisoned incident chunk::$OLD_NAME carries $INC_MARKERS free __VITE_PRELOAD__ placeholder(s) for Brotli clients — every lazy route is broken until the fixed dist.zip is redeployed and Cloudflare is purged."
+            fi
+          else
+            echo "incident chunk $OLD_NAME is gone (HTTP $OLD_HTTP) — rolled back or already redeployed."
+          fi
+
       - name: Route smoke against the production preview (anti white-screen)
         run: |
           set +e
@@ -180,6 +255,19 @@ jobs:
                   echo "::error title=Preview route smoke failure::${line}"
                 done
             exit "$STATUS"
+          fi
+          # Proof of execution: the spec appends its summary (and the
+          # ROUTE-SMOKE-SUMMARY-OK marker) to $GITHUB_STEP_SUMMARY only when
+          # it ran to completion. Job/step status APIs have been seen reporting
+          # success while steps sat pending — this greps the artifact instead.
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            if grep -q 'ROUTE-SMOKE-SUMMARY-OK' "$GITHUB_STEP_SUMMARY"; then
+              echo "::notice title=Preview route smoke executed::spec completed; summary written to the run summary."
+              grep -A8 'Route lazy-loading smoke' "$GITHUB_STEP_SUMMARY" | head -12
+            else
+              echo "::error title=Preview route smoke did not execute::Playwright exited 0 but the spec never wrote its ROUTE-SMOKE-SUMMARY-OK marker — treat this run as invalid."
+              exit 1
+            fi
           fi
 
       - name: Upload Playwright report on failure
@@ -241,6 +329,12 @@ jobs:
         run: |
           npm run build:zip
           ls -lh dist.zip dist/
+
+      # The release artifact gets its own marker scan (this job rebuilds
+      # independently of playwright-smoke): no shipped .js — raw or inside its
+      # .br/.gz siblings — may contain a free __VITE_PRELOAD__ placeholder.
+      - name: Built-output contract on the release build (dist shape + marker scan)
+        run: npx tsx tests/dist-shape.test.ts
 
       - name: Verify dist.zip content
         run: |
