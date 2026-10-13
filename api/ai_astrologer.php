@@ -38,7 +38,7 @@
  * Replies are local-only: this endpoint never calls an external AI service
  * and never needs an API key. If the chat cannot answer, sign in as an admin
  * and run /api/ai_astrologer.php?action=diagnose to check PHP extensions and
- * the deployed knowledge/ files. See AI_CHAT_NOT_REPLYING_FIX.md.
+ * the deployed knowledge/ files. See docs/AI_CHAT_NOT_REPLYING_FIX.md.
  *
  * ACCESS GATES — READ BEFORE EDITING
  * Authentication and entitlement checks run in PHP on EVERY action, including
@@ -61,7 +61,7 @@
  *   node scripts/php-ai-provider-check.mjs tests/fixtures/php-ai-probes/knowledge-base-mode.php
  * The gates, migration and schema contracts are checked by
  * tests/ai-astrologer-access.test.ts. Smoke-test the dispatch on the server
- * before relying on it — see BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md.
+ * before relying on it — see docs/BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md.
  */
 
 require_once __DIR__ . '/config.php';

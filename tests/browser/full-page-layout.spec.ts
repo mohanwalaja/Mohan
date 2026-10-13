@@ -11,7 +11,7 @@ import type { AppLanguage } from '../../src/lib/astrology/types';
 import { routeReportFonts } from '../../scripts/report-fonts.mjs';
 
 /**
- * Full-page contract (see REPORT_AND_INVOICE_FULL_PAGE_LAYOUT.md).
+ * Full-page contract (see docs/REPORT_AND_INVOICE_FULL_PAGE_LAYOUT.md).
  *
  * Every sheet of every report and the invoice must be covered from the header
  * to the footer band: no half-empty page, no blank band inside a page, and no

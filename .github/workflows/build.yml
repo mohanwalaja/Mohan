@@ -65,7 +65,7 @@ jobs:
             composer install --no-interaction --prefer-dist --no-progress
           else
             # No committed composer.lock yet (see CI notes in
-            # PAYMENT_WEBHOOK_IDEMPOTENCY_AND_CI.md), so resolve it here and
+            # docs/PAYMENT_WEBHOOK_IDEMPOTENCY_AND_CI.md), so resolve it here and
             # audit what production would actually install.
             composer update --no-interaction --prefer-dist --no-progress
           fi
@@ -272,7 +272,7 @@ jobs:
             Automated production build including:
             - Full optimized React frontend (`dist/`)
             - Complete cPanel PHP backend (`/api/`) with Vedic astrology engine
-            - BigRock cPanel Deployment Guide (`BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md`)
+            - BigRock cPanel Deployment Guide (`docs/BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md`)
             
             **Download `dist.zip` below and upload to your cPanel `public_html/`.**
           files: |

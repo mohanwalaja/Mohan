@@ -26,7 +26,7 @@
  *    uptime monitor can treat the endpoint as a real readiness probe.
  *
  * Runbook (error_log routing, rotation, the backup marker this file reads and
- * the monitoring workflow): HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md.
+ * the monitoring workflow): docs/HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md.
  */
 
 require_once __DIR__ . '/../config.php';
@@ -348,7 +348,7 @@ $checks[] = astro_health_run('backups', function () {
     if (!is_file($marker)) {
         return [
             'status' => 'degraded',
-            'detail' => 'No backup marker yet. Schedule scripts/backup/astro_site_backup.sh and read HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md.',
+            'detail' => 'No backup marker yet. Schedule scripts/backup/astro_site_backup.sh and read docs/HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md.',
             'data' => ['marker' => basename(ASTRO_HEALTH_BACKUP_MARKER), 'present' => false]
         ];
     }

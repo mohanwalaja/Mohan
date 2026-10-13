@@ -121,7 +121,7 @@ check('the scan actually covers the shipped tree (frontend, PHP API, tests, scri
     'tests/refund-policy-contract.test.ts',
     'scripts/run-tests.mjs',
     '.github/workflows/tests.yml',
-    'REFUND_POLICY_AND_ONE_CLICK_REFUND.md'
+    'docs/REFUND_POLICY_AND_ONE_CLICK_REFUND.md'
   ]) {
     assert.ok(fs.existsSync(path.join(projectRoot, expected)), `${expected} must exist to be scanned`);
     assert.ok(!covered.has(expected), `${expected} must be free of retired branding`);

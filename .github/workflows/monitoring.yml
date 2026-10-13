@@ -25,7 +25,7 @@
 #
 # The in-app counterpart (DB, schema, providers, capture status, webhook ledger,
 # storage, backups, logging, runtime limits) is GET /api/admin/health.php; see
-# HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md.
+# docs/HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md.
 # ============================================================================
 name: Production monitoring
 

@@ -99,7 +99,10 @@ def create_dist_zip():
         if os.path.exists('public/.htaccess') and '.htaccess' not in zipf.namelist():
             zipf.write('public/.htaccess', '.htaccess')
 
-        # 4. Add the operator documentation referenced by the deployment guide
+        # 4. Add the operator documentation referenced by the deployment guide.
+        #    The runbooks live under docs/ in the repository but ship at the zip
+        #    root (bare filenames), matching what the deployment guide tells the
+        #    operator to look for after extraction.
         for doc in (
             'BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md',
             'RATE_LIMITING_AND_PAYMENT_RECOVERY.md',
@@ -107,8 +110,9 @@ def create_dist_zip():
             'HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md',
             'PAYMENT_WEBHOOK_IDEMPOTENCY_AND_CI.md'
         ):
-            if os.path.exists(doc):
-                zipf.write(doc, doc)
+            source = os.path.join('docs', doc)
+            if os.path.exists(source):
+                zipf.write(source, doc)
 
         # 5. Ops scripts the runbook schedules from cron (weekly backup, weekly
         #    log rotation). They must ship with the release: a host that is

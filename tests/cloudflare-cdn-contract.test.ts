@@ -42,7 +42,7 @@ const configPhp = read('api/config.php');
 const clientIp = read('api/client_ip.php');
 const health = read('api/admin/health.php');
 const monitoring = read('.github/workflows/monitoring.yml');
-const setupDoc = read('CLOUDFLARE_CDN_SETUP.md');
+const setupDoc = read('docs/CLOUDFLARE_CDN_SETUP.md');
 
 console.log('--- CDN (CLOUDFLARE) CONTRACT ---');
 

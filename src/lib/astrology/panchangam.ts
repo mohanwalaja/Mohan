@@ -4,7 +4,7 @@
  * Governing tradition (audit items #26/#27/#28 correction, 2026-10-12):
  * THIRUKANITHA (Drik Ganita), per the Yalppanam Sri Thirukanitha Karthikeya
  * Aiyar Panchangam (138th edition, Viswavasu 2025-26, calculated for Zurich).
- * See THIRUKANITHA_AUDIT_RECORD.md.
+ * See docs/THIRUKANITHA_AUDIT_RECORD.md.
  *
  * Rules implemented here (from the almanac's explanatory pages):
  *   - Tithi: 12° steps of (Moon − Sun) ecliptic longitude separation; the
