@@ -134,5 +134,32 @@ def create_dist_zip():
     size_mb = os.path.getsize(zip_name) / (1024 * 1024)
     print(f"Successfully generated {zip_name} - Size: {size_mb:.2f} MB")
 
+# ---------------------------------------------------------------------------
+# Deployment shape contract (audit S1): the cPanel file manager must keep
+# showing a limited folder list at the site root — never one folder per route
+# or per asset class. These lists are deliberately explicit: if a build change
+# grows them, the packer FAILS instead of silently shipping a sprawled tree.
+# Enforced by tests/dist-shape.test.ts and asserted again in CI's zip check.
+# ---------------------------------------------------------------------------
+EXPECTED_DIST_TOP_DIRS = {'assets', 'audio', 'video-scenes'}
+EXPECTED_ZIP_TOP_DIRS = {'api', 'assets', 'audio', 'knowledge', 'scripts', 'src', 'video-scenes'}
+
+
+def assert_deploy_shape(dist_dir='dist', zip_name='dist.zip'):
+    if os.path.isdir(dist_dir):
+        dist_dirs = {e for e in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, e))}
+        if dist_dirs != EXPECTED_DIST_TOP_DIRS:
+            raise RuntimeError(
+                f'dist/ top-level folders changed: {sorted(dist_dirs)} (expected {sorted(EXPECTED_DIST_TOP_DIRS)})'
+            )
+    with zipfile.ZipFile(zip_name) as archive:
+        zip_dirs = {name.split('/', 1)[0] for name in archive.namelist() if '/' in name}
+    if zip_dirs != EXPECTED_ZIP_TOP_DIRS:
+        raise RuntimeError(
+            f'dist.zip top-level folders changed: {sorted(zip_dirs)} (expected {sorted(EXPECTED_ZIP_TOP_DIRS)})'
+        )
+    print(f'Deploy shape OK — zip root folders: {", ".join(sorted(zip_dirs))}')
+
 if __name__ == '__main__':
     create_dist_zip()
+    assert_deploy_shape()

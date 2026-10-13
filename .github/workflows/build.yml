@@ -162,6 +162,26 @@ jobs:
             exit "$STATUS"
           fi
 
+      # White-screen gate for code splitting (audit S1): run the route smoke
+      # against the REAL built output (vite preview serving dist/), the same
+      # asset layout that ships to cPanel. Every route must render content,
+      # every lazy chunk must load, no static asset may 404.
+      - name: Build production output for the preview smoke
+        run: npm run build
+
+      - name: Route smoke against the production preview (anti white-screen)
+        run: |
+          set +e
+          npx playwright test --config playwright.preview.config.ts 2>&1 | tee /tmp/playwright-preview.log
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            grep -nE "Error|expect|Timed out|Received|Expected|✘|failed" /tmp/playwright-preview.log \
+              | head -25 | while IFS= read -r line; do
+                  echo "::error title=Preview route smoke failure::${line}"
+                done
+            exit "$STATUS"
+          fi
+
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -230,6 +250,12 @@ jobs:
               names = archive.namelist()
           assert 'index.html' in names, 'Missing index.html'
           assert any(name.startswith('api/') for name in names), 'Missing PHP api/ folder'
+          # Deploy shape contract (audit S1): the cPanel root folder list must
+          # stay exactly this set — code splitting adds files inside assets/,
+          # never new folders. Keep in sync with scripts/create_dist_zip.py.
+          expected_dirs = {'api', 'assets', 'audio', 'knowledge', 'scripts', 'src', 'video-scenes'}
+          top_dirs = {name.split('/', 1)[0] for name in names if '/' in name}
+          assert top_dirs == expected_dirs, f'Root folders changed: {sorted(top_dirs)}'
           for kb in (
               'knowledge/ai-astrologer/rules/guided-questions.json',
               'knowledge/ai-astrologer/rules/life-areas.json',
@@ -248,6 +274,12 @@ jobs:
           ):
               assert kb in names, f'Missing {kb} in dist.zip'
           assert not any(name.endswith(('.cjs', '.map')) for name in names), 'Server bundle or source map must not be deployed'
+          # Every lazy route chunk must be in the zip: a missing chunk is the
+          # white-screen failure mode of code splitting (audit S1).
+          for page in ('AdminPortal', 'CustomerDashboard', 'BirthJathagamPage',
+                       'MarriageCompatibilityPage', 'BabyNamingPage', 'MuhurthamPage'):
+              assert any(name.startswith(f'assets/{page}-') and name.endswith('.js') for name in names), \
+                  f'Missing lazy route chunk for {page} in dist.zip'
           print(f'Static/PHP dist.zip verified successfully! Total files: {len(names)}')
           PY
 
