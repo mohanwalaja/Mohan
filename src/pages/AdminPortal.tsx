@@ -81,6 +81,7 @@ import {
   prepareOrderItemsSendPayload
 } from '../services/orderItems';
 import { orderChartServiceType } from '../services/multiPersonOrder';
+import { DEFAULT_CURRENCY } from '../services/pricing';
 import { FinancialDashboard } from '../components/admin/FinancialDashboard';
 import { AdminAnalyticsDashboard } from '../components/admin/AdminAnalyticsDashboard';
 import { PaymentConfigPanel } from '../components/admin/PaymentConfigPanel';
@@ -234,27 +235,27 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
   // Setting edit state
   const [serviceMode, setServiceMode] = useState<'FREE_BETA' | 'PAID'>(authSettings?.serviceMode || 'FREE_BETA');
-  const [fijiPrice, setFijiPrice] = useState(authSettings?.fijiPriceFJD || 10);
+
   const [intlPrice, setIntlPrice] = useState(authSettings?.intlPriceUSD || 5);
   const [indiaPrice, setIndiaPrice] = useState(authSettings?.indiaPriceINR || 499);
   const [servicePricing, setServicePricing] = useState({
     BIRTH_JATHAGAM: {
-      fjd: authSettings?.servicePricing?.BIRTH_JATHAGAM?.fjd ?? 35,
+
       usd: authSettings?.servicePricing?.BIRTH_JATHAGAM?.usd ?? 18,
       inr: authSettings?.servicePricing?.BIRTH_JATHAGAM?.inr ?? 499
     },
     MARRIAGE_COMPATIBILITY: {
-      fjd: authSettings?.servicePricing?.MARRIAGE_COMPATIBILITY?.fjd ?? 45,
+
       usd: authSettings?.servicePricing?.MARRIAGE_COMPATIBILITY?.usd ?? 22,
       inr: authSettings?.servicePricing?.MARRIAGE_COMPATIBILITY?.inr ?? 699
     },
     BABY_NAMING: {
-      fjd: authSettings?.servicePricing?.BABY_NAMING?.fjd ?? 30,
+
       usd: authSettings?.servicePricing?.BABY_NAMING?.usd ?? 15,
       inr: authSettings?.servicePricing?.BABY_NAMING?.inr ?? 399
     },
     MUHURTHAM: {
-      fjd: authSettings?.servicePricing?.MUHURTHAM?.fjd ?? 40,
+
       usd: authSettings?.servicePricing?.MUHURTHAM?.usd ?? 20,
       inr: authSettings?.servicePricing?.MUHURTHAM?.inr ?? 599
     }
@@ -313,7 +314,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       if (settingsRes.success && settingsRes.settings) {
         setSettings(settingsRes.settings);
         setServiceMode(settingsRes.settings.serviceMode);
-        setFijiPrice(settingsRes.settings.fijiPriceFJD);
+
         setIntlPrice(settingsRes.settings.intlPriceUSD);
         if (settingsRes.settings.indiaPriceINR) {
           setIndiaPrice(settingsRes.settings.indiaPriceINR);
@@ -321,22 +322,22 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         if (settingsRes.settings.servicePricing) {
           setServicePricing({
             BIRTH_JATHAGAM: {
-              fjd: settingsRes.settings.servicePricing.BIRTH_JATHAGAM?.fjd ?? 35,
+
               usd: settingsRes.settings.servicePricing.BIRTH_JATHAGAM?.usd ?? 18,
               inr: settingsRes.settings.servicePricing.BIRTH_JATHAGAM?.inr ?? 499
             },
             MARRIAGE_COMPATIBILITY: {
-              fjd: settingsRes.settings.servicePricing.MARRIAGE_COMPATIBILITY?.fjd ?? 45,
+
               usd: settingsRes.settings.servicePricing.MARRIAGE_COMPATIBILITY?.usd ?? 22,
               inr: settingsRes.settings.servicePricing.MARRIAGE_COMPATIBILITY?.inr ?? 699
             },
             BABY_NAMING: {
-              fjd: settingsRes.settings.servicePricing.BABY_NAMING?.fjd ?? 30,
+
               usd: settingsRes.settings.servicePricing.BABY_NAMING?.usd ?? 15,
               inr: settingsRes.settings.servicePricing.BABY_NAMING?.inr ?? 399
             },
             MUHURTHAM: {
-              fjd: settingsRes.settings.servicePricing.MUHURTHAM?.fjd ?? 40,
+
               usd: settingsRes.settings.servicePricing.MUHURTHAM?.usd ?? 20,
               inr: settingsRes.settings.servicePricing.MUHURTHAM?.inr ?? 599
             }
@@ -975,21 +976,82 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     }
   };
 
-  const handleProcessRefund = async (orderId: string, notes?: string) => {
-    startProcessing(orderId);
+  /**
+   * REFUND & CANCELLATION POLICY helpers — these mirror api/refunds.php, which
+   * is the authority. They exist so the portal never renders a refund button
+   * for an order the policy does not allow to be refunded:
+   *
+   *   • BEFORE admin approval  →  refundable at 90% (one click, 3 working days)
+   *   • AFTER admin approval   →  report emailed, order completed, NOT refundable
+   */
+  const REFUND_DELIVERED_STATUSES = ['APPROVED', 'GENERATED', 'PROCESSING', 'COMPLETED'];
+
+  /** True once the order has been approved and its report emailed (completed). */
+  const refundBlockedByPolicy = (order?: Order) => {
+    if (!order) return true;
+    const status = (order.status || '').toUpperCase();
+    const refundStatus = (order.refundStatus || '').toUpperCase();
+    if (status === 'REFUNDED' || refundStatus === 'REFUNDED') return true;
+    return REFUND_DELIVERED_STATUSES.includes(status);
+  };
+
+  /** 90% of the amount paid — the pre-approval refundable figure. */
+  const preApprovalRefundAmount = (amount: number) => Math.round((Number(amount) || 0) * 0.9 * 100) / 100;
+
+  const moneyLabel = (amount: number, currency?: string | null) =>
+    `${(currency || DEFAULT_CURRENCY).toUpperCase()} ${(Math.round((Number(amount) || 0) * 100) / 100).toFixed(2)}`;
+
+  /** A single order can be refunded in one click when it is still pre-approval and was paid for. */
+  const canOneClickRefund = (order?: Order) =>
+    !!order && !refundBlockedByPolicy(order) && Number(order.amount || 0) > 0;
+
+  /** A family bundle refunds as a whole: every chart must still be pre-approval. */
+  const canOneClickRefundGroup = (groupOrders: Order[]) =>
+    groupOrders.length > 0 &&
+    groupOrders.every(member => !refundBlockedByPolicy(member)) &&
+    groupOrders.reduce((sum, member) => sum + (Number(member.amount) || 0), 0) > 0;
+
+  /** The refunded-order summary line (amount + the 3-working-day settlement date). */
+  const refundSummaryText = (order?: Order) => {
+    if (!order || (order.refundStatus || '').toUpperCase() !== 'REFUNDED') return '';
+    const amount = order.refundAmount != null ? moneyLabel(order.refundAmount, order.refundCurrency || order.currency) : '';
+    const percent = order.refundPercent != null ? `${Math.round(order.refundPercent)}%` : '90%';
+    const deadline = order.refundDeadline
+      ? new Date(order.refundDeadline.replace(' ', 'T')).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      : '';
+    const reference = order.refundReference
+      ? ` • ${(order.refundMethod || '').toUpperCase() === 'GATEWAY' ? 'refunded' : 'settled'} via ${order.refundReference}`
+      : '';
+    return `Refunded ${amount}${amount ? ' ' : ''}(${percent})${deadline ? ` • settles by ${deadline} (3 working days)` : ' • settles within 3 working days'}${reference}`;
+  };
+
+  /**
+   * ONE-CLICK REFUND.
+   *
+   * One click, no dialog and no amount to type: the API refunds 90% of what was
+   * paid (the remaining 10% is the non-refundable payment-gateway fee) and
+   * answers with the amount plus the settlement date, 3 working days out.
+   * Approving the order is what makes it non-refundable, so the button is only
+   * rendered for orders that are still awaiting approval.
+   */
+  const handleProcessRefund = async (order: Order, refundWholeGroup = false) => {
+    const orderId = order.id;
+    startProcessing(`refund-${orderId}`);
+    setErrorMessage('');
     try {
-      const res = await api.processRefund(orderId, notes || 'Refund verified and processed via Admin Portal');
+      const res = await api.processRefund(orderId, { refundGroup: refundWholeGroup });
       if (res.success) {
-        setSuccessMessage(res.message);
-        setTimeout(() => setSuccessMessage(''), 4000);
+        setSuccessMessage(`✅ ${res.message}`);
+        setTimeout(() => setSuccessMessage(''), 10000);
         fetchAdminData();
       } else {
-        setErrorMessage(res.message);
+        setErrorMessage(res.message || 'Refund failed');
+        setTimeout(() => setErrorMessage(''), 10000);
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Refund processing failed');
     } finally {
-      stopProcessing(orderId);
+      stopProcessing(`refund-${orderId}`);
     }
   };
 
@@ -1014,7 +1076,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     try {
       const res = await api.updateAdminSettings({
         serviceMode,
-        fijiPriceFJD: Number(fijiPrice),
         intlPriceUSD: Number(intlPrice),
         indiaPriceINR: Number(indiaPrice),
         servicePricing,
@@ -1241,13 +1302,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       const totalAmount = gOrders.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
       const allCompleted = gOrders.every(item => (item.status || '').toUpperCase() === 'COMPLETED');
       const allCancelled = gOrders.every(item => (item.status || '').toUpperCase() === 'CANCELLED');
+      // A bundle refunded with one click has every chart in REFUNDED (the
+      // pre-approval 90% refund path) — show that instead of the stale status.
+      const allRefunded = gOrders.every(item =>
+        (item.status || '').toUpperCase() === 'REFUNDED' || (item.refundStatus || '').toUpperCase() === 'REFUNDED');
       const anyPending = gOrders.some(item => {
         const s = (item.status || '').toUpperCase();
         return s === 'PENDING' || s === 'PENDING_APPROVAL';
       });
 
       let combinedStatus = 'PENDING';
-      if (allCompleted) combinedStatus = 'COMPLETED';
+      if (allRefunded) combinedStatus = 'REFUNDED';
+      else if (allCompleted) combinedStatus = 'COMPLETED';
       else if (allCancelled) combinedStatus = 'CANCELLED';
       else if (anyPending) combinedStatus = 'PENDING';
       else combinedStatus = main.status;
@@ -1264,7 +1330,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         orders: gOrders,
         mainOrder: main,
         totalAmount,
-        currency: main.currency || 'FJD',
+        currency: main.currency || DEFAULT_CURRENCY,
         paymentReference: main.paymentReference || gOrders.find(o => o.paymentReference)?.paymentReference,
         paymentMethod: main.paymentMethod,
         status: combinedStatus,
@@ -1287,7 +1353,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         orders: [order],
         mainOrder: order,
         totalAmount: Number(order.amount) || 0,
-        currency: order.currency || 'FJD',
+        currency: order.currency || DEFAULT_CURRENCY,
         paymentReference: order.paymentReference,
         paymentMethod: order.paymentMethod,
         status: order.status,
@@ -1607,7 +1673,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         const isEmailOk = Boolean(settings?.emailSettings?.smtpHost && settings?.emailSettings?.senderEmail);
         const isMPaisaOk = Boolean(settings?.vodafoneMPaisaNumber && settings.vodafoneMPaisaNumber.trim().length >= 6);
         const isPayPalOk = Boolean(settings?.paypalEmail || settings?.paypalClientId);
-        const isPriceOk = Boolean((settings?.fijiPriceFJD || 0) > 0 && (settings?.intlPriceUSD || 0) > 0);
+        const isPriceOk = Boolean((settings?.intlPriceUSD || 0) > 0 || (settings?.indiaPriceINR || 0) > 0);
 
         return (
           <div className="bg-slate-900/90 dark:bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -1953,6 +2019,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
               <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
               <span>
                 <strong>Daily Priest Review &amp; Approval Workflow:</strong> When you click <strong>Approve</strong>, ASTRO SIVAM instantly generates both the official Report PDF and Tax Invoice PDF with our India priest team verification, archives the records, and automatically emails both documents together to the customer.
+                <br />
+                <strong>Refund policy:</strong> before approval an order can be refunded in <strong>one click</strong> at <strong>90%</strong> (the other 10% is the non-refundable payment gateway fee) and settles in <strong>3 working days</strong>. Once approved and emailed the order is completed and <strong>non-refundable</strong>, so the refund button disappears.
               </span>
             </div>
           </div>
@@ -1966,7 +2034,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                 { id: 'PENDING', label: 'Pending', count: orders.filter(o => { const s = (o.status || '').toUpperCase(); return s === 'PENDING' || s === 'PENDING_APPROVAL'; }).length },
                 { id: 'GENERATED', label: 'Generated', count: orders.filter(o => (o.status || '').toUpperCase() === 'GENERATED').length },
                 { id: 'COMPLETED', label: 'Completed', count: orders.filter(o => (o.status || '').toUpperCase() === 'COMPLETED').length },
-                { id: 'CANCELLED', label: 'Cancelled', count: orders.filter(o => (o.status || '').toUpperCase() === 'CANCELLED').length }
+                { id: 'CANCELLED', label: 'Cancelled', count: orders.filter(o => (o.status || '').toUpperCase() === 'CANCELLED').length },
+                { id: 'REFUNDED', label: 'Refunded', count: orders.filter(o => { const s = (o.status || '').toUpperCase(); return s === 'REFUNDED' || (o.refundStatus || '').toUpperCase() === 'REFUNDED'; }).length }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -2166,6 +2235,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                           </span>
                         );
                       }
+                      if (s === 'REFUNDED') {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-700/60 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400"></span>
+                            <span>REFUNDED</span>
+                          </span>
+                        );
+                      }
                       if (s === 'CANCELLED') {
                         return (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700/60 shadow-2xs">
@@ -2186,6 +2263,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                       const isEmailingGroup = isProcessing(`family-email-${groupId}`);
                       const isCancellingGroup = isProcessing(`family-cancel-${groupId}`);
                       const isDownloadingInv = isProcessing(`family-inv-${groupId}`);
+                      const isRefundingGroup = isProcessing(`refund-${unit.mainOrder?.id || groupId}`);
 
                       return (
                         <div key={groupId} className="p-4 space-y-3.5 bg-gradient-to-br from-amber-500/5 via-transparent to-purple-500/5 border-l-4 border-l-amber-500 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
@@ -2336,8 +2414,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                               </button>
                             )}
 
-                            {/* Cancel Family Order if pending */}
-                            {isPending && (
+                            {/* Cancel Family Order if pending AND unpaid — a paid bundle is
+                                cancelled through the one-click refund above (API enforces) */}
+                            {isPending && !canOneClickRefundGroup(unit.orders) && (
                               <button
                                 type="button"
                                 onClick={() => handleCancelFamilyOrder(groupId)}
@@ -2347,6 +2426,22 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                               >
                                 <XCircle className="w-3.5 h-3.5" />
                                 <span>Cancel</span>
+                              </button>
+                            )}
+
+                            {/* ONE-CLICK 90% REFUND (family bundle) — only while every chart is
+                                still awaiting approval: approving the bundle generates and emails
+                                the reports, which makes it completed and non-refundable. */}
+                            {canOneClickRefundGroup(unit.orders) && (
+                              <button
+                                type="button"
+                                onClick={() => handleProcessRefund(unit.mainOrder, true)}
+                                disabled={isRefundingGroup}
+                                title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(unit.totalAmount), unit.currency)}) for all ${unit.orders.length} charts in this family bundle. The other 10% is the non-refundable payment gateway fee. Settles within 3 working days.`}
+                                className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+                              >
+                                <RotateCcw className={`w-3.5 h-3.5 ${isRefundingGroup ? 'animate-spin' : ''}`} />
+                                <span>{isRefundingGroup ? 'Refunding...' : `Refund 90% (${moneyLabel(preApprovalRefundAmount(unit.totalAmount), unit.currency)})`}</span>
                               </button>
                             )}
 
@@ -2364,6 +2459,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                               </button>
                             )}
                           </div>
+
+                          {/* Refunded bundle: what was returned and when it settles (3 working days). */}
+                          {refundSummaryText(unit.mainOrder) && (
+                            <div className="text-[11px] font-bold text-emerald-300 bg-emerald-950/40 border border-emerald-800/60 rounded-xl px-3 py-2">
+                              💸 {refundSummaryText(unit.mainOrder)}
+                            </div>
+                          )}
 
                           {/* 4. Expanded Sub-items List (Individual Family Members) */}
                           {isExpanded && (
@@ -2422,6 +2524,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                     const order = unit.mainOrder;
                     const isSendingEmail = isProcessing(`email-${order.id}`);
                     const isCancelling = isProcessing(order.id);
+                    const isRefunding = isProcessing(`refund-${order.id}`);
                     const orderItems = order.items || [];
                     const isMultiPerson = isMultiPersonUnit(order);
                     const isItemsExpanded = !!expandedItemOrderIds[order.id];
@@ -2575,8 +2678,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             </button>
                           )}
 
-                          {/* Cancel button: STRICTLY ONLY when order is pending approval */}
-                          {isPending && (
+                          {/* Cancel button: STRICTLY ONLY when order is pending approval AND nothing
+                              was paid. A paid order is cancelled through the one-click refund above,
+                              otherwise the money would be kept without a refund (API enforces this). */}
+                          {isPending && !canOneClickRefund(order) && (
                             <button
                               type="button"
                               onClick={() => handleCancelOrder(order.id)}
@@ -2586,6 +2691,22 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             >
                               <XCircle className="w-3.5 h-3.5" />
                               <span>Cancel</span>
+                            </button>
+                          )}
+
+                          {/* ONE-CLICK 90% REFUND — shown only while the order is still awaiting
+                              approval. Once approved the report is generated and emailed, which
+                              completes the order and ends refund eligibility (Refund Policy). */}
+                          {canOneClickRefund(order) && (
+                            <button
+                              type="button"
+                              onClick={() => handleProcessRefund(order)}
+                              disabled={isRefunding}
+                              title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(order.amount), order.currency)}) to ${order.userEmail}. The other 10% is the non-refundable payment gateway fee. Settles within 3 working days.`}
+                              className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+                            >
+                              <RotateCcw className={`w-3.5 h-3.5 ${isRefunding ? 'animate-spin' : ''}`} />
+                              <span>{isRefunding ? 'Refunding...' : `Refund 90% (${moneyLabel(preApprovalRefundAmount(order.amount), order.currency)})`}</span>
                             </button>
                           )}
 
@@ -2617,6 +2738,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             </button>
                           )}
                         </div>
+
+                        {/* Refunded order: what was returned and when it settles (3 working days) */}
+                        {refundSummaryText(order) && (
+                          <div className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl px-3 py-2">
+                            💸 {refundSummaryText(order)}
+                          </div>
+                        )}
 
                         {/* People & reports: preview/send each report on its own */}
                         {isMultiPerson && isItemsExpanded && renderMultiPersonItems(order)}
@@ -2694,6 +2822,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 animate-pulse">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
                               <span>Pending</span>
+                            </span>
+                          );
+                        }
+                        if (s === 'REFUNDED') {
+                          return (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                              <span>Refunded</span>
                             </span>
                           );
                         }
@@ -2885,8 +3021,25 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                     </button>
                                   )}
 
-                                  {/* Cancel Family Order Button if pending */}
-                                  {isPending && (
+                                  {/* ONE-CLICK 90% REFUND (family bundle) — offered only while every
+                                      chart is still awaiting approval; approving the bundle emails the
+                                      reports, which completes it and ends refund eligibility. */}
+                                  {canOneClickRefundGroup(unit.orders) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleProcessRefund(unit.mainOrder, true)}
+                                      disabled={isProcessing(`refund-${unit.mainOrder?.id || groupId}`)}
+                                      title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(unit.totalAmount), unit.currency)}) for all ${unit.orders.length} charts. The other 10% is the non-refundable gateway fee. Settles within 3 working days.`}
+                                      className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+                                    >
+                                      <RotateCcw className={`w-3.5 h-3.5 ${isProcessing(`refund-${unit.mainOrder?.id || groupId}`) ? 'animate-spin' : ''}`} />
+                                      <span>{isProcessing(`refund-${unit.mainOrder?.id || groupId}`) ? 'Refunding...' : `Refund 90%`}</span>
+                                    </button>
+                                  )}
+
+                                  {/* Cancel Family Order Button (pending and unpaid only — a paid
+                                      bundle goes through the one-click refund above) */}
+                                  {isPending && !canOneClickRefundGroup(unit.orders) && (
                                     <button
                                       type="button"
                                       onClick={() => handleCancelFamilyOrder(groupId)}
@@ -2901,6 +3054,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                 </div>
                               </div>
                             </div>
+
+                            {/* Refunded bundle: what was returned and when it settles (3 working days). */}
+                            {refundSummaryText(unit.orders[0]) && (
+                              <div className="px-6 py-2 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-t border-emerald-200 dark:border-emerald-800/60">
+                                💸 {refundSummaryText(unit.orders[0])}
+                              </div>
+                            )}
 
                             {/* Expanded Nested Member Cards */}
                             {isExpanded && (
@@ -3081,6 +3241,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                   <span>Email Failed</span>
                                 </span>
                               )}
+                              {/* Refunded order: the amount returned and its 3-working-day settlement date */}
+                              {refundSummaryText(order) && (
+                                <div className="text-[10.5px] font-bold text-emerald-700 dark:text-emerald-300 truncate" title={refundSummaryText(order)}>
+                                  💸 {refundSummaryText(order)}
+                                </div>
+                              )}
                             </div>
 
                             {/* 5. Actions */}
@@ -3127,8 +3293,24 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                   </button>
                                 )}
 
-                                {/* Cancel Button (Shown only when pending) */}
-                                {isPending && (
+                                {/* ONE-CLICK 90% REFUND — pre-approval orders only (see the
+                                    Refund & Cancellation Policy: non-refundable once approved). */}
+                                {canOneClickRefund(order) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleProcessRefund(order)}
+                                    disabled={isProcessing(`refund-${order.id}`)}
+                                    title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(order.amount), order.currency)}) to ${order.userEmail}. The other 10% is the non-refundable gateway fee. Settles within 3 working days.`}
+                                    className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
+                                  >
+                                    <RotateCcw className={`w-3.5 h-3.5 ${isProcessing(`refund-${order.id}`) ? 'animate-spin' : ''}`} />
+                                    <span>{isProcessing(`refund-${order.id}`) ? 'Refunding...' : 'Refund 90%'}</span>
+                                  </button>
+                                )}
+
+                                {/* Cancel Button (shown only when pending and unpaid — a paid order
+                                    goes through the one-click refund instead, enforced by the API) */}
+                                {isPending && !canOneClickRefund(order) && (
                                   <button
                                     type="button"
                                     onClick={() => handleCancelOrder(order.id)}
@@ -3435,10 +3617,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   type="button"
                   onClick={() => {
                     setServicePricing({
-                      BIRTH_JATHAGAM: { fjd: Number(fijiPrice), usd: Number(intlPrice), inr: Number(indiaPrice) },
-                      MARRIAGE_COMPATIBILITY: { fjd: Number(fijiPrice), usd: Number(intlPrice), inr: Number(indiaPrice) },
-                      BABY_NAMING: { fjd: Number(fijiPrice), usd: Number(intlPrice), inr: Number(indiaPrice) },
-                      MUHURTHAM: { fjd: Number(fijiPrice), usd: Number(intlPrice), inr: Number(indiaPrice) }
+                      BIRTH_JATHAGAM: { usd: Number(intlPrice), inr: Number(indiaPrice) },
+                      MARRIAGE_COMPATIBILITY: { usd: Number(intlPrice), inr: Number(indiaPrice) },
+                      BABY_NAMING: { usd: Number(intlPrice), inr: Number(indiaPrice) },
+                      MUHURTHAM: { usd: Number(intlPrice), inr: Number(indiaPrice) }
                     });
                     setSuccessMessage('Base rates applied to all 4 astrological services! Click Save Settings below.');
                     setTimeout(() => setSuccessMessage(''), 4000);
@@ -3448,21 +3630,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   ⚡ Apply Base Rates To All Services
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    FJD Price Tier (legacy):
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={fijiPrice}
-                    onChange={e => setFijiPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                  />
-                  <span className="text-[10px] text-slate-400">PayPal / Cards (VISA, MC, Amex)</span>
-                </div>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                     India Domestic (₹ INR):
@@ -3513,20 +3681,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <span>1. Birth Jathagam (Complete Life Horoscope)</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">3 Pages</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">FJD (legacy)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.BIRTH_JATHAGAM?.fjd ?? 35}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        BIRTH_JATHAGAM: { ...servicePricing.BIRTH_JATHAGAM, fjd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
                     <input
@@ -3562,20 +3717,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <span>2. Marriage Compatibility (10 Poruthams)</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-bold">1 Page</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">FJD (legacy)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.MARRIAGE_COMPATIBILITY?.fjd ?? 45}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        MARRIAGE_COMPATIBILITY: { ...servicePricing.MARRIAGE_COMPATIBILITY, fjd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
                     <input
@@ -3611,20 +3753,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <span>3. Baby Naming (Vedic Namakaran)</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">1 Page</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">FJD (legacy)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.BABY_NAMING?.fjd ?? 30}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        BABY_NAMING: { ...servicePricing.BABY_NAMING, fjd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
                     <input
@@ -3660,20 +3789,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <span>4. Subha Muhurtham (6-Month Dates)</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">2 Pages</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">FJD (legacy)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.MUHURTHAM?.fjd ?? 40}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        MUHURTHAM: { ...servicePricing.MUHURTHAM, fjd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
                     <input

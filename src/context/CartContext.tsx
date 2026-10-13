@@ -60,7 +60,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const ZERO_PRICES: CurrencyPriceMap = { FJD: 0, INR: 0, USD: 0 };
+const ZERO_PRICES: CurrencyPriceMap = { INR: 0, USD: 0 };
 
 const STORAGE_KEY = 'astrosivam_family_cart';
 const PAYMENT_METHOD_STORAGE_KEY = 'astrosivam_family_cart_payment_method';
@@ -70,7 +70,7 @@ function readStoredPaymentMethod(): PaymentMethod | null {
     const saved = localStorage.getItem(PAYMENT_METHOD_STORAGE_KEY) as PaymentMethod | null;
     if (!saved) return null;
     const upper = String(saved).toUpperCase() as PaymentMethod;
-    // Legacy M-PAiSA / MyCash (Fiji wallets) are no longer offered.
+    // Legacy wallet selections are no longer offered.
     // Migrate any old saved selection to PayPal instead of leaving checkout broken.
     if (upper === 'MPAISA' || upper === 'MYCASH' || upper === 'CARD') return 'PAYPAL';
     return ['PAYPAL', 'GPAY', 'UPI'].includes(upper) ? upper : null;
@@ -199,7 +199,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Keep customer pricing untouched. This override only applies to an
     // authenticated admin session; the API independently enforces the same
     // role-based rule before creating the order.
-    const zeroPrices = { FJD: 0, INR: 0, USD: 0 };
+    const zeroPrices = { INR: 0, USD: 0 };
     return {
       ...base,
       freeChartAvailable: items.length > 0,

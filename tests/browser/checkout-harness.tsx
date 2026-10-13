@@ -32,7 +32,7 @@ function CheckoutHarness({ serviceType, family }: HarnessProps) {
             summaryText: 'Follow-up test chart',
             country: 'India',
             inputPayload: { name: 'Follow-up Order' },
-            prices: { FJD: 35, INR: 499, USD: 18 },
+            prices: { INR: 499, USD: 18 },
             unitPrice: 499,
             currency: 'INR'
           });

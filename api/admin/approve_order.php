@@ -119,7 +119,7 @@ $serviceDisplayNames = [
 ];
 
 $currencySymbolMap = ['INR' => '₹', 'USD' => 'US$'];
-$groupCurrency = $firstOrder['currency'] ?? 'FJD';
+$groupCurrency = $firstOrder['currency'] ?? (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD');
 $groupCurrencySymbol = $currencySymbolMap[$groupCurrency] ?? 'FJ$';
 
 // =========================================================================

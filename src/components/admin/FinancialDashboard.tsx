@@ -94,11 +94,9 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-1">
           <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Gross Sales Revenue</div>
           <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-            FJD ${(report?.grossRevenueFJD ?? report?.totalPaymentsAmountFJD ?? 0).toFixed(2)}
+            USD ${(report?.grossRevenueUSD ?? report?.totalPaymentsAmountUSD ?? 0).toFixed(2)}
           </div>
           <div className="text-[11px] text-slate-400 flex flex-wrap gap-2">
-            <span>USD ${(report?.grossRevenueUSD ?? report?.totalPaymentsAmountUSD ?? 0).toFixed(2)}</span>
-            <span>•</span>
             <span className="text-amber-600 dark:text-amber-400 font-semibold">₹{(report?.grossRevenueINR ?? report?.totalPaymentsAmountINR ?? 0).toFixed(2)} INR</span>
           </div>
         </div>
@@ -107,11 +105,11 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-1">
           <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Net Settled Revenue</div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
-            FJD ${(report?.netRevenueFJD ?? 0).toFixed(2)}
+            USD ${(report?.netRevenueUSD ?? 0).toFixed(2)}
           </div>
           <div className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
             <ArrowUpRight className="w-3 h-3" />
-            <span>USD ${(report?.netRevenueUSD ?? 0).toFixed(2)} • ₹{(report?.netRevenueINR ?? 0).toFixed(2)} INR</span>
+            <span>₹{(report?.netRevenueINR ?? 0).toFixed(2)} INR</span>
           </div>
         </div>
 
@@ -119,10 +117,11 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-1">
           <div className="text-xs font-semibold text-rose-500">Refunds Processed</div>
           <div className="text-2xl font-black text-rose-600">
-            FJD ${(report?.totalRefundsFJD ?? 0).toFixed(2)}
+            USD ${(report?.totalRefundsUSD ?? 0).toFixed(2)}
           </div>
           <div className="text-[11px] text-slate-400">
-            {report?.refundsCount || report?.totalRefundsCount || 0} pre-approval cancellations
+            {report?.refundsCount || report?.totalRefundsCount || 0} pre-approval 90% refunds
+            {(report?.pendingRefundsCount || 0) > 0 ? ` • ${report?.pendingRefundsCount} awaiting refund` : ''}
           </div>
         </div>
 
@@ -173,13 +172,8 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
             <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
               ₹{((report?.byPaymentMethod?.GPAY?.inrAmount || report?.byPaymentMethod?.GPAY?.amount) ?? 0).toFixed(2)}
             </div>
-            <div className="text-xs text-slate-500 flex items-center justify-between">
-              <span>{report?.byPaymentMethod?.GPAY?.count ?? 0} Transactions</span>
-              {(report?.byPaymentMethod?.GPAY?.fjdAmount ?? 0) > 0 && (
-                <span className="text-[11px] text-slate-400">
-                  (FJD ${(report?.byPaymentMethod?.GPAY?.fjdAmount ?? 0).toFixed(2)})
-                </span>
-              )}
+            <div className="text-xs text-slate-500">
+              {report?.byPaymentMethod?.GPAY?.count ?? 0} Transactions
             </div>
           </div>
         </div>
@@ -212,7 +206,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-1">
             <div className="text-xs font-semibold text-slate-500">Birth Jathagam</div>
             <div className="text-xl font-bold text-slate-900 dark:text-white">
-              FJD ${(report?.byServiceType?.BIRTH_JATHAGAM?.amount ?? report?.revenueByService?.BIRTH_JATHAGAM?.fjd ?? 0).toFixed(2)}
+              ₹{(report?.byServiceType?.BIRTH_JATHAGAM?.amount ?? report?.revenueByService?.BIRTH_JATHAGAM?.inr ?? 0).toFixed(2)}
             </div>
             <div className="text-[11px] text-slate-400">
               {report?.byServiceType?.BIRTH_JATHAGAM?.count ?? report?.revenueByService?.BIRTH_JATHAGAM?.count ?? 0} Requests
@@ -222,7 +216,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-1">
             <div className="text-xs font-semibold text-slate-500">Marriage Compatibility</div>
             <div className="text-xl font-bold text-slate-900 dark:text-white">
-              FJD ${(report?.byServiceType?.MARRIAGE_COMPATIBILITY?.amount ?? report?.revenueByService?.MARRIAGE_COMPATIBILITY?.fjd ?? 0).toFixed(2)}
+              ₹{(report?.byServiceType?.MARRIAGE_COMPATIBILITY?.amount ?? report?.revenueByService?.MARRIAGE_COMPATIBILITY?.inr ?? 0).toFixed(2)}
             </div>
             <div className="text-[11px] text-slate-400">
               {report?.byServiceType?.MARRIAGE_COMPATIBILITY?.count ?? report?.revenueByService?.MARRIAGE_COMPATIBILITY?.count ?? 0} Match Requests
@@ -232,7 +226,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-1">
             <div className="text-xs font-semibold text-slate-500">Baby Naming</div>
             <div className="text-xl font-bold text-slate-900 dark:text-white">
-              FJD ${(report?.byServiceType?.BABY_NAMING?.amount ?? report?.revenueByService?.BABY_NAMING?.fjd ?? 0).toFixed(2)}
+              ₹{(report?.byServiceType?.BABY_NAMING?.amount ?? report?.revenueByService?.BABY_NAMING?.inr ?? 0).toFixed(2)}
             </div>
             <div className="text-[11px] text-slate-400">
               {report?.byServiceType?.BABY_NAMING?.count ?? report?.revenueByService?.BABY_NAMING?.count ?? 0} Consultations
@@ -242,7 +236,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-1">
             <div className="text-xs font-semibold text-slate-500">Subha Muhurtham</div>
             <div className="text-xl font-bold text-slate-900 dark:text-white">
-              FJD ${(report?.byServiceType?.MUHURTHAM?.amount ?? report?.revenueByService?.MUHURTHAM?.fjd ?? 0).toFixed(2)}
+              ₹{(report?.byServiceType?.MUHURTHAM?.amount ?? report?.revenueByService?.MUHURTHAM?.inr ?? 0).toFixed(2)}
             </div>
             <div className="text-[11px] text-slate-400">
               {report?.byServiceType?.MUHURTHAM?.count ?? report?.revenueByService?.MUHURTHAM?.count ?? 0} Muhurtham Requests

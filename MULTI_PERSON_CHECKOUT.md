@@ -45,7 +45,7 @@ order_items         M rows (<= 24)    person_id, service_code, unit_price,
     {
       "name": "Meena Sundar", "gender": "F",
       "dob": "1990-08-15", "tob": "09:30",
-      "place": "Suva, Fiji", "country": "Fiji",
+      "place": "Suva", "country": "",
       "latitude": -18.14, "longitude": 178.44, "timezoneOffsetHours": 12,
       "services": ["BIRTH_JATHAGAM", "BABY_NAMING"],
       "language": "ta",
@@ -53,7 +53,7 @@ order_items         M rows (<= 24)    person_id, service_code, unit_price,
       "muhurtham": { /* place + selectedMonth + six-month scan for MUHURTHAM */ }
     }
   ],
-  "paymentMethod": "MPAISA", "currency": "FJD", "paymentReference": "..."
+  "paymentMethod": "PAYPAL", "currency": "USD", "paymentReference": "..."
 }
 ```
 

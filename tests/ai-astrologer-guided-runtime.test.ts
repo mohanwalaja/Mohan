@@ -121,7 +121,7 @@ check('order options quote the order facts, never invent them', () => {
   assert.match(reply('order-status').content as string, /AST-PROBE/);
   assert.match(reply('order-status').content as string, /BIRTH_JATHAGAM/);
   assert.match(reply('order-details').content as string, /1990-05-15/);
-  assert.match(reply('order-payment').content as string, /FJD 50/);
+  assert.match(reply('order-payment').content as string, /USD 50/);
 });
 
 check('corrections and complaints acknowledge and hand off to the team', () => {

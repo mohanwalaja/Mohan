@@ -193,7 +193,7 @@ class AstroChatAlerts
         ];
         $serviceType = $order['service_type'] ?? ($order['serviceType'] ?? '');
         $amount = $order['amount'] ?? 0;
-        $currency = $order['currency'] ?? 'FJD';
+        $currency = $order['currency'] ?? (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD');
 
         return array_merge([
             'customer_name' => $order['user_name'] ?? ($order['userName'] ?? 'User'),
@@ -507,8 +507,8 @@ class AstroChatAlerts
             'customer_email' => 'test@astrosivam.com',
             'order_number' => 'ORD-TEST1',
             'service_name' => 'Diagnostic Test',
-            'amount' => 'FJD 0.00',
-            'currency' => 'FJD',
+            'amount' => 'USD 0.00',
+            'currency' => defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD',
             'status' => 'TEST',
             'payment_method' => 'N/A',
             'site_name' => 'ASTRO SIVAM'

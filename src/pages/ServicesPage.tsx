@@ -38,19 +38,15 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
   const { settings } = useAuth();
   const isBeta = settings?.serviceMode === 'FREE_BETA';
 
-  const bjFjd = settings?.servicePricing?.BIRTH_JATHAGAM?.fjd ?? settings?.fijiPriceFJD ?? 35;
   const bjInr = settings?.servicePricing?.BIRTH_JATHAGAM?.inr ?? settings?.indiaPriceINR ?? 499;
   const bjUsd = settings?.servicePricing?.BIRTH_JATHAGAM?.usd ?? settings?.intlPriceUSD ?? 18;
 
-  const mcFjd = settings?.servicePricing?.MARRIAGE_COMPATIBILITY?.fjd ?? settings?.fijiPriceFJD ?? 45;
   const mcInr = settings?.servicePricing?.MARRIAGE_COMPATIBILITY?.inr ?? settings?.indiaPriceINR ?? 699;
   const mcUsd = settings?.servicePricing?.MARRIAGE_COMPATIBILITY?.usd ?? settings?.intlPriceUSD ?? 22;
 
-  const bnFjd = settings?.servicePricing?.BABY_NAMING?.fjd ?? settings?.fijiPriceFJD ?? 30;
   const bnInr = settings?.servicePricing?.BABY_NAMING?.inr ?? settings?.indiaPriceINR ?? 399;
   const bnUsd = settings?.servicePricing?.BABY_NAMING?.usd ?? settings?.intlPriceUSD ?? 15;
 
-  const mhFjd = settings?.servicePricing?.MUHURTHAM?.fjd ?? 40;
   const mhInr = settings?.servicePricing?.MUHURTHAM?.inr ?? 599;
   const mhUsd = settings?.servicePricing?.MUHURTHAM?.usd ?? 20;
 

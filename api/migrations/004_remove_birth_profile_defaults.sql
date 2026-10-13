@@ -4,7 +4,8 @@
 --
 -- Existing profile inserts must provide the birth location and time-zone
 -- coordinates explicitly. This removes legacy MySQL defaults that could turn
--- an omitted value into Nadi, Fiji. Existing rows are preserved unchanged.
+-- an omitted value into a fabricated birthplace. Existing rows are preserved
+-- unchanged.
 --
 -- HOW TO RUN (phpMyAdmin)
 -- -----------------------

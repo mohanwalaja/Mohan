@@ -238,7 +238,7 @@ credentials (`checkout` / `webhookVerification` booleans, no secret values), and
    - Name: `Mohan`
    - Date of Birth: `1990-08-15`
    - Time of Birth: `08:30`
-   - Birth City: `Walajapet, Tamil Nadu` (or `Nadi, Fiji`)
+   - Birth City: `Walajapet, Tamil Nadu` (or any other city worldwide)
 4. Click **Preview Ephemeris (ஜாதகக் கணிப்பு முன்னோட்டம்)**.
 5. Click **Download Official Certified PDF Report**:
    - The PDF will now output a **Multi-Page Certified Vedic Document** containing:

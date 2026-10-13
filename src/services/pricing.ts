@@ -19,7 +19,7 @@ import type { CurrencyCode, CurrencyPriceMap, PaymentMethod, ServiceType } from 
 
 export type { CurrencyCode, CurrencyPriceMap };
 
-export const ALL_CURRENCIES: CurrencyCode[] = ['FJD', 'INR', 'USD'];
+export const ALL_CURRENCIES: CurrencyCode[] = ['INR', 'USD'];
 
 export interface CurrencyInfo {
   code: CurrencyCode;
@@ -29,7 +29,6 @@ export interface CurrencyInfo {
 }
 
 export const CURRENCY_INFO: Record<CurrencyCode, CurrencyInfo> = {
-  FJD: { code: 'FJD', symbol: 'FJ$', label: 'Fijian Dollar', region: 'Pacific' },
   INR: { code: 'INR', symbol: '₹', label: 'Indian Rupee', region: 'India' },
   USD: { code: 'USD', symbol: '$', label: 'US Dollar', region: 'International' }
 };
@@ -55,13 +54,13 @@ export const DEFAULT_PAYMENT_METHOD: PaymentMethod = 'PAYPAL';
  */
 export const USD_TO_INR_RATE = 84;
 
-/** Fallback retail prices in USD (base), with INR auto-converted. FJD tier retained for legacy DB compat. */
+/** Fallback retail prices: USD is the base, INR is auto-converted from it. */
 export const DEFAULT_SERVICE_PRICES: Record<ServiceType, CurrencyPriceMap> = {
-  BIRTH_JATHAGAM: { FJD: 35, INR: Math.round(18 * USD_TO_INR_RATE), USD: 18 },
-  MARRIAGE_COMPATIBILITY: { FJD: 45, INR: Math.round(22 * USD_TO_INR_RATE), USD: 22 },
-  BABY_NAMING: { FJD: 30, INR: Math.round(15 * USD_TO_INR_RATE), USD: 15 },
+  BIRTH_JATHAGAM: { INR: Math.round(18 * USD_TO_INR_RATE), USD: 18 },
+  MARRIAGE_COMPATIBILITY: { INR: Math.round(22 * USD_TO_INR_RATE), USD: 22 },
+  BABY_NAMING: { INR: Math.round(15 * USD_TO_INR_RATE), USD: 15 },
   // Subha Muhurtham Finder — six-month auspicious date report for one ceremony.
-  MUHURTHAM: { FJD: 40, INR: Math.round(20 * USD_TO_INR_RATE), USD: 20 }
+  MUHURTHAM: { INR: Math.round(20 * USD_TO_INR_RATE), USD: 20 }
 };
 
 /**
@@ -78,19 +77,18 @@ export interface PricingSettingsSource {
    * chart of the order is free), `false` = already used (everything paid).
    */
   betaFreeChartAvailable?: boolean | null;
-  fijiPriceFJD?: number | null;
   intlPriceUSD?: number | null;
   indiaPriceINR?: number | null;
   servicePricing?: PriceOverrideTable | null;
   pricing?: PriceOverrideTable | null;
 }
 
-export type PriceOverride = Partial<Record<'fjd' | 'usd' | 'inr' | 'FJD' | 'USD' | 'INR', number>>;
+export type PriceOverride = Partial<Record<'usd' | 'inr' | 'USD' | 'INR', number>>;
 
 export type PriceOverrideTable = Partial<Record<ServiceType, PriceOverride>>;
 
 export function isCurrencyCode(value: unknown): value is CurrencyCode {
-  return value === 'FJD' || value === 'INR' || value === 'USD';
+  return value === 'INR' || value === 'USD';
 }
 
 /** Currency a payment method settles in, or `null` when it is not a real payment. */
@@ -116,10 +114,10 @@ export function getCurrencySymbol(currency: CurrencyCode | string): string {
   return isCurrencyCode(currency) ? CURRENCY_INFO[currency].symbol : '$';
 }
 
-/** "₹1,498.00" / "FJ$70.00" / "US$36.00" */
+/** "₹1,498.00" / "$36.00" */
 export function formatMoney(amount: number, currency: CurrencyCode | string): string {
   const safe = Number.isFinite(amount) ? amount : 0;
-  const decimals = currency === 'INR' || currency === 'FJD' ? 2 : 2;
+  const decimals = 2;
   const body = safe.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
@@ -144,9 +142,13 @@ function pickServicePricing(
 }
 
 /**
- * All three prices for a service, honouring admin overrides:
- * per-service pricing first, then the legacy global country prices,
+ * Both prices for a service, honouring admin overrides:
+ * per-service pricing first, then the global price settings,
  * then the built-in defaults.
+ *
+ * Any price key this version does not know (a retired currency stored in an old
+ * settings row, for example) is ignored rather than guessed at, so an old row
+ * can never re-introduce a currency the site no longer offers.
  */
 export function getServicePrices(
   settings: PricingSettingsSource | null | undefined,
@@ -155,11 +157,6 @@ export function getServicePrices(
   const overrides = pickServicePricing(settings, serviceType);
   const fallbacks = DEFAULT_SERVICE_PRICES[serviceType] ?? DEFAULT_SERVICE_PRICES.BIRTH_JATHAGAM;
 
-  const fjd =
-    toNumber(overrides?.fjd) ??
-    toNumber(overrides?.FJD) ??
-    toNumber(settings?.fijiPriceFJD) ??
-    fallbacks.FJD;
   const usd =
     toNumber(overrides?.usd) ??
     toNumber(overrides?.USD) ??
@@ -172,7 +169,7 @@ export function getServicePrices(
     toNumber(settings?.indiaPriceINR) ??
     Math.round(usd * USD_TO_INR_RATE);
 
-  return { FJD: fjd, INR: inr, USD: usd };
+  return { INR: inr, USD: usd };
 }
 
 export function getServicePriceInCurrency(
@@ -246,11 +243,10 @@ export function resolveOrderCurrency(options: {
 export function sumCartTotals(prices: CurrencyPriceMap[]): CurrencyPriceMap {
   return prices.reduce<CurrencyPriceMap>(
     (acc, p) => ({
-      FJD: acc.FJD + (p?.FJD || 0),
       INR: acc.INR + (p?.INR || 0),
       USD: acc.USD + (p?.USD || 0)
     }),
-    { FJD: 0, INR: 0, USD: 0 }
+    { INR: 0, USD: 0 }
   );
 }
 
@@ -265,19 +261,20 @@ export interface CartLineLike {
 }
 
 /**
- * Price of one chart in all three currencies.
- * Older saved carts (added before per-currency pricing) are rebuilt from the
- * current admin pricing for the service instead of trusting a single
- * birthplace-derived number.
+ * Price of one chart in every offered currency.
+ * Older saved carts (added before per-currency pricing, or saved while a
+ * retired currency was still offered) cannot satisfy ALL_CURRENCIES, so they
+ * are rebuilt from the current admin pricing for the service instead of
+ * trusting a stale birthplace-derived number.
  */
 export function cartItemPrices(
   item: CartLineLike | null | undefined,
   settings: PricingSettingsSource | null | undefined
 ): CurrencyPriceMap {
-  if (!item) return { FJD: 0, INR: 0, USD: 0 };
-  const stored = item.prices;
+  if (!item) return { INR: 0, USD: 0 };
+  const stored = item.prices as Partial<CurrencyPriceMap> | null | undefined;
   if (stored && ALL_CURRENCIES.every(c => typeof stored[c] === 'number' && Number.isFinite(stored[c]))) {
-    return { FJD: stored.FJD, INR: stored.INR, USD: stored.USD };
+    return { INR: stored.INR as number, USD: stored.USD as number };
   }
   return getServicePrices(settings, item.serviceType ?? 'BIRTH_JATHAGAM');
 }
@@ -309,7 +306,7 @@ export function computeCartTotals(
     // FREE_BETA: exactly ONE free report per customer (per IP address) — the
     // FIRST chart of the order is free; the rest of the family pays normally.
     if (freeChartAvailable && index === 0) {
-      return { FJD: 0, INR: 0, USD: 0 };
+      return { INR: 0, USD: 0 };
     }
     return p;
   });

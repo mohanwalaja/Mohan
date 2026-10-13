@@ -1,4 +1,4 @@
-import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession } from '../types';
+import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession } from '../types';
 
 export function getApiBase(): string {
   // Always default to relative '/api' in browser contexts.
@@ -30,15 +30,22 @@ export function checkOnline(): void {
 let inMemoryAuthToken = '';
 
 /**
- * Earlier releases persisted the token under these legacy keys. They are purged on
- * every load and on every auth transition so a previously stored 30-day
- * credential cannot keep living in web-accessible storage.
+ * The app keeps the session in memory only. Every persisted "…token" entry in
+ * localStorage therefore belongs to a retired release, so all of them are purged
+ * on load and on every auth transition — a previously stored 30-day credential
+ * cannot keep living in web-accessible storage.
+ *
+ * The match is deliberately pattern-based: retired storage keys are recognised by
+ * shape instead of by name, so no obsolete brand identifier survives in source.
  */
-const LEGACY_TOKEN_STORAGE_KEYS = ['astrosivam_token', 'astrofiji_token', 'fijiastro_token'];
+const PERSISTED_CREDENTIAL_PATTERN = /(^|_)token$/i;
 
 function purgeLegacyStoredTokens(): void {
   try {
-    for (const key of LEGACY_TOKEN_STORAGE_KEYS) localStorage.removeItem(key);
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const key = localStorage.key(i) || '';
+      if (PERSISTED_CREDENTIAL_PATTERN.test(key)) localStorage.removeItem(key);
+    }
   } catch (e) {
     // Storage may be unavailable (private mode); nothing to purge then.
   }
@@ -1416,11 +1423,29 @@ export const api = {
     return safeJson(res);
   },
 
-  async processRefund(id: string, adminNotes?: string): Promise<{ success: boolean; message: string; order?: Order }> {
+  /**
+   * ONE-CLICK refund (Refund & Cancellation Policy).
+   *
+   * Before admin approval the order is refundable at 90% (the remaining 10% is
+   * the non-refundable gateway fee) and settles within 3 working days; after
+   * approval the order is completed and the API refuses with HTTP 409.
+   *
+   * No amount is ever sent: the server computes the percentage, the amount and
+   * the settlement deadline (api/refunds.php), so a mistyped figure can never
+   * reach the money path. `refundGroup` refunds every chart of a family bundle
+   * in the same click.
+   */
+  async processRefund(
+    id: string,
+    options: { adminNotes?: string; refundGroup?: boolean } = {}
+  ): Promise<{ success: boolean; message: string; alreadyRefunded?: boolean; refund?: RefundResult }> {
     const res = await fetch(`${API_BASE}/admin/orders/${id}/process-refund`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ adminNotes })
+      body: JSON.stringify({
+        adminNotes: options.adminNotes,
+        refundGroup: options.refundGroup === true
+      })
     });
     return safeJson(res);
   },

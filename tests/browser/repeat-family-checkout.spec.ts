@@ -3,10 +3,10 @@ import type { ServiceType } from '../../src/types';
 
 const serviceTypes: ServiceType[] = ['BIRTH_JATHAGAM', 'MARRIAGE_COMPATIBILITY', 'BABY_NAMING', 'MUHURTHAM'];
 const servicePricing = {
-  BIRTH_JATHAGAM: { fjd: 35, inr: 499, usd: 18 },
-  MARRIAGE_COMPATIBILITY: { fjd: 45, inr: 699, usd: 22 },
-  BABY_NAMING: { fjd: 30, inr: 399, usd: 15 },
-  MUHURTHAM: { fjd: 40, inr: 599, usd: 20 }
+  BIRTH_JATHAGAM: { inr: 499, usd: 18 },
+  MARRIAGE_COMPATIBILITY: { inr: 699, usd: 22 },
+  BABY_NAMING: { inr: 399, usd: 15 },
+  MUHURTHAM: { inr: 599, usd: 20 }
 };
 
 async function mountRepeatCheckout(page: Page) {
@@ -73,7 +73,6 @@ async function mountRepeatCheckout(page: Page) {
       summaryText: `Test chart ${index + 1}`,
       inputPayload: { name: `Family Member ${index + 1}` },
       prices: {
-        FJD: serviceType === 'BIRTH_JATHAGAM' ? 35 : serviceType === 'MARRIAGE_COMPATIBILITY' ? 45 : serviceType === 'BABY_NAMING' ? 30 : 40,
         INR: serviceType === 'BIRTH_JATHAGAM' ? 499 : serviceType === 'MARRIAGE_COMPATIBILITY' ? 699 : serviceType === 'BABY_NAMING' ? 399 : 599,
         USD: serviceType === 'BIRTH_JATHAGAM' ? 18 : serviceType === 'MARRIAGE_COMPATIBILITY' ? 22 : serviceType === 'BABY_NAMING' ? 15 : 20
       },

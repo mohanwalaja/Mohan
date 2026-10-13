@@ -164,7 +164,7 @@ for (let mars = 1; mars <= 12; mars += 1) {
 // ---------------------------------------------------------------------------
 const births = [
   { place: 'Chennai, Tamil Nadu, India', latitude: 13.0827, longitude: 80.2707, offset: 5.5 },
-  { place: 'Suva, Fiji', latitude: -18.1248, longitude: 178.4501, offset: 12 },
+  { place: 'Suva', latitude: -18.1248, longitude: 178.4501, offset: 12 },
   { place: 'London, United Kingdom', latitude: 51.5074, longitude: -0.1278, offset: 0 },
   { place: 'New York, United States', latitude: 40.7128, longitude: -74.006, offset: -5 },
   { place: 'Sydney, Australia', latitude: -33.8688, longitude: 151.2093, offset: 10 },

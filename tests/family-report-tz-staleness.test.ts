@@ -5,8 +5,8 @@
  * and the PHP engine) intentionally replace the submitted fixed offset with
  * the offset in force at the moment of birth, so the stored offset
  * legitimately differs from what the customer typed for any DST birth
- * (New York in July: submitted -5, stored -4; Fiji in January: submitted 12,
- * stored 13).
+ * (New York in July: submitted -5, stored -4; a southern-hemisphere zone in
+ * January: submitted 12, stored 13).
  *
  * The old staleness check required the stored offset to equal the submitted
  * one byte-for-byte, so:
@@ -92,25 +92,26 @@ assert.equal(
 );
 
 // --- 2. Same failure class without an IANA zone in the payload -------------
-// Fiji in January: submitted 12 (present-day standard), the zone was +13 then.
-const fjPayload = {
-  name: 'Fiji Member',
+// A southern-hemisphere DST zone in January: submitted 12 (present-day
+// standard), the zone was +13 then.
+const dzPayload = {
+  name: 'DST Member',
   dob: '2000-01-01',
   tob: '12:00',
   birthPlace: 'Suva',
-  country: 'Fiji',
+  country: '',
   latitude: -18.1416,
   longitude: 178.4419,
   timezoneOffsetHours: 12,
   gender: 'M'
 };
-const fjStored = calculatePrecisionHoroscope(
-  'Fiji Member', fjPayload.dob, fjPayload.tob, fjPayload.birthPlace,
-  fjPayload.latitude, fjPayload.longitude, 12, 'Fiji', 'M'
+const dzStored = calculatePrecisionHoroscope(
+  'DST Member', dzPayload.dob, dzPayload.tob, dzPayload.birthPlace,
+  dzPayload.latitude, dzPayload.longitude, 12, '', 'M'
 );
-assert.equal(fjStored.timezoneOffsetHours, 13, 'historical Fiji DST offset');
+assert.equal(dzStored.timezoneOffsetHours, 13, 'historical DST-aware offset');
 assert.equal(
-  resultNeedsRecalculation(makeOrder('Fiji Member', fjPayload, fjStored), fjStored),
+  resultNeedsRecalculation(makeOrder('DST Member', dzPayload, dzStored), dzStored),
   false,
   'without a timeZoneId in the payload the coordinate-mapped zone offset still matches'
 );
@@ -178,7 +179,7 @@ assert.equal(
 // --- 5. The full family calculation phase: 4/4 members resolve -------------
 const members = [
   makeOrder('Chennai Member', inPayload, inStored),
-  makeOrder('Fiji Member', fjPayload, fjStored),
+  makeOrder('DST Member', dzPayload, dzStored),
   makeOrder('Mohan Ji', nyPayload, nyStored),
   makeOrder('Mohan Ji', nyPayload, null) // stale-or-missing cache: must recalculate
 ];

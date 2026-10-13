@@ -20,7 +20,7 @@ const fontCss = [
 
 function fixture(starIndex: number, gender: 'M' | 'F', full = false) {
   const star = ALL_NAKSHATRA_LETTERS[starIndex];
-  const result = calculateBabyNamingDetails('Baby Layout Test', '2024-03-10', '08:45', 'Suva', gender, -18.1416, 178.4419, 12, 'Fiji');
+  const result = calculateBabyNamingDetails('Baby Layout Test', '2024-03-10', '08:45', 'Suva', gender, -18.1416, 178.4419, 12, '');
   result.nakshatraLetters = star;
   result.primaryPadaInfo = star.padas[0];
   result.janmaPada = 1;

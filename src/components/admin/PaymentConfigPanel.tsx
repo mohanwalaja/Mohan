@@ -57,7 +57,7 @@ export const PaymentConfigPanel: React.FC<PaymentConfigPanelProps> = ({ settings
     paypalWebhookId: settings?.paypalWebhookId || '',
     paypalMode: (settings?.paypalMode || 'sandbox') as 'sandbox' | 'live',
 
-    // 3. Fiji Vodafone M-PAiSA — Offline & Online
+    // 3. Mobile wallet (retired) — legacy keys kept for settings round-trip
     vodafoneMPaisaActive: settings?.vodafoneMPaisaActive ?? true,
     vodafoneMPaisaPaymentMode: 'offline' as PaymentGatewayMode,
     vodafoneMPaisaNumber: settings?.vodafoneMPaisaNumber || '+679 999 1234',
@@ -72,7 +72,6 @@ export const PaymentConfigPanel: React.FC<PaymentConfigPanelProps> = ({ settings
     vodafoneMPaisaApiUrl: settings?.vodafoneMPaisaApiUrl || 'https://pay.mpaisa.vodafone.com.fj/API/',
     vodafoneMPaisaEnvironment: (settings?.vodafoneMPaisaEnvironment || 'sandbox') as 'sandbox' | 'live',
 
-    currencyFiji: settings?.currencyFiji || 'FJD',
     currencyIntl: settings?.currencyIntl || 'USD',
     currencyIndia: settings?.currencyIndia || 'INR'
   });
@@ -118,7 +117,6 @@ export const PaymentConfigPanel: React.FC<PaymentConfigPanelProps> = ({ settings
         vodafoneMPaisaApiUrl: settings.vodafoneMPaisaApiUrl ?? prev.vodafoneMPaisaApiUrl,
         vodafoneMPaisaEnvironment: (settings.vodafoneMPaisaEnvironment || prev.vodafoneMPaisaEnvironment || 'sandbox') as 'sandbox' | 'live',
 
-        currencyFiji: settings.currencyFiji || prev.currencyFiji,
         currencyIntl: settings.currencyIntl || prev.currencyIntl,
         currencyIndia: settings.currencyIndia || prev.currencyIndia
       }));
@@ -208,7 +206,7 @@ export const PaymentConfigPanel: React.FC<PaymentConfigPanelProps> = ({ settings
         ? 'India Google Pay (GPay)'
         : gateway === 'PAYPAL'
         ? 'International PayPal'
-        : 'Fiji Vodafone M-PAiSA';
+        : 'Mobile Wallet (retired)';
     await persistSettings(
       updated,
       `${label} switched to ${mode.toUpperCase()} Mode and saved!`
@@ -1034,281 +1032,6 @@ export const PaymentConfigPanel: React.FC<PaymentConfigPanelProps> = ({ settings
                     {showSecrets.paypal ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* =====================================================================
-            Payment Methods Configuration (M-PAiSA section hidden — payment method discontinued; fields retained for DB compatibility)
-           ===================================================================== */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-5" style={{ display: 'none' }}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-red-600 text-white font-black flex items-center justify-center text-sm shadow-xs">
-                3
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    3. Fiji Vodafone M-PAiSA (Discontinued)
-                  </h3>
-                  <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 text-[10px] font-bold">
-                    FJ$ FJD Settlement
-                  </span>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                      formData.vodafoneMPaisaPaymentMode === 'online'
-                        ? 'bg-red-600 text-white'
-                        : 'bg-amber-500 text-slate-950'
-                    }`}
-                  >
-                    Active: {formData.vodafoneMPaisaPaymentMode === 'online' ? 'ONLINE GATEWAY' : 'OFFLINE RECEIPT'}
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400">
-                  PayPal processes all major cards: VISA, Mastercard, American Express, Discover.
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setActiveGuide(activeGuide === 'MPAISA' ? null : 'MPAISA')}
-                className="text-xs text-amber-600 dark:text-amber-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <HelpCircle className="w-3.5 h-3.5" />
-                <span>Setup Guide</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTestPayment('MPAISA')}
-                disabled={testingMethod === 'MPAISA'}
-                className="px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
-              >
-                <RefreshCw className={`w-3 h-3 ${testingMethod === 'MPAISA' ? 'animate-spin' : ''}`} />
-                <span>Test M-PAiSA ({formData.vodafoneMPaisaPaymentMode.toUpperCase()})</span>
-              </button>
-            </div>
-          </div>
-
-          {activeGuide === 'MPAISA' && (
-            <div className="p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl text-xs text-slate-700 dark:text-slate-300 space-y-2">
-              <h4 className="font-bold text-red-900 dark:text-red-300">
-                Fiji Vodafone M-PAiSA — Offline vs Online Setup Guide
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                <div className="space-y-1">
-                  <div className="font-bold text-amber-700 dark:text-amber-400">
-                    A. Manual Mode (Supported Now):
-                  </div>
-                  <ol className="list-decimal list-inside space-y-1 text-[11px]">
-                    <li>Enter your Vodafone Fiji M-PAiSA mobile number (+679) and Registered Account Name.</li>
-                    <li>Users send FJ$ via the M-PAiSA App or USSD <code>*555#</code> and enter their MP Transaction ID at checkout.</li>
-                  </ol>
-                </div>
-                <div className="space-y-1">
-                  <div className="font-bold text-red-700 dark:text-red-400">
-                    B. Automated Online Mode (Not Yet Available):
-                  </div>
-                  <p className="text-[11px]">This app does not yet create or capture M-PAiSA payments. Keep the gateway in manual mode; do not rely on the API fields below for live checkout. Verify every receipt directly with your payment provider.</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Dual Columns: Offline Config + Online Config */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* 3A. M-PAiSA OFFLINE SETTINGS */}
-            <div
-              className={`p-4 rounded-2xl border space-y-3.5 transition-all ${
-                formData.vodafoneMPaisaPaymentMode === 'offline'
-                  ? 'bg-amber-500/5 border-amber-500/40 ring-1 ring-amber-500/20'
-                  : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2 border-b border-slate-200/70 dark:border-slate-700/60 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-amber-500" />
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">
-                    Offline Mode Config (Manual M-PAiSA App / *555# &amp; Receipt)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, vodafoneMPaisaPaymentMode: 'offline' })}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer ${
-                    formData.vodafoneMPaisaPaymentMode === 'offline'
-                      ? 'bg-amber-500 text-slate-950'
-                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-amber-500/20'
-                  }`}
-                >
-                  {formData.vodafoneMPaisaPaymentMode === 'offline' ? '● Currently Active' : 'Use Offline Mode'}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                    M-PAiSA Mobile Number (+679)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vodafoneMPaisaNumber}
-                    onChange={e => setFormData({ ...formData, vodafoneMPaisaNumber: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
-                    placeholder="+679 999 1234"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                    Registered Account Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vodafoneMPaisaName}
-                    onChange={e => setFormData({ ...formData, vodafoneMPaisaName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
-                    placeholder="ASTRO SIVAM SERVICES"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                    Business Merchant Shortcode (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vodafoneMPaisaMerchantCode}
-                    onChange={e => setFormData({ ...formData, vodafoneMPaisaMerchantCode: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-mono"
-                    placeholder="e.g. 58291"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                    M-PAiSA QR Image URL (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vodafoneMPaisaQrUrl}
-                    onChange={e => setFormData({ ...formData, vodafoneMPaisaQrUrl: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Offline Customer Payment Instructions
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.vodafoneMPaisaInstructions}
-                  onChange={e => setFormData({ ...formData, vodafoneMPaisaInstructions: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
-                />
-              </div>
-            </div>
-
-            {/* 3B. M-PAiSA ONLINE SETTINGS */}
-            <div
-              className={`p-4 rounded-2xl border space-y-3.5 transition-all ${
-                formData.vodafoneMPaisaPaymentMode === 'online'
-                  ? 'bg-red-500/5 border-red-500/40 ring-1 ring-red-500/20'
-                  : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2 border-b border-slate-200/70 dark:border-slate-700/60 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <KeyRound className="w-4 h-4 text-red-500" />
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">
-                    Future API Credentials (Not Used for Checkout)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  disabled
-                  title="M-PAiSA online capture is not implemented yet; manual transfers remain available."
-                  className="px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-not-allowed opacity-60 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-                >
-                  Automated online checkout unavailable
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                    Vodafone M-PAiSA Environment
-                  </label>
-                  <select
-                    value={formData.vodafoneMPaisaEnvironment}
-                    onChange={e =>
-                      setFormData({
-                        ...formData,
-                        vodafoneMPaisaEnvironment: e.target.value as 'sandbox' | 'live'
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-semibold"
-                  >
-                    <option value="sandbox">Sandbox / Test Mode</option>
-                    <option value="live">Live Production Mode</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                    M-PAiSA Online Merchant ID (cID)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vodafoneMPaisaMerchantId}
-                    onChange={e => setFormData({ ...formData, vodafoneMPaisaMerchantId: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-mono"
-                    placeholder="e.g. VFJ_MERCHANT_10492"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  M-PAiSA Online API Secret Key
-                </label>
-                <div className="relative">
-                  <input
-                    type={showSecrets.mpaisa ? 'text' : 'password'}
-                    value={formData.vodafoneMPaisaApiSecret}
-                    onChange={e => setFormData({ ...formData, vodafoneMPaisaApiSecret: e.target.value })}
-                    className="w-full pl-3 pr-8 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-mono"
-                    placeholder={settings?.vodafoneMPaisaApiSecretConfigured ? 'Stored securely — leave blank to keep it' : 'Enter Vodafone M-PAiSA API Secret'}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSecrets(s => ({ ...s, mpaisa: !s.mpaisa }))}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    {showSecrets.mpaisa ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Vodafone M-PAiSA Gateway Endpoint URL
-                </label>
-                <input
-                  type="text"
-                  value={formData.vodafoneMPaisaApiUrl}
-                  onChange={e => setFormData({ ...formData, vodafoneMPaisaApiUrl: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-mono"
-                  placeholder="https://pay.mpaisa.vodafone.com.fj/API/"
-                />
               </div>
             </div>
           </div>

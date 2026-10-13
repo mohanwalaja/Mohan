@@ -18,7 +18,8 @@ import {
   Send,
   X,
   ShieldCheck,
-  Check
+  Check,
+  RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -456,6 +457,17 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
               {(orders || []).map(order => {
                 const isCompleted = order.status === 'COMPLETED' || order.status === 'GENERATED';
                 const isFree = order.serviceMode === 'FREE_BETA';
+                // Refund & Cancellation Policy: 90% back if cancelled BEFORE admin
+                // approval, settled within 3 working days; non-refundable after
+                // approval. Both values below come from the server, never guessed.
+                const isRefunded = (order.refundStatus || '').toUpperCase() === 'REFUNDED' || (order.status || '').toUpperCase() === 'REFUNDED';
+                const refundAmountText = (o: Order) => {
+                  const amount = o.refundAmount != null ? o.refundAmount : Math.round((Number(o.amount) || 0) * 0.9 * 100) / 100;
+                  const currency = (o.refundCurrency || o.currency || 'USD').toUpperCase();
+                  return `${currency} ${amount.toFixed(2)}`;
+                };
+                const formatRefundDeadline = (deadline: string) =>
+                  new Date(deadline.replace(' ', 'T')).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
                 const getServiceName = () => {
                   if (order.serviceType === 'BIRTH_JATHAGAM') {
@@ -716,6 +728,24 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               </div>
                             </div>
                           </div>
+                        ) : isRefunded ? (
+                          <div className="text-emerald-200 bg-emerald-950/50 border border-emerald-700/70 rounded-xl px-3.5 py-2.5 flex items-start gap-2.5">
+                            <RotateCcw className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                            <div className="space-y-0.5">
+                              <div className="font-bold text-emerald-300">
+                                Refund Approved — {refundAmountText(order)}
+                              </div>
+                              <div className="text-[11.5px] text-emerald-200/90">
+                                This order was cancelled before admin approval, so the 90% pre-approval refund applies (the remaining 10% covers the non-refundable payment gateway fee).
+                                {order.refundDeadline && (
+                                  <> The amount returns to your original payment method on or before <strong>{formatRefundDeadline(order.refundDeadline)}</strong> — within 3 working days.</>
+                                )}
+                                {order.refundMethod && order.refundMethod.toUpperCase() === 'GATEWAY' && order.refundReference && (
+                                  <> It has already been sent back by the payment provider (reference <strong>{order.refundReference}</strong>).</>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         ) : isCompleted ? (
                           <div className="text-emerald-300 bg-emerald-950/40 border border-emerald-800/60 rounded-xl px-3.5 py-2.5 flex items-start gap-2.5">
                             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -725,6 +755,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               </div>
                               <div className="text-[11.5px] text-emerald-200">
                                 High-resolution Vedic Report PDF & Tax Invoice PDF were successfully emailed to <strong>{order.userEmail}</strong>.
+                              </div>
+                              <div className="text-[11px] text-emerald-200/80 pt-0.5">
+                                Approved &amp; delivered — the order is completed and non-refundable under our <strong>Refund &amp; Cancellation Policy</strong> (90% refunds apply only before admin approval).
                               </div>
                             </div>
                           </div>
@@ -742,6 +775,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               </div>
                               <div className="text-[11.5px] text-amber-300/90">
                                 Our India Vedic astrology scholars are reviewing your planetary chart. Your PDF Report and Tax Invoice will be emailed to <strong>{order.userEmail}</strong>.
+                              </div>
+                              <div className="text-[11px] text-amber-300/80 pt-0.5">
+                                Not approved yet — you are eligible for a <strong>90% refund</strong> if you cancel before admin approval (the other 10% is the non-refundable payment gateway fee). Approved refunds settle within <strong>3 working days</strong>. To request one, email <strong>admin@astrosivam.com</strong> with this order number.
                               </div>
                             </div>
                           </div>

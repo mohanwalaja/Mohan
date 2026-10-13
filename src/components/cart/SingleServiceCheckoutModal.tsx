@@ -110,12 +110,10 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
   const orderWillBeFree = isAdmin || (isFreeBeta && betaFreeChartAvailable);
 
   const prices = getServicePrices(settings, serviceType);
-  const priceFjd = prices.FJD;
   const priceUsd = prices.USD;
   const priceInr = prices.INR;
 
-  const activePrice =
-    currency === 'FJD' ? priceFjd : currency === 'INR' ? priceInr : priceUsd;
+  const activePrice = currency === 'INR' ? priceInr : priceUsd;
   const activeSymbol = CURRENCY_INFO[currency]?.symbol || '$';
 
   // Offline Payment Details
@@ -410,7 +408,7 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
                   {/* No payment or currency selection is needed for free reports. */}
                   {!orderWillBeFree && (
                     <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-xl border border-white/10">
-                      {(['USD', 'INR'] as CurrencyCode[]).filter(c => c !== 'FJD').map(c => (
+                      {(['USD', 'INR'] as CurrencyCode[]).map(c => (
                         <button
                           key={c}
                           type="button"

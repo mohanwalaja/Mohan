@@ -149,7 +149,7 @@ function expectedNavagrahaIndicators(chart: Chart): Graha[] {
 // ---------------------------------------------------------------------------
 const PLACES = [
   { name: 'Chennai, Tamil Nadu, India', latitude: 13.0827, longitude: 80.2707, offset: 5.5 },
-  { name: 'Suva, Fiji', latitude: -18.1248, longitude: 178.4501, offset: 12 },
+  { name: 'Suva', latitude: -18.1248, longitude: 178.4501, offset: 12 },
   { name: 'Reykjavik, Iceland', latitude: 64.1466, longitude: -21.9426, offset: 0 }
 ];
 const DATES = [

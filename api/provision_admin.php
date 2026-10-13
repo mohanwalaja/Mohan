@@ -44,7 +44,7 @@ try {
         $userId = $existing['id'];
     } else {
         $userId = 'usr_admin_' . bin2hex(random_bytes(12));
-        $insert = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'admin', 1, 'Fiji', NOW(), NOW())");
+        $insert = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'admin', 1, '', NOW(), NOW())");
         $insert->execute([$userId, $name, $email, $passwordHash]);
     }
     $pdo->commit();

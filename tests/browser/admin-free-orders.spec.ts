@@ -3,10 +3,10 @@ import type { ServiceMode, ServiceType, UserRole } from '../../src/types';
 
 const serviceTypes: ServiceType[] = ['BIRTH_JATHAGAM', 'MARRIAGE_COMPATIBILITY', 'BABY_NAMING', 'MUHURTHAM'];
 const servicePricing = {
-  BIRTH_JATHAGAM: { fjd: 35, inr: 499, usd: 18 },
-  MARRIAGE_COMPATIBILITY: { fjd: 45, inr: 699, usd: 22 },
-  BABY_NAMING: { fjd: 30, inr: 399, usd: 15 },
-  MUHURTHAM: { fjd: 40, inr: 599, usd: 20 }
+  BIRTH_JATHAGAM: { inr: 499, usd: 18 },
+  MARRIAGE_COMPATIBILITY: { inr: 699, usd: 22 },
+  BABY_NAMING: { inr: 399, usd: 15 },
+  MUHURTHAM: { inr: 599, usd: 20 }
 };
 
 async function openCheckout(page: Page, options: {
@@ -73,7 +73,7 @@ async function openCheckout(page: Page, options: {
       ? serviceTypes.map((serviceType, index) => ({
           id: `chart-${index}`, serviceType, language: 'en', country: 'India',
           devoteeName: `Family Member ${index + 1}`, inputPayload: { name: `Family Member ${index + 1}` },
-          prices: { FJD: 999, INR: 999, USD: 999 }, unitPrice: 999
+          prices: { INR: 999, USD: 999 }, unitPrice: 999
         }))
       : []));
     const modulePath = '/tests/browser/checkout-harness.tsx';

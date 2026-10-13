@@ -28,12 +28,12 @@ assert.equal(skippedClock?.nonexistent, true);
 assert.equal(skippedClock?.utcDate.toISOString(), '2021-03-14T07:30:00.000Z');
 
 const winterChart = calculatePrecisionHoroscope(
-  'Timezone Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, 'Fiji', 'M'
+  'Timezone Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, '', 'M'
 );
 const sameChartWithDifferentFallback = calculatePrecisionHoroscope(
-  'Timezone Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 13, 'Fiji', 'M'
+  'Timezone Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 13, '', 'M'
 );
-assert.equal(winterChart.timezoneOffsetHours, 13, 'Historical Fiji DST should override a present-day offset');
+assert.equal(winterChart.timezoneOffsetHours, 13, 'Historical southern-hemisphere DST should override a present-day offset');
 assert.equal(winterChart.timeZoneId, 'Pacific/Fiji');
 assert.equal(winterChart.lagnaDegrees, sameChartWithDifferentFallback.lagnaDegrees);
 assert.equal(winterChart.chandraRasi, sameChartWithDifferentFallback.chandraRasi);
@@ -55,7 +55,7 @@ assert.equal(tokyoPanchangam.varaIndex, 2);
 assert.match(tokyoPanchangam.sunriseTime, /AM|PM/);
 
 const suvaPanchangam = calculatePrecisionPanchangam(
-  new Date('2026-01-15T00:00:00Z'), -17.7134, 178.065, 'Suva', 'Fiji'
+  new Date('2026-01-15T00:00:00Z'), -17.7134, 178.065, 'Suva', ''
 );
 assert.equal(suvaPanchangam.date, '2026-01-15');
 assert.equal(suvaPanchangam.varaIndex, 4, 'Suva date is Thursday');

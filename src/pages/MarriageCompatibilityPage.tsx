@@ -74,7 +74,7 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
   const betaFreeChartAvailable = settings?.betaFreeChartAvailable !== false;
   const isAdmin = user?.role === 'admin';
   const orderWillBeFree = isAdmin || (isBeta && betaFreeChartAvailable);
-  const fjdPrice = settings?.servicePricing?.MARRIAGE_COMPATIBILITY?.fjd ?? settings?.fijiPriceFJD ?? 45;
+
   const inrPrice = settings?.servicePricing?.MARRIAGE_COMPATIBILITY?.inr ?? settings?.indiaPriceINR ?? 699;
   const usdPrice = settings?.servicePricing?.MARRIAGE_COMPATIBILITY?.usd ?? settings?.intlPriceUSD ?? 22;
 

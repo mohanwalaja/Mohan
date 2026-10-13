@@ -82,7 +82,7 @@ $facts = astro_ai_chart_facts($order);
 $chart = $facts['chart'] ?? null;
 $out['doshaKeys'] = $chart ? array_map(function ($d) { return $d['key']; }, $chart['doshaDetails'] ?? []) : null;
 
-$orderDetails = 'Order number: AST-PROBE | Service: BIRTH_JATHAGAM | Amount paid: FJD 50 | '
+$orderDetails = 'Order number: AST-PROBE | Service: BIRTH_JATHAGAM | Amount paid: USD 50 | '
     . 'Payment: confirmed | Placed on: 2026-10-01 | Report emailed on: 2026-10-02 | Order status: COMPLETED | '
     . 'Birth details used: Name: Probe Native, Date of birth: 1990-05-15, Time of birth: 06:30, Birth place: Chennai';
 
