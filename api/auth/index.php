@@ -368,7 +368,7 @@ if ($isFacebookRoute) {
         if (!$user) {
             $id = 'usr_' . uniqid('', true);
             $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
-            $ins = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, auth_provider, provider_subject, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'customer', 'facebook', ?, 1, 'Fiji', NOW(), NOW())");
+            $ins = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, auth_provider, provider_subject, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'customer', 'facebook', ?, 1, '', NOW(), NOW())");
             $ins->execute([$id, $name, $email, $hash, $fbId]);
 
             // Provider login does not supply DOB/time/place; leave profile empty.
@@ -500,7 +500,7 @@ if ($isGoogleRoute) {
         if (!$user) {
             $id = 'usr_' . uniqid('', true);
             $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
-            $ins = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, auth_provider, provider_subject, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'customer', 'google', ?, 1, 'Fiji', NOW(), NOW())");
+            $ins = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, auth_provider, provider_subject, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'customer', 'google', ?, 1, '', NOW(), NOW())");
             $ins->execute([$id, $name, $email, $hash, $googleId]);
 
             // Provider login does not supply DOB/time/place; leave profile empty.

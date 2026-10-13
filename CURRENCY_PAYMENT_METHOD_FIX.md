@@ -6,17 +6,16 @@
 ## The reported problem
 
 > *"Myself and my wife were born in India, so the site shows Indian rupees. My son
-> was born in Nadi, so it shows Fiji dollars. If any user is born in the United
-> States it asks for USD. This is not good. After filling the birth details of all
-> family members, the user should decide how to pay — Indian payment method GPay,
-> international payment method PayPal, Fiji payment method Vodafone M-PAiSA — and
-> then pay."*
+> was born abroad, so it showed a different currency. If any user is born in the
+> United States it asks for USD. This is not good. After filling the birth details
+> of all family members, the user should decide how to pay — Indian payment method
+> GPay or international payment method PayPal — and then pay."*
 
 ## What was actually wrong
 
 | Where | Problem |
 |---|---|
-| `src/pages/*.tsx` (`handleAddToFamilyTray`) | Each chart got `currency`/`unitPrice` from **its own birth place** (`isIndia ? 'INR' : isFiji ? 'FJD' : 'USD'`). |
+| `src/pages/*.tsx` (`handleAddToFamilyTray`) | Each chart got `currency`/`unitPrice` from **its own birth place** (`isIndia ? 'INR' : 'USD'`, plus a since-retired regional tier). |
 | `src/context/CartContext.tsx` | `totalAmount` **summed those mixed numbers** (`499 + 499 + 35`) and the displayed currency was just `items[0].currency` → a meaningless "₹1033". |
 | `src/components/cart/UnifiedCheckoutModal.tsx` | The tray showed one currency per line but one total in another; the "Pay Total" box reused that mixed number for whichever method was picked. |
 | `api/services/index.php`, `server/db/store.ts` | The server derived the order currency from `country` (= the **birth** country of the first item) and only let the payment method override it in one direction — so an India-born family paying by PayPal was still stored/charged in INR. |
@@ -28,9 +27,12 @@ whole family order. A birth place never does.**
 
 | Payment method | Currency |
 |---|---|
-| Vodafone M-PAiSA / Digicel MyCash | FJD (Fiji) |
 | Google Pay / UPI | INR (India) |
 | PayPal / Card | USD (International) |
+
+Only these two methods are offered. Removed regional wallet methods are not
+accepted at checkout, and a historical order keeps whatever currency it was
+stored with (nothing is converted or re-labelled).
 
 A country is only consulted as a fallback when there is **no** real payment method
 (FREE_BETA / `NONE`), and then it is the **billing country of the account**, never
@@ -52,17 +54,17 @@ The rule lives in `src/services/pricing.ts` and is shared by:
 `servicePricing` and PHP `pricing`), `cartItemPrices`, `computeCartTotals`,
 `cartTotalForPaymentMethod`, `formatMoney`.
 
-### 2. Every chart is priced in **all three** currencies
-`CartItem.prices = { FJD, INR, USD }` is captured when a chart is added to the
+### 2. Every chart is priced in **both** supported currencies
+`CartItem.prices = { INR, USD }` is captured when a chart is added to the
 Family Tray, so switching payment method later re-prices the whole tray instantly
 and nothing has to be re-derived from a birth place. Old carts saved in
 `localStorage` without `prices` are rebuilt from the current admin pricing.
 
 ### 3. Family Tray + floating bar
-* `Total Amount Once (INR)`, `Total in FJD`, etc. — always one currency.
+* `Total Amount Once (INR)`, `Total in USD`, etc. — always one currency.
 * A compact **"Pay with"** picker in the tray footer: each button shows what the
-  whole family costs in that method's currency (M-PAiSA `FJ$105.00`,
-  GPay `₹1,497.00`, PayPal `US$54.00`), so the decision can be made before
+  whole family costs in that method's currency (GPay `₹1,497.00`,
+  PayPal `US$54.00`), so the decision can be made before
   checkout. The choice is remembered in `localStorage`.
 * The choice is pre-selected from the **account** country only (a convenience
   default the customer can always change).
@@ -88,15 +90,14 @@ astrology only.
 
 ## Example — the exact reported family
 
-Husband (Chennai, India) + Wife (Madurai, India) + Son (Nadi, Fiji), 3 × Birth Jathagam:
+Husband (Chennai, India) + Wife (Madurai, India) + Son (Auckland, New Zealand), 3 × Birth Jathagam:
 
 | Customer chooses | Currency | Per chart | Total |
 |---|---|---|---|
 | Google Pay / UPI | INR | ₹499 | **₹1,497.00** |
-| Vodafone M-PAiSA | FJD | FJ$35 | **FJ$105.00** |
 | PayPal / Card | USD | US$18 | **US$54.00** |
 
-Before this fix the tray showed `₹1033` (499 + 499 + 35).
+Before this fix the tray summed mixed numbers and showed a meaningless `₹1033`.
 
 ## Deploying to cPanel (BigRock)
 
@@ -118,13 +119,13 @@ Never By Birth Place** covers:
 
 * every payment-method → currency mapping, including "born in India but paying by
   PayPal ⇒ USD";
-* the reported family (India + India + Fiji) totals in all three currencies, and
+* the reported family (India + India + New Zealand) totals in the supported currencies, and
   the assertion that the old mixed `1033` total is gone;
 * admin pricing overrides in both the PHP (`pricing`) and Node (`servicePricing`)
   shapes, FREE_BETA zeroing, and rebuilding legacy carts;
 * the **real** `PaymentMethodSelector` and the **real** family-tray bar rendered
   with `react-dom/server` (asserting `₹1497.00` / `Total in INR`);
 * the **real** Node backend (`db.createMultiOrder`) storing one currency across a
-  3-chart family for GPay, M-PAiSA and PayPal;
+  3-chart family for GPay and PayPal;
 * source-level guards so the birth-place rule cannot creep back into the PHP API,
   the Node store, the service pages or the checkout modal.

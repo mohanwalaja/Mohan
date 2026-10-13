@@ -76,7 +76,7 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
   const betaFreeChartAvailable = settings?.betaFreeChartAvailable !== false;
   const isAdmin = user?.role === 'admin';
   const orderWillBeFree = isAdmin || (isBeta && betaFreeChartAvailable);
-  const fjdPrice = settings?.servicePricing?.BIRTH_JATHAGAM?.fjd ?? settings?.fijiPriceFJD ?? 35;
+
   const inrPrice = settings?.servicePricing?.BIRTH_JATHAGAM?.inr ?? settings?.indiaPriceINR ?? 499;
   const usdPrice = settings?.servicePricing?.BIRTH_JATHAGAM?.usd ?? settings?.intlPriceUSD ?? 18;
 

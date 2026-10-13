@@ -35,6 +35,7 @@ foreach (array(
     'api/admin/orders.php',
     'api/db.php',
     'api/services/index.php',
+    'api/payments.php',
 ) as $relative) {
     $path = $root . '/' . $relative;
     $ok = true;
@@ -73,9 +74,9 @@ $preApprovalOrder = array('status' => 'PENDING', 'amount' => 100.00, 'currency' 
 $deliveredOrder = array('status' => 'COMPLETED', 'amount' => 100.00, 'currency' => 'USD');
 probe_check($checks, 'a $100.00 pre-approval order refunds $90.00', astro_refund_amount_for_order($preApprovalOrder) === 90.00, (string) astro_refund_amount_for_order($preApprovalOrder));
 probe_check($checks, 'a $100.00 approved order refunds $0.00', astro_refund_amount_for_order($deliveredOrder) === 0.00, (string) astro_refund_amount_for_order($deliveredOrder));
-$oddOrder = array('status' => 'PENDING', 'amount' => 12.34, 'currency' => 'FJD');
+$oddOrder = array('status' => 'PENDING', 'amount' => 12.34, 'currency' => 'USD');
 probe_check($checks, '12.34 at 90% rounds to 11.11', astro_refund_amount_for_order($oddOrder) === 11.11, (string) astro_refund_amount_for_order($oddOrder));
-probe_check($checks, 'money is formatted with the order currency', astro_refund_money(11.11, 'FJD') === 'FJD 11.11', astro_refund_money(11.11, 'FJD'));
+probe_check($checks, 'money is formatted with the order currency', astro_refund_money(11.11, 'USD') === 'USD 11.11', astro_refund_money(11.11, 'USD'));
 
 // Working days: a Wednesday + 3 working days lands on Monday (the weekend is skipped).
 $wednesday = new DateTimeImmutable('2026-10-14 12:00:00'); // Wed
@@ -156,6 +157,65 @@ probe_check($checks, 'a single-order email carries no bundle line', strpos($emai
 // The policy sentence stored on the order must quote both numbers.
 $reason = astro_refund_policy_reason($preApprovalOrder);
 probe_check($checks, 'the stored reason quotes 90% and the 10% fee', strpos($reason, '90%') !== false && strpos($reason, '10%') !== false, $reason);
+
+// ------------------------------------------------- automatic gateway refund ----
+// The one-click refund must really return money for payments captured online.
+// These assertions execute the pure request/response builders that
+// api/payments.php uses for the provider calls (no network, no database).
+$config = array(
+    'razorpay' => array('configured' => true, 'key_id' => 'rzp_test_key', 'key_secret' => 'rzp_test_secret'),
+    'paypal' => array('configured' => true, 'base_url' => 'https://api-m.sandbox.paypal.com', 'client_id' => 'cid', 'client_secret' => 'csecret')
+);
+
+$capturedPaypal = array(
+    'id' => 'pi_paypal_1', 'provider' => 'paypal', 'status' => 'CAPTURED',
+    'amount' => 100.00, 'currency' => 'USD', 'gateway_payment_id' => 'CAPTURE-9'
+);
+$capturedRazorpay = array(
+    'id' => 'pi_rzp_1', 'provider' => 'razorpay', 'status' => 'CAPTURED',
+    'amount' => 100.00, 'currency' => 'INR', 'gateway_payment_id' => 'pay_9'
+);
+$offlineIntent = array(
+    'id' => 'pi_offline_1', 'provider' => 'manual', 'status' => 'VERIFIED_MANUAL',
+    'amount' => 100.00, 'currency' => 'USD', 'gateway_payment_id' => ''
+);
+
+probe_check($checks, 'only a captured online payment is auto-refundable',
+    astro_refund_intent_is_refundable($capturedPaypal)
+    && astro_refund_intent_is_refundable($capturedRazorpay)
+    && !astro_refund_intent_is_refundable($offlineIntent)
+    && !astro_refund_intent_is_refundable(array_merge($capturedPaypal, array('status' => 'CREATED'))));
+
+$paypalRequest = astro_refund_gateway_request($capturedPaypal, 90.00, 'USD', 'refund-ord-1', $config);
+probe_check($checks, 'PayPal refunds hit the captures endpoint for the capture id',
+    is_array($paypalRequest)
+    && $paypalRequest['url'] === 'https://api-m.sandbox.paypal.com/v2/payments/captures/CAPTURE-9/refund'
+    && $paypalRequest['body']['amount']['value'] === '90.00'
+    && $paypalRequest['body']['amount']['currency_code'] === 'USD');
+probe_check($checks, 'PayPal refunds carry a deterministic idempotency request id',
+    in_array('PayPal-Request-Id: refund-ord-1', $paypalRequest['headers'], true));
+
+$paypalVerdict = astro_refund_gateway_result('paypal', 201, array('id' => 'REFUND-1', 'status' => 'COMPLETED'), 90.00, 'USD');
+probe_check($checks, 'a PayPal refund response yields the provider refund id',
+    $paypalVerdict['ok'] && $paypalVerdict['reference'] === 'REFUND-1' && strpos($paypalVerdict['message'], 'REFUND-1') !== false);
+
+$rzpRequest = astro_refund_gateway_request($capturedRazorpay, 11.11, 'INR', 'refund-ord-2', $config);
+probe_check($checks, 'Razorpay refunds are sent in minor units to the payments endpoint',
+    is_array($rzpRequest)
+    && $rzpRequest['url'] === 'https://api.razorpay.com/v1/payments/pay_9/refund'
+    && $rzpRequest['body']['amount'] === 1111
+    && $rzpRequest['basicUser'] === 'rzp_test_key'
+    && $rzpRequest['body']['receipt'] === 'refund-ord-2');
+
+$refused = astro_refund_gateway_result('rizp', 400, array('error' => array('description' => 'Payment has already been refunded')), 90.00, 'USD');
+probe_check($checks, 'a refused refund reports failure and promises no state change',
+    !$refused['ok'] && strpos($refused['message'], 'Nothing was marked as refunded') !== false, $refused['message']);
+
+probe_check($checks, 'an offline payment has no provider request (manual settlement)',
+    astro_refund_gateway_request($offlineIntent, 90.00, 'USD', 'refund-ord-3', $config) === null);
+probe_check($checks, 'a zero amount is never sent to a provider',
+    astro_refund_gateway_request($capturedPaypal, 0.0, 'USD', 'refund-ord-4', $config) === null
+    && astro_refund_minor_units(11.11) === 1111);
 
 $failed = 0;
 foreach ($checks as $check) {

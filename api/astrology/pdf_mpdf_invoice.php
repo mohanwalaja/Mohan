@@ -216,7 +216,7 @@ CSS;
         $orderNumber = $order['order_number'] ?? $order['orderNumber'] ?? 'ORD-0000';
         $createdAt = $order['created_at'] ?? $order['createdAt'] ?? null;
         $createdDate = $createdAt ? date('F j, Y', strtotime($createdAt)) : date('F j, Y');
-        $currency = $order['currency'] ?? 'FJD';
+        $currency = $order['currency'] ?? (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD');
         $currencySymbol = self::currencySymbol($currency);
         $amountVal = number_format((float)($order['amount'] ?? 0), 2);
         $serviceType = $order['service_type'] ?? $order['serviceType'] ?? 'BIRTH_JATHAGAM';
@@ -475,7 +475,7 @@ HTML;
 
         $createdAt = $first['created_at'] ?? $first['createdAt'] ?? null;
         $createdDate = $createdAt ? date('F j, Y', strtotime($createdAt)) : date('F j, Y');
-        $currency = $first['currency'] ?? 'FJD';
+        $currency = $first['currency'] ?? (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD');
         $currencySymbol = self::currencySymbol($currency);
         $paymentDisplay = self::paymentMethodDisplay($first['payment_method'] ?? $first['paymentMethod'] ?? null);
         $userName = self::e($first['user_name'] ?? $first['userName'] ?? 'Client');

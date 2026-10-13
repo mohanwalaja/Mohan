@@ -91,6 +91,8 @@ function astro_ensure_refund_schema($pdo) {
         'refund_processed_at' => "ALTER TABLE orders ADD COLUMN refund_processed_at DATETIME NULL AFTER refund_currency",
         'refund_deadline' => "ALTER TABLE orders ADD COLUMN refund_deadline DATETIME NULL AFTER refund_processed_at",
         'refund_admin_notes' => "ALTER TABLE orders ADD COLUMN refund_admin_notes TEXT NULL AFTER refund_deadline",
+        'refund_method' => "ALTER TABLE orders ADD COLUMN refund_method VARCHAR(32) NULL AFTER refund_admin_notes",
+        'refund_reference' => "ALTER TABLE orders ADD COLUMN refund_reference VARCHAR(191) NULL AFTER refund_method",
     );
 
     try {

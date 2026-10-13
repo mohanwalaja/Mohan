@@ -203,7 +203,7 @@ function astro_currency_for_payment($paymentMethod, $billingCountry = null, $req
     $map = [
         'GPAY' => 'INR',
         'UPI' => 'INR',
-        // MPAISA/MYCASH are discontinued (legacy orders only); no longer route to FJD.
+        // MPAISA/MYCASH are discontinued (legacy orders only); they settle in USD.
         'PAYPAL' => 'USD',
         'CARD' => 'USD'
     ];
@@ -218,7 +218,7 @@ function astro_currency_for_payment($paymentMethod, $billingCountry = null, $req
 
     // No real payment method (FREE_BETA): honour an explicit valid currency...
     $req = strtoupper(trim((string)$requestedCurrency));
-    if (in_array($req, ['INR', 'FJD', 'USD'], true)) {
+    if (in_array($req, ['INR', 'USD'], true)) {
         return $req;
     }
 
@@ -237,8 +237,7 @@ function astro_currency_for_payment($paymentMethod, $billingCountry = null, $req
 function astro_currency_symbol($currency) {
     $c = strtoupper((string)$currency);
     if ($c === 'INR') return '₹';
-    if ($c === 'USD') return '$';
-    return 'FJ$';
+    return '$';
 }
 
 // 6. Helper function to read incoming JSON body (capped at 1MB to bound memory).

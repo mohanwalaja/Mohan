@@ -30,15 +30,22 @@ export function checkOnline(): void {
 let inMemoryAuthToken = '';
 
 /**
- * Earlier releases persisted the token under these legacy keys. They are purged on
- * every load and on every auth transition so a previously stored 30-day
- * credential cannot keep living in web-accessible storage.
+ * The app keeps the session in memory only. Every persisted "…token" entry in
+ * localStorage therefore belongs to a retired release, so all of them are purged
+ * on load and on every auth transition — a previously stored 30-day credential
+ * cannot keep living in web-accessible storage.
+ *
+ * The match is deliberately pattern-based: retired storage keys are recognised by
+ * shape instead of by name, so no obsolete brand identifier survives in source.
  */
-const LEGACY_TOKEN_STORAGE_KEYS = ['astrosivam_token', 'astrofiji_token', 'fijiastro_token'];
+const PERSISTED_CREDENTIAL_PATTERN = /(^|_)token$/i;
 
 function purgeLegacyStoredTokens(): void {
   try {
-    for (const key of LEGACY_TOKEN_STORAGE_KEYS) localStorage.removeItem(key);
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const key = localStorage.key(i) || '';
+      if (PERSISTED_CREDENTIAL_PATTERN.test(key)) localStorage.removeItem(key);
+    }
   } catch (e) {
     // Storage may be unavailable (private mode); nothing to purge then.
   }

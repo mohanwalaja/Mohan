@@ -1,6 +1,6 @@
 import React from 'react';
 import { PaymentMethod, CurrencyPriceMap, SystemSettings, PaymentGatewayMode } from '../../types';
-import { PAYMENT_METHOD_CURRENCY, formatMoney } from '../../services/pricing';
+import { DEFAULT_CURRENCY, PAYMENT_METHOD_CURRENCY, formatMoney } from '../../services/pricing';
 
 /**
  * Online-only: every gateway runs in 'online' mode. Manual/offline transfers are no longer accepted.
@@ -89,7 +89,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
 
       <div className={`grid gap-2.5 ${compact ? 'grid-cols-3' : 'grid-cols-1 sm:grid-cols-3'}`}>
         {PAYMENT_METHOD_OPTIONS.map(option => {
-          const optionCurrency = PAYMENT_METHOD_CURRENCY[option.method] || 'FJD';
+          const optionCurrency = PAYMENT_METHOD_CURRENCY[option.method] || DEFAULT_CURRENCY;
           const isActive = paymentMethod === option.method;
           const gwMode = settings ? getGatewayModeForMethod(option.method, settings) : null;
           return (

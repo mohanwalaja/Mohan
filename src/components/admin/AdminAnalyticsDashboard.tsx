@@ -59,7 +59,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
   const [data, setData] = useState<AdminAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '3m' | '6m' | '12m' | 'all'>('6m');
-  const [currencyFilter, setCurrencyFilter] = useState<'ALL' | 'FJD' | 'USD'>('ALL');
+  const [currencyFilter, setCurrencyFilter] = useState<'ALL' | 'INR' | 'USD'>('ALL');
   const [activeChartTab, setActiveChartTab] = useState<'overview' | 'revenue' | 'users' | 'services' | 'turnaround' | 'emails'>('overview');
   const [selectedService, setSelectedService] = useState<string | null>(null);
 
@@ -93,30 +93,30 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
       ['Metric', 'Value'],
       ['Monthly Active Users (MAU)', data.kpis.monthlyActiveUsers],
       ['Total Completed Orders', data.kpis.totalCompletedOrders],
-      ['Total Gross Revenue (FJD)', `FJD $${data.kpis.totalRevenueFJD.toFixed(2)}`],
+      ['Total Gross Revenue (INR)', `INR ${data.kpis.totalRevenueINR.toFixed(2)}`],
       ['Total Gross Revenue (USD)', `USD $${data.kpis.totalRevenueUSD.toFixed(2)}`],
       ['Average Processing Turnaround', `${(data.kpis.avgProcessingMinutes / 60).toFixed(1)} Hours`],
       ['12-Hour SLA Compliance Rate', `${data.kpis.slaComplianceRate}%`],
       ['Email Delivery Success Rate', `${data.kpis.emailDeliveryRate}%`],
       [],
       ['=== MONTHLY REVENUE & USER TRENDS ==='],
-      ['Period', 'Active Users', 'New Signups', 'Orders', 'Revenue FJD ($)', 'Revenue USD ($)'],
+      ['Period', 'Active Users', 'New Signups', 'Orders', 'Revenue INR (₹)', 'Revenue USD ($)'],
       ...data.revenueOverTime.map((r, i) => [
         r.period,
         data.monthlyActiveUsersTrend[i]?.activeUsers || '-',
         data.monthlyActiveUsersTrend[i]?.newSignups || '-',
         r.totalOrders,
-        r.fjd,
+        r.inr,
         r.usd
       ]),
       [],
       ['=== POPULAR SERVICES BREAKDOWN ==='],
-      ['Service Name', 'Order Count', 'Share (%)', 'Revenue FJD', 'Revenue USD', 'Avg Rating'],
+      ['Service Name', 'Order Count', 'Share (%)', 'Revenue INR', 'Revenue USD', 'Avg Rating'],
       ...data.popularServices.map(s => [
         s.name,
         s.count,
         `${s.percentage}%`,
-        `$${s.revenueFJD}`,
+        `₹${s.revenueINR}`,
         `$${s.revenueUSD}`,
         s.avgRating
       ]),
@@ -166,7 +166,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
             Portal Intelligence & Operations
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
-            Real-time telemetry tracking monthly active users, service popularity, multi-currency revenue in FJD & USD, turnaround velocity, and SMTP email deliverability.
+            Real-time telemetry tracking monthly active users, service popularity, multi-currency revenue in INR & USD, turnaround velocity, and SMTP email deliverability.
           </p>
         </div>
 
@@ -241,7 +241,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
           </div>
         </div>
 
-        {/* KPI 2: Gross Sales Revenue (Dual Currency FJD + USD) */}
+        {/* KPI 2: Gross Sales Revenue (Dual Currency INR + USD) */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-2 relative overflow-hidden group hover:border-emerald-500/50 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Revenue</span>
@@ -251,7 +251,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-              FJD ${data?.kpis.totalRevenueFJD.toLocaleString() || '4,830'}
+              ₹{data?.kpis.totalRevenueINR.toLocaleString() || '4,830'}
             </span>
           </div>
           <div className="text-xs font-bold text-slate-600 dark:text-slate-300">
@@ -327,7 +327,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 text-xs font-bold">
         {[
           { id: 'overview', label: 'All Visualizations Overview', icon: BarChart3 },
-          { id: 'revenue', label: 'Revenue Over Time (FJD vs USD)', icon: DollarSign },
+          { id: 'revenue', label: 'Revenue Over Time (INR vs USD)', icon: DollarSign },
           { id: 'users', label: 'Monthly Active Users (MAU)', icon: Users },
           { id: 'services', label: 'Most Popular Services', icon: Sparkles },
           { id: 'turnaround', label: 'Turnaround Velocity & SLA', icon: Clock },
@@ -378,15 +378,15 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                   currencyFilter === 'ALL' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
-                Combined (FJD + USD)
+                Combined (INR + USD)
               </button>
               <button
-                onClick={() => setCurrencyFilter('FJD')}
+                onClick={() => setCurrencyFilter('INR')}
                 className={`px-3 py-1 rounded-xl transition-all ${
-                  currencyFilter === 'FJD' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-600 dark:text-slate-400'
+                  currencyFilter === 'INR' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
-                FJD Focus
+                INR Focus
               </button>
               <button
                 onClick={() => setCurrencyFilter('USD')}
@@ -405,7 +405,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data.revenueOverTime} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="colorFjd" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="colorInr" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                     </linearGradient>
@@ -427,20 +427,20 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                       boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
                     }}
                     formatter={(value: any, name: string) => [
-                      name.includes('FJD') ? `FJD $${Number(value).toFixed(2)}` : name.includes('USD') ? `USD $${Number(value).toFixed(2)}` : value,
+                      name.includes('USD') ? `USD $${Number(value).toFixed(2)}` : `₹${Number(value).toFixed(2)}`,
                       name
                     ]}
                   />
                   <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                  {(currencyFilter === 'ALL' || currencyFilter === 'FJD') && (
+                  {(currencyFilter === 'ALL' || currencyFilter === 'INR') && (
                     <Area
                       type="monotone"
-                      dataKey="fjd"
+                      dataKey="inr"
                       name="INR Revenue (India UPI ₹)"
                       stroke="#10b981"
                       strokeWidth={3}
                       fillOpacity={1}
-                      fill="url(#colorFjd)"
+                      fill="url(#colorInr)"
                     />
                   )}
                   {(currencyFilter === 'ALL' || currencyFilter === 'USD') && (
@@ -468,7 +468,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
             <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40">
               <div className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">India UPI Share (INR)</div>
               <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
-                ${data?.kpis.totalRevenueFJD.toLocaleString() || '4,830.00'} FJD
+                ₹{data?.kpis.totalRevenueINR.toLocaleString() || '4,830.00'} INR
               </div>
               <div className="text-[10px] text-emerald-600/80 dark:text-emerald-400/70 mt-1">
                 Avg order: Google Pay / UPI preferred in India
@@ -677,7 +677,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                       <strong className="text-slate-900 dark:text-white font-bold">{service.count} Orders</strong> ({service.percentage}% share)
                     </div>
                     <div className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      FJD ${service.revenueFJD.toLocaleString()} • USD ${service.revenueUSD.toLocaleString()}
+                      ₹{service.revenueINR.toLocaleString()} • USD ${service.revenueUSD.toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -965,7 +965,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                 <div className="bg-purple-600 h-full rounded-full" style={{ width: `${geo.percentage}%` }} />
               </div>
               <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                {geo.revenueFJD > 0 ? `FJD $${geo.revenueFJD}` : `USD $${geo.revenueUSD}`}
+                {geo.revenueINR > 0 ? `₹${geo.revenueINR}` : `$${geo.revenueUSD}`}
               </div>
             </div>
           ))}

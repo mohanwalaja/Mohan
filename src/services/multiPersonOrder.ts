@@ -445,9 +445,9 @@ export function personPrices(person: PersonDraft, settings: SystemSettings | nul
   return person.services.reduce<CurrencyPriceMap>(
     (sum, service) => {
       const price = getServicePrices(settings, service);
-      return { FJD: sum.FJD + price.FJD, INR: sum.INR + price.INR, USD: sum.USD + price.USD };
+      return { INR: sum.INR + price.INR, USD: sum.USD + price.USD };
     },
-    { FJD: 0, INR: 0, USD: 0 }
+    { INR: 0, USD: 0 }
   );
 }
 

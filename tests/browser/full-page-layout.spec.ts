@@ -29,16 +29,16 @@ const MM = 96 / 25.4;
 const TOL = 0.5;
 
 const horoscope = calculatePrecisionHoroscope(
-  'Fiji Native', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, 'Fiji', 'M'
+  'Global Native', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, '', 'M'
 );
 const wedding = calculateWeddingCompatibility({
   brideName: 'Anitha Devi',
   groomName: 'Rajan Kumar',
-  bride: { dob: '1995-06-14', tob: '06:45', birthPlace: 'Nadi, Fiji', latitude: -17.79, longitude: 177.95, timezoneOffsetHours: 12 },
-  groom: { dob: '1993-02-09', tob: '18:20', birthPlace: 'Suva, Fiji', latitude: -18.14, longitude: 178.44, timezoneOffsetHours: 12 }
+  bride: { dob: '1995-06-14', tob: '06:45', birthPlace: 'Nadi', latitude: -17.79, longitude: 177.95, timezoneOffsetHours: 12 },
+  groom: { dob: '1993-02-09', tob: '18:20', birthPlace: 'Suva', latitude: -18.14, longitude: 178.44, timezoneOffsetHours: 12 }
 } as any);
 const baby = calculateBabyNamingDetails(
-  'Aarav', '2024-03-10', '08:45', 'Suva', 'M', -18.1416, 178.4419, 12, 'Fiji'
+  'Aarav', '2024-03-10', '08:45', 'Suva', 'M', -18.1416, 178.4419, 12, ''
 );
 
 function muhurthamMonth(index: number) {
@@ -58,15 +58,15 @@ function muhurthamMonth(index: number) {
   };
 }
 const muhurthamSparse = {
-  devoteeName: 'Muhurtham Layout Test', dob: '1990-01-01', tob: '08:00', birthPlace: 'Suva', country: 'Fiji',
+  devoteeName: 'Muhurtham Layout Test', dob: '1990-01-01', tob: '08:00', birthPlace: 'Suva', country: '',
   eventKey: 'wedding', eventTitleEn: 'Wedding (Vivaha Muhurtham)', months: [muhurthamMonth(0)]
 };
 const muhurthamFull = { ...muhurthamSparse, months: Array.from({ length: 6 }, (_, i) => muhurthamMonth(i)) };
 
 const invoiceOrder = (over: Record<string, unknown> = {}) => ({
   id: 'ord-1', orderNumber: 'LAYOUT-1001', userId: 'u1', userName: 'Client Name', userEmail: 'client@example.com',
-  userMobile: '+679 999 8888', serviceType: 'MARRIAGE_COMPATIBILITY', language: 'en', country: 'Fiji',
-  currency: 'FJD', amount: 45, serviceMode: 'PAID', paymentMethod: 'GPAY', paymentReference: 'PAY-1',
+  userMobile: '+679 999 8888', serviceType: 'MARRIAGE_COMPATIBILITY', language: 'en', country: '',
+  currency: 'USD', amount: 45, serviceMode: 'PAID', paymentMethod: 'GPAY', paymentReference: 'PAY-1',
   status: 'PAID', emailStatus: 'SENT', emailDeliveryAttempts: 1, inputPayload: {}, hasPdf: true,
   createdAt: new Date('2026-10-02T09:00:00Z').toISOString(), ...over
 }) as any;

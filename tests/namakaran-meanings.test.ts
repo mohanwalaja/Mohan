@@ -99,7 +99,7 @@ assert.deepEqual(relocalized, buildNamakaranPadaNames(star.padas, 'M'),
 const result = {
   babyName: 'Kanika',
   gender: 'F',
-  dob: '2024-03-10', tob: '08:45', birthPlace: 'Suva', country: 'Fiji',
+  dob: '2024-03-10', tob: '08:45', birthPlace: 'Suva', country: '',
   janmaNakshatraEn: star.nakshatraNameEn,
   janmaNakshatraTa: star.nakshatraNameTa,
   janmaNakshatraHi: star.nakshatraNameHi,

@@ -289,15 +289,15 @@ test('The shared isolated HTML exporter still renders the other reports and invo
     const { buildWeddingMatchHtml } = await load('/src/services/weddingHtmlBuilder.ts');
     const { buildInvoiceHtml, buildFamilyInvoiceHtml } = await load('/src/services/invoiceHtmlBuilder.ts');
     const { renderHtmlToPdfDoc } = await load('/src/services/jathagamPdfExporter.ts');
-    const horoscope = calculatePrecisionHoroscope('PDF Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, 'Fiji', 'M');
-    const baby = calculateBabyNamingDetails('Baby Test', '2024-03-10', '08:45', 'Suva', 'M', -18.1416, 178.4419, 12, 'Fiji');
+    const horoscope = calculatePrecisionHoroscope('PDF Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, '', 'M');
+    const baby = calculateBabyNamingDetails('Baby Test', '2024-03-10', '08:45', 'Suva', 'M', -18.1416, 178.4419, 12, '');
     const wedding = calculateWeddingCompatibility(
       { name: 'Bride Test', dob: '1995-05-15', tob: '10:30', birthPlace: 'Chennai', latitude: 13.0827, longitude: 80.2707, timezoneOffsetHours: 5.5 },
       { name: 'Groom Test', dob: '1993-08-20', tob: '14:15', birthPlace: 'Coimbatore', latitude: 11.0168, longitude: 76.9558, timezoneOffsetHours: 5.5 }
     );
     const order = {
       id: 'pdf-test', orderNumber: 'PDF-TEST-1', createdAt: '2026-09-30T00:00:00Z',
-      serviceType: 'BIRTH_JATHAGAM', amount: 35, currency: 'FJD', language: 'en',
+      serviceType: 'BIRTH_JATHAGAM', amount: 35, currency: 'USD', language: 'en',
       userName: 'PDF Test', userEmail: 'test@example.com', inputPayload: { name: 'PDF Test' }
     };
     const reports = [

@@ -23,7 +23,7 @@ function namakaranFixture(array $row, string $gender, int $pada): array {
         'dob' => '2024-03-10',
         'tob' => '08:45',
         'birthPlace' => 'Suva',
-        'country' => 'Fiji',
+        'country' => '',
         'babyNamingAlgorithmVersion' => 2,
         'janmaPada' => $pada,
         'nakshatraLetters' => $row + ['pada' => $pada],

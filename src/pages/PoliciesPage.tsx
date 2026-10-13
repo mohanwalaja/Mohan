@@ -262,7 +262,7 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
             </p>
 
             <p className="text-xs text-slate-500 pt-2">
-              This policy is governed by the laws of Fiji and applies to all ASTRO SIVAM orders placed on astrosivam.com. For any clarification, write to <a href="mailto:admin@astrosivam.com" className="text-amber-700 dark:text-amber-400 font-semibold underline">admin@astrosivam.com</a>.
+              This policy is governed by the laws applicable at the place where ASTRO SIVAM is registered and applies to all ASTRO SIVAM orders placed on astrosivam.com. For any clarification, write to <a href="mailto:admin@astrosivam.com" className="text-amber-700 dark:text-amber-400 font-semibold underline">admin@astrosivam.com</a>.
             </p>
           </div>
         )}

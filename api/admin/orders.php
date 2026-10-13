@@ -110,6 +110,8 @@ if ($method === 'GET') {
                 'refundProcessedAt' => $m['refund_processed_at'] ?? null,
                 'refundDeadline' => $m['refund_deadline'] ?? null,
                 'refundAdminNotes' => $m['refund_admin_notes'] ?? null,
+                'refundMethod' => $m['refund_method'] ?? null,
+                'refundReference' => $m['refund_reference'] ?? null,
                 'createdAt' => $m['created_at'],
                 'updatedAt' => $m['updated_at'] ?? $m['created_at']
             ];
@@ -157,6 +159,8 @@ if ($method === 'GET') {
             'refundProcessedAt' => $primary['refund_processed_at'] ?? null,
             'refundDeadline' => $primary['refund_deadline'] ?? null,
             'refundAdminNotes' => $primary['refund_admin_notes'] ?? null,
+            'refundMethod' => $primary['refund_method'] ?? null,
+            'refundReference' => $primary['refund_reference'] ?? null,
             'createdAt' => $primary['created_at'],
             'updatedAt' => $primary['updated_at'] ?? $primary['created_at'],
             'members' => $formattedMembers

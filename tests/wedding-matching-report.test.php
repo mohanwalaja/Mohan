@@ -12,8 +12,8 @@ $validBirth = [
     'name' => 'Birth Validation Test',
     'dob' => '1990-08-15',
     'tob' => '09:30',
-    'birthPlace' => 'Suva, Fiji',
-    'country' => 'Fiji',
+    'birthPlace' => 'Suva',
+    'country' => '',
     'latitude' => -18.1416,
     'longitude' => 178.4419,
     'timezoneOffsetHours' => 12,
@@ -33,25 +33,25 @@ checkWeddingVerdict(!AstroEngine::hasValidBirthDetails(array_merge($validBirth, 
 
 // Historical DST without an IANA id: the zone is derived from the coordinates
 // and the region's real transition history overrides the submitted offset.
-checkWeddingVerdict(AstroEngine::timeZoneIdForCoordinates(-18.1416, 178.4419) === 'Pacific/Fiji', 'PHP coordinate lookup resolves Suva to Pacific/Fiji');
+checkWeddingVerdict(AstroEngine::timeZoneIdForCoordinates(-18.1416, 178.4419) === 'Pacific/Fiji', 'PHP coordinate lookup resolves the sample coordinates to their IANA zone');
 checkWeddingVerdict(AstroEngine::timeZoneIdForCoordinates(13.0827, 80.2707) === 'Asia/Kolkata', 'PHP coordinate lookup resolves Chennai to Asia/Kolkata');
 checkWeddingVerdict(AstroEngine::timeZoneIdForCoordinates(40.7128, -74.006) === 'America/New_York', 'PHP coordinate lookup resolves New York to America/New_York');
 checkWeddingVerdict(AstroEngine::timeZoneIdForCoordinates(0, -180) === 'Etc/GMT+12', 'PHP coordinate lookup falls back to nautical Etc/GMT zones at sea');
-$fijiSummer1999 = array_merge($validBirth, ['dob' => '1999-12-15', 'tob' => '06:00', 'timezoneOffsetHours' => 12, 'timeZoneId' => '']);
-$fijiResolved = AstroEngine::resolveBirthInstant($fijiSummer1999);
-checkWeddingVerdict($fijiResolved['ok'] && $fijiResolved['timeZoneId'] === 'Pacific/Fiji' && $fijiResolved['timeZoneSource'] === 'coordinates',
+$dstSummer1999 = array_merge($validBirth, ['dob' => '1999-12-15', 'tob' => '06:00', 'timezoneOffsetHours' => 12, 'timeZoneId' => '']);
+$dstResolved = AstroEngine::resolveBirthInstant($dstSummer1999);
+checkWeddingVerdict($dstResolved['ok'] && $dstResolved['timeZoneId'] === 'Pacific/Fiji' && $dstResolved['timeZoneSource'] === 'coordinates',
     'PHP derives Pacific/Fiji from coordinates when timeZoneId is omitted');
-checkWeddingVerdict(abs($fijiResolved['offsetHours'] - 13.0) < 1e-9 && $fijiResolved['offsetAdjusted'] === true && $fijiResolved['dst'] === true
-    && gmdate('Y-m-d H:i', $fijiResolved['timestamp']) === '1999-12-14 17:00',
-    'PHP applies the historical Fiji 1999/2000 DST offset (+13) instead of the submitted +12');
-$fijiWithId = AstroEngine::resolveBirthInstant(array_merge($fijiSummer1999, ['timeZoneId' => 'Pacific/Fiji']));
-checkWeddingVerdict($fijiWithId['timestamp'] === $fijiResolved['timestamp'] && $fijiWithId['timeZoneSource'] === 'payload',
-    'PHP resolves the same instant with or without an explicit Pacific/Fiji id');
-$fijiHoroscopeNoId = AstroEngine::calculateHoroscope($fijiSummer1999);
-$fijiHoroscopeWithId = AstroEngine::calculateHoroscope(array_merge($fijiSummer1999, ['timeZoneId' => 'Pacific/Fiji']));
-checkWeddingVerdict($fijiHoroscopeNoId['lagna'] === $fijiHoroscopeWithId['lagna'] && $fijiHoroscopeNoId['timezoneOffsetHours'] === 13.0
-    && $fijiHoroscopeNoId['timeZoneId'] === 'Pacific/Fiji' && $fijiHoroscopeNoId['timezoneOffsetAdjusted'] === true,
-    'PHP horoscope Lagna is identical with or without timeZoneId for a Fiji DST-era birth');
+checkWeddingVerdict(abs($dstResolved['offsetHours'] - 13.0) < 1e-9 && $dstResolved['offsetAdjusted'] === true && $dstResolved['dst'] === true
+    && gmdate('Y-m-d H:i', $dstResolved['timestamp']) === '1999-12-14 17:00',
+    'PHP applies the historical 1999/2000 DST offset (+13) instead of the submitted +12');
+$dstWithId = AstroEngine::resolveBirthInstant(array_merge($dstSummer1999, ['timeZoneId' => 'Pacific/Fiji']));
+checkWeddingVerdict($dstWithId['timestamp'] === $dstResolved['timestamp'] && $dstWithId['timeZoneSource'] === 'payload',
+    'PHP resolves the same instant with or without an explicit IANA zone id');
+$dstHoroscopeNoId = AstroEngine::calculateHoroscope($dstSummer1999);
+$dstHoroscopeWithId = AstroEngine::calculateHoroscope(array_merge($dstSummer1999, ['timeZoneId' => 'Pacific/Fiji']));
+checkWeddingVerdict($dstHoroscopeNoId['lagna'] === $dstHoroscopeWithId['lagna'] && $dstHoroscopeNoId['timezoneOffsetHours'] === 13.0
+    && $dstHoroscopeNoId['timeZoneId'] === 'Pacific/Fiji' && $dstHoroscopeNoId['timezoneOffsetAdjusted'] === true,
+    'PHP horoscope Lagna is identical with or without timeZoneId for a DST-era birth');
 $usSummer = array_merge($nonexistentDstBirth, ['dob' => '2024-07-04', 'tob' => '12:00', 'timeZoneId' => '']);
 $usResolved = AstroEngine::resolveBirthInstant($usSummer);
 checkWeddingVerdict($usResolved['ok'] && $usResolved['timeZoneId'] === 'America/New_York' && abs($usResolved['offsetHours'] + 4.0) < 1e-9 && $usResolved['offsetAdjusted'],

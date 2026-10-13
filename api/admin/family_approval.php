@@ -202,7 +202,7 @@ if (!function_exists('astroApproveFamilyGroup')) {
             'MUHURTHAM' => 'Subha Muhurtham (6-Month Auspicious Dates)'
         ];
         $currencySymbolMap = ['INR' => '₹', 'USD' => 'US$'];
-        $groupCurrency = $first['currency'] ?? 'FJD';
+        $groupCurrency = $first['currency'] ?? (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD');
         $groupCurrencySymbol = $currencySymbolMap[$groupCurrency] ?? 'FJ$';
 
         // ---------------------------------------------------------------------

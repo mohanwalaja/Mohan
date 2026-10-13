@@ -31,7 +31,7 @@ name: Production monitoring
 
 on:
   schedule:
-    # Weekly, Monday 06:15 UTC (18:15 Fiji). Tuesdays catch the host's Sunday
+    # Weekly, Monday 06:15 UTC. Tuesdays catch the host's Sunday
     # backup window before a human looks at it again.
     - cron: '15 6 * * 1'
   workflow_dispatch:

@@ -176,9 +176,153 @@ function astro_refund_settle_deadline_label($deadline = null) {
     return $date->format('d M Y');
 }
 
+/**
+ * ---------------------------------------------------------------------------
+ * AUTOMATIC REFUNDS — provider request/response shapes (pure, testable)
+ * ---------------------------------------------------------------------------
+ *
+ * The one-click refund in the Admin Portal really returns money for payments
+ * this server captured online. The wire format is decided HERE, in the policy
+ * module, so the admin handler, the tests and any future caller speak to the
+ * provider the same way:
+ *
+ *   Razorpay  POST /v1/payments/{payment_id}/refund   (amount in minor units)
+ *   PayPal    POST /v2/payments/captures/{capture_id}/refund
+ *
+ * These helpers are pure: no database, no HTTP. api/payments.php performs the
+ * call and feeds the response back through astro_refund_gateway_result().
+ */
+
+/** Minor units (paise) as Razorpay expects them. */
+function astro_refund_minor_units($amount) {
+    return (int) round(round((float) $amount, 2) * 100);
+}
+
+/** True when an intent holds money a provider can actually return. */
+function astro_refund_intent_is_refundable($intent) {
+    if (!is_array($intent)) {
+        return false;
+    }
+    $status = strtoupper(trim((string) ($intent['status'] ?? '')));
+    $captureId = trim((string) ($intent['gateway_payment_id'] ?? ''));
+    $provider = strtolower(trim((string) ($intent['provider'] ?? '')));
+    return $captureId !== ''
+        && in_array($provider, array('razorpay', 'paypal'), true)
+        && in_array($status, array('CAPTURED', 'PAID', 'COMPLETED'), true);
+}
+
+/**
+ * Build the provider refund request. Returns null when the intent has no online
+ * capture to reverse, so callers fall back to a manual settlement.
+ *
+ * @return array|null{provider:string,url:string,headers:array,body:array|string,basicUser:?string,basicPassword:?string,requestId:string}
+ */
+function astro_refund_gateway_request($intent, $amount, $currency, $requestId, $config, $intentId = '') {
+    if (!astro_refund_intent_is_refundable($intent)) {
+        return null;
+    }
+    $amount = round((float) $amount, 2);
+    if ($amount <= 0) {
+        return null;
+    }
+    $currency = strtoupper(trim((string) $currency));
+    $captureId = trim((string) $intent['gateway_payment_id']);
+    $provider = strtolower(trim((string) $intent['provider']));
+    $intentId = $intentId !== '' ? $intentId : (string) ($intent['id'] ?? '');
+    $requestId = trim((string) $requestId);
+    if ($requestId === '') {
+        $requestId = 'refund-' . ($intentId !== '' ? $intentId : $captureId);
+    }
+
+    if ($provider === 'razorpay') {
+        return array(
+            'provider' => 'razorpay',
+            'url' => 'https://api.razorpay.com/v1/payments/' . rawurlencode($captureId) . '/refund',
+            'headers' => array('Content-Type: application/json'),
+            'body' => array(
+                'amount' => astro_refund_minor_units($amount),
+                'speed' => 'normal',
+                // Deterministic provider-side receipt: the same click can never
+                // turn into two refunds.
+                'receipt' => $requestId,
+                'notes' => array(
+                    'intent_id' => $intentId,
+                    'policy' => 'pre-approval refund',
+                    'source' => 'astrosivam_admin_one_click'
+                )
+            ),
+            'basicUser' => (string) ($config['razorpay']['key_id'] ?? ''),
+            'basicPassword' => (string) ($config['razorpay']['key_secret'] ?? ''),
+            'requestId' => $requestId
+        );
+    }
+
+    if ($provider === 'paypal') {
+        $base = rtrim((string) ($config['paypal']['base_url'] ?? 'https://api-m.paypal.com'), '/');
+        return array(
+            'provider' => 'paypal',
+            'url' => $base . '/v2/payments/captures/' . rawurlencode($captureId) . '/refund',
+            'headers' => array(
+                'Content-Type: application/json',
+                'Accept: application/json',
+                // PayPal replays the original refund for a repeated request id
+                // instead of refunding twice.
+                'PayPal-Request-Id: ' . $requestId
+            ),
+            'body' => array(
+                'amount' => array(
+                    'value' => number_format($amount, 2, '.', ''),
+                    'currency_code' => $currency !== '' ? $currency : 'USD'
+                ),
+                'note_to_payer' => 'ASTRO SIVAM refund of ' . number_format($amount, 2) . ' ' . ($currency !== '' ? $currency : 'USD')
+            ),
+            'basicUser' => null,
+            'basicPassword' => null,
+            'requestId' => $requestId
+        );
+    }
+
+    return null;
+}
+
+/**
+ * Interpret a provider refund response.
+ *
+ * @return array{ok:bool,reference:string,status:string,message:string}
+ */
+function astro_refund_gateway_result($provider, $httpStatus, $body, $amount, $currency) {
+    $amount = round((float) $amount, 2);
+    $currency = strtoupper(trim((string) $currency));
+    $httpStatus = (int) $httpStatus;
+    $body = is_array($body) ? $body : array();
+    $reference = (string) ($body['id'] ?? '');
+    $ok = $httpStatus >= 200 && $httpStatus < 300 && $reference !== '';
+
+    if (!$ok) {
+        $reason = (string) ($body['error']['description'] ?? $body['error']['reason'] ?? $body['message'] ?? $body['name'] ?? 'no reason given');
+        return array(
+            'ok' => false,
+            'reference' => $reference,
+            'status' => 'FAILED',
+            'message' => ucfirst((string) $provider) . ' refused the refund (' . $httpStatus . '): ' . $reason
+                . '. Nothing was marked as refunded — retry from the portal.'
+        );
+    }
+
+    return array(
+        'ok' => true,
+        'reference' => $reference,
+        'status' => strtoupper((string) ($body['status'] ?? ($provider === 'paypal' ? 'COMPLETED' : 'PROCESSED'))),
+        'message' => ucfirst((string) $provider) . ' refund ' . $reference . ' issued for '
+            . ($currency !== '' ? $currency : 'USD') . ' ' . number_format($amount, 2) . '.'
+    );
+}
+
 /** Money formatting shared by the admin toast and the customer email. */
 function astro_refund_money($amount, $currency) {
-    $currency = $currency !== null && $currency !== '' ? strtoupper((string) $currency) : 'FJD';
+    $currency = $currency !== null && $currency !== ''
+        ? strtoupper((string) $currency)
+        : (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD');
     return $currency . ' ' . number_format((float) $amount, 2, '.', ',');
 }
 

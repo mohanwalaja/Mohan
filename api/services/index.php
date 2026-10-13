@@ -63,6 +63,10 @@ function astro_order_to_client_array($r) {
         'refundCurrency' => $r['refund_currency'] ?? null,
         'refundProcessedAt' => $r['refund_processed_at'] ?? null,
         'refundDeadline' => $r['refund_deadline'] ?? null,
+        // GATEWAY = the provider already returned the money; MANUAL = the
+        // administrator settles it by hand within the 3-working-day promise.
+        'refundMethod' => $r['refund_method'] ?? null,
+        'refundReference' => $r['refund_reference'] ?? null,
         'createdAt' => $r['created_at'],
         'updated_at' => $r['updated_at']
     ];
@@ -363,7 +367,7 @@ if (($method === 'GET' || $method === 'HEAD') && (
         $settings = array_merge($general, [
             'serviceMode' => $row['service_mode'] ?? $general['serviceMode'] ?? 'PAID',
             'freeBetaActive' => isset($row['free_beta_active']) ? (bool)$row['free_beta_active'] : ($general['freeBetaActive'] ?? false),
-            'currency' => $row['currency'] ?? $general['currency'] ?? 'FJD',
+            'currency' => $row['currency'] ?? $general['currency'] ?? DEFAULT_CURRENCY,
             'pricing' => $pricing,
             'paymentMethods' => $paymentMethods,
             'emailSettings' => $safeEmail
@@ -388,7 +392,6 @@ if (($method === 'GET' || $method === 'HEAD') && (
             }
         }
 
-        if (!isset($settings['fijiPriceFJD'])) $settings['fijiPriceFJD'] = $general['fijiPriceFJD'] ?? 10;
         if (!isset($settings['intlPriceUSD'])) $settings['intlPriceUSD'] = $general['intlPriceUSD'] ?? 5;
         if (!isset($settings['googleLoginEnabled'])) $settings['googleLoginEnabled'] = $general['googleLoginEnabled'] ?? true;
         if (!isset($settings['googleClientId'])) $settings['googleClientId'] = $general['googleClientId'] ?? '';
@@ -448,9 +451,8 @@ if (($method === 'GET' || $method === 'HEAD') && (
         $settings = [
             'serviceMode' => 'PAID',
             'freeBetaActive' => false,
-            'fijiPriceFJD' => 10,
             'intlPriceUSD' => 5,
-            'currency' => 'FJD',
+            'currency' => DEFAULT_CURRENCY,
             'googleLoginEnabled' => true,
             'googleClientId' => '',
             'facebookLoginEnabled' => true,
@@ -466,7 +468,7 @@ if (($method === 'GET' || $method === 'HEAD') && (
             'paypalMode' => 'sandbox',
             'supportEmail' => 'admin@astrosivam.com',
             'supportPhone' => '+679 999 8888',
-            'pricing' => ['BIRTH_JATHAGAM' => ['fjd' => 35, 'usd' => 18], 'MARRIAGE_COMPATIBILITY' => ['fjd' => 45, 'usd' => 22], 'BABY_NAMING' => ['fjd' => 30, 'usd' => 15], 'MUHURTHAM' => ['fjd' => 40, 'usd' => 20]],
+            'pricing' => ['BIRTH_JATHAGAM' => ['usd' => 18, 'inr' => (int)round(18 * USD_TO_INR_RATE)], 'MARRIAGE_COMPATIBILITY' => ['usd' => 22, 'inr' => (int)round(22 * USD_TO_INR_RATE)], 'BABY_NAMING' => ['usd' => 15, 'inr' => (int)round(15 * USD_TO_INR_RATE)], 'MUHURTHAM' => ['usd' => 20, 'inr' => (int)round(20 * USD_TO_INR_RATE)]],
             'paymentMethods' => ['mpaisa' => ['enabled' => true, 'accountName' => 'ASTRO SIVAM CONSULTING', 'mobileNumber' => '9998888']],
             'emailSettings' => ['fromEmail' => 'admin@astrosivam.com', 'fromName' => 'ASTRO SIVAM'],
             'generalSettings' => ['siteName' => 'ASTRO SIVAM', 'turnaroundHours' => 12],
@@ -1096,10 +1098,10 @@ if ($method === 'POST' && (
 
     $pricing = $sRow ? json_decode($sRow['pricing'] ?? '{}', true) : [];
     $priceMap = [
-        'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 35 : 18)),
-        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 45 : 22)),
-        'BABY_NAMING' => ($currency === 'INR' ? (int)round(15 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 30 : 15)),
-        'MUHURTHAM' => ($currency === 'INR' ? (int)round(20 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 40 : 20))
+        'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : 18),
+        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : 22),
+        'BABY_NAMING' => ($currency === 'INR' ? (int)round(15 * USD_TO_INR_RATE) : 15),
+        'MUHURTHAM' => ($currency === 'INR' ? (int)round(20 * USD_TO_INR_RATE) : 20)
     ];
     $currKey = strtolower($currency);
     $expectedAmount = 0.0;
@@ -1286,10 +1288,10 @@ if ($method === 'POST' && (
 
     $pricing = $sRow ? json_decode($sRow['pricing'] ?? '{}', true) : [];
     $priceMap = [
-        'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 35 : 18)),
-        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 45 : 22)),
-        'BABY_NAMING' => ($currency === 'INR' ? (int)round(15 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 30 : 15)),
-        'MUHURTHAM' => ($currency === 'INR' ? (int)round(20 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 40 : 20))
+        'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : 18),
+        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : 22),
+        'BABY_NAMING' => ($currency === 'INR' ? (int)round(15 * USD_TO_INR_RATE) : 15),
+        'MUHURTHAM' => ($currency === 'INR' ? (int)round(20 * USD_TO_INR_RATE) : 20)
     ];
     $currKey = strtolower($currency);
     $groupTotal = 0;
@@ -1602,10 +1604,10 @@ if ($method === 'POST' && (
     // fallback and rejected correctly-priced orders.
     $pricing = $sRow ? json_decode($sRow['pricing'] ?? '{}', true) : [];
     $priceMap = [
-        'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 35 : 18)),
-        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 45 : 22)),
-        'BABY_NAMING' => ($currency === 'INR' ? (int)round(15 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 30 : 15)),
-        'MUHURTHAM' => ($currency === 'INR' ? (int)round(20 * USD_TO_INR_RATE) : ($currency === 'FJD' ? 40 : 20))
+        'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : 18),
+        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : 22),
+        'BABY_NAMING' => ($currency === 'INR' ? (int)round(15 * USD_TO_INR_RATE) : 15),
+        'MUHURTHAM' => ($currency === 'INR' ? (int)round(20 * USD_TO_INR_RATE) : 20)
     ];
     $currKey = strtolower($currency);
 
@@ -1936,7 +1938,7 @@ if ((strpos($path, 'services/export-preview-pdf') !== false || $action === 'expo
         'language' => $lang,
         'order_number' => 'PREVIEW-' . strtoupper(substr(md5(uniqid()), 0, 6)),
         'user_name' => $result['nativeName'] ?? ($result['devoteeName'] ?? ($body['inputPayload']['name'] ?? 'Valued User')),
-        'currency' => 'FJD',
+        'currency' => DEFAULT_CURRENCY,
         'amount' => 0,
         'input_payload' => $body['inputPayload'] ?? ($result['inputPayload'] ?? [])
     ];

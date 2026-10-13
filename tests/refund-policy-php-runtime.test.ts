@@ -62,7 +62,7 @@ check('every PHP file the refund touches parses (php -l equivalent)', () => {
   for (const [file, info] of Object.entries(result.syntax as Record<string, { ok: boolean; message: string }>)) {
     assert.ok(info.ok, `${file} failed to parse: ${info.message}`);
   }
-  assert.ok(Object.keys(result.syntax).length >= 5, 'the probe must parse the refund engine, the admin router and the read models');
+  assert.ok(Object.keys(result.syntax).length >= 6, 'the probe must parse the refund engine, the payment provider module, the admin router and the read models');
 });
 
 check('the executed policy engine reported zero failures', () => {
@@ -77,7 +77,13 @@ check('the executed assertions cover the money, the calendar and the refusal', (
     'a $100.00 approved order refunds $0.00',
     'Wed 14 Oct 2026 + 3 working days = Mon 19 Oct 2026',
     'Wed 23 Dec 2026 + 3 working days skips the 25 Dec holiday = Tue 29 Dec 2026',
-    'refund email promises 3 working days'
+    'refund email promises 3 working days',
+    'only a captured online payment is auto-refundable',
+    'PayPal refunds hit the captures endpoint for the capture id',
+    'PayPal refunds carry a deterministic idempotency request id',
+    'Razorpay refunds are sent in minor units to the payments endpoint',
+    'a refused refund reports failure and promises no state change',
+    'an offline payment has no provider request (manual settlement)'
   ];
   for (const name of mustCover) {
     assert.ok(names.includes(name), `the PHP runtime must assert: ${name}`);

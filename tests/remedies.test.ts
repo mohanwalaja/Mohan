@@ -25,7 +25,7 @@ import { classifyJathagamPlanetsForSummary } from '../src/services/jathagamPlane
 // the original restriction, which is still asserted below.)
 const restrictedInstructions = /mantra|manthra|chanting|chalisa|namah|japa|fasting|donat|lamp|abhishek|tarpanam|மந்திர|தீபம்|தானம்|தர்ப்பணம்|मंत्र|जाप|दीपक|दान|तर्पण/i;
 const languages = ['en', 'ta', 'hi'] as const;
-const chart = calculatePrecisionHoroscope('Remedy Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, 'Fiji', 'M');
+const chart = calculatePrecisionHoroscope('Remedy Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, '', 'M');
 const phpEngine = readFileSync(new URL('../api/astrology/engine.php', import.meta.url), 'utf8');
 const phpReports = readFileSync(new URL('../api/astrology/pdf_mpdf_reports.php', import.meta.url), 'utf8');
 const builderSource = readFileSync(new URL('../src/services/jathagamHtmlBuilder.ts', import.meta.url), 'utf8');

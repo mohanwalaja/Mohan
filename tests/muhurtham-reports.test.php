@@ -10,7 +10,7 @@ $result = [
     'devoteeName' => 'PDF Regression', 'dob' => '1991-06-18', 'tob' => '06:30',
     'birthPlace' => 'Suva', 'eventKey' => 'wedding',
     'muhurthamAlgorithmVersion' => AstroEngine::MUHURTHAM_ALGORITHM_VERSION,
-    'muhurthamPlace' => 'Suva, Fiji',
+    'muhurthamPlace' => 'Suva',
     'muhurthamLatitude' => -18.1416,
     'muhurthamLongitude' => 178.4419,
     'muhurthamTimezoneOffsetHours' => 12,
@@ -28,7 +28,7 @@ $result = [
 $original = json_encode($result);
 $rules = AstroEngine::getMuhurthamRules();
 $scanInputContext = [
-    'dob' => '1991-06-18', 'tob' => '06:30', 'birthPlace' => 'Suva', 'country' => 'Fiji',
+    'dob' => '1991-06-18', 'tob' => '06:30', 'birthPlace' => 'Suva', 'country' => '',
     'latitude' => -18.1416, 'longitude' => 178.4419, 'timezoneOffsetHours' => 12, 'timeZoneId' => 'Pacific/Fiji',
     'muhurthamPlace' => 'New York, New York, United States', 'muhurthamCountry' => 'United States',
     'muhurthamLatitude' => 40.7128, 'muhurthamLongitude' => -74.006,
@@ -37,7 +37,7 @@ $scanInputContext = [
 ];
 $normalizedLocations = AstroEngine::calculateMuhurtham([
     'name' => 'Place Separation', 'dob' => '1991-06-18', 'tob' => '06:30',
-    'birthPlace' => 'Suva', 'country' => 'Fiji', 'latitude' => -18.1416, 'longitude' => 178.4419,
+    'birthPlace' => 'Suva', 'country' => '', 'latitude' => -18.1416, 'longitude' => 178.4419,
     'timezoneOffsetHours' => 12, 'timeZoneId' => 'Pacific/Fiji',
     'muhurthamPlace' => 'New York, New York, United States', 'muhurthamCountry' => 'United States',
     'muhurthamLatitude' => 40.7128, 'muhurthamLongitude' => -74.006,
@@ -53,9 +53,9 @@ checkReport($normalizedLocations['muhurthamTimeZoneId'] === 'America/New_York' &
 $staleLocationScanRejected = false;
 try {
     $staleLocationPayload = [
-        'dob' => '1991-06-18', 'tob' => '06:30', 'birthPlace' => 'Suva', 'country' => 'Fiji',
+        'dob' => '1991-06-18', 'tob' => '06:30', 'birthPlace' => 'Suva', 'country' => '',
         'latitude' => -18.1416, 'longitude' => 178.4419, 'timezoneOffsetHours' => 12, 'timeZoneId' => 'Pacific/Fiji',
-        'muhurthamPlace' => 'Suva, Fiji', 'muhurthamCountry' => 'Fiji',
+        'muhurthamPlace' => 'Suva', 'muhurthamCountry' => '',
         'muhurthamLatitude' => -18.1416, 'muhurthamLongitude' => 178.4419,
         'muhurthamTimezoneOffsetHours' => 12, 'muhurthamTimeZoneId' => 'Pacific/Fiji',
         'eventKey' => 'wedding', 'selectedMonth' => '2026-11',
@@ -76,7 +76,7 @@ checkReport($staleLocationScanRejected, 'PHP rejects a v6 scan stamped for a dif
 $outdatedScanRejected = false;
 try {
     AstroEngine::calculateMuhurtham([
-        'muhurthamPlace' => 'Suva, Fiji', 'muhurthamLatitude' => -18.1416,
+        'muhurthamPlace' => 'Suva', 'muhurthamLatitude' => -18.1416,
         'muhurthamLongitude' => 178.4419, 'muhurthamTimezoneOffsetHours' => 12,
         'eventKey' => 'wedding',
         'muhurthamScan' => ['muhurthamAlgorithmVersion' => AstroEngine::MUHURTHAM_ALGORITHM_VERSION - 1, 'months' => [['days' => []]]]

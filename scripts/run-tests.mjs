@@ -21,6 +21,11 @@ const testFiles = [
   // php-wasm dev dependency is installed (it SKIPs otherwise): the 90% split
   // and the 3-working-day calendar are arithmetic, and arithmetic must be run.
   'tests/refund-policy-php-runtime.test.ts',
+  // And the inverse guard: the retired currency/branding must never come back.
+  // It scans the shipped tree (frontend, PHP API, fixtures, scripts, CI, docs)
+  // and fails with file+line for anything outside the three approved
+  // functional occurrences (IANA zone, dial code, birthplace data).
+  'tests/retired-branding-guard.test.ts',
   // Executes the backup script against a stubbed mysqldump: proves the marker,
   // the retention rotation and the "a failed dump cannot look like a backup"
   // failure path, none of which a code-reading review would catch.

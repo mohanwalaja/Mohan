@@ -900,3 +900,191 @@ function astro_payment_idempotency_stats($pdo) {
     }
     return $stats;
 }
+
+/**
+ * ---------------------------------------------------------------------------
+ * AUTOMATIC REFUNDS (one click in the Admin Portal)
+ * ---------------------------------------------------------------------------
+ *
+ * The admin refund button must return REAL money for payments this server
+ * captured online, and must say so when it cannot:
+ *
+ *   • Razorpay (India UPI / GPay) -> POST /v1/payments/{payment_id}/refund
+ *   • PayPal (international cards / wallet) -> POST /v2/payments/captures/{id}/refund
+ *
+ * Anything that was never captured online (bank transfer, manual receipt
+ * verification, free beta) has no provider-side payment to reverse, so the
+ * caller records the refund in the order trail and tells the administrator to
+ * settle it manually. That distinction is returned, never guessed at.
+ *
+ * Every call is idempotent by construction: the caller stores the provider
+ * reference on the order and refuses to issue a second refund for it, and the
+ * provider itself receives a deterministic request id derived from the order
+ * (PayPal honours `PayPal-Request-Id`; Razorpay receives a `receipt`).
+ *
+ * `$httpJson` is injectable so the policy can be executed in tests without a
+ * network (see tests/fixtures/php-refund-probes/refund-policy.php).
+ */
+
+/**
+ * The most recent payment intent recorded for an order, if any.
+ *
+ * The one-click refund needs the CAPTURE (not just the order) to talk to the
+ * provider, so the intent is resolved from orders.payment_intent_id and then
+ * from any intent that recorded this order id.
+ */
+function astro_payment_intent_for_order($pdo, $order) {
+    $orderId = (string) ($order['id'] ?? '');
+    $intentId = trim((string) ($order['payment_intent_id'] ?? ''));
+    if ($intentId !== '') {
+        try {
+            $intent = astro_payment_intent_by_id($pdo, $intentId);
+            if ($intent) return $intent;
+        } catch (Throwable $e) {
+            // Fall through to the order-linked lookup below.
+        }
+    }
+    if ($orderId === '') return null;
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM payment_intents WHERE order_id = ? ORDER BY created_at DESC, id DESC LIMIT 1");
+        $stmt->execute([$orderId]);
+        $intent = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $intent ?: null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+/** Thin wrapper over the pure policy predicate in api/refunds.php. */
+function astro_payment_intent_is_refundable($intent) {
+    require_once __DIR__ . '/refunds.php';
+    return astro_refund_intent_is_refundable($intent);
+}
+
+/**
+ * Refund a captured payment at the provider. This is the ONLY place in the
+ * codebase that returns real money, and it is called before anything is marked
+ * refunded — a provider refusal must leave the order untouched so the admin can
+ * retry.
+ *
+ * @return array{
+ *   attempted:bool, ok:bool, manual:bool, provider:string, reference:string,
+ *   status:string, message:string
+ * }
+ */
+function astro_payment_refund_intent($pdo, $intent, $amount, $currency, $idempotencyKey = '', $httpJson = null, $configOverride = null) {
+    require_once __DIR__ . '/refunds.php';
+
+    $http = $httpJson === null ? 'astro_payment_http_json' : $httpJson;
+    $amount = round((float) $amount, 2);
+    $currency = strtoupper(trim((string) $currency));
+    $provider = is_array($intent) ? strtolower(trim((string) ($intent['provider'] ?? ''))) : '';
+
+    $manual = array(
+        'attempted' => false,
+        'ok' => false,
+        'manual' => true,
+        'provider' => $provider,
+        'reference' => '',
+        'status' => 'MANUAL',
+        'message' => 'No online capture is on record for this payment, so the amount has to be returned manually (bank transfer / receipt). '
+            . 'The refund is recorded on the order and must be settled by the administrator.'
+    );
+
+    if ($amount <= 0) {
+        return array_merge($manual, array('message' => 'There is no captured amount to return.'));
+    }
+
+    $config = $configOverride;
+    if (!is_array($config)) {
+        try {
+            $config = astro_payment_provider_config($pdo);
+        } catch (Throwable $e) {
+            $config = array(
+                'razorpay' => array('configured' => false, 'key_id' => '', 'key_secret' => ''),
+                'paypal' => array('configured' => false, 'base_url' => 'https://api-m.paypal.com')
+            );
+        }
+    }
+
+    $request = astro_refund_gateway_request(
+        $intent,
+        $amount,
+        $currency,
+        $idempotencyKey,
+        is_array($config) ? $config : array(),
+        (string) ($intent['id'] ?? '')
+    );
+    if ($request === null) {
+        return $manual;
+    }
+
+    if (empty($config[$provider]['configured'])) {
+        return array(
+            'attempted' => true,
+            'ok' => false,
+            'manual' => false,
+            'provider' => $provider,
+            'reference' => '',
+            'status' => 'UNCONFIGURED',
+            'message' => ucfirst($provider) . ' credentials are not configured on this server, so the automatic refund could not be sent. Nothing was changed.'
+        );
+    }
+
+    try {
+        // PayPal needs an OAuth bearer token before the refund call.
+        if ($provider === 'paypal') {
+            $base = rtrim((string) ($config['paypal']['base_url'] ?? ''), '/');
+            $tokenResponse = $http(
+                $base . '/v1/oauth2/token',
+                'POST',
+                array('Accept: application/json', 'Content-Type: application/x-www-form-urlencoded'),
+                'grant_type=client_credentials',
+                $config['paypal']['client_id'],
+                $config['paypal']['client_secret']
+            );
+            $accessToken = (string) ($tokenResponse['body']['access_token'] ?? '');
+            if ($accessToken === '') {
+                return array(
+                    'attempted' => true,
+                    'ok' => false,
+                    'manual' => false,
+                    'provider' => 'paypal',
+                    'reference' => '',
+                    'status' => 'FAILED',
+                    'message' => 'PayPal authentication failed, so the automatic refund was not sent. Nothing was changed.'
+                );
+            }
+            $request['headers'][] = 'Authorization: Bearer ' . $accessToken;
+        }
+
+        $response = $http(
+            $request['url'],
+            'POST',
+            $request['headers'],
+            $request['body'],
+            $request['basicUser'],
+            $request['basicPassword']
+        );
+        $verdict = astro_refund_gateway_result($provider, $response['status'], $response['body'], $amount, $currency);
+        return array(
+            'attempted' => true,
+            'ok' => (bool) $verdict['ok'],
+            'manual' => false,
+            'provider' => $provider,
+            'reference' => (string) $verdict['reference'],
+            'status' => (string) $verdict['status'],
+            'message' => (string) $verdict['message']
+        );
+    } catch (Throwable $e) {
+        return array(
+            'attempted' => true,
+            'ok' => false,
+            'manual' => false,
+            'provider' => $provider,
+            'reference' => '',
+            'status' => 'ERROR',
+            'message' => 'The automatic refund call failed: ' . $e->getMessage() . ' Nothing was marked as refunded — retry from the portal.'
+        );
+    }
+}

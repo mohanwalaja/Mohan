@@ -175,7 +175,7 @@ Verified in `api/services/index.php`, `api/payments.php`, `api/payment_webhook.p
   fail closed (503). Events are deduplicated in `payment_webhook_events`.
 - Amount mismatches produce `MISMATCH` (never captured).
 - Currency rule is deterministic (`astro_currency_for_payment`): payment
-  method decides FJD/INR/USD; birth-country never changes the charge currency.
+  method decides USD/INR; birth-country never changes the charge currency.
 - Manual (offline M-PAiSA/MyCash) orders stay `PENDING` until an admin
   verifies and approves — appropriate for the workflow.
 - Verification endpoints are rate-limited per user and per IP.
@@ -306,7 +306,7 @@ probing it, plus component review. TypeScript compiles with **zero errors**.
 **Design/UX findings:**
 
 - **W1 (medium, performance):** the build produces one **3.48 MB JS chunk**
-  (933 KB gzip). For the primary mobile audience (Fiji/India) this materially
+  (933 KB gzip). For the primary mobile audience (India and the diaspora) this materially
   slows first load. Recommend code-splitting (route-level dynamic imports;
   admin portal, Leaflet, recharts, html2canvas/jsPDF are natural split points).
 - **W2 (low):** 7 links use `target="_blank"` with `rel="noreferrer"` but no

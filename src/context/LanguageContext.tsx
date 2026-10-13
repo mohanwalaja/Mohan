@@ -28,7 +28,6 @@ const translations: Record<string, string> = {
   admin_portal: 'Admin Portal',
   my_orders: 'My Orders',
   birth_profile: 'Birth Profile',
-  fiji_fjd: 'Pacific (FJ$)',
   intl_usd: 'International (US$)',
 
   // Home Hero
@@ -38,7 +37,7 @@ const translations: Record<string, string> = {
   free_beta_badge: '★ FREE BETA TESTING ACTIVE',
   free_beta_desc: 'All astrology services are currently 100% free! Every order is verified and approved by Admin before automatic calculation and PDF email delivery.',
   paid_mode_badge: 'OFFICIAL SERVICE PRICING',
-  paid_mode_fiji: 'PayPal / Cards: Secure worldwide payment (VISA · MC · Amex · Discover)',
+  paid_mode_global: 'PayPal / Cards: Secure worldwide payment (VISA · MC · Amex · Discover)',
   paid_mode_intl: 'International: US$ (PayPal)',
 
   // Services

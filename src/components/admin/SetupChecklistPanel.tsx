@@ -26,6 +26,7 @@ import {
   Settings
 } from 'lucide-react';
 import { AppSettings, TeamMember } from '../../types';
+import { USD_TO_INR_RATE } from '../../services/pricing';
 import { aiAstrologer } from '../../services/aiAstrologerApi';
 
 interface SetupChecklistPanelProps {
@@ -79,13 +80,13 @@ export const SetupChecklistPanel: React.FC<SetupChecklistPanelProps> = ({
 
   const isAllPaymentsConfigured = isMPaisaFullyConfigured && isPayPalFullyConfigured;
 
-  // 3. Pricing Validations
-  const fijiPrice = Number(settings?.fijiPriceFJD || 0);
+  // 3. Pricing Validations (USD is the base; INR is derived from it unless set)
   const intlPrice = Number(settings?.intlPriceUSD || 0);
-  const hasValidFijiPrice = fijiPrice > 0;
+  const indiaPrice = Number(settings?.indiaPriceINR || 0);
   const hasValidIntlPrice = intlPrice > 0;
+  const hasValidIndiaPrice = indiaPrice > 0;
   const isServiceModeConfigured = Boolean(settings?.serviceMode);
-  const isPricingFullyConfigured = hasValidFijiPrice && hasValidIntlPrice;
+  const isPricingFullyConfigured = hasValidIntlPrice || hasValidIndiaPrice;
 
   // 4. Astrological & Operational Validations
   const hasActiveTeam = teamMembers.length >= 1;
@@ -123,15 +124,6 @@ export const SetupChecklistPanel: React.FC<SetupChecklistPanelProps> = ({
       value: settings?.paypalEmail || settings?.paypalClientId || 'Config Required',
       detail: isPayPalLive ? 'Mode: Production (Live)' : 'Mode: Sandbox Testing',
       tab: 'payments'
-    },
-    {
-      id: 'pricing_fiji',
-      name: 'Pricing Tier (FJD — legacy)',
-      category: 'PRICING',
-      isConfigured: hasValidFijiPrice,
-      value: hasValidFijiPrice ? `FJ$${fijiPrice}.00` : 'Price Required',
-      detail: settings?.serviceMode === 'FREE_BETA' ? 'Active in Free Beta' : 'Active in Paid Mode',
-      tab: 'settings'
     },
     {
       id: 'pricing_intl',
@@ -265,20 +257,6 @@ export const SetupChecklistPanel: React.FC<SetupChecklistPanelProps> = ({
 
     // Pricing & Service Mode Checks
     {
-      id: 'chk-price-1',
-      category: 'PRICING',
-      title: 'Pricing Tier (FJD — legacy Pacific)',
-      description: 'Legacy price tier for FJD currency records.',
-      isDone: hasValidFijiPrice,
-      indicator: hasValidFijiPrice ? '✓' : '✕',
-      statusText: hasValidFijiPrice ? `FJ$${fijiPrice}.00` : 'Price Required',
-      tab: 'settings',
-      details: [
-        { label: 'FJD Fee', valid: hasValidFijiPrice, value: `FJ$${fijiPrice}.00` },
-        { label: 'Free Beta Rule', valid: true, value: settings?.serviceMode === 'FREE_BETA' ? 'Active (1st report free)' : 'Inactive' }
-      ]
-    },
-    {
       id: 'chk-price-2',
       category: 'PRICING',
       title: 'International Pricing Tier (USD)',
@@ -289,7 +267,8 @@ export const SetupChecklistPanel: React.FC<SetupChecklistPanelProps> = ({
       tab: 'settings',
       details: [
         { label: 'USD Fee', valid: hasValidIntlPrice, value: `US$${intlPrice}.00` },
-        { label: 'Currency', valid: true, value: 'USD (Auto-converted)' }
+        { label: 'India Tier (₹ INR)', valid: true, value: indiaPrice > 0 ? `₹${indiaPrice}.00` : `Auto ×${USD_TO_INR_RATE} from USD` },
+        { label: 'Free Beta Rule', valid: true, value: settings?.serviceMode === 'FREE_BETA' ? 'Active (1st report free)' : 'Inactive' }
       ]
     },
     {
@@ -412,8 +391,8 @@ export const SetupChecklistPanel: React.FC<SetupChecklistPanelProps> = ({
       `[EMAIL] Validating Sender Identity (${settings?.emailSettings?.senderEmail || 'Missing'})... ${hasSenderEmail ? 'OK' : 'WARNING'}`,
       `[PAYMENT] Probing PayPal / Cards Number (${settings?.vodafoneMPaisaNumber || 'Missing'})... ${hasMPaisaNumber ? 'VALIDATED' : 'NOT SET'}`,
       `[PAYMENT] Validating PayPal Gateway Client ID (${settings?.paypalMode || 'sandbox'})... ${hasPayPalClientId ? 'CONNECTED' : 'STANDBY'}`,
-      `[PRICING] Auditing FJD Price Tier (FJ$${fijiPrice})... ${hasValidFijiPrice ? 'PASSED' : 'FAILED'}`,
       `[PRICING] Auditing Global Diaspora Rate (US$${intlPrice})... ${hasValidIntlPrice ? 'PASSED' : 'FAILED'}`,
+      `[PRICING] Auditing India Domestic Rate (₹${indiaPrice > 0 ? indiaPrice : `auto ${USD_TO_INR_RATE}x USD`})... ${hasValidIndiaPrice || hasValidIntlPrice ? 'PASSED' : 'FAILED'}`,
       `[PRICING] Master Service Mode: ${settings?.serviceMode || 'FREE_BETA'}`,
       `[SCHOLARS] Verifying India Astrology Roster (${teamMembers.length} active members)... ${hasActiveTeam ? 'VERIFIED' : 'ACTION REQ'}`,
       `[CALCULATION] Testing Lahiri Ephemeris precision algorithms... PASSED (0.01s)`,
@@ -722,7 +701,7 @@ export const SetupChecklistPanel: React.FC<SetupChecklistPanelProps> = ({
               Service Prices
             </div>
             <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-1 font-bold">
-              FJ${fijiPrice} / US${intlPrice}
+              US${intlPrice}{indiaPrice > 0 ? ` / ₹${indiaPrice}` : ''}
             </div>
             <div className="text-[10px] text-slate-400 mt-0.5 truncate">
               {settings?.serviceMode === 'FREE_BETA' ? '★ Mode: Free Beta (1st report free)' : 'Mode: Commercial Paid'}

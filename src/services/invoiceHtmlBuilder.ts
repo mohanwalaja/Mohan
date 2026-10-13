@@ -14,10 +14,9 @@ function escapeHtml(str: string | undefined | null): string {
 }
 
 function getCurrencySymbol(curr: string): string {
-  const c = (curr || 'FJD').toUpperCase();
+  const c = (curr || 'USD').toUpperCase();
   if (c === 'INR') return '₹';
   if (c === 'USD') return '$';
-  if (c === 'FJD') return 'FJ$';
   if (c === 'NZD') return 'NZ$';
   if (c === 'AUD') return 'A$';
   if (c === 'EUR') return '€';
@@ -601,8 +600,8 @@ export function buildInvoiceHtml(order: Order): string {
         day: 'numeric'
       });
 
-  const currency = escapeHtml(order.currency || 'FJD');
-  const currencySymbol = getCurrencySymbol(order.currency || 'FJD');
+  const currency = escapeHtml(order.currency || 'USD');
+  const currencySymbol = getCurrencySymbol(order.currency || 'USD');
   const amountVal = Number(order.amount || 0).toFixed(2);
 
   let serviceTitle = 'Vedic Astrological Consultation & Certified Kundali Report';
@@ -955,7 +954,7 @@ export function buildFamilyInvoiceHtml(orders: Order[], groupId?: string): strin
         day: 'numeric'
       });
 
-  const currencyCode = (primary?.currency || 'FJD').toUpperCase();
+  const currencyCode = (primary?.currency || 'USD').toUpperCase();
   const currency = escapeHtml(currencyCode);
   const currencySymbol = getCurrencySymbol(currencyCode);
   const totalVal = members.reduce((sum, o) => sum + (Number(o.amount) || 0), 0);

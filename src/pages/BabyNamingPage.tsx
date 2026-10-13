@@ -73,7 +73,7 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
   const betaFreeChartAvailable = settings?.betaFreeChartAvailable !== false;
   const isAdmin = user?.role === 'admin';
   const orderWillBeFree = isAdmin || (isBeta && betaFreeChartAvailable);
-  const fjdPrice = settings?.servicePricing?.BABY_NAMING?.fjd ?? settings?.fijiPriceFJD ?? 30;
+
   const inrPrice = settings?.servicePricing?.BABY_NAMING?.inr ?? settings?.indiaPriceINR ?? 399;
   const usdPrice = settings?.servicePricing?.BABY_NAMING?.usd ?? settings?.intlPriceUSD ?? 15;
 

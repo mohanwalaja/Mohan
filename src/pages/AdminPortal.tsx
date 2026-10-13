@@ -81,6 +81,7 @@ import {
   prepareOrderItemsSendPayload
 } from '../services/orderItems';
 import { orderChartServiceType } from '../services/multiPersonOrder';
+import { DEFAULT_CURRENCY } from '../services/pricing';
 import { FinancialDashboard } from '../components/admin/FinancialDashboard';
 import { AdminAnalyticsDashboard } from '../components/admin/AdminAnalyticsDashboard';
 import { PaymentConfigPanel } from '../components/admin/PaymentConfigPanel';
@@ -234,27 +235,27 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
   // Setting edit state
   const [serviceMode, setServiceMode] = useState<'FREE_BETA' | 'PAID'>(authSettings?.serviceMode || 'FREE_BETA');
-  const [fijiPrice, setFijiPrice] = useState(authSettings?.fijiPriceFJD || 10);
+
   const [intlPrice, setIntlPrice] = useState(authSettings?.intlPriceUSD || 5);
   const [indiaPrice, setIndiaPrice] = useState(authSettings?.indiaPriceINR || 499);
   const [servicePricing, setServicePricing] = useState({
     BIRTH_JATHAGAM: {
-      fjd: authSettings?.servicePricing?.BIRTH_JATHAGAM?.fjd ?? 35,
+
       usd: authSettings?.servicePricing?.BIRTH_JATHAGAM?.usd ?? 18,
       inr: authSettings?.servicePricing?.BIRTH_JATHAGAM?.inr ?? 499
     },
     MARRIAGE_COMPATIBILITY: {
-      fjd: authSettings?.servicePricing?.MARRIAGE_COMPATIBILITY?.fjd ?? 45,
+
       usd: authSettings?.servicePricing?.MARRIAGE_COMPATIBILITY?.usd ?? 22,
       inr: authSettings?.servicePricing?.MARRIAGE_COMPATIBILITY?.inr ?? 699
     },
     BABY_NAMING: {
-      fjd: authSettings?.servicePricing?.BABY_NAMING?.fjd ?? 30,
+
       usd: authSettings?.servicePricing?.BABY_NAMING?.usd ?? 15,
       inr: authSettings?.servicePricing?.BABY_NAMING?.inr ?? 399
     },
     MUHURTHAM: {
-      fjd: authSettings?.servicePricing?.MUHURTHAM?.fjd ?? 40,
+
       usd: authSettings?.servicePricing?.MUHURTHAM?.usd ?? 20,
       inr: authSettings?.servicePricing?.MUHURTHAM?.inr ?? 599
     }
@@ -313,7 +314,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       if (settingsRes.success && settingsRes.settings) {
         setSettings(settingsRes.settings);
         setServiceMode(settingsRes.settings.serviceMode);
-        setFijiPrice(settingsRes.settings.fijiPriceFJD);
+
         setIntlPrice(settingsRes.settings.intlPriceUSD);
         if (settingsRes.settings.indiaPriceINR) {
           setIndiaPrice(settingsRes.settings.indiaPriceINR);
@@ -321,22 +322,22 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         if (settingsRes.settings.servicePricing) {
           setServicePricing({
             BIRTH_JATHAGAM: {
-              fjd: settingsRes.settings.servicePricing.BIRTH_JATHAGAM?.fjd ?? 35,
+
               usd: settingsRes.settings.servicePricing.BIRTH_JATHAGAM?.usd ?? 18,
               inr: settingsRes.settings.servicePricing.BIRTH_JATHAGAM?.inr ?? 499
             },
             MARRIAGE_COMPATIBILITY: {
-              fjd: settingsRes.settings.servicePricing.MARRIAGE_COMPATIBILITY?.fjd ?? 45,
+
               usd: settingsRes.settings.servicePricing.MARRIAGE_COMPATIBILITY?.usd ?? 22,
               inr: settingsRes.settings.servicePricing.MARRIAGE_COMPATIBILITY?.inr ?? 699
             },
             BABY_NAMING: {
-              fjd: settingsRes.settings.servicePricing.BABY_NAMING?.fjd ?? 30,
+
               usd: settingsRes.settings.servicePricing.BABY_NAMING?.usd ?? 15,
               inr: settingsRes.settings.servicePricing.BABY_NAMING?.inr ?? 399
             },
             MUHURTHAM: {
-              fjd: settingsRes.settings.servicePricing.MUHURTHAM?.fjd ?? 40,
+
               usd: settingsRes.settings.servicePricing.MUHURTHAM?.usd ?? 20,
               inr: settingsRes.settings.servicePricing.MUHURTHAM?.inr ?? 599
             }
@@ -998,7 +999,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
   const preApprovalRefundAmount = (amount: number) => Math.round((Number(amount) || 0) * 0.9 * 100) / 100;
 
   const moneyLabel = (amount: number, currency?: string | null) =>
-    `${(currency || 'FJD').toUpperCase()} ${(Math.round((Number(amount) || 0) * 100) / 100).toFixed(2)}`;
+    `${(currency || DEFAULT_CURRENCY).toUpperCase()} ${(Math.round((Number(amount) || 0) * 100) / 100).toFixed(2)}`;
 
   /** A single order can be refunded in one click when it is still pre-approval and was paid for. */
   const canOneClickRefund = (order?: Order) =>
@@ -1018,7 +1019,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     const deadline = order.refundDeadline
       ? new Date(order.refundDeadline.replace(' ', 'T')).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
       : '';
-    return `Refunded ${amount}${amount ? ' ' : ''}(${percent})${deadline ? ` • settles by ${deadline} (3 working days)` : ' • settles within 3 working days'}`;
+    const reference = order.refundReference
+      ? ` • ${(order.refundMethod || '').toUpperCase() === 'GATEWAY' ? 'refunded' : 'settled'} via ${order.refundReference}`
+      : '';
+    return `Refunded ${amount}${amount ? ' ' : ''}(${percent})${deadline ? ` • settles by ${deadline} (3 working days)` : ' • settles within 3 working days'}${reference}`;
   };
 
   /**
@@ -1072,7 +1076,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     try {
       const res = await api.updateAdminSettings({
         serviceMode,
-        fijiPriceFJD: Number(fijiPrice),
         intlPriceUSD: Number(intlPrice),
         indiaPriceINR: Number(indiaPrice),
         servicePricing,
@@ -1327,7 +1330,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         orders: gOrders,
         mainOrder: main,
         totalAmount,
-        currency: main.currency || 'FJD',
+        currency: main.currency || DEFAULT_CURRENCY,
         paymentReference: main.paymentReference || gOrders.find(o => o.paymentReference)?.paymentReference,
         paymentMethod: main.paymentMethod,
         status: combinedStatus,
@@ -1350,7 +1353,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         orders: [order],
         mainOrder: order,
         totalAmount: Number(order.amount) || 0,
-        currency: order.currency || 'FJD',
+        currency: order.currency || DEFAULT_CURRENCY,
         paymentReference: order.paymentReference,
         paymentMethod: order.paymentMethod,
         status: order.status,
@@ -1670,7 +1673,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         const isEmailOk = Boolean(settings?.emailSettings?.smtpHost && settings?.emailSettings?.senderEmail);
         const isMPaisaOk = Boolean(settings?.vodafoneMPaisaNumber && settings.vodafoneMPaisaNumber.trim().length >= 6);
         const isPayPalOk = Boolean(settings?.paypalEmail || settings?.paypalClientId);
-        const isPriceOk = Boolean((settings?.fijiPriceFJD || 0) > 0 && (settings?.intlPriceUSD || 0) > 0);
+        const isPriceOk = Boolean((settings?.intlPriceUSD || 0) > 0 || (settings?.indiaPriceINR || 0) > 0);
 
         return (
           <div className="bg-slate-900/90 dark:bg-slate-900 border border-slate-800 rounded-2xl p-4 text-white shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -3614,10 +3617,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   type="button"
                   onClick={() => {
                     setServicePricing({
-                      BIRTH_JATHAGAM: { fjd: Number(fijiPrice), usd: Number(intlPrice), inr: Number(indiaPrice) },
-                      MARRIAGE_COMPATIBILITY: { fjd: Number(fijiPrice), usd: Number(intlPrice), inr: Number(indiaPrice) },
-                      BABY_NAMING: { fjd: Number(fijiPrice), usd: Number(intlPrice), inr: Number(indiaPrice) },
-                      MUHURTHAM: { fjd: Number(fijiPrice), usd: Number(intlPrice), inr: Number(indiaPrice) }
+                      BIRTH_JATHAGAM: { usd: Number(intlPrice), inr: Number(indiaPrice) },
+                      MARRIAGE_COMPATIBILITY: { usd: Number(intlPrice), inr: Number(indiaPrice) },
+                      BABY_NAMING: { usd: Number(intlPrice), inr: Number(indiaPrice) },
+                      MUHURTHAM: { usd: Number(intlPrice), inr: Number(indiaPrice) }
                     });
                     setSuccessMessage('Base rates applied to all 4 astrological services! Click Save Settings below.');
                     setTimeout(() => setSuccessMessage(''), 4000);
@@ -3627,21 +3630,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   ⚡ Apply Base Rates To All Services
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    FJD Price Tier (legacy):
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={fijiPrice}
-                    onChange={e => setFijiPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                  />
-                  <span className="text-[10px] text-slate-400">PayPal / Cards (VISA, MC, Amex)</span>
-                </div>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                     India Domestic (₹ INR):
@@ -3692,20 +3681,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <span>1. Birth Jathagam (Complete Life Horoscope)</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">3 Pages</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">FJD (legacy)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.BIRTH_JATHAGAM?.fjd ?? 35}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        BIRTH_JATHAGAM: { ...servicePricing.BIRTH_JATHAGAM, fjd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
                     <input
@@ -3741,20 +3717,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <span>2. Marriage Compatibility (10 Poruthams)</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-bold">1 Page</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">FJD (legacy)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.MARRIAGE_COMPATIBILITY?.fjd ?? 45}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        MARRIAGE_COMPATIBILITY: { ...servicePricing.MARRIAGE_COMPATIBILITY, fjd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
                     <input
@@ -3790,20 +3753,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <span>3. Baby Naming (Vedic Namakaran)</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">1 Page</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">FJD (legacy)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.BABY_NAMING?.fjd ?? 30}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        BABY_NAMING: { ...servicePricing.BABY_NAMING, fjd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
                     <input
@@ -3839,20 +3789,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <span>4. Subha Muhurtham (6-Month Dates)</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">2 Pages</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">FJD (legacy)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.MUHURTHAM?.fjd ?? 40}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        MUHURTHAM: { ...servicePricing.MUHURTHAM, fjd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
                     <input

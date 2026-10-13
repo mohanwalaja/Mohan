@@ -38,7 +38,7 @@ assert('equator and UTC-zero coordinates are valid rather than treated as missin
 assert('out-of-range coordinates are rejected', !isVerifiedBirthLocation({
   placeName: 'Bad Place', country: 'Global', latitude: 91, longitude: 0, timezoneOffsetHours: 0
 }));
-assert('legacy profiles without coordinates are not silently given Fiji coordinates', locationFromBirthProfile({
+assert('legacy profiles without coordinates are never given a fabricated birthplace', locationFromBirthProfile({
   birthPlace: 'Chennai', country: 'India'
 }) === null);
 assert('null coordinates or timezone are not misread as valid zero values', locationFromBirthProfile({

@@ -263,7 +263,7 @@ function astro_order_items_email_html(array $order, array $items, array $attachm
     $orderNumber = htmlspecialchars((string)($order['order_number'] ?? ''));
     $userName = htmlspecialchars((string)($order['user_name'] ?? 'User'));
     $orderDate = date('d M Y', strtotime((string)($order['created_at'] ?? 'now')));
-    $amountDisplay = htmlspecialchars((string)($order['currency'] ?? 'FJD')) . ' $' . number_format((float)($order['amount'] ?? 0), 2);
+    $amountDisplay = htmlspecialchars((string)($order['currency'] ?? (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD'))) . ' $' . number_format((float)($order['amount'] ?? 0), 2);
     $personCount = count($items);
 
     $docRows = '';

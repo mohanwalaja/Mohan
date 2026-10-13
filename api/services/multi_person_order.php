@@ -23,7 +23,7 @@
  *                   "partner": { ... },          // Marriage Compatibility
  *                   "muhurtham": { ... }         // Subha Muhurtham
  *                 }, ... ],
- *     "paymentMethod": "MPAISA", "currency": "FJD", ... }
+ *     "paymentMethod": "PAYPAL", "currency": "USD", ... }
  *
  * SECURITY / MONEY RULES (identical to the legacy multi-order endpoint)
  * --------------------------------------------------------------------
@@ -65,10 +65,10 @@ function astro_multi_person_service_catalog(): array
 {
     // USD is the base price; INR is auto-converted via USD_TO_INR_RATE.
     return [
-        'BIRTH_JATHAGAM'      => ['FJD' => 35, 'INR' => (int)round(18 * USD_TO_INR_RATE), 'USD' => 18],
-        'MARRIAGE_COMPATIBILITY' => ['FJD' => 45, 'INR' => (int)round(22 * USD_TO_INR_RATE), 'USD' => 22],
-        'BABY_NAMING'         => ['FJD' => 30, 'INR' => (int)round(15 * USD_TO_INR_RATE), 'USD' => 15],
-        'MUHURTHAM'           => ['FJD' => 40, 'INR' => (int)round(20 * USD_TO_INR_RATE), 'USD' => 20],
+        'BIRTH_JATHAGAM'      => ['INR' => (int)round(18 * USD_TO_INR_RATE), 'USD' => 18],
+        'MARRIAGE_COMPATIBILITY' => ['INR' => (int)round(22 * USD_TO_INR_RATE), 'USD' => 22],
+        'BABY_NAMING'         => ['INR' => (int)round(15 * USD_TO_INR_RATE), 'USD' => 15],
+        'MUHURTHAM'           => ['INR' => (int)round(20 * USD_TO_INR_RATE), 'USD' => 20],
     ];
 }
 
@@ -115,7 +115,10 @@ function astro_multi_person_unit_price($serviceCode, $pricing, $currency): float
         return round($usdPrice * USD_TO_INR_RATE, 2);
     }
 
-    return round((float)($catalog[$serviceCode][$currency] ?? 0), 2);
+    // Defence in depth: an unrecognised currency must never resolve to a
+    // zero-price order, so fall back to the USD base price instead.
+    $explicit = (float)($catalog[$serviceCode][$currency] ?? 0);
+    return $explicit > 0 ? round($explicit, 2) : round((float)($catalog[$serviceCode]['USD'] ?? 0), 2);
 }
 
 /** 'F' | 'M' | 'O' - accepts the human spellings the checklists send. */

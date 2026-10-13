@@ -176,6 +176,11 @@ if (strpos($path, 'admin/orders') !== false && $method === 'GET' && !preg_match(
             'refundProcessedAt' => $r['refund_processed_at'] ?? null,
             'refundDeadline' => $r['refund_deadline'] ?? null,
             'refundAdminNotes' => $r['refund_admin_notes'] ?? null,
+            // How the money actually travelled: GATEWAY (the provider was
+            // called and acknowledged the refund) or MANUAL (offline payment,
+            // settled by hand within the 3-working-day promise).
+            'refundMethod' => $r['refund_method'] ?? null,
+            'refundReference' => $r['refund_reference'] ?? null,
             'createdAt' => $r['created_at'],
             'updated_at' => $r['updated_at'],
             'updatedAt' => $r['updated_at'] ?? $r['created_at']
@@ -493,7 +498,7 @@ if (preg_match('/admin\/orders\/([^\/]+)\/approve/', $path, $matches) && $method
     ];
     $serviceDisplayName = $serviceDisplayNames[$order['service_type']] ?? $order['service_type'];
     $orderDateDisplay = date('d M Y', strtotime($order['created_at'] ?? 'now'));
-    $orderAmountDisplay = htmlspecialchars($order['currency'] ?? 'FJD') . ' $' . number_format(floatval($order['amount'] ?? 0), 2);
+    $orderAmountDisplay = htmlspecialchars($order['currency'] ?? DEFAULT_CURRENCY) . ' $' . number_format(floatval($order['amount'] ?? 0), 2);
 
     // Email HTML content - maroon/gold temple branding to match the report & invoice PDFs
     $html = "
@@ -687,7 +692,7 @@ if (preg_match('/admin\/orders\/([^\/]+)\/resend-email/', $path, $matches) && $m
     ];
     $serviceDisplayName = $serviceDisplayNames[$order['service_type']] ?? $order['service_type'];
     $orderDateDisplay = date('d M Y', strtotime($order['created_at'] ?? 'now'));
-    $orderAmountDisplay = htmlspecialchars($order['currency'] ?? 'FJD') . ' $' . number_format(floatval($order['amount'] ?? 0), 2);
+    $orderAmountDisplay = htmlspecialchars($order['currency'] ?? DEFAULT_CURRENCY) . ' $' . number_format(floatval($order['amount'] ?? 0), 2);
 
     $html = "
     <div style='background:#f4ede1; padding:24px 12px; font-family: Georgia, \'Times New Roman\', serif;'>
@@ -982,14 +987,101 @@ if (preg_match('/admin\/orders\/([^\/]+)\/process-refund/', $path, $matches) && 
     $amountPaid = round($amountPaid, 2);
     $refundAmount = round($refundAmount, 2);
     $feeRetained = round($amountPaid - $refundAmount, 2);
-    $currency = (string) ($payableTargets[0]['currency'] ?? 'FJD');
+    $currency = (string) ($payableTargets[0]['currency'] ?? DEFAULT_CURRENCY);
     $deadline = astro_refund_settle_deadline_sql();
     $deadlineLabel = astro_refund_settle_deadline_label($deadline);
     $processedAt = date('Y-m-d H:i:s');
     $reason = astro_refund_policy_reason($payableTargets[0]);
 
+    // ------------------------------------------------------------------
+    // AUTOMATIC REFUND — the click must move the money, not just the bookkeeping.
+    //
+    // Every payable order of this click is looked up in payment_intents. When
+    // ONE captured online payment funds the whole click (the normal case, even
+    // for a family bundle: one payment, one intent), the provider refund API is
+    // called for the 90% amount BEFORE any order is marked refunded:
+    //
+    //   Razorpay (India UPI / GPay) -> /v1/payments/{payment_id}/refund
+    //   PayPal (cards / wallet)     -> /v2/payments/captures/{capture_id}/refund
+    //
+    // If the provider refuses, the request fails with 502 and NOTHING is marked
+    // refunded, so the administrator can retry instead of the portal claiming a
+    // refund that never happened. Offline/bank/manual payments have no capture
+    // to reverse: those are recorded as a MANUAL settlement and the response
+    // says so explicitly.
+    // ------------------------------------------------------------------
+    require_once __DIR__ . '/../payments.php';
+
+    $onlineIntents = array();
+    foreach ($payableTargets as $target) {
+        $intent = astro_payment_intent_for_order($pdo, $target);
+        if (astro_payment_intent_is_refundable($intent)) {
+            $onlineIntents[(string) $intent['id']] = $intent;
+        }
+    }
+
+    $settlementMode = 'MANUAL';
+    $gatewayProvider = '';
+    $gatewayReference = '';
+    $gatewayMessage = 'No online capture was recorded for this payment, so the refund is recorded here and must be settled manually by the administrator within ' . (int) ASTRO_REFUND_WORKING_DAYS . ' working days.';
+    $alreadyBookedReference = trim((string) ($payableTargets[0]['refund_reference'] ?? ''));
+
+    if ($alreadyBookedReference !== '') {
+        // A previous click already reached the provider but could not finish
+        // writing the order rows. Never refund the same payment twice.
+        $bookedIntent = count($onlineIntents) === 1 ? reset($onlineIntents) : null;
+        $settlementMode = 'GATEWAY';
+        $gatewayProvider = is_array($bookedIntent) ? strtolower((string) ($bookedIntent['provider'] ?? '')) : 'gateway';
+        $gatewayReference = $alreadyBookedReference;
+        $gatewayMessage = 'This payment was already refunded at the provider ('
+            . trim($gatewayProvider . ' ' . $gatewayReference)
+            . '); the order rows were re-marked without sending a second refund.';
+    } elseif (count($onlineIntents) === 1) {
+        $refundIntent = reset($onlineIntents);
+        $refundResult = astro_payment_refund_intent(
+            $pdo,
+            $refundIntent,
+            $refundAmount,
+            $currency,
+            'refund-' . $refundTargets[0]['id'] . '-' . (string) $refundIntent['id']
+        );
+
+        if (empty($refundResult['ok'])) {
+            jsonResponse([
+                'success' => false,
+                'code' => 'AUTO_REFUND_FAILED',
+                'message' => 'Automatic refund refused: ' . $refundResult['message'],
+                'refund' => [
+                    'orderIds' => array_values($refundIds),
+                    'orderNumbers' => array_values($refundNumbers),
+                    'amount' => $refundAmount,
+                    'amountPaid' => $amountPaid,
+                    'currency' => $currency,
+                    'settlement' => 'FAILED',
+                    'gatewayProvider' => $refundResult['provider'],
+                    'gatewayStatus' => $refundResult['status']
+                ]
+            ], 502);
+        }
+
+        $settlementMode = 'GATEWAY';
+        $gatewayProvider = $refundResult['provider'];
+        $gatewayReference = $refundResult['reference'];
+        $gatewayMessage = 'Automatic ' . ucfirst($gatewayProvider) . ' refund ' . $gatewayReference
+            . ' issued for ' . astro_refund_money($refundAmount, $currency)
+            . '; the customer receives it in their account within ' . (int) ASTRO_REFUND_WORKING_DAYS . ' working days.';
+    } elseif (count($onlineIntents) > 1) {
+        // Two different captured payments funding one click cannot be refunded
+        // as a single amount without guessing a split — refuse instead.
+        jsonResponse([
+            'success' => false,
+            'code' => 'MULTIPLE_PAYMENTS_REQUIRE_MANUAL_REFUND',
+            'message' => 'This click spans ' . count($onlineIntents) . ' separate online payments, so one automatic refund amount cannot be split safely. Refund each order from its own row, or settle manually.'
+        ], 409);
+    }
+
     foreach ($refundTargets as $target) {
-        $upd = $pdo->prepare("UPDATE orders SET status = 'REFUNDED', refund_status = 'REFUNDED', refund_percent = ?, refund_amount = ?, refund_currency = ?, refund_reason = ?, refund_processed_at = ?, refund_deadline = ?, refund_admin_notes = ?, admin_notes = ?, updated_at = NOW() WHERE id = ?");
+        $upd = $pdo->prepare("UPDATE orders SET status = 'REFUNDED', refund_status = 'REFUNDED', refund_percent = ?, refund_amount = ?, refund_currency = ?, refund_reason = ?, refund_processed_at = ?, refund_deadline = ?, refund_admin_notes = ?, refund_method = ?, refund_reference = ?, admin_notes = ?, updated_at = NOW() WHERE id = ?");
         $upd->execute([
             astro_refund_percent_for_order($target),
             astro_refund_amount_for_order($target),
@@ -998,6 +1090,8 @@ if (preg_match('/admin\/orders\/([^\/]+)\/process-refund/', $path, $matches) && 
             $processedAt,
             $deadline,
             $notes,
+            $settlementMode,
+            $gatewayReference !== '' ? $gatewayReference : null,
             $notes,
             $target['id']
         ]);
@@ -1039,8 +1133,10 @@ if (preg_match('/admin\/orders\/([^\/]+)\/process-refund/', $path, $matches) && 
     $summary = 'Refund approved for order #' . $refundTargets[0]['order_number']
         . ($wholeGroupRefund ? ' (all ' . count($refundTargets) . ' charts in the family bundle)' : '')
         . ': ' . astro_refund_money($refundAmount, $currency) . ' (' . rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.') . '% of '
-        . astro_refund_money($amountPaid, $currency) . '). Settles within ' . (int) ASTRO_REFUND_WORKING_DAYS . ' working days, on or before '
-        . $deadlineLabel . '.';
+        . astro_refund_money($amountPaid, $currency) . '). '
+        . ($settlementMode === 'GATEWAY'
+            ? $gatewayMessage
+            : $gatewayMessage . ' Settles on or before ' . $deadlineLabel . '.');
 
     logAudit(
         $pdo,
@@ -1050,7 +1146,9 @@ if (preg_match('/admin\/orders\/([^\/]+)\/process-refund/', $path, $matches) && 
         'ORDER_REFUNDED',
         'One-click pre-approval refund for order #' . implode(', #', $refundNumbers)
             . ' — ' . astro_refund_money($refundAmount, $currency) . ' of ' . astro_refund_money($amountPaid, $currency)
-            . ' (' . rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.') . '%), settles by ' . $deadlineLabel
+            . ' (' . rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.') . '%), ' . $settlementMode . ' settlement'
+            . ($gatewayReference !== '' ? ' (' . $gatewayProvider . ' ' . $gatewayReference . ')' : '')
+            . ', settles by ' . $deadlineLabel
             . ', customer email ' . ($emailSent ? 'sent' : 'failed')
     );
 
@@ -1071,6 +1169,12 @@ if (preg_match('/admin\/orders\/([^\/]+)\/process-refund/', $path, $matches) && 
             'processedAt' => $processedAt,
             'deadline' => $deadline,
             'deadlineLabel' => $deadlineLabel,
+            // GATEWAY = the provider was called and acknowledged the refund;
+            // MANUAL = offline/bank payment recorded for manual settlement.
+            'settlement' => $settlementMode,
+            'gatewayProvider' => $gatewayProvider,
+            'gatewayReference' => $gatewayReference,
+            'gatewayMessage' => $gatewayMessage,
             'emailSent' => $emailSent,
             'emailMessage' => $emailMessage
         ]
@@ -1186,14 +1290,13 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
             $settings = array_merge($general, [
                 'serviceMode' => $row['service_mode'] ?? $general['serviceMode'] ?? 'PAID',
                 'freeBetaActive' => isset($row['free_beta_active']) ? (bool)$row['free_beta_active'] : ($general['freeBetaActive'] ?? false),
-                'currency' => $row['currency'] ?? $general['currency'] ?? 'FJD',
+                'currency' => $row['currency'] ?? $general['currency'] ?? DEFAULT_CURRENCY,
                 'pricing' => $pricing,
                 'paymentMethods' => $paymentMethods,
                 'emailSettings' => !empty($email) ? $email : ($general['emailSettings'] ?? [])
             ]);
 
             // Ensure specific keys exist with sensible defaults if not set
-            if (!isset($settings['fijiPriceFJD'])) $settings['fijiPriceFJD'] = $general['fijiPriceFJD'] ?? 10;
             if (!isset($settings['intlPriceUSD'])) $settings['intlPriceUSD'] = $general['intlPriceUSD'] ?? 5;
             if (!isset($settings['googleLoginEnabled'])) $settings['googleLoginEnabled'] = $general['googleLoginEnabled'] ?? true;
             if (!isset($settings['googleClientId'])) $settings['googleClientId'] = $general['googleClientId'] ?? '';
@@ -1216,9 +1319,8 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
             $settings = [
                 'serviceMode' => 'PAID',
                 'freeBetaActive' => false,
-                'fijiPriceFJD' => 10,
                 'intlPriceUSD' => 5,
-                'currency' => 'FJD',
+                'currency' => DEFAULT_CURRENCY,
                 'googleLoginEnabled' => true,
                 'googleClientId' => '',
                 'facebookLoginEnabled' => true,
@@ -1280,7 +1382,7 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
 
         $serviceMode = $body['serviceMode'] ?? $mergedGeneral['serviceMode'] ?? ($existingRow['service_mode'] ?? 'PAID');
         $freeBetaActive = isset($body['freeBetaActive']) ? (!empty($body['freeBetaActive']) ? 1 : 0) : ($existingRow['free_beta_active'] ?? 0);
-        $currency = $body['currency'] ?? $mergedGeneral['currency'] ?? ($existingRow['currency'] ?? 'FJD');
+        $currency = $body['currency'] ?? $mergedGeneral['currency'] ?? ($existingRow['currency'] ?? DEFAULT_CURRENCY);
         
         $pricing = isset($body['pricing']) ? $body['pricing'] : ($body['servicePricing'] ?? $existingPricing);
         $paymentMethods = isset($body['paymentMethods']) ? $body['paymentMethods'] : $existingPayment;
@@ -1558,108 +1660,107 @@ if (strpos($path, 'admin/reports/financial') !== false && $method === 'GET') {
     $rows = $stmt->fetchAll();
     
     $totalPaymentsCount = 0;
-    $totalPaymentsAmountFJD = 0.0;
     $totalPaymentsAmountUSD = 0.0;
     $totalPaymentsAmountINR = 0.0;
     $pendingPaymentsCount = 0;
     $approvedPaymentsCount = 0;
     $rejectedPaymentsCount = 0;
     $totalRefundsCount = 0;
-    $totalRefundsAmountFJD = 0.0;
     $totalRefundsAmountUSD = 0.0;
     $totalRefundsAmountINR = 0.0;
     $pendingRefundsCount = 0;
     $betaUsageCount = 0;
-    
+
+    // Two supported currencies only: USD (international) and INR (India).
     $revenueByService = [
-        'BIRTH_JATHAGAM' => ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0],
-        'MARRIAGE_COMPATIBILITY' => ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0],
-        'BABY_NAMING' => ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0],
-        'MUHURTHAM' => ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0]
+        'BIRTH_JATHAGAM' => ['usd' => 0.0, 'inr' => 0.0, 'count' => 0],
+        'MARRIAGE_COMPATIBILITY' => ['usd' => 0.0, 'inr' => 0.0, 'count' => 0],
+        'BABY_NAMING' => ['usd' => 0.0, 'inr' => 0.0, 'count' => 0],
+        'MUHURTHAM' => ['usd' => 0.0, 'inr' => 0.0, 'count' => 0]
     ];
-    
+
     $revenueByPaymentMethod = [
-        'MPAISA' => ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0],
-        'MYCASH' => ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0],
-        'GPAY' => ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0],
-        'UPI' => ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0],
-        'PAYPAL' => ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0],
-        'NONE' => ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0]
+        'GPAY' => ['usd' => 0.0, 'inr' => 0.0, 'count' => 0],
+        'UPI' => ['usd' => 0.0, 'inr' => 0.0, 'count' => 0],
+        'PAYPAL' => ['usd' => 0.0, 'inr' => 0.0, 'count' => 0],
+        'NONE' => ['usd' => 0.0, 'inr' => 0.0, 'count' => 0]
     ];
-    
+
     foreach ($rows as $r) {
         $mode = $r['service_mode'] ?? 'PAID';
         $status = $r['status'] ?? 'PENDING';
-        $curr = strtoupper($r['currency'] ?? 'FJD');
+        $curr = strtoupper((string)($r['currency'] ?? DEFAULT_CURRENCY));
+        // A historical row stored in a currency this version no longer offers is
+        // counted in the USD bucket so old revenue stays visible instead of
+        // silently disappearing from the report.
+        $bucket = ($curr === 'INR') ? 'inr' : 'usd';
         $amt = floatval($r['amount'] ?? 0);
         $st = $r['service_type'] ?? 'BIRTH_JATHAGAM';
         $pm = strtoupper($r['payment_method'] ?? 'NONE');
-        
+
         if ($mode === 'FREE_BETA') {
             $betaUsageCount++;
         }
-        
+
         if ($status === 'PENDING_APPROVAL' || $status === 'PENDING_PAYMENT_VERIFICATION') {
             $pendingPaymentsCount++;
         } elseif ($status === 'APPROVED' || $status === 'COMPLETED' || $status === 'PROCESSING') {
             $approvedPaymentsCount++;
             $totalPaymentsCount++;
-            if ($curr === 'FJD') $totalPaymentsAmountFJD += $amt;
-            if ($curr === 'USD') $totalPaymentsAmountUSD += $amt;
-            if ($curr === 'INR') $totalPaymentsAmountINR += $amt;
-            
+            if ($bucket === 'inr') $totalPaymentsAmountINR += $amt; else $totalPaymentsAmountUSD += $amt;
+
             if (isset($revenueByService[$st])) {
                 $revenueByService[$st]['count']++;
-                if ($curr === 'FJD') $revenueByService[$st]['fjd'] += $amt;
-                if ($curr === 'USD') $revenueByService[$st]['usd'] += $amt;
-                if ($curr === 'INR') $revenueByService[$st]['inr'] += $amt;
+                $revenueByService[$st][$bucket] += $amt;
             }
-            
+
             if (!isset($revenueByPaymentMethod[$pm])) {
-                $revenueByPaymentMethod[$pm] = ['fjd' => 0.0, 'usd' => 0.0, 'inr' => 0.0, 'count' => 0];
+                $revenueByPaymentMethod[$pm] = ['usd' => 0.0, 'inr' => 0.0, 'count' => 0];
             }
             $revenueByPaymentMethod[$pm]['count']++;
-            if ($curr === 'FJD') $revenueByPaymentMethod[$pm]['fjd'] += $amt;
-            if ($curr === 'USD') $revenueByPaymentMethod[$pm]['usd'] += $amt;
-            if ($curr === 'INR') $revenueByPaymentMethod[$pm]['inr'] += $amt;
+            $revenueByPaymentMethod[$pm][$bucket] += $amt;
         } elseif ($status === 'REJECTED') {
             $rejectedPaymentsCount++;
         } elseif ($status === 'REFUNDED') {
             $totalRefundsCount++;
-            if ($curr === 'FJD') $totalRefundsAmountFJD += $amt;
-            if ($curr === 'USD') $totalRefundsAmountUSD += $amt;
-            if ($curr === 'INR') $totalRefundsAmountINR += $amt;
+            if ($bucket === 'inr') $totalRefundsAmountINR += $amt; else $totalRefundsAmountUSD += $amt;
         } elseif ($status === 'CANCELLED' || $status === 'REFUND_REQUESTED') {
             $pendingRefundsCount++;
         }
     }
-    
-    $netRevenueFJD = $totalPaymentsAmountFJD - $totalRefundsAmountFJD;
+
     $netRevenueUSD = $totalPaymentsAmountUSD - $totalRefundsAmountUSD;
     $netRevenueINR = $totalPaymentsAmountINR - $totalRefundsAmountINR;
-    
+
     $gpayCount = ($revenueByPaymentMethod['GPAY']['count'] ?? 0) + ($revenueByPaymentMethod['UPI']['count'] ?? 0);
     $gpayAmountINR = ($revenueByPaymentMethod['GPAY']['inr'] ?? 0.0) + ($revenueByPaymentMethod['UPI']['inr'] ?? 0.0);
-    $gpayAmountFJD = ($revenueByPaymentMethod['GPAY']['fjd'] ?? 0.0) + ($revenueByPaymentMethod['UPI']['fjd'] ?? 0.0);
-    
+
+    $serviceTypeReport = static function ($revenueByService, $code) {
+        $row = $revenueByService[$code] ?? ['usd' => 0.0, 'inr' => 0.0, 'count' => 0];
+        return [
+            // USD is the primary figure shown to the admin; `inr` carries the
+            // India settlement alongside it.
+            'amount' => $row['usd'] ?? 0.0,
+            'usd' => $row['usd'] ?? 0.0,
+            'inr' => $row['inr'] ?? 0.0,
+            'count' => $row['count'] ?? 0
+        ];
+    };
+
     $report = [
         'generatedAt' => date('c'),
         'dateRange' => ['startDate' => $startDate, 'endDate' => $endDate],
         'totalPaymentsCount' => $totalPaymentsCount,
-        'totalPaymentsAmountFJD' => $totalPaymentsAmountFJD,
         'totalPaymentsAmountUSD' => $totalPaymentsAmountUSD,
         'totalPaymentsAmountINR' => $totalPaymentsAmountINR,
-        'grossRevenueFJD' => $totalPaymentsAmountFJD,
         'grossRevenueUSD' => $totalPaymentsAmountUSD,
         'grossRevenueINR' => $totalPaymentsAmountINR,
         'pendingPaymentsCount' => $pendingPaymentsCount,
         'approvedPaymentsCount' => $approvedPaymentsCount,
         'rejectedPaymentsCount' => $rejectedPaymentsCount,
         'totalRefundsCount' => $totalRefundsCount,
-        'totalRefundsAmountFJD' => $totalRefundsAmountFJD,
         'totalRefundsAmountUSD' => $totalRefundsAmountUSD,
         'totalRefundsAmountINR' => $totalRefundsAmountINR,
-        'totalRefundsFJD' => $totalRefundsAmountFJD,
         'totalRefundsUSD' => $totalRefundsAmountUSD,
         'totalRefundsINR' => $totalRefundsAmountINR,
         'refundsCount' => $totalRefundsCount,
@@ -1667,23 +1768,20 @@ if (strpos($path, 'admin/reports/financial') !== false && $method === 'GET') {
         'paidOrdersCount' => $totalPaymentsCount,
         'betaOrdersCount' => $betaUsageCount,
         'pendingRefundsCount' => $pendingRefundsCount,
-        'netRevenueFJD' => $netRevenueFJD,
         'netRevenueUSD' => $netRevenueUSD,
         'netRevenueINR' => $netRevenueINR,
         'revenueByService' => $revenueByService,
         'revenueByPaymentMethod' => $revenueByPaymentMethod,
         'byPaymentMethod' => [
-            'MPAISA' => ['amount' => $revenueByPaymentMethod['MPAISA']['fjd'] ?? 0.0, 'count' => $revenueByPaymentMethod['MPAISA']['count'] ?? 0],
-            'MYCASH' => ['amount' => $revenueByPaymentMethod['MYCASH']['fjd'] ?? 0.0, 'count' => $revenueByPaymentMethod['MYCASH']['count'] ?? 0],
-            'GPAY' => ['amount' => $gpayAmountINR > 0 ? $gpayAmountINR : $gpayAmountFJD, 'inrAmount' => $gpayAmountINR, 'fjdAmount' => $gpayAmountFJD, 'count' => $gpayCount],
+            'GPAY' => ['amount' => $gpayAmountINR, 'inrAmount' => $gpayAmountINR, 'count' => $gpayCount],
             'UPI' => ['amount' => $revenueByPaymentMethod['UPI']['inr'] ?? 0.0, 'count' => $revenueByPaymentMethod['UPI']['count'] ?? 0],
             'PAYPAL' => ['amount' => $revenueByPaymentMethod['PAYPAL']['usd'] ?? 0.0, 'count' => $revenueByPaymentMethod['PAYPAL']['count'] ?? 0]
         ],
         'byServiceType' => [
-            'BIRTH_JATHAGAM' => ['amount' => $revenueByService['BIRTH_JATHAGAM']['fjd'] ?? 0.0, 'count' => $revenueByService['BIRTH_JATHAGAM']['count'] ?? 0],
-            'MARRIAGE_COMPATIBILITY' => ['amount' => $revenueByService['MARRIAGE_COMPATIBILITY']['fjd'] ?? 0.0, 'count' => $revenueByService['MARRIAGE_COMPATIBILITY']['count'] ?? 0],
-            'BABY_NAMING' => ['amount' => $revenueByService['BABY_NAMING']['fjd'] ?? 0.0, 'count' => $revenueByService['BABY_NAMING']['count'] ?? 0],
-            'MUHURTHAM' => ['amount' => $revenueByService['MUHURTHAM']['fjd'] ?? 0.0, 'count' => $revenueByService['MUHURTHAM']['count'] ?? 0]
+            'BIRTH_JATHAGAM' => $serviceTypeReport($revenueByService, 'BIRTH_JATHAGAM'),
+            'MARRIAGE_COMPATIBILITY' => $serviceTypeReport($revenueByService, 'MARRIAGE_COMPATIBILITY'),
+            'BABY_NAMING' => $serviceTypeReport($revenueByService, 'BABY_NAMING'),
+            'MUHURTHAM' => $serviceTypeReport($revenueByService, 'MUHURTHAM')
         ],
         'betaUsageCount' => $betaUsageCount,
         'orders' => array_map(function($r) {

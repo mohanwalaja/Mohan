@@ -35,6 +35,8 @@ const MOUNT_FILES = [
   'api/services/index.php',
   'api/schema.sql',
   'api/migrations/009_refund_workflow.sql',
+  'api/migrations/010_refund_gateway_settlement.sql',
+  'api/payments.php',
 ];
 
 const emitIndex = process.argv.indexOf('--emit');

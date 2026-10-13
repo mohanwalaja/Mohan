@@ -58,6 +58,8 @@ const apiClient = read('src/services/api.ts');
 const types = read('src/types/index.ts');
 const checklist = read('src/components/admin/SetupChecklistPanel.tsx');
 const runTests = read('scripts/run-tests.mjs');
+const paymentsPhp = read('api/payments.php');
+const gatewayMigration = read('api/migrations/010_refund_gateway_settlement.sql');
 
 console.log('--- REFUND POLICY CONTRACT ---');
 
@@ -136,6 +138,10 @@ check('read models: the refund trail reaches the admin portal and the customer d
   }
   assert.ok(customerApi.includes("'refundAmount'"), 'the customer dashboard must see what was refunded');
   assert.ok(customerApi.includes("'refundDeadline'"), 'the customer dashboard must see the settlement date');
+  for (const [file, source] of [['admin list', adminApi], ['grouped admin list', adminOrdersApi], ['customer read model', customerApi]] as Array<[string, string]>) {
+    assert.ok(source.includes("'refundMethod'"), `${file} must expose how the money was returned`);
+    assert.ok(source.includes("'refundReference'"), `${file} must expose the provider refund reference`);
+  }
 });
 
 check('schema: REFUNDED is a legal order status and the extra trail columns exist', () => {
@@ -199,6 +205,59 @@ check('admin checklist copy matches the enforced policy (no stale 48-hour/100% c
 
 check('the contract is wired into the test runner', () => {
   assert.match(runTests, /tests\/refund-policy-contract\.test\.ts/, 'scripts/run-tests.mjs must execute this contract');
+});
+
+check('automatic refund: the provider is called BEFORE any order is marked refunded', () => {
+  const handler = region(adminApi, '// 3d. POST /api/admin/orders/:id/process-refund', '// ===================================================================\n// FAMILY ORDER GROUP MANAGEMENT');
+  const providerCall = handler.indexOf('astro_payment_refund_intent(');
+  const markRefunded = handler.indexOf("status = 'REFUNDED', refund_status = 'REFUNDED'");
+  assert.ok(providerCall !== -1, 'the one-click handler must call the provider refund API');
+  assert.ok(markRefunded !== -1, 'the one-click handler must still mark the orders refunded');
+  assert.ok(providerCall < markRefunded, 'the money must be moved before the bookkeeping claims it was');
+  assert.match(handler, /astro_payment_intent_for_order\(\$pdo, \$target\)/, 'the handler must resolve the captured payment intent per payable order');
+  assert.match(handler, /AUTO_REFUND_FAILED/, 'a provider refusal must be a distinct, reportable outcome');
+  assert.match(handler, /502/, 'a provider refusal must answer 502 so the portal shows a retryable error');
+  const refusal = region(handler, "code' => 'AUTO_REFUND_FAILED'", '} elseif (count($onlineIntents) > 1)');
+  assert.doesNotMatch(refusal, /UPDATE orders SET/, 'a refused automatic refund must not mark anything refunded');
+});
+
+check('automatic refund: both provider endpoints, with an idempotent request id', () => {
+  assert.match(refunds, /api\.razorpay\.com\/v1\/payments\/.{0,40}\/refund/, 'Razorpay refunds must go to the payments refund endpoint');
+  assert.match(refunds, /\/v2\/payments\/captures\/.{0,40}\/refund/, 'PayPal refunds must go to the captures refund endpoint');
+  assert.match(refunds, /astro_refund_minor_units/, 'Razorpay amounts must be converted to minor units');
+  assert.match(refunds, /PayPal-Request-Id:/, 'PayPal refunds must carry an idempotency request id');
+  assert.match(refunds, /'receipt' => \$requestId/, 'Razorpay refunds must carry a deterministic receipt');
+  assert.match(refunds, /function astro_refund_intent_is_refundable/, 'the policy module must decide what can be auto-refunded');
+  assert.match(paymentsPhp, /function astro_payment_refund_intent/, 'the provider call must live in the payment module');
+  assert.match(paymentsPhp, /function astro_payment_intent_for_order/, 'the capture must be resolvable from an order');
+});
+
+check('automatic refund: offline payments are recorded as MANUAL and labelled as such', () => {
+  const handler = region(adminApi, '// 3d. POST /api/admin/orders/:id/process-refund', '// ===================================================================\n// FAMILY ORDER GROUP MANAGEMENT');
+  assert.match(handler, /\$settlementMode = 'MANUAL'/, 'offline payments must fall back to a manual settlement');
+  assert.match(handler, /must be settled manually/, 'the manual path must say the administrator has to settle it');
+  assert.match(handler, /'settlement' => \$settlementMode/, 'the response must state which settlement path was used');
+  assert.match(handler, /'gatewayReference' => \$gatewayReference/, 'the response must carry the provider refund reference');
+  assert.match(handler, /refund_reference/, 'a previously issued gateway refund must never be issued twice');
+  assert.match(handler, /MULTIPLE_PAYMENTS_REQUIRE_MANUAL_REFUND/, 'two captured payments must never be split by guesswork');
+});
+
+check('schema: the gateway settlement trail is declared, migrated and self-migrated', () => {
+  for (const column of ['refund_method', 'refund_reference']) {
+    assert.ok(schema.includes(`\`${column}\``), `api/schema.sql must declare ${column}`);
+    assert.ok(gatewayMigration.includes(`\`${column}\``), `migration 010 must add ${column}`);
+    assert.ok(dbPhp.includes(`'${column}'`), `api/db.php must self-migrate ${column}`);
+  }
+  assert.match(gatewayMigration, /'GATEWAY'/, 'the migration doc must explain the GATEWAY settlement');
+  assert.match(gatewayMigration, /'MANUAL'/, 'the migration doc must explain the MANUAL settlement');
+});
+
+check('portal and customer see how the money travelled', () => {
+  assert.ok(types.includes('settlement?: \'GATEWAY\' | \'MANUAL\' | \'FAILED\''), 'the API types must expose the settlement outcome');
+  assert.match(portal, /order\.refundReference/, 'the admin portal must show the provider reference');
+  const dashboard = read('src/pages/CustomerDashboard.tsx');
+  assert.match(dashboard, /refundMethod/, 'the customer dashboard must distinguish a gateway refund from a manual one');
+  assert.match(dashboard, /order\.refundReference/, 'the customer must be able to see the provider reference');
 });
 
 console.log(`\n${passed} refund-policy contract checks passed.`);

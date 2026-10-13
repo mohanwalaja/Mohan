@@ -132,7 +132,7 @@ export interface OnlinePaymentSession {
  * chooses (GPay/UPI -> INR, PayPal/Card -> USD) and never by
  * the birth place of a family member.
  */
-export type CurrencyCode = 'INR' | 'FJD' | 'USD';
+export type CurrencyCode = 'INR' | 'USD';
 
 /** A price expressed in all three currencies at once. */
 export type CurrencyPriceMap = Record<CurrencyCode, number>;
@@ -230,8 +230,12 @@ export interface EmailTemplate {
   lastModified?: string;
 }
 
+/**
+ * Per-service price in the two offered currencies. A stored row may still carry
+ * keys from a currency this version no longer offers; those keys are ignored
+ * (see services/pricing.ts) instead of being trusted.
+ */
 export interface ServicePriceItem {
-  fjd: number;
   usd: number;
   inr: number;
 }
@@ -249,7 +253,6 @@ export interface SystemSettings {
    * Served per requesting IP by GET /api/services/settings.
    */
   betaFreeChartAvailable?: boolean;
-  fijiPriceFJD: number;
   intlPriceUSD: number;
   indiaPriceINR?: number;
   /** @deprecated Vodafone M-PAiSA / Digicel MyCash fields retained for legacy DB compatibility; these payment methods are no longer offered at checkout. */
@@ -307,7 +310,6 @@ export interface SystemSettings {
   paypalMode?: 'sandbox' | 'live';
   paypalOnlineConfigured?: boolean;
   // Legacy / convenience currency fields (retained for DB compat)
-  currencyFiji?: string;
   currencyIntl?: string;
   currencyIndia?: string;
   // Per-Service Pricing Override (Separate pricing for each service)
@@ -385,7 +387,7 @@ export interface CartItem {
   /** @deprecated legacy single-currency price, kept for old saved carts */
   unitPrice: number;
   /** @deprecated currency implied by birth place — no longer used for totals */
-  currency: 'FJD' | 'USD' | 'INR';
+  currency: CurrencyCode;
   saveAsProfile?: boolean;
 }
 
@@ -489,6 +491,14 @@ export interface Order {
   refundCurrency?: string | null;
   /** refundProcessedAt + 3 working days — the settlement date shown to the customer. */
   refundDeadline?: string | null;
+  /**
+   * How the money actually went back: 'GATEWAY' means the payment provider was
+   * called and acknowledged the refund (refundReference holds its refund id);
+   * 'MANUAL' means the payment was offline/verified by hand and the
+   * administrator settles it within the 3 working days.
+   */
+  refundMethod?: string | null;
+  refundReference?: string | null;
   ipAddress?: string;
   isIpBanned?: boolean;
   groupId?: string;
@@ -536,6 +546,16 @@ export interface RefundResult {
   deadline: string;
   /** Human label for the deadline, e.g. "19 Oct 2026". */
   deadlineLabel: string;
+  /**
+   * 'GATEWAY' — the provider refund API accepted the refund and
+   * gatewayReference identifies it; 'MANUAL' — offline payment recorded for
+   * manual settlement; 'FAILED' — the provider refused and nothing changed.
+   */
+  settlement?: 'GATEWAY' | 'MANUAL' | 'FAILED';
+  gatewayProvider?: string;
+  gatewayReference?: string;
+  /** Sentence the portal shows verbatim (gateway reference or manual notice). */
+  gatewayMessage?: string;
   emailSent: boolean;
   emailMessage?: string;
 }
@@ -561,20 +581,16 @@ export interface FinancialSummaryReport {
   generatedAt: string;
   dateRange: { startDate?: string; endDate?: string };
   totalPaymentsCount: number;
-  totalPaymentsAmountFJD: number;
   totalPaymentsAmountUSD: number;
   totalPaymentsAmountINR?: number;
-  grossRevenueFJD: number;
   grossRevenueUSD: number;
   grossRevenueINR?: number;
   pendingPaymentsCount: number;
   approvedPaymentsCount: number;
   rejectedPaymentsCount: number;
   totalRefundsCount: number;
-  totalRefundsAmountFJD: number;
   totalRefundsAmountUSD: number;
   totalRefundsAmountINR?: number;
-  totalRefundsFJD: number;
   totalRefundsUSD?: number;
   totalRefundsINR?: number;
   refundsCount: number;
@@ -582,15 +598,13 @@ export interface FinancialSummaryReport {
   paidOrdersCount: number;
   betaOrdersCount: number;
   pendingRefundsCount: number;
-  netRevenueFJD: number;
   netRevenueUSD: number;
   netRevenueINR?: number;
-  revenueByService: Record<string, { fjd: number; usd: number; inr?: number; count: number }>;
-  revenueByPaymentMethod: Record<string, { fjd: number; usd: number; inr?: number; count: number }>;
+  /** `usd` also holds legacy rows whose stored currency is no longer offered. */
+  revenueByService: Record<string, { usd: number; inr?: number; count: number }>;
+  revenueByPaymentMethod: Record<string, { usd: number; inr?: number; count: number }>;
   byPaymentMethod: {
-    MPAISA: { amount: number; count: number };
-    MYCASH: { amount: number; count: number };
-    GPAY: { amount: number; inrAmount?: number; fjdAmount?: number; count: number };
+    GPAY: { amount: number; inrAmount?: number; count: number };
     UPI?: { amount: number; count: number };
     PAYPAL: { amount: number; count: number };
   };
@@ -638,8 +652,8 @@ export interface Statistics {
   pendingApproval: number;
   pendingOrders?: number;
   rejectedOrders: number;
-  totalRevenueFJD: number;
   totalRevenueUSD: number;
+  totalRevenueINR?: number;
   serviceCounts: Record<string, number>;
   languageCounts: Record<string, number>;
   countryCounts: Record<string, number>;
@@ -676,17 +690,17 @@ export interface PopularServiceStat {
   name: string;
   count: number;
   percentage: number;
-  revenueFJD: number;
+  revenueINR: number;
   revenueUSD: number;
   avgRating: number;
 }
 
 export interface RevenueTimelineStat {
   period: string;
-  fjd: number;
+  inr: number;
   usd: number;
   totalOrders: number;
-  avgOrderFJD: number;
+  avgOrderINR: number;
   avgOrderUSD: number;
 }
 
@@ -724,7 +738,7 @@ export interface AdminAnalyticsData {
   kpis: {
     monthlyActiveUsers: number;
     mauGrowthPercent: number;
-    totalRevenueFJD: number;
+    totalRevenueINR: number;
     totalRevenueUSD: number;
     revenueGrowthPercent: number;
     avgProcessingMinutes: number;
@@ -742,7 +756,7 @@ export interface AdminAnalyticsData {
     region: string;
     orderCount: number;
     percentage: number;
-    revenueFJD: number;
+    revenueINR: number;
     revenueUSD: number;
   }>;
 }

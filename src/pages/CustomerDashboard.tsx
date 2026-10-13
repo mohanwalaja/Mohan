@@ -463,7 +463,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 const isRefunded = (order.refundStatus || '').toUpperCase() === 'REFUNDED' || (order.status || '').toUpperCase() === 'REFUNDED';
                 const refundAmountText = (o: Order) => {
                   const amount = o.refundAmount != null ? o.refundAmount : Math.round((Number(o.amount) || 0) * 0.9 * 100) / 100;
-                  const currency = (o.refundCurrency || o.currency || 'FJD').toUpperCase();
+                  const currency = (o.refundCurrency || o.currency || 'USD').toUpperCase();
                   return `${currency} ${amount.toFixed(2)}`;
                 };
                 const formatRefundDeadline = (deadline: string) =>
@@ -739,6 +739,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                 This order was cancelled before admin approval, so the 90% pre-approval refund applies (the remaining 10% covers the non-refundable payment gateway fee).
                                 {order.refundDeadline && (
                                   <> The amount returns to your original payment method on or before <strong>{formatRefundDeadline(order.refundDeadline)}</strong> — within 3 working days.</>
+                                )}
+                                {order.refundMethod && order.refundMethod.toUpperCase() === 'GATEWAY' && order.refundReference && (
+                                  <> It has already been sent back by the payment provider (reference <strong>{order.refundReference}</strong>).</>
                                 )}
                               </div>
                             </div>

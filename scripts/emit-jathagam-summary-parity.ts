@@ -33,7 +33,7 @@ const karthik = calculatePrecisionHoroscope(
   'Karthik Raman', '2000-01-01', '02:00', 'Chennai, Tamil Nadu, India', 13.0827, 80.2707, 5.5, 'India', 'M'
 );
 const suva = calculatePrecisionHoroscope(
-  'Reminder Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, 'Fiji', 'M'
+  'Reminder Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, '', 'M'
 );
 
 const charts: Array<[string, SummaryChartInput]> = [
