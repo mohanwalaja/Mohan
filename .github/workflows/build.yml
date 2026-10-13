@@ -221,6 +221,28 @@ jobs:
           else
             echo "Not deployed yet or unreachable (HTTP $HTTP) — expected for PR builds and during rollback."
           fi
+          # One-off incident forensics (2026-10-13 outage): while production
+          # still runs the broken deploy, verify what Brotli-capable browsers
+          # actually receive for the poisoned chunk. An identity fetch would
+          # lie — Apache only rewrites to the .br sibling on the br header,
+          # and the raw file was always clean.
+          OLD_NAME=index-CvPoQHlu.js
+          OLD_HTTP=$(curl -sS -D /tmp/inc-br.headers -o /tmp/inc-br.body -H 'Accept-Encoding: br' -w '%{http_code}' "https://astrosivam.com/assets/$OLD_NAME" || echo "curl-failed")
+          echo "incident chunk $OLD_NAME (Accept-Encoding: br): HTTP $OLD_HTTP"
+          if [ "$OLD_HTTP" = "200" ]; then
+            if grep -qi '^content-encoding: br' /tmp/inc-br.headers; then
+              node -e "const z=require('zlib'),fs=require('fs');fs.writeFileSync('/tmp/inc-index.js',z.brotliDecompressSync(fs.readFileSync('/tmp/inc-br.body')))" || cp /tmp/inc-br.body /tmp/inc-index.js
+            else
+              cp /tmp/inc-br.body /tmp/inc-index.js
+            fi
+            INC_MARKERS=$(grep -ac '__VITE_PRELOAD__' /tmp/inc-index.js || true)
+            echo "incident chunk body: size=$(size /tmp/inc-index.js) sha256=$(sha /tmp/inc-index.js) marker count: $INC_MARKERS"
+            if [ "$INC_MARKERS" != "0" ]; then
+              echo "::warning title=Production still serves the poisoned incident chunk::$OLD_NAME carries $INC_MARKERS free __VITE_PRELOAD__ placeholder(s) for Brotli clients — every lazy route is broken until the fixed dist.zip is redeployed and Cloudflare is purged."
+            fi
+          else
+            echo "incident chunk $OLD_NAME is gone (HTTP $OLD_HTTP) — rolled back or already redeployed."
+          fi
 
       - name: Route smoke against the production preview (anti white-screen)
         run: |

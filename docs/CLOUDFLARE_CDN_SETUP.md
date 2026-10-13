@@ -117,6 +117,15 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache
 Use a **scoped** token (Zone → Cache Purge → Purge), never a global API key.
 If you skip Rule 3 entirely, no purge step is needed.
 
+**Hotfix rule: purge EVERYTHING after deploying a fix** (`Purge Everything` in
+Caching → Configuration, or `--data '{"purge_everything":true}'`). An edge or
+browser cache can keep handing out a previously-cached body — and after a
+build-tooling fix (e.g. the 2026-10-13 `__VITE_PRELOAD__` incident, where the
+poisoned bytes lived in the pre-compressed `.br` siblings negotiated *under*
+the `.js` URL) the fix is only real once every cached copy of the old response
+is gone. Old 1-year `Expires` on `/assets/*` means a missed purge can mask a
+fixed deploy for up to a year.
+
 ## 6. Origin exposure (optional hardening)
 
 The site cannot be reached by IP: the Apache vhost answers on the hostname, and
