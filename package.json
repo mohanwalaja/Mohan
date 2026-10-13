@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "astrosivam-web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,6 +11,7 @@
     "parity:compare": "tsx scripts/compare-parity.ts",
     "parity:seed": "npm run parity:corpus && npm run parity:node -- --write-expected",
     "test:pdf": "playwright test",
+    "test:preview": "npm run build && playwright test --config playwright.preview.config.ts",
     "test:php": "bash scripts/run-php-tests.sh",
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",

@@ -4,7 +4,7 @@ import logoImg from '../../assets/astrosivam_logo.png';
 /**
  * ASTRO SIVAM brand lockup — emblem, wordmark, slogan.
  *
- * The brand line is fixed by LOGO_BRAND_GUIDELINES.md §9: the name plus its
+ * The brand line is fixed by docs/LOGO_BRAND_GUIDELINES.md §9: the name plus its
  * slogan, and nothing else. It lives here once instead of being retyped in every
  * page that shows the mark, so the slogan can never drift or go missing.
  */

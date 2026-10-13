@@ -715,7 +715,7 @@ ${REPORT_FONT_LINK_TAG}
          clamp() sizes and line-height ≥ 1.25 so Tamil and Devanagari glyph tops
          and bottoms are never cut off.
        * .padas-panel is the growing block that keeps the sheet full to the
-         footer band (REPORT_AND_INVOICE_FULL_PAGE_LAYOUT.md).
+         footer band (docs/REPORT_AND_INVOICE_FULL_PAGE_LAYOUT.md).
      ══════════════════════════════════════════════════════════════════ */
 
   /* ── Panels ── */

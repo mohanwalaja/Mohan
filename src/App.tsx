@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -12,25 +12,92 @@ import { ContactPage } from './pages/ContactPage';
 import { PoliciesPage } from './pages/PoliciesPage';
 import { AstrologyTeamPage } from './pages/AstrologyTeamPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-// Keep route pages in the main application bundle. This avoids route-level
-// network requests and Suspense loading screens when navigating between pages.
-import { AdminPortal } from './pages/AdminPortal';
-import { CustomerDashboard } from './pages/CustomerDashboard';
-import { BirthJathagamPage } from './pages/BirthJathagamPage';
-import { MarriageCompatibilityPage } from './pages/MarriageCompatibilityPage';
-import { BabyNamingPage } from './pages/BabyNamingPage';
-import { MuhurthamPage } from './pages/MuhurthamPage';
 import { HowItWorksPage } from './pages/HowItWorksPage';
-
-import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import {
+  recoverFromChunkError,
+  clearChunkRecoveryFlag,
+  installChunkErrorRecovery,
+  prefetchRouteChunksOnIdle,
+} from './services/routeChunks';
+
+// Heavy routes are code-split (audit S1): the admin portal, the customer
+// dashboard and the four report pages pull in the PDF/HTML report builders.
+// Each becomes its own chunk in the existing dist/assets/ folder — no new
+// top-level folders (tests/dist-shape.test.ts enforces this).
+//
+// WHITE-SCREEN SAFETY (a previous split attempt broke production):
+//   - home + the app shell stay eager, so the site always renders;
+//   - every lazy route sits behind <Suspense> with a themed fallback;
+//   - a failed chunk fetch reloads ONCE instead of dying blank
+//     (see src/services/routeChunks.ts);
+//   - chunks are warmed when the browser is idle, so navigation is as
+//     instant as the old single-bundle build.
+const AdminPortal = lazy(() =>
+  import('./pages/AdminPortal')
+    .then((m) => ({ default: m.AdminPortal }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const CustomerDashboard = lazy(() =>
+  import('./pages/CustomerDashboard')
+    .then((m) => ({ default: m.CustomerDashboard }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const BirthJathagamPage = lazy(() =>
+  import('./pages/BirthJathagamPage')
+    .then((m) => ({ default: m.BirthJathagamPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const MarriageCompatibilityPage = lazy(() =>
+  import('./pages/MarriageCompatibilityPage')
+    .then((m) => ({ default: m.MarriageCompatibilityPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const BabyNamingPage = lazy(() =>
+  import('./pages/BabyNamingPage')
+    .then((m) => ({ default: m.BabyNamingPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const MuhurthamPage = lazy(() =>
+  import('./pages/MuhurthamPage')
+    .then((m) => ({ default: m.MuhurthamPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AiAstrologerLauncher } from './components/ai-astrologer/AiAstrologerLauncher';
 import { CosmicBackground } from './components/common/CosmicBackground';
 import { CartProvider } from './context/CartContext';
 import { FamilyCartDrawer } from './components/cart/FamilyCartDrawer';
 import { UnifiedCheckoutModal } from './components/cart/UnifiedCheckoutModal';
 import { FamilyCartFloatingBar } from './components/cart/FamilyCartFloatingBar';
+
+/** Themed spinner shown only in the brief moment a lazy route chunk loads. */
+function RouteFallback() {
+  return (
+    <div
+      className="min-h-[55vh] flex items-center justify-center"
+      role="status"
+      aria-label="Loading page"
+    >
+      <div className="h-12 w-12 rounded-full border-4 border-amber-400/25 border-t-amber-400 animate-spin" />
+    </div>
+  );
+}
+
+/**
+ * Mounts only after the (possibly lazy) route content has resolved. Used to
+ * clear the one-shot chunk-recovery flag at the right moment: if the flag were
+ * cleared when the Suspense boundary first renders its fallback, a failing
+ * chunk could reload the page in an endless loop.
+ */
+function RouteLoadedMarker() {
+  useEffect(() => {
+    clearChunkRecoveryFlag();
+  }, []);
+  return null;
+}
 
 function AppContent() {
   const getInitialRoute = () => {
@@ -139,6 +206,14 @@ function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentRoute]);
 
+  // Code-splitting support (audit S1): install the one-shot chunk-failure
+  // recovery, then warm the heavy route chunks when the browser is idle so
+  // navigating feels exactly as instant as the old single-bundle build.
+  useEffect(() => {
+    installChunkErrorRecovery();
+    prefetchRouteChunksOnIdle();
+  }, []);
+
   const handleNavigate = (route: string) => {
     const targetRoute = route === 'admin-portal' ? 'admin' : route;
     setCurrentRoute(targetRoute);
@@ -217,7 +292,10 @@ function AppContent() {
 
       <Navbar currentRoute={currentRoute} onNavigate={handleNavigate} />
       <main className="flex-grow relative z-10">
-        {renderRoute()}
+        <Suspense fallback={<RouteFallback />}>
+          {renderRoute()}
+          <RouteLoadedMarker />
+        </Suspense>
       </main>
       <Footer onNavigate={handleNavigate} />
 

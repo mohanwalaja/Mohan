@@ -99,7 +99,10 @@ def create_dist_zip():
         if os.path.exists('public/.htaccess') and '.htaccess' not in zipf.namelist():
             zipf.write('public/.htaccess', '.htaccess')
 
-        # 4. Add the operator documentation referenced by the deployment guide
+        # 4. Add the operator documentation referenced by the deployment guide.
+        #    The runbooks live under docs/ in the repository but ship at the zip
+        #    root (bare filenames), matching what the deployment guide tells the
+        #    operator to look for after extraction.
         for doc in (
             'BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md',
             'RATE_LIMITING_AND_PAYMENT_RECOVERY.md',
@@ -107,8 +110,9 @@ def create_dist_zip():
             'HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md',
             'PAYMENT_WEBHOOK_IDEMPOTENCY_AND_CI.md'
         ):
-            if os.path.exists(doc):
-                zipf.write(doc, doc)
+            source = os.path.join('docs', doc)
+            if os.path.exists(source):
+                zipf.write(source, doc)
 
         # 5. Ops scripts the runbook schedules from cron (weekly backup, weekly
         #    log rotation). They must ship with the release: a host that is
@@ -130,5 +134,32 @@ def create_dist_zip():
     size_mb = os.path.getsize(zip_name) / (1024 * 1024)
     print(f"Successfully generated {zip_name} - Size: {size_mb:.2f} MB")
 
+# ---------------------------------------------------------------------------
+# Deployment shape contract (audit S1): the cPanel file manager must keep
+# showing a limited folder list at the site root — never one folder per route
+# or per asset class. These lists are deliberately explicit: if a build change
+# grows them, the packer FAILS instead of silently shipping a sprawled tree.
+# Enforced by tests/dist-shape.test.ts and asserted again in CI's zip check.
+# ---------------------------------------------------------------------------
+EXPECTED_DIST_TOP_DIRS = {'assets', 'audio', 'video-scenes'}
+EXPECTED_ZIP_TOP_DIRS = {'api', 'assets', 'audio', 'knowledge', 'scripts', 'src', 'video-scenes'}
+
+
+def assert_deploy_shape(dist_dir='dist', zip_name='dist.zip'):
+    if os.path.isdir(dist_dir):
+        dist_dirs = {e for e in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, e))}
+        if dist_dirs != EXPECTED_DIST_TOP_DIRS:
+            raise RuntimeError(
+                f'dist/ top-level folders changed: {sorted(dist_dirs)} (expected {sorted(EXPECTED_DIST_TOP_DIRS)})'
+            )
+    with zipfile.ZipFile(zip_name) as archive:
+        zip_dirs = {name.split('/', 1)[0] for name in archive.namelist() if '/' in name}
+    if zip_dirs != EXPECTED_ZIP_TOP_DIRS:
+        raise RuntimeError(
+            f'dist.zip top-level folders changed: {sorted(zip_dirs)} (expected {sorted(EXPECTED_ZIP_TOP_DIRS)})'
+        )
+    print(f'Deploy shape OK — zip root folders: {", ".join(sorted(zip_dirs))}')
+
 if __name__ == '__main__':
     create_dist_zip()
+    assert_deploy_shape()

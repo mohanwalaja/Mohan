@@ -168,7 +168,7 @@ docker rm -f astro-restore                 # local sandbox
 # cPanel: drop astro287_restore_test so a stale copy of customer data never lingers
 ```
 
-Copy the table below into `HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md` (or the
+Copy the table below into `docs/HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md` (or the
 ops log) — the point of the drill is the written result:
 
 | date | generation restored | dump size | tables | orders | intents | storage files | restored by | result |

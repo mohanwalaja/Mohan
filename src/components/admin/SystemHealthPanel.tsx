@@ -205,7 +205,7 @@ export const SystemHealthPanel: React.FC = () => {
       <p className="text-[11px] text-slate-500 dark:text-slate-400">
         Failing checks are appended to the PHP error log as structured{' '}
         <code className="text-[11px]">admin_health_*</code> lines. Backup and restore drills, error-log routing and the
-        external uptime monitor are documented in <code className="text-[11px]">HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md</code>.
+        external uptime monitor are documented in <code className="text-[11px]">docs/HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md</code>.
       </p>
     </div>
   );

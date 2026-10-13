@@ -16,7 +16,7 @@
  * so this file has NOT been executed. The logic it mirrors has been executed,
  * in TypeScript, by 26 passing checks. Run api/astrology/ai_report_extract.php
  * through a smoke test on the server before relying on it — see
- * BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md.
+ * docs/BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md.
  *
  * OWNERSHIP DESIGN (same reasoning as the TS file):
  * The uploaded PDF is an OWNERSHIP TOKEN, not the source of the explanation.
