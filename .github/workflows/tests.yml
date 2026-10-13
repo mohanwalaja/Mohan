@@ -1,0 +1,44 @@
+name: PHP Test Suite
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    name: PHP test suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: gd, mbstring, intl
+          ini-values: memory_limit=512M
+          tools: composer
+
+      - name: Install mPDF for real three-language PDF checks
+        run: |
+          if [ -f composer.lock ]; then
+            composer install --no-interaction --prefer-dist --no-progress
+          else
+            composer update --no-interaction --prefer-dist --no-progress
+          fi
+
+      - name: Lint every PHP file
+        run: |
+          find api tests -name '*.php' -not -path '*/vendor/*' -print0 \
+            | xargs -0 -n1 -P4 php -l
+
+      - name: Run PHP test suites
+        env:
+          ASTRO_REQUIRE_MPDF_TESTS: '1'
+        run: bash scripts/run-php-tests.sh

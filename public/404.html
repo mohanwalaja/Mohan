@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 - Page Not Found | ASTRO SIVAM</title>
+    <meta name="description" content="The page you are looking for does not exist on ASTRO SIVAM." />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; min-height: 100%; }
+      body {
+        background: #0b0813;
+        color: #e9e4f5;
+        font-family: "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        display: flex; align-items: center; justify-content: center;
+        padding: 32px 20px; text-align: center;
+      }
+      .card { max-width: 560px; }
+      .glyph { font-size: 64px; line-height: 1; margin-bottom: 8px; }
+      h1 {
+        font-family: Cinzel, Georgia, serif;
+        font-size: clamp(28px, 6vw, 44px);
+        margin: 0 0 12px;
+        background: linear-gradient(90deg, #f5d67b, #e0b155);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      p { color: #b9b1cf; font-size: 16px; line-height: 1.6; margin: 0 0 28px; }
+      .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+      a.btn {
+        display: inline-block; text-decoration: none; font-weight: 700;
+        padding: 12px 22px; border-radius: 999px; font-size: 15px;
+      }
+      a.primary { background: linear-gradient(90deg, #f5d67b, #e0b155); color: #1a1206; }
+      a.ghost { border: 1px solid #4a3f6b; color: #d9d2ec; }
+      a.ghost:hover { border-color: #f5d67b; color: #f5d67b; }
+      .links { margin-top: 26px; font-size: 14px; }
+      .links a { color: #9a90bd; text-decoration: none; margin: 0 8px; }
+      .links a:hover { color: #f5d67b; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="glyph" aria-hidden="true">&#10022;</div>
+      <h1>Page Not Found</h1>
+      <p>
+        The page you are looking for has drifted beyond the stars. It may have been
+        moved, renamed, or never existed. Let us guide you back to the light.
+      </p>
+      <div class="actions">
+        <a class="btn primary" href="/">Return Home</a>
+        <a class="btn ghost" href="/services">Explore Services</a>
+      </div>
+      <nav class="links">
+        <a href="/birth-jathagam">Birth Jathagam</a>
+        <a href="/marriage-compatibility">Marriage Matching</a>
+        <a href="/baby-naming">Baby Naming</a>
+        <a href="/muhurtham">Muhurtham</a>
+        <a href="/contact">Contact</a>
+      </nav>
+    </main>
+  </body>
+</html>

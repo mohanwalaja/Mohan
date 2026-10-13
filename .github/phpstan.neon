@@ -1,0 +1,20 @@
+# ASTRO SIVAM — advisory PHPStan configuration.
+#
+# WHY SO NARROW: the payment modules decide whether money and orders are
+# recorded, so they are the two files worth analysing first. Level 0 keeps the
+# signal high (typos, undefined functions, wrong argument counts) without
+# requiring the legacy engine files to be fully annotated. The CI step that uses
+# this config is intentionally non-blocking; `php -l` on every API file is the
+# hard gate next to it.
+parameters:
+    level: 0
+    paths:
+        - ../api/payments.php
+        - ../api/payment_webhook.php
+    # These entry points are included from cPanel at runtime; scanning the API
+    # tree lets PHPStan find getDbConnection(), logAudit(), jsonResponse() and
+    # the config constants instead of reporting them as unknown.
+    scanDirectories:
+        - ../api
+        - ../api/astrology
+    treatPhpDocTypesAsCertain: false

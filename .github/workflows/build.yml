@@ -1,0 +1,281 @@
+name: Build, Security Gate & Package Production dist.zip
+
+# WHY THIS WORKFLOW HAS A PULL-REQUEST TRIGGER
+#   Pushing to main used to be the first time anything was verified: the only
+#   checks were "does dist.zip build" and the separate PHP suite. A dependency
+#   advisory or a PHP file with a syntax error could therefore reach the
+#   release artifact unnoticed. The `security`, `tests` and `playwright-smoke`
+#   jobs below gate the packaging job, and they run on every pull request.
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Dependency advisories + PHP syntax. Fails on high/critical production
+  #    advisories and on ANY PHP parse error.
+  # ---------------------------------------------------------------------------
+  security:
+    name: Security gate (npm audit, composer audit, php -l)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # The PHP-CS-Fixer step diffs against the PR base branch.
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup PHP 8.1 + Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: gd, mbstring, intl
+          ini-values: memory_limit=512M
+          tools: composer
+
+      # npm ci is strict on purpose: a lockfile that drifted from package.json
+      # is exactly what makes an audit meaningless.
+      - name: Install frontend dependencies (strict lockfile)
+        run: npm ci
+
+      - name: npm audit — production dependencies (fail on high/critical)
+        run: npm audit --omit=dev --audit-level=high
+
+      # Build-time/dev advisories stay visible without blocking every PR:
+      # a vulnerable build tool is still worth reading about, but it does not
+      # ship to cPanel (there is no Node process on production).
+      - name: npm audit — full tree (advisory only)
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: Install PHP dependencies
+        run: |
+          if [ -f composer.lock ]; then
+            composer install --no-interaction --prefer-dist --no-progress
+          else
+            # No committed composer.lock yet (see CI notes in
+            # PAYMENT_WEBHOOK_IDEMPOTENCY_AND_CI.md), so resolve it here and
+            # audit what production would actually install.
+            composer update --no-interaction --prefer-dist --no-progress
+          fi
+
+      - name: composer audit — production packages
+        run: composer audit --no-dev
+
+      - name: PHP syntax check — php -l on every API file
+        run: |
+          set -o pipefail
+          find api -name '*.php' -not -path '*/vendor/*' -print0 \
+            | xargs -0 -n1 -P4 php -l \
+            | tee /tmp/php-lint.log
+          echo "Linted $(grep -c 'No syntax errors detected' /tmp/php-lint.log) PHP file(s)."
+
+      - name: PHPStan on the payment modules (advisory)
+        continue-on-error: true
+        run: |
+          curl -sSL -o /tmp/phpstan.phar https://github.com/phpstan/phpstan/releases/latest/download/phpstan.phar
+          php /tmp/phpstan.phar analyse --no-progress --error-format=github \
+            --level=0 -c .github/phpstan.neon api/payments.php api/payment_webhook.php
+
+      - name: PHP-CS-Fixer dry run on changed PHP files (advisory)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: |
+          CHANGED=$(git diff --name-only --diff-filter=ACMR origin/${{ github.base_ref }}...HEAD -- 'api/*.php' 'api/**/*.php' || true)
+          if [ -z "$CHANGED" ]; then echo "No changed PHP files."; exit 0; fi
+          curl -sSL -o /tmp/php-cs-fixer.phar https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/latest/download/php-cs-fixer.phar
+          echo "$CHANGED" | tr '\n' ' ' > /tmp/changed-php.txt
+          php /tmp/php-cs-fixer.phar fix --dry-run --diff --using-cache=no $(cat /tmp/changed-php.txt)
+
+  # ---------------------------------------------------------------------------
+  # 2. Node regression suite (includes the lockfile-drift check, the CI-gate
+  #    contract and the checkout idempotency contract).
+  #
+  #    This used to be advisory because it was red on main: the orphaned
+  #    src/components/common/LiveChatWidget.tsx had been replaced by the AI
+  #    astrologer chat but was still in the tree, and the access test asserted
+  #    its removal. The component is gone, so the suite is a real gate again.
+  # ---------------------------------------------------------------------------
+  tests:
+    name: Node test suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run the Node suites
+        run: npm test
+
+  # ---------------------------------------------------------------------------
+  # 3. Browser smoke test — the customer's first click, on desktop and mobile.
+  # ---------------------------------------------------------------------------
+  playwright-smoke:
+    name: Playwright smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke test the homepage (desktop + mobile)
+        run: |
+          set +e
+          npx playwright test tests/browser/homepage-navigation.spec.ts 2>&1 | tee /tmp/playwright-smoke.log
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            # Job logs sit behind a storage redirect; annotations are readable
+            # straight from the commit/PR page, so the first failing assertions
+            # are re-emitted as error annotations before the step gives up.
+            grep -nE "Error|expect|Timed out|Received|Expected|✘|failed" /tmp/playwright-smoke.log \
+              | head -25 | while IFS= read -r line; do
+                  echo "::error title=Playwright smoke failure::${line}"
+                done
+            exit "$STATUS"
+          fi
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-smoke-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # 4. Package the release. Only runs when every gate above is green — the
+  #    dependency/PHP audits, the Node contract suite and the browser smoke test.
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build production dist.zip
+    needs: [ security, tests, playwright-smoke ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 (frontend build tools only)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Setup PHP 8.1 + Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+          ini-values: memory_limit=512M
+
+      - name: Install PHP dependencies
+        run: |
+          if [ -f composer.json ]; then
+            if [ -f composer.lock ]; then
+              composer install --no-dev --optimize-autoloader || echo "Composer install completed with warnings"
+            else
+              composer update --no-dev --optimize-autoloader || echo "Composer update completed with warnings"
+            fi
+          fi
+
+      # Node.js runs only in CI to compile the static frontend; BigRock receives no Node server.
+      - name: Install frontend build dependencies
+        run: |
+          npm ci || npm install
+
+      - name: Build production app & generate dist.zip with api/
+        run: |
+          npm run build:zip
+          ls -lh dist.zip dist/
+
+      - name: Verify dist.zip content
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('dist.zip') as archive:
+              names = archive.namelist()
+          assert 'index.html' in names, 'Missing index.html'
+          assert any(name.startswith('api/') for name in names), 'Missing PHP api/ folder'
+          for kb in (
+              'knowledge/ai-astrologer/rules/guided-questions.json',
+              'knowledge/ai-astrologer/rules/life-areas.json',
+              'knowledge/ai-astrologer/rules/guardrails.json',
+              'knowledge/ai-astrologer/rules/remedies.json',
+              'knowledge/ai-astrologer/rules/report-sections.json',
+              'knowledge/ai-astrologer/sources.json',
+              'api/knowledge/ai-astrologer/rules/guided-questions.json',
+              # The webhook idempotency migration must ship with the API.
+              'api/migrations/008_payment_idempotency.sql',
+              # Ops surface: the admin health endpoint and the backup/rotation
+              # scripts. A release without them cannot be monitored.
+              'api/admin/health.php',
+              'scripts/backup/astro_site_backup.sh',
+              'scripts/ops/rotate_php_logs.sh',
+          ):
+              assert kb in names, f'Missing {kb} in dist.zip'
+          assert not any(name.endswith(('.cjs', '.map')) for name in names), 'Server bundle or source map must not be deployed'
+          print(f'Static/PHP dist.zip verified successfully! Total files: {len(names)}')
+          PY
+
+      - name: Upload dist.zip as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: astrosivam-dist
+          path: dist.zip
+          retention-days: 30
+          overwrite: true
+
+      - name: Publish / Update Latest Release Asset
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: latest
+          name: ASTRO SIVAM Production Build (Latest)
+          body: |
+            Automated production build including:
+            - Full optimized React frontend (`dist/`)
+            - Complete cPanel PHP backend (`/api/`) with Vedic astrology engine
+            - BigRock cPanel Deployment Guide (`BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md`)
+            
+            **Download `dist.zip` below and upload to your cPanel `public_html/`.**
+          files: |
+            dist.zip
+          draft: false
+          prerelease: false

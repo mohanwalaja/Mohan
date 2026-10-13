@@ -1,0 +1,54 @@
+node_modules/
+vendor/
+build/
+coverage/
+playwright-report/
+test-results/
+
+# Preview screenshot written at the repo root by the Muhurtham PDF browser test
+muhurtham_preview_p2_month.png
+.DS_Store
+*.log
+.env*
+!.env.example
+dist/
+dist.zip
+public/dist.zip
+public/dist_and_api.zip
+public_html/
+public_html_combined.zip
+
+# PHP runtime signing key (never commit)
+api/astrology/tmp/app_secret_key.txt
+
+# Backup generations written by scripts/backup/astro_site_backup.sh (customer
+# data + support documents). These live on the host only, under the directory
+# api/.htaccess already denies over HTTP.
+api/storage/backups/
+
+# Python bytecode cache from the scripts/ asset builders
+__pycache__/
+*.pyc
+
+# Locally generated report previews / verification harness output (repository root)
+/tmp/
+
+# PHP runtime directory: signing keys and the mPDF font cache are generated on
+# the host and never committed. Only its Apache access-control file is tracked.
+api/astrology/tmp/*
+!api/astrology/tmp/.htaccess
+
+# Regenerable TypeScript/PHP parity output (the committed contract is in fixtures).
+tests/fixtures/parity-node.json
+tests/fixtures/parity-php.json
+
+# Written on every run of tests/ai-astrologer-php-runtime.test.ts by the wasm PHP
+# probe. The probe itself is tracked; its output is not.
+tests/fixtures/php-ai-probes/out.json
+tests/fixtures/php-ai-probes/out-coverage.json
+tests/fixtures/php-ai-probes/out-kb.json
+tests/fixtures/php-ai-probes/out-guided.json
+tests/fixtures/php-ai-probes/out-guided-focus.json
+tests/fixtures/php-ai-probes/out-lint.json
+tests/fixtures/php-ai-probes/out-service-reports.json
+tests/fixtures/php-ai-probes/out-birth-chart-sample.json
