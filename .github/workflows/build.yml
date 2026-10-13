@@ -191,11 +191,11 @@ jobs:
           sha() { sha256sum "$1" | cut -d' ' -f1; }
           size() { stat -c%s "$1"; }
           echo "local raw .js : $BASE size=$(size "$INDEX_JS") sha256=$(sha "$INDEX_JS")"
-          echo "local raw marker count: $(grep -ac '__VITE_PRELOAD__' "$INDEX_JS" || true)"
+          echo "local raw marker count: $(grep -ao '__VITE_PRELOAD__' "$INDEX_JS" | wc -l | tr -d ' ')"
           if [ -f "$INDEX_JS.br" ]; then
             node -e "const z=require('zlib'),fs=require('fs');fs.writeFileSync('/tmp/local-index.br.js',z.brotliDecompressSync(fs.readFileSync(process.argv[1])))" "$INDEX_JS.br"
             echo "local .br decompressed: size=$(size /tmp/local-index.br.js) sha256=$(sha /tmp/local-index.br.js)"
-            echo "local .br marker count: $(grep -ac '__VITE_PRELOAD__' /tmp/local-index.br.js || true)"
+            echo "local .br marker count: $(grep -ao '__VITE_PRELOAD__' /tmp/local-index.br.js | wc -l | tr -d ' ')"
           fi
           # What the world gets with a Brotli-capable browser (production
           # .htaccess internally rewrites .js → .js.br on this header).
@@ -208,7 +208,7 @@ jobs:
               cp /tmp/prod-br.body /tmp/prod-index.js
             fi
             echo "production body: size=$(size /tmp/prod-index.js) sha256=$(sha /tmp/prod-index.js)"
-            PROD_MARKERS=$(grep -ac '__VITE_PRELOAD__' /tmp/prod-index.js || true)
+            PROD_MARKERS=$(grep -ao '__VITE_PRELOAD__' /tmp/prod-index.js | wc -l | tr -d ' ')
             echo "production marker count: $PROD_MARKERS"
             if [ "$PROD_MARKERS" != "0" ]; then
               echo "::warning title=Production serves a free __VITE_PRELOAD__::https://astrosivam.com/assets/$BASE still contains $PROD_MARKERS unreplaced placeholder(s) — every lazy route is broken for Brotli clients. Redeploy the fixed dist.zip and purge the Cloudflare cache."
@@ -235,7 +235,7 @@ jobs:
             else
               cp /tmp/inc-br.body /tmp/inc-index.js
             fi
-            INC_MARKERS=$(grep -ac '__VITE_PRELOAD__' /tmp/inc-index.js || true)
+            INC_MARKERS=$(grep -ao '__VITE_PRELOAD__' /tmp/inc-index.js | wc -l | tr -d ' ')
             echo "incident chunk body: size=$(size /tmp/inc-index.js) sha256=$(sha /tmp/inc-index.js) marker count: $INC_MARKERS"
             if [ "$INC_MARKERS" != "0" ]; then
               echo "::warning title=Production still serves the poisoned incident chunk::$OLD_NAME carries $INC_MARKERS free __VITE_PRELOAD__ placeholder(s) for Brotli clients — every lazy route is broken until the fixed dist.zip is redeployed and Cloudflare is purged."
