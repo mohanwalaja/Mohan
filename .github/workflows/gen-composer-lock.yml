@@ -6,6 +6,9 @@ name: Generate composer.lock (one-off)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'arena/**'
 
 permissions:
   contents: read
