@@ -20,6 +20,7 @@ import {
   clearChunkRecoveryFlag,
   installChunkErrorRecovery,
   prefetchRouteChunksOnIdle,
+  safeImport,
 } from './services/routeChunks';
 
 // Heavy routes are code-split (audit S1): the admin portal, the customer
@@ -33,34 +34,38 @@ import {
 //   - a failed chunk fetch reloads ONCE instead of dying blank
 //     (see src/services/routeChunks.ts);
 //   - chunks are warmed when the browser is idle, so navigation is as
-//     instant as the old single-bundle build.
+//     instant as the old single-bundle build;
+//   - every loader goes through safeImport(): a SYNCHRONOUS throw while
+//     evaluating the import() wrapper (how the __VITE_PRELOAD__ incident
+//     escaped `.catch()` and landed in the ErrorBoundary) becomes a
+//     rejection that recoverFromChunkError handles instead.
 const AdminPortal = lazy(() =>
-  import('./pages/AdminPortal')
+  safeImport(() => import('./pages/AdminPortal'))
     .then((m) => ({ default: m.AdminPortal }))
     .catch((error) => recoverFromChunkError(error)),
 );
 const CustomerDashboard = lazy(() =>
-  import('./pages/CustomerDashboard')
+  safeImport(() => import('./pages/CustomerDashboard'))
     .then((m) => ({ default: m.CustomerDashboard }))
     .catch((error) => recoverFromChunkError(error)),
 );
 const BirthJathagamPage = lazy(() =>
-  import('./pages/BirthJathagamPage')
+  safeImport(() => import('./pages/BirthJathagamPage'))
     .then((m) => ({ default: m.BirthJathagamPage }))
     .catch((error) => recoverFromChunkError(error)),
 );
 const MarriageCompatibilityPage = lazy(() =>
-  import('./pages/MarriageCompatibilityPage')
+  safeImport(() => import('./pages/MarriageCompatibilityPage'))
     .then((m) => ({ default: m.MarriageCompatibilityPage }))
     .catch((error) => recoverFromChunkError(error)),
 );
 const BabyNamingPage = lazy(() =>
-  import('./pages/BabyNamingPage')
+  safeImport(() => import('./pages/BabyNamingPage'))
     .then((m) => ({ default: m.BabyNamingPage }))
     .catch((error) => recoverFromChunkError(error)),
 );
 const MuhurthamPage = lazy(() =>
-  import('./pages/MuhurthamPage')
+  safeImport(() => import('./pages/MuhurthamPage'))
     .then((m) => ({ default: m.MuhurthamPage }))
     .catch((error) => recoverFromChunkError(error)),
 );

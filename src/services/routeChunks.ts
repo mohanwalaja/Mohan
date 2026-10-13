@@ -31,6 +31,32 @@ export const routeChunkImporters: Record<string, () => Promise<unknown>> = {
   muhurtham: () => import('../pages/MuhurthamPage'),
 };
 
+/**
+ * Invoke a route loader so a SYNCHRONOUS throw becomes a rejection.
+ *
+ * Why this exists (the `ReferenceError: __VITE_PRELOAD__ is not defined`
+ * incident): Vite compiles `import('./pages/X')` inside a lazy() factory to
+ * `__vitePreload(() => import('./pages/X'), <deps>)`. When the deps argument
+ * blows up while the factory is being *evaluated*, the throw happens before
+ * any promise exists — so `.then(...).catch(recoverFromChunkError)` never runs
+ * and the error bypasses the chunk-recovery path straight into the
+ * ErrorBoundary. Deferring the loader call behind `Promise.resolve().then(load)`
+ * guarantees every failure (sync or async) arrives as a rejection that
+ * recoverFromChunkError can handle. The explicit try/catch is belt-and-braces
+ * for exotic loaders that throw while merely being readied.
+ */
+export function safeImport<T>(load: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    try {
+      Promise.resolve()
+        .then(load)
+        .then(resolve, reject);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
 const CHUNK_RELOAD_KEY = 'astro-chunk-recovered';
 
 function safeSession(): Storage | null {
@@ -64,12 +90,15 @@ export function clearChunkRecoveryFlag(): void {
 /**
  * Warm a route's chunk ahead of the click. Used by the idle prefetch below and
  * safe to call from hover handlers. Failures are ignored — navigation itself
- * will retry the import.
+ * will retry the import. The loader runs inside `Promise.resolve().then(...)`
+ * because a synchronous throw from the import() wrapper (the failure mode that
+ * escaped `.catch()` in the __VITE_PRELOAD__ incident) would otherwise surface
+ * as an uncaught exception instead of a handled rejection.
  */
 export function prefetchRoute(route: string): void {
   const load = routeChunkImporters[route];
   if (!load) return;
-  void load().catch(() => {});
+  void safeImport(load).catch(() => {});
 }
 
 /** True when the visitor is on a metered or very slow connection. */

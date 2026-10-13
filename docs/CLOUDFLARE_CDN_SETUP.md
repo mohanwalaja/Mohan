@@ -34,7 +34,7 @@ wrong. Check `https://<origin-ip>/` directly with `openssl s_client` first.
 | Auto Accept | On, **with care** | makes the edge request/accept one encoding so the cache holds a single variant, then re-encodes per client. If you see a client receiving unreadable JS after enabling it, that is a `Vary`/encoding mismatch: the §4 rules are the fix, and the monitor's API check plus the Playwright smoke test will catch a broken bundle. |
 | Rocket Loader | **OFF** | it rewrites and defers scripts from the edge; our CSP (`script-src 'self' …`) blocks the injected loader, and deferring app scripts breaks the report renderer's timing |
 | Email Obfuscation | **OFF** | it injects markup/scripts into HTML; nothing in the app needs it and it fights the CSP |
-| Auto Minify | **n/a** | deprecated; Vite already minifies |
+| Auto Minify | **OFF** for JavaScript (the dashboard feature is deprecated/removed — if your zone still exposes it, it must stay unticked for JS) | Cloudflare's edge minifier **rewrites ES modules**, and Vite's code-split output depends on exact module semantics (dynamic-import preload helper, side-effect order). Edge-minified JS has broken Vite lazy chunks before — never let anything between Cloudflare and the origin re-minify what Vite already minified |
 | HTTP/3, 0-RTT, Early Hints | On | free wins for TTFB; the app does not depend on request ordering |
 | Web Analytics (optional) | if enabled, update the CSP | add `https://static.cloudflareinsights.com` to `script-src` and `https://cloudflareinsights.com` to `connect-src` in `public/.htaccess`. It is **not** in the policy today, so the beacon is blocked until you add it. |
 
