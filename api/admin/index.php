@@ -124,11 +124,16 @@ if (strpos($path, 'admin/orders') !== false && $method === 'GET' && !preg_match(
         $pdo->exec("ALTER TABLE `orders` ADD COLUMN `group_order_index` INT NOT NULL DEFAULT 0 AFTER `group_id`");
     } catch (\Throwable $e) {}
 
-    // Online-payments only: only surface orders with successfully captured payment.
+    // Surface every fulfilable order: paid orders whose payment was captured
+    // (or verified by an admin), PLUS free-beta charts that never required a
+    // payment at all (payment_status NOT_REQUIRED with payment_confirmed 0 —
+    // the 1-free-per-IP order carries no intent, so it must not be hidden).
+    // Rejected/cancelled and not-yet-captured online orders stay hidden.
     $stmt = $pdo->query("SELECT * FROM orders
         WHERE status NOT IN ('REJECTED','CANCELLED')
-          AND payment_confirmed = 1
-          AND (payment_status IS NULL OR payment_status IN ('CAPTURED','NOT_REQUIRED','CONSUMED'))
+          AND (payment_confirmed = 1
+               OR UPPER(COALESCE(NULLIF(payment_status, ''), 'PENDING_ADMIN')) = 'NOT_REQUIRED')
+          AND (payment_status IS NULL OR payment_status IN ('CAPTURED','NOT_REQUIRED','CONSUMED','VERIFIED_MANUAL'))
         ORDER BY created_at DESC, id ASC");
     $rows = $stmt->fetchAll();
 
@@ -1648,8 +1653,9 @@ if (strpos($path, 'admin/reports/financial') !== false && $method === 'GET') {
     
     $sql = "SELECT * FROM orders
         WHERE status NOT IN ('REJECTED','CANCELLED')
-          AND payment_confirmed = 1
-          AND (payment_status IS NULL OR payment_status IN ('CAPTURED','NOT_REQUIRED','CONSUMED'))";
+          AND (payment_confirmed = 1
+               OR UPPER(COALESCE(NULLIF(payment_status, ''), 'PENDING_ADMIN')) = 'NOT_REQUIRED')
+          AND (payment_status IS NULL OR payment_status IN ('CAPTURED','NOT_REQUIRED','CONSUMED','VERIFIED_MANUAL'))";
     if (!empty($where)) {
         $sql .= " AND " . implode(" AND ", $where);
     }

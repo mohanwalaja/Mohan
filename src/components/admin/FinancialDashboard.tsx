@@ -214,17 +214,17 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-1">
-            <div className="text-xs font-semibold text-slate-500">Marriage Compatibility</div>
+            <div className="text-xs font-semibold text-slate-500">Wedding Matching</div>
             <div className="text-xl font-bold text-slate-900 dark:text-white">
               ₹{(report?.byServiceType?.MARRIAGE_COMPATIBILITY?.amount ?? report?.revenueByService?.MARRIAGE_COMPATIBILITY?.inr ?? 0).toFixed(2)}
             </div>
             <div className="text-[11px] text-slate-400">
-              {report?.byServiceType?.MARRIAGE_COMPATIBILITY?.count ?? report?.revenueByService?.MARRIAGE_COMPATIBILITY?.count ?? 0} Match Requests
+              {report?.byServiceType?.MARRIAGE_COMPATIBILITY?.count ?? report?.revenueByService?.MARRIAGE_COMPATIBILITY?.count ?? 0} Wedding Matching Requests
             </div>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-1">
-            <div className="text-xs font-semibold text-slate-500">Baby Naming</div>
+            <div className="text-xs font-semibold text-slate-500">Baby Naming Syllables</div>
             <div className="text-xl font-bold text-slate-900 dark:text-white">
               ₹{(report?.byServiceType?.BABY_NAMING?.amount ?? report?.revenueByService?.BABY_NAMING?.inr ?? 0).toFixed(2)}
             </div>
@@ -239,7 +239,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = () => {
               ₹{(report?.byServiceType?.MUHURTHAM?.amount ?? report?.revenueByService?.MUHURTHAM?.inr ?? 0).toFixed(2)}
             </div>
             <div className="text-[11px] text-slate-400">
-              {report?.byServiceType?.MUHURTHAM?.count ?? report?.revenueByService?.MUHURTHAM?.count ?? 0} Muhurtham Requests
+              {report?.byServiceType?.MUHURTHAM?.count ?? report?.revenueByService?.MUHURTHAM?.count ?? 0} Subha Muhurtham Requests
             </div>
           </div>
         </div>
