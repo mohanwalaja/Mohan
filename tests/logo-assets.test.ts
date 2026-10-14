@@ -135,14 +135,14 @@ check('Size rule picks the reduced mark below the threshold and the full mark ab
   sizeRuleOk);
 
 // --- the live logo contract must not regress -------------------------------- //
-check('Browser emblem is served from public/',
-  has('public/astrosivam_logo.png') && statSync(resolve(root, 'public/astrosivam_logo.png')).size > 1024);
-const publishedEmblem = readFileSync(resolve(root, 'public/astrosivam_logo.png'));
+check('Browser emblem is served from public/assets/images/',
+  has('public/assets/images/astrosivam_logo.png') && statSync(resolve(root, 'public/assets/images/astrosivam_logo.png')).size > 1024);
+const publishedEmblem = readFileSync(resolve(root, 'public/assets/images/astrosivam_logo.png'));
 check('Vite navbar emblem matches the published website emblem',
   has('src/assets/astrosivam_logo.png')
   && readFileSync(resolve(root, 'src/assets/astrosivam_logo.png')).equals(publishedEmblem));
-check('Official full logo is present in public/',
-  has('public/astrosivam_full_logo.png') && statSync(resolve(root, 'public/astrosivam_full_logo.png')).size > 1024);
+check('Official full logo is present in public/assets/images/',
+  has('public/assets/images/astrosivam_full_logo.png') && statSync(resolve(root, 'public/assets/images/astrosivam_full_logo.png')).size > 1024);
 check('Favicon 16x16 is present in public/',
   has('public/favicon-16x16.png') && statSync(resolve(root, 'public/favicon-16x16.png')).size > 0);
 check('Favicon 32x32 is present in public/',
@@ -160,7 +160,7 @@ check('Android Chrome 512 icon is present in public/',
 check('PHP API keeps its own bundled logo',
   has('api/assets/astrosivam_logo.png') && statSync(resolve(root, 'api/assets/astrosivam_logo.png')).size < 80 * 1024);
 check('Social share card is a 1200x630 JPEG (served, not PNG)',
-  has('public/astrosivam_og_image.jpg'));
+  has('public/assets/images/astrosivam_og_image.jpg'));
 
 // --- icon cache-busting ----------------------------------------------------- // A stale ?v= means browsers and social scrapers keep serving the old mark.
 const indexHtml = read('index.html');
