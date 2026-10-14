@@ -465,11 +465,31 @@ function installBrowserStubs() {
     hostname: 'astrosivam.com',
   };
   globalThis.location = globalThis.window.location;
+  // Node 21+ (and some Node 20 backports) expose a read-only `navigator`
+  // without the DOM fields Leaflet reads at module init (`navigator.platform`
+  // here; `userAgent` elsewhere). Fill in whatever is missing on the existing
+  // object instead of assuming a clean slate.
+  const navigatorStub = {
+    userAgent: 'prerender',
+    platform: 'Linux x86_64',
+    appVersion: '5.0 (prerender)',
+    vendor: 'prerender',
+    language: 'en',
+    languages: ['en'],
+    onLine: true,
+  };
   if (!globalThis.navigator) {
-    Object.defineProperty(globalThis, 'navigator', {
-      value: { userAgent: 'prerender', language: 'en', onLine: true },
-      configurable: true,
-    });
+    Object.defineProperty(globalThis, 'navigator', { value: navigatorStub, configurable: true });
+  } else {
+    for (const [key, value] of Object.entries(navigatorStub)) {
+      if (typeof globalThis.navigator[key] === 'undefined') {
+        try {
+          Object.defineProperty(globalThis.navigator, key, { value, configurable: true });
+        } catch {
+          // Non-configurable prototype getter — nothing else we can do.
+        }
+      }
+    }
   }
   globalThis.document = {
     addEventListener() {},
