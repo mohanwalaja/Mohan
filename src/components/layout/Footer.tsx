@@ -91,8 +91,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <button
-                  onClick={() => onNavigate('birth-jathagam')}
+                  <button
+                    data-route="birth-jathagam"
+                    onClick={() => onNavigate('birth-jathagam')}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
@@ -100,8 +101,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => onNavigate('marriage-compatibility')}
+                  <button
+                    data-route="marriage-compatibility"
+                    onClick={() => onNavigate('marriage-compatibility')}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
@@ -109,8 +111,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => onNavigate('baby-naming')}
+                  <button
+                    data-route="baby-naming"
+                    onClick={() => onNavigate('baby-naming')}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
@@ -118,8 +121,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => onNavigate('muhurtham')}
+                  <button
+                    data-route="muhurtham"
+                    onClick={() => onNavigate('muhurtham')}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
@@ -127,8 +131,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => onNavigate('services')}
+                  <button
+                    data-route="services"
+                    onClick={() => onNavigate('services')}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
@@ -145,8 +150,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <button
-                  onClick={() => onNavigate('how-it-works')}
+                  <button
+                    data-route="how-it-works"
+                    onClick={() => onNavigate('how-it-works')}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
@@ -154,8 +160,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => onNavigate('team')}
+                  <button
+                    data-route="team"
+                    onClick={() => onNavigate('team')}
                   className="group flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-amber-500 group-hover:translate-x-0.5 transition-transform" />
@@ -163,8 +170,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => onNavigate('about')}
+                  <button
+                    data-route="about"
+                    onClick={() => onNavigate('about')}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
@@ -172,8 +180,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => onNavigate('contact')}
+                  <button
+                    data-route="contact"
+                    onClick={() => onNavigate('contact')}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
@@ -181,8 +190,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => onNavigate('dashboard')}
+                  <button
+                    data-route="dashboard"
+                    onClick={() => onNavigate('dashboard')}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
@@ -245,29 +255,33 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
-            <button
-              onClick={() => onNavigate('policy-privacy')}
+              <button
+                data-route="policy-privacy"
+                onClick={() => onNavigate('policy-privacy')}
               className="hover:text-amber-300 transition-colors"
             >
               {t('privacy_policy')}
             </button>
             <span className="text-slate-600">•</span>
-            <button
-              onClick={() => onNavigate('policy-terms')}
+              <button
+                data-route="policy-terms"
+                onClick={() => onNavigate('policy-terms')}
               className="hover:text-amber-300 transition-colors"
             >
               {t('terms_conditions')}
             </button>
             <span className="text-slate-600">•</span>
-            <button
-              onClick={() => onNavigate('policy-payment')}
+              <button
+                data-route="policy-payment"
+                onClick={() => onNavigate('policy-payment')}
               className="hover:text-amber-300 transition-colors"
             >
               {t('payment_policy')}
             </button>
             <span className="text-slate-600">•</span>
-            <button
-              onClick={() => onNavigate('policy-refund')}
+              <button
+                data-route="policy-refund"
+                onClick={() => onNavigate('policy-refund')}
               className="hover:text-amber-300 transition-colors"
             >
               {t('refund_policy')}

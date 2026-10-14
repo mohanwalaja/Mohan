@@ -160,6 +160,119 @@ function apiDevMiddleware(): Plugin {
   };
 }
 
+/**
+ * Vendor chunks, grouped by npm package.
+ *
+ * WHY BY PACKAGE: a module id like `node_modules/canvg/lib/index.es.js` never
+ * contains the string "jspdf", yet canvg is jspdf's SVG renderer. Matching on
+ * ids put every such transitive dependency into `vendor-core` — the chunk the
+ * app entry statically imports — so jspdf's and recharts' dependencies were
+ * unconditionally downloaded by every visitor, including on the homepage.
+ *
+ * Every package NOT listed here (react, react-dom, lucide-react, …) stays in
+ * `vendor-core`, i.e. in the initial bundle: React itself must never be
+ * deferred (white-screen safety, tests/dist-shape.test.ts).
+ */
+/**
+ * The HTML report builders, one chunk each (audit PERF-1).
+ *
+ * WHY THEY ARE NAMED CHUNKS: `jathagamPdfExporter` imports all five builders,
+ * and Rollup's default chunking folds a module that is both statically and
+ * dynamically imported into the chunk of the static importer. That put the
+ * builders INSIDE the exporter chunk — the chunk that statically imports the
+ * PDF engine — so `import('.../jathagamHtmlBuilder')` from the preview modal
+ * resolved to the exporter and a visitor opening a sample report downloaded
+ * jspdf + html2canvas after all. Naming each builder forces them out of the
+ * exporter chunk, and the preview's dynamic import then fetches only the
+ * builder for the report being shown (the Baby Naming builder carries the
+ * ~370 KB name tables, the Muhurtham one the ~245 KB scan data).
+ */
+const REPORT_BUILDER_CHUNKS = [
+  'jathagamHtmlBuilder',
+  'weddingHtmlBuilder',
+  'babyNamingHtmlBuilder',
+  'muhurthamHtmlBuilder',
+  'invoiceHtmlBuilder',
+];
+
+const VENDOR_CHUNK_GROUPS: Array<{ name: string; packages: string[] }> = [
+  {
+    name: 'vendor-pdf',
+    // jspdf + html2canvas and everything they pull in. Loaded only when a
+    // visitor actually downloads/exports a PDF.
+    packages: [
+      'jspdf',
+      'jspdf-autotable',
+      'html2canvas',
+      'canvg',
+      'dompurify',
+      'fflate',
+      'fast-png',
+      'pako',
+      'iobuffer',
+      'rgbcolor',
+      'stackblur-canvas',
+      'svg-pathdata',
+      'raf',
+      'performance-now',
+      'core-js',
+      '@babel/runtime',
+    ],
+  },
+  {
+    name: 'vendor-charts',
+    // recharts and its state/d3 layer — the admin analytics dashboard only.
+    packages: [
+      'recharts',
+      'victory-vendor',
+      'd3-array',
+      'd3-color',
+      'd3-ease',
+      'd3-format',
+      'd3-interpolate',
+      'd3-path',
+      'd3-scale',
+      'd3-shape',
+      'd3-time',
+      'd3-time-format',
+      'd3-timer',
+      'internmap',
+      'decimal.js-light',
+      '@reduxjs/toolkit',
+      'react-redux',
+      'redux',
+      'redux-thunk',
+      'reselect',
+      'immer',
+      'es-toolkit',
+      'clsx',
+      'eventemitter3',
+      'tiny-invariant',
+      'use-sync-external-store',
+    ],
+  },
+  {
+    name: 'vendor-astrology',
+    packages: ['astronomy-engine', 'tz-lookup'],
+  },
+  {
+    name: 'vendor-maps',
+    // Leaflet — imported only by the on-demand map picker modal.
+    packages: ['leaflet'],
+  },
+];
+
+/** The npm package a node_modules module id belongs to (`@scope/name` included). */
+function nodePackageName(id: string): string {
+  const marker = 'node_modules/';
+  const index = id.lastIndexOf(marker);
+  if (index === -1) return '';
+  const rest = id.slice(index + marker.length);
+  if (!rest.startsWith('@')) return rest.split('/')[0];
+  const [scope, name] = rest.split('/');
+  return name ? `${scope}/${name}` : scope;
+}
+
 export default defineConfig(() => {
   return {
     base: '/',
@@ -171,22 +284,39 @@ export default defineConfig(() => {
       emptyOutDir: true,
       rollupOptions: {
         output: {
+          // Vendor chunking by PACKAGE rather than by substring match on the
+          // module id (audit PERF-1). The old rules recognised only the four
+          // direct imports, so every transitive dependency fell into
+          // `vendor-core` — the one vendor chunk the entry chunk always
+          // imports. The homepage therefore downloaded jspdf's raster/SVG
+          // helpers (canvg 169 KB, pako 109 KB, dompurify 84 KB, fflate,
+          // fast-png, svg-pathdata, stackblur) and recharts' state layer
+          // (redux, immer, d3, es-toolkit, …) as part of React's chunk, even
+          // though they are reachable only from the PDF renderer and the
+          // admin charts. They now ship with those features and are fetched
+          // when — and only when — the feature is used.
           manualChunks(id) {
+            // The Vite preload helper is statically imported by EVERY chunk
+            // that performs a dynamic import, including the app entry. When
+            // Rollup parked it inside a heavy chunk (it landed in
+            // `vendor-pdf`), that whole chunk became a static dependency of the
+            // entry and Vite emitted a modulepreload for it on first paint —
+            // the homepage downloaded jspdf + html2canvas to run a helper for
+            // dynamic imports it had not made yet. Keep it in the chunk the
+            // entry already needs.
+            if (id.includes('vite/preload-helper')) return 'vendor-core';
+            // One chunk per report builder — see REPORT_BUILDER_CHUNKS.
+            for (const builder of REPORT_BUILDER_CHUNKS) {
+              if (new RegExp(`/services/${builder}\\.tsx?$`).test(id)) return builder;
+            }
             if (id.includes('node_modules')) {
-              if (id.includes('jspdf') || id.includes('html2canvas')) {
-                return 'vendor-pdf';
-              }
-              if (id.includes('astronomy-engine') || id.includes('tz-lookup')) {
-                return 'vendor-astrology';
-              }
-              if (id.includes('recharts')) {
-                return 'vendor-charts';
-              }
-              if (id.includes('leaflet')) {
-                return 'vendor-maps';
+              const pkg = nodePackageName(id);
+              for (const group of VENDOR_CHUNK_GROUPS) {
+                if (group.packages.includes(pkg)) return group.name;
               }
               return 'vendor-core';
             }
+            return undefined;
           },
         },
       },

@@ -1,12 +1,38 @@
-import React, { useCallback, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useState } from 'react';
 import { AlertCircle, Eye, Loader2 } from 'lucide-react';
 import { AppLanguage, ServiceType } from '../../types';
-import { LivePdfPreviewModal } from './LivePdfPreviewModal';
 import {
   calculateSampleResult,
   SAMPLE_BIRTH_LABEL,
   SampleServiceType
 } from '../../services/sampleReports';
+
+/**
+ * The sample viewer is a DEFERRED feature (audit PERF-1): this button sits on
+ * every service page, and the modal behind it pulls in the report builders and
+ * (until the download click) nothing else. Fetching it when the visitor asks to
+ * see a sample — instead of when the page loads — keeps the preview code out of
+ * the initial navigation even for the visitors who never click.
+ */
+const LivePdfPreviewModal = lazy(() =>
+  import('./LivePdfPreviewModal').then((m) => ({ default: m.LivePdfPreviewModal }))
+);
+
+/** Shown for the moment the sample viewer chunk is being fetched. */
+function SamplePreviewLoading() {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
+      <div
+        role="status"
+        aria-label="Loading sample report"
+        className="flex flex-col items-center gap-3 rounded-3xl border border-slate-700 bg-slate-900 px-8 py-6 shadow-2xl"
+      >
+        <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+        <p className="text-xs font-bold text-slate-200">Preparing the sample viewer…</p>
+      </div>
+    </div>
+  );
+}
 
 export interface SampleReportButtonProps {
   /** Which fixed sample report to open. */
@@ -92,15 +118,21 @@ export const SampleReportButton: React.FC<SampleReportButtonProps> = ({
         </p>
       )}
 
-      <LivePdfPreviewModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        serviceType={serviceType as ServiceType}
-        result={result}
-        initialLang={language}
-        sourceContext="user_testing"
-        sampleMode
-      />
+      {/* Mounted only while open, so the lazy chunk is fetched on the first
+          click and never during the page's initial load. */}
+      {isOpen && (
+        <Suspense fallback={<SamplePreviewLoading />}>
+          <LivePdfPreviewModal
+            isOpen={isOpen}
+            onClose={() => setIsOpen(false)}
+            serviceType={serviceType as ServiceType}
+            result={result}
+            initialLang={language}
+            sourceContext="user_testing"
+            sampleMode
+          />
+        </Suspense>
+      )}
     </>
   );
 };

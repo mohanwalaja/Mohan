@@ -13,9 +13,17 @@
  *   3. A failed dynamic import means the tab holds an index.html from a
  *      previous deploy: reload ONCE (sessionStorage-guarded) instead of
  *      rendering blank forever.
- *   4. Chunks are prefetched when the browser is idle so navigation feels
- *      exactly as instant as when everything was bundled — but only when the
- *      visitor is not on a metered/2G connection.
+ *   4. A route chunk is fetched when the visitor SHOWS INTENT to open it
+ *      (hover/focus/touch on its link — see installRouteIntentPrefetch) and
+ *      never otherwise, and never on a metered/2G connection.
+ *
+ * WHY 4 CHANGED (audit PERF-1): the first version of this file warmed all six
+ * heavy routes on `requestIdleCallback`. The browser is idle on every page —
+ * including the homepage of a visitor who only wants to read the services —
+ * so the "code splitting" downloaded the admin portal, the customer dashboard
+ * and every report page (which pull in the PDF renderer) within seconds of
+ * landing. Idle is not intent: the only signal this app can trust is the
+ * visitor reaching for a specific link.
  *
  * All chunks are emitted into the existing dist/assets/ folder (default Vite
  * naming) — code splitting must never create new top-level folders in the
@@ -29,6 +37,21 @@ export const routeChunkImporters: Record<string, () => Promise<unknown>> = {
   'marriage-compatibility': () => import('../pages/MarriageCompatibilityPage'),
   'baby-naming': () => import('../pages/BabyNamingPage'),
   muhurtham: () => import('../pages/MuhurthamPage'),
+  // Every page the homepage links to is lazy too (audit PERF-1): a visitor
+  // reading the homepage should not download the policy pages to be able to
+  // open them. Keys match the `data-route` attributes on the links.
+  services: () => import('../pages/ServicesPage'),
+  'how-it-works': () => import('../pages/HowItWorksPage'),
+  about: () => import('../pages/AboutPage'),
+  team: () => import('../pages/AstrologyTeamPage'),
+  contact: () => import('../pages/ContactPage'),
+  policies: () => import('../pages/PoliciesPage'),
+  'policy-privacy': () => import('../pages/PoliciesPage'),
+  'policy-terms': () => import('../pages/PoliciesPage'),
+  'policy-payment': () => import('../pages/PoliciesPage'),
+  'policy-refund': () => import('../pages/PoliciesPage'),
+  login: () => import('../pages/LoginPage'),
+  register: () => import('../pages/RegisterPage'),
 };
 
 /**
@@ -88,12 +111,13 @@ export function clearChunkRecoveryFlag(): void {
 }
 
 /**
- * Warm a route's chunk ahead of the click. Used by the idle prefetch below and
- * safe to call from hover handlers. Failures are ignored — navigation itself
- * will retry the import. The loader runs inside `Promise.resolve().then(...)`
- * because a synchronous throw from the import() wrapper (the failure mode that
- * escaped `.catch()` in the __VITE_PRELOAD__ incident) would otherwise surface
- * as an uncaught exception instead of a handled rejection.
+ * Warm a route's chunk ahead of the click. Used by the intent prefetch below
+ * and safe to call from hover handlers. Failures are ignored — navigation
+ * itself will retry the import. The loader runs inside
+ * `Promise.resolve().then(...)` because a synchronous throw from the import()
+ * wrapper (the failure mode that escaped `.catch()` in the __VITE_PRELOAD__
+ * incident) would otherwise surface as an uncaught exception instead of a
+ * handled rejection.
  */
 export function prefetchRoute(route: string): void {
   const load = routeChunkImporters[route];
@@ -115,22 +139,61 @@ function shouldSkipPrefetch(): boolean {
   }
 }
 
+/** Routes already warmed this session — intent fires many times per link. */
+const preparedRoutes = new Set<string>();
+
 /**
- * Prefetch every heavy route chunk once the browser is idle, so clicking a
- * nav link is a render — not a network wait. Skipped on data-saver/2G.
+ * Warm ONE route's chunk because the visitor reached for its link. Call from
+ * pointerenter/focus handlers; safe to call repeatedly (the chunk import is
+ * cached by the browser, the set only avoids re-entering the loader).
  */
-export function prefetchRouteChunksOnIdle(): void {
+export function prefetchRouteOnIntent(route: string): void {
+  if (!route || preparedRoutes.has(route)) return;
+  if (!(route in routeChunkImporters)) return;
   if (shouldSkipPrefetch()) return;
-  const warm = () => Object.keys(routeChunkImporters).forEach(prefetchRoute);
-  try {
-    if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(() => warm(), { timeout: 4000 });
-    } else {
-      window.setTimeout(warm, 2000);
-    }
-  } catch {
-    // Prefetch is an optimisation only — never let it break the app.
-  }
+  preparedRoutes.add(route);
+  prefetchRoute(route);
+}
+
+/**
+ * Fetch a route's code when the visitor shows intent to open it — hovering or
+ * focusing a link (and on touchstart, where hover never happens) — instead of
+ * on an idle callback that fired for every visitor whether or not they ever
+ * meant to leave the homepage (audit PERF-1).
+ *
+ * The markup side is declarative: any element carrying `data-route="<route>"`
+ * (the navbar links, the footer service links) is a trigger. Listeners are
+ * attached once, in the capture phase, so they run before React's own handlers
+ * and keep working for links rendered later.
+ *
+ * Returns a cleanup function; callers may ignore it (the app installs this
+ * exactly once for the lifetime of the document).
+ */
+export function installRouteIntentPrefetch(): () => void {
+  const INTENT_EVENTS = ['pointerenter', 'focusin', 'touchstart'] as const;
+
+  const handleIntent = (event: Event) => {
+    const target = event.target as Element | null;
+    if (!target || typeof (target as Element).closest !== 'function') return;
+    const trigger = (target as Element).closest('[data-route]');
+    const route = trigger?.getAttribute('data-route');
+    if (route) prefetchRouteOnIntent(route);
+  };
+
+  INTENT_EVENTS.forEach((eventName) => {
+    document.addEventListener(eventName, handleIntent, {
+      capture: true,
+      // Hover/touch are gesture signals only — they must never swallow the
+      // click that follows, and they must not be prevented by handlers.
+      passive: true,
+    });
+  });
+
+  return () => {
+    INTENT_EVENTS.forEach((eventName) => {
+      document.removeEventListener(eventName, handleIntent, { capture: true });
+    });
+  };
 }
 
 /** Register global handlers for Vite's chunk/preload failures. */

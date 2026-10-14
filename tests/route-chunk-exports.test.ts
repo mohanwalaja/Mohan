@@ -1,5 +1,5 @@
 /**
- * ASTRO SIVAM — lazy route export contract (audit S1).
+ * ASTRO SIVAM — lazy route export contract (audit S1, widened by audit PERF-1).
  *
  * App.tsx builds each lazy() factory as
  *   safeImport(() => import('./pages/X')).then((m) => ({ default: m.X }))
@@ -35,7 +35,12 @@ const factories = [
 ];
 assert.ok(factories.length > 0, 'no lazy() route factories found in src/App.tsx — are the heavy routes still code-split?');
 
-const expectedPages = [
+// The six heavy routes (admin, dashboard, the four report pages) plus every
+// other non-home page: the homepage needs the shell and nothing else, so a
+// visitor reading it never downloads the services, policy or auth pages
+// (audit PERF-1). HomePage stays EAGER (white-screen safety) and is asserted
+// below.
+const expectedHeavy = [
   'AdminPortal',
   'CustomerDashboard',
   'BirthJathagamPage',
@@ -43,9 +48,22 @@ const expectedPages = [
   'BabyNamingPage',
   'MuhurthamPage',
 ];
+const expectedLight = [
+  'ServicesPage',
+  'HowItWorksPage',
+  'AboutPage',
+  'AstrologyTeamPage',
+  'ContactPage',
+  'PoliciesPage',
+  'LoginPage',
+  'RegisterPage',
+  'NotFoundPage',
+];
+const expectedPages = [...expectedHeavy, ...expectedLight];
 
 const mappedPages = factories.map((m) => m[1]).sort();
-assert.deepEqual(mappedPages, [...expectedPages].sort(), 'App.tsx must lazy-load exactly the six heavy routes');
+assert.deepEqual(mappedPages, [...expectedPages].sort(), 'App.tsx must lazy-load every non-home route');
+assert.match(app, /import \{ HomePage \} from '\.\/pages\/HomePage';/, 'HomePage must stay eager');
 
 // Hardening contract (the __VITE_PRELOAD__ incident): every lazy factory must
 // go through safeImport() so a synchronous throw from the import() wrapper is

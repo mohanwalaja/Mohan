@@ -315,6 +315,23 @@ check('the 12-second cap is enforced and the real response time counts', () => {
 
 check('the floating launcher hosts the email-gated source-based astrologer for customers and admins', () => {
   assert.match(app, /<AiAstrologerLauncher \/>/);
+  // ...and it is FETCHED only for signed-in visitors (audit PERF-1): a normal
+  // visit has no entitlement to check, so it must not download the chat code.
+  assert.match(
+    app,
+    /const AiAstrologerLauncher = lazy\(\(\) =>/,
+    'the launcher must be a lazy chunk, not part of the app shell'
+  );
+  assert.doesNotMatch(
+    app,
+    /import \{ AiAstrologerLauncher \} from/,
+    'a static launcher import would put the chat client in the initial bundle'
+  );
+  assert.match(
+    app,
+    /function DeferredAiAstrologer\(\) \{\s*const \{ user \} = useAuth\(\);\s*if \(!user\?\.id\) return null;/,
+    'the launcher must stay unmounted (and unfetched) until a visitor signs in'
+  );
   assert.match(launcher, /fixed bottom-5 right-5/);
   assert.match(launcher, /Ask ASTRO SIVAM/);
   assert.match(launcher, /aiAstrologer\.usage\(\)/,

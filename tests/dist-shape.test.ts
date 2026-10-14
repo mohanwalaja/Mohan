@@ -51,15 +51,26 @@ check('vite config emits chunks into the default assets/ folder only', () => {
   assert.ok(!assetsDir || assetsDir[1] === 'assets', "assetsDir must stay 'assets'");
 });
 
-check('App.tsx lazy-loads exactly the six heavy routes and keeps home eager', () => {
+check('App.tsx lazy-loads every non-home route and keeps home eager', () => {
   const app = read('src/App.tsx');
   for (const page of [
+    // The six heavy routes (report builders / admin / dashboard) …
     'AdminPortal',
     'CustomerDashboard',
     'BirthJathagamPage',
     'MarriageCompatibilityPage',
     'BabyNamingPage',
     'MuhurthamPage',
+    // … plus every other page: the homepage only needs the shell (PERF-1).
+    'ServicesPage',
+    'HowItWorksPage',
+    'AboutPage',
+    'AstrologyTeamPage',
+    'ContactPage',
+    'PoliciesPage',
+    'LoginPage',
+    'RegisterPage',
+    'NotFoundPage',
   ]) {
     assert.match(app, new RegExp(`const ${page} = lazy\\(`), `${page} must be lazy-loaded`);
   }
@@ -147,14 +158,27 @@ check('index.html references only files that exist', () => {
 check('every lazy route chunk exists inside dist/assets (no chunk 404 = no white screen)', () => {
   const assetsDir = path.join(distDir, 'assets');
   const files = fs.readdirSync(assetsDir).filter((f) => f.endsWith('.js'));
-  for (const page of [
+  const lazyRoutes = [
     'AdminPortal',
     'CustomerDashboard',
     'BirthJathagamPage',
     'MarriageCompatibilityPage',
     'BabyNamingPage',
     'MuhurthamPage',
-  ]) {
+    'ServicesPage',
+    'HowItWorksPage',
+    'AboutPage',
+    'AstrologyTeamPage',
+    'ContactPage',
+    'PoliciesPage',
+    'LoginPage',
+    'RegisterPage',
+    'NotFoundPage',
+    // Deferred features that are not routes: a chunk that 404s is just as
+    // fatal for the visitor who clicked the sample/map button.
+    'LeafletMapPickerModal',
+  ];
+  for (const page of lazyRoutes) {
     const found = files.some((f) => f.startsWith(`${page}-`) || f.startsWith(`${page}.`));
     assert.ok(found, `no chunk emitted for lazy route ${page} (looked for assets/${page}-*.js)`);
   }

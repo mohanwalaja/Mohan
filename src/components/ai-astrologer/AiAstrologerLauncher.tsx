@@ -1,9 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { aiAstrologer, type ChatLanguage } from '../../services/aiAstrologerApi';
-import AiAstrologerPanel from './AiAstrologerPanel';
+import { recoverFromChunkError, safeImport } from '../../services/routeChunks';
+
+// The launcher is on every page; the panel it opens is not (audit PERF-1). The
+// panel is ~900 lines of chat UI that most visitors never open, so it is
+// fetched by the first click instead of by the first page view. The launcher
+// itself (access check + the floating button) stays eager.
+const AiAstrologerPanel = lazy(() =>
+  safeImport(() => import('./AiAstrologerPanel'))
+    .then((m) => ({ default: m.default }))
+    .catch((error) => recoverFromChunkError(error)),
+);
 
 /**
  * Site-wide source-based astrologer launcher, replacing the retired canned support chat.
@@ -86,13 +96,24 @@ export const AiAstrologerLauncher: React.FC = () => {
     <>
       {isOpen && (
         <div className="fixed bottom-24 right-3 z-[60] w-[calc(100vw-1.5rem)] max-w-lg select-auto sm:right-5">
-          <AiAstrologerPanel
-            customerId={String(user.id)}
-            customerName={user.name || (isAdmin ? 'Administrator' : 'there')}
-            language={language}
-            isAdmin={isAdmin}
-            onClose={() => setIsOpen(false)}
-          />
+          <Suspense
+            fallback={
+              <div
+                className="flex h-40 items-center justify-center rounded-2xl border border-amber-500/30 bg-slate-900/95 text-xs font-semibold text-amber-200 shadow-2xl backdrop-blur-md"
+                role="status"
+              >
+                Opening ASTRO SIVAM…
+              </div>
+            }
+          >
+            <AiAstrologerPanel
+              customerId={String(user.id)}
+              customerName={user.name || (isAdmin ? 'Administrator' : 'there')}
+              language={language}
+              isAdmin={isAdmin}
+              onClose={() => setIsOpen(false)}
+            />
+          </Suspense>
         </div>
       )}
 

@@ -1,5 +1,8 @@
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
+/* Leaflet's stylesheet is NOT imported here (audit PERF-1): it belongs to the
+   on-demand map picker, which carries a copy of it
+   (src/components/common/LeafletMapPickerModal.tsx). Keeping it global made
+   every visitor download map CSS for a map they had not opened. */
 
 /* Self-hosted Fontsource variable fonts (SIL OFL 1.1). Keep only the two
    families used by the app shell; local WOFF2 assets are content-hashed and
