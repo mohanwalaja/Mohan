@@ -53,7 +53,9 @@ const ROUTE_PAGES = [
   'LivePdfPreviewModal',
   'UnifiedCheckoutModal',
   'FamilyCartDrawer',
+  'AiAstrologerLauncher',
   'AiAstrologerPanel',
+  'aiAstrologerApi',
 ];
 
 function trackRequests(page: Page): string[] {
@@ -86,6 +88,20 @@ test.describe('deferred heavy features', () => {
 
     const pages = requested.filter((url) => ROUTE_PAGES.some((name) => routeChunkRe(name).test(url)));
     expect(pages, `page chunks were fetched without the visitor asking for them: ${pages.join(', ')}`).toEqual([]);
+  });
+
+  test('a signed-out visit downloads none of the AI astrologer', async ({ page }) => {
+    // The chat exists for entitled customers (a delivered report) and admins.
+    // A normal visit has no entitlement to check, so it must not fetch the
+    // launcher, the panel or the chat API client — this is the guard that a
+    // future "let's just render it always" change would break.
+    const requested = trackRequests(page);
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(4000);
+
+    const ai = requested.filter((url) => /ai-astrologer|aiAstrologer/i.test(url));
+    expect(ai, `a signed-out visit must not download the AI chat: ${ai.join(', ')}`).toEqual([]);
+    await expect(page.getByRole('button', { name: /open astro sivam chat/i })).toHaveCount(0);
   });
 
   test('hovering a link prefetches that route — and only that route', async ({ page }) => {

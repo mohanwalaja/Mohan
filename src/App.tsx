@@ -114,7 +114,6 @@ const MuhurthamPage = lazy(() =>
 );
 
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { AiAstrologerLauncher } from './components/ai-astrologer/AiAstrologerLauncher';
 import { CosmicBackground } from './components/common/CosmicBackground';
 import { CartProvider, useCart } from './context/CartContext';
 import { FamilyCartFloatingBar } from './components/cart/FamilyCartFloatingBar';
@@ -143,6 +142,33 @@ const UnifiedCheckoutModal = lazy(() =>
     .then((m) => ({ default: m.UnifiedCheckoutModal }))
     .catch((error) => recoverFromChunkError(error)),
 );
+
+// THE AI ASTROLOGER IS AN ENTITLEMENT, NOT THE SHELL (audit PERF-1)
+// -----------------------------------------------------------------
+// The chat exists for exactly two audiences: a signed-in customer whose report
+// was delivered (the server, never the browser, grants that), and an admin.
+// A normal visit — the overwhelming majority — has neither, so it must not
+// download the launcher or the chat API client at all. The gate below costs
+// nothing: `user` already comes from the eager AuthContext, and the launcher
+// chunk (plus the api module it owns) is fetched the first time a signed-in
+// visitor could possibly be entitled. The panel itself stays a second,
+// click-time fetch inside the launcher.
+const AiAstrologerLauncher = lazy(() =>
+  safeImport(() => import('./components/ai-astrologer/AiAstrologerLauncher'))
+    .then((m) => ({ default: m.AiAstrologerLauncher }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+
+/** Renders — and therefore fetches — the AI astrologer only for signed-in visitors. */
+function DeferredAiAstrologer() {
+  const { user } = useAuth();
+  if (!user?.id) return null;
+  return (
+    <Suspense fallback={null}>
+      <AiAstrologerLauncher />
+    </Suspense>
+  );
+}
 
 /**
  * Mounts each cart surface only while it is open, so its chunk is fetched by
@@ -399,7 +425,7 @@ function AppContent() {
       {/* Family order tray trigger (eager) + the deferred cart surfaces. */}
       <FamilyCartFloatingBar onNavigate={handleNavigate} />
       <DeferredCartLayer onNavigate={handleNavigate} />
-      <AiAstrologerLauncher />
+      <DeferredAiAstrologer />
 
     </div>
   );

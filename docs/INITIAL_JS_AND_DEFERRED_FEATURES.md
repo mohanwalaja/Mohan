@@ -12,12 +12,12 @@ Measured on the production build (`npm run build`, `dist/index.html`).
 
 | | Before | After |
 |---|---|---|
-| App entry `index-*.js` | 680.90 kB | 116.86 kB |
+| App entry `index-*.js` | 680.90 kB | 113.01 kB |
 | `vendor-core-*.js` (React, helmet) | 628.41 kB | 255.30 kB |
 | `vendor-pdf-*.js` (jspdf + html2canvas + raster helpers) | 545.64 kB | — deferred |
 | `vendor-astrology-*.js` (astronomy engine, tz-lookup) | 130.35 kB | — deferred |
 | `vendor-maps-*.js` (Leaflet) | 149.66 kB | — deferred |
-| **Initial JavaScript** | **2 134.96 kB** (gzip ≈ 646 kB) | **381.09 kB / 372 kB** (gzip **109 kB**) |
+| **Initial JavaScript** | **2 134.96 kB** (gzip ≈ 646 kB) | **377.15 kB / 368 kB** (gzip **108 kB**) |
 | Stylesheet `index-*.css` | 239.27 kB | 233.70 kB (Leaflet's 15.6 kB left the global sheet) |
 | `modulepreload` links in `index.html` | 4 (entry + React + PDF + astrology + maps) | **1** (vendor-core) |
 | On `requestIdleCallback`, the browser also fetched | all 6 heavy route chunks (AdminPortal, dashboard, 4 report pages) | **nothing** |
@@ -34,7 +34,7 @@ in the initial request set, and no route chunk is requested during idle.
 | Click **Download** / **Send** | `jathagamPdfExporter` 26 kB + the other builders + `vendor-pdf` 785 kB (cached for the tab) |
 | Open the map picker | `LeafletMapPickerModal` 7 kB + `vendor-maps` 150 kB + Leaflet CSS 15.6 kB |
 | Open the family tray / checkout | `FamilyCartDrawer` 14 kB / `UnifiedCheckoutModal` 40 kB + `BirthDateTimeFields` 42 kB + `multiPersonOrder` 12 kB |
-| Open the AI astrologer | `AiAstrologerPanel` 54 kB |
+| Open the AI astrologer (entitled customer or admin only) | `AiAstrologerLauncher` 2.7 kB + `aiAstrologerApi` 2.1 kB when a visitor signs in, then `AiAstrologerPanel` 54 kB on click |
 | Open the admin portal | `AdminPortal` 394 kB + `vendor-charts` 419 kB + `vendor-pdf` 785 kB |
 
 A short loading state on the first use of each deferred feature is expected and
@@ -67,22 +67,31 @@ anyway).
    the idle warm-all is gone; links carrying `data-route` warm *their* chunk on
    `pointerenter`/`focusin`/`touchstart`, skipped on Save-Data / 2G. All
    navigation links in Navbar, Footer, HomePage and ServicesPage carry it.
-5. **Remaining pages, the cart layer and the AI panel are lazy** (`App.tsx`,
-   `AiAstrologerLauncher.tsx`): everything except the home/shell is a chunk,
-   and the cart surfaces mount only while they are open.
+5. **Remaining pages and the cart layer are lazy** (`App.tsx`): everything
+   except the home/shell is a chunk, and the cart surfaces mount only while
+   they are open.
+6. **The AI astrologer is an entitlement, not the shell** (`App.tsx` +
+   `AiAstrologerLauncher.tsx`): the chat serves entitled customers (a report the
+   server confirmed as delivered) and admins, and a normal visit is neither — so
+   the launcher is lazy AND gated on a signed-in `user`, and the panel is a
+   second, click-time fetch inside it. A signed-out visit downloads **zero**
+   AI bytes (previously the entry carried the launcher and the chat API client,
+   ~4 kB); the sign-out path renders nothing and fetches nothing, exactly as
+   before. "Paid users only" is enforced by the API (`aiAstrologer.usage()` on
+   the server gate), which is why the browser still never decides access.
 
 ## Verification
 
 - `tests/initial-js-budget.test.ts` (registered in `scripts/run-tests.mjs`,
-  18 checks) — source contracts + built-output contracts: the initial request
+  19 checks) — source contracts + built-output contracts: the initial request
   set is entry + `vendor-core` only, no deferred chunk is in it, `index.html`
   preloads nothing heavy, every deferred feature is still emitted and wired
   through dynamic imports, every builder is its own chunk outside the PDF
   engine's chunk, and the initial JS stays under a 460 kB ceiling (it was
   2.1 MB when the audit started).
 - `tests/browser/deferred-features.spec.ts` — browser-level request assertions
-  for the same four rules (homepage, hover prefetch, sample open vs download,
-  map open). Runs against the dev server and the production preview.
+  for the same rules (homepage, hover prefetch, sample open vs download, map
+  open) plus "a signed-out visit downloads none of the AI astrologer". Runs against the dev server and the production preview.
 - `tests/dist-shape.test.ts`, `tests/route-chunk-exports.test.ts` — widened to
   every lazy route, plus the map modal chunk.
 - `npm test` (all node contracts) and `npm run lint` (`tsc --noEmit`) pass;

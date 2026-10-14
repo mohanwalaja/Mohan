@@ -90,6 +90,7 @@ const DEFERRED_CHUNK_NAMES = [
   'CustomerDashboard',
   'UnifiedCheckoutModal',
   'FamilyCartDrawer',
+  'AiAstrologerLauncher',
   'AiAstrologerPanel',
   'LeafletMapPickerModal',
 ];
@@ -201,11 +202,27 @@ check('the cart layer and the AI panel are fetched on first open, not on first p
   assert.match(app, /isCartOpen && \(/);
   assert.match(app, /isCheckoutOpen && \(/);
 
+  // The AI astrologer is an entitlement: a normal visit has nothing to check,
+  // so it downloads neither the launcher nor the chat API client. Only a
+  // signed-in visitor (a possibly-entitled customer, or an admin) fetches it.
+  assert.doesNotMatch(
+    app,
+    /import \{ AiAstrologerLauncher \} from/,
+    'the launcher must not be statically imported by the app shell',
+  );
+  assert.match(app, /const AiAstrologerLauncher = lazy\(\(\) =>/);
+  assert.match(
+    app,
+    /function DeferredAiAstrologer\(\) \{\s*const \{ user \} = useAuth\(\);\s*if \(!user\?\.id\) return null;/,
+    'the launcher must stay unmounted (and unfetched) for signed-out visitors',
+  );
+  assert.match(app, /<DeferredAiAstrologer \/>/);
+
   const launcher = code('src/components/ai-astrologer/AiAstrologerLauncher.tsx');
   assert.doesNotMatch(
     launcher,
     /import AiAstrologerPanel from '\.\/AiAstrologerPanel'/,
-    'the launcher sits on every page — the panel it opens must not be in that path',
+    'the launcher must not drag the panel into its own chunk',
   );
   assert.match(
     launcher,
@@ -434,6 +451,30 @@ check('no PDF or Leaflet code is reachable from the initial request set', () => 
   );
 });
 
+check('the chat client is not in the initial bytes', () => {
+  // The launcher owns services/aiAstrologerApi.ts (the endpoint paths and the
+  // session calls). With the launcher deferred, that module must leave the
+  // entry too — a normal visit never talks to the AI endpoint.
+  const initial = initialRequestSet();
+  // Markers that only exist inside services/aiAstrologerApi.ts — the endpoint
+  // it talks to and the session/upload actions it posts. The chunk NAMES may
+  // still appear in the entry's dynamic-deps list (that is how a lazy import
+  // works); the client itself must not.
+  const CHAT_CLIENT_MARKERS = ['ai_astrologer.php', 'action=upload', 'action=session'];
+  const offenders: string[] = [];
+  for (const url of initial) {
+    const text = chunkText(url);
+    for (const marker of CHAT_CLIENT_MARKERS) {
+      if (text.includes(marker)) offenders.push(`${url} contains "${marker}"`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `the AI chat client must not be reachable from the homepage: ${offenders.join(', ')}`,
+  );
+});
+
 check('none of the deferred chunks is part of the initial request set', () => {
   const initial = initialRequestSet();
   const offenders = initial.filter((url) =>
@@ -467,6 +508,7 @@ check('the deferred features are still shipped and wired through dynamic imports
     'sampleReports',
     'UnifiedCheckoutModal',
     'FamilyCartDrawer',
+    'AiAstrologerLauncher',
     'AiAstrologerPanel',
   ]) {
     assert.ok(
