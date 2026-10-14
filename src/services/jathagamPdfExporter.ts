@@ -1641,7 +1641,15 @@ export async function prepareFamilyFulfilPayload(
  * before the server can email a lower-quality substitute.
  * ══════════════════════════════════════════════════════════════════════════ */
 
-/** Base64 payload size above which a single order is uploaded document-by-document. */
+/**
+ * Combined report + invoice size (decoded PDF bytes) above which a single order
+ * is uploaded document-by-document. Inline, the approve body is ~4/3 of this
+ * (base64) - about 6.7 MB at the limit. The server reads delivery bodies with
+ * ASTRO_DOCUMENT_JSON_MAX_BYTES (api/request_body.php, 64 MiB); keep this well
+ * below it (tests/admin-report-delivery.test.ts enforces that). The ordinary
+ * 1 MiB JSON cap in config.php's getJsonBody() must never be used for these
+ * routes again: it silently emptied every preview-quality delivery body.
+ */
 export const SINGLE_ORDER_INLINE_LIMIT_BYTES = 5 * 1024 * 1024;
 
 /**

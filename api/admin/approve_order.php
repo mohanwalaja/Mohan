@@ -23,6 +23,7 @@ require_once __DIR__ . '/../branding.php';
 require_once __DIR__ . '/../chat_alerts.php';
 require_once __DIR__ . '/../rate_limit.php';
 require_once __DIR__ . '/family_approval.php';
+require_once __DIR__ . '/../request_body.php';
 
 $pdo = getDbConnection();
 $admin = requireAdmin($pdo);
@@ -50,7 +51,10 @@ if (function_exists('ignore_user_abort')) {
 }
 
 // 3. Extract Order or Group ID
-$body = json_decode(file_get_contents('php://input'), true) ?: [];
+// Same bounded reader as the rewritten routes: a document-sized limit, and a
+// too-large, discarded or malformed body is answered explicitly instead of
+// being treated as "no PDFs were sent".
+$body = astro_document_json_body('approval');
 $targetId = trim($_GET['group_id'] ?? ($_GET['id'] ?? ($body['group_id'] ?? ($body['groupId'] ?? ($body['id'] ?? '')))));
 
 if (empty($targetId)) {

@@ -639,10 +639,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         setTimeout(() => setSuccessMessage(''), 6000);
         fetchAdminData();
       } else {
+        // Drop the "⏳ Preparing…" banner so it does not sit next to the error
+        // as if the delivery were still in progress.
+        setSuccessMessage('');
         setOrders(prev => prev.map(o => fulfilledOrderIds.includes(o.id) ? { ...o, emailStatus: 'FAILED' } : o));
         setErrorMessage(res?.message || 'Failed to email customer');
       }
     } catch (err: any) {
+      setSuccessMessage('');
       setOrders(prev => prev.map(o => o.id === order.id || (order.groupId && o.groupId === order.groupId)
         ? { ...o, emailStatus: 'FAILED' }
         : o));

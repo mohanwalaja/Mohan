@@ -559,7 +559,7 @@ if (!function_exists('astroApproveFamilyGroup')) {
         return [
             'success' => !empty($mailResult['success']),
             'message' => !empty($mailResult['success'])
-                ? "Family order group ({$memberCount} users) " . ($isResend ? 're-sent' : 'approved') . " and completed. {$generatedReports} preview-quality reports and 1 consolidated invoice ({$totalAttachmentMb} MB) emailed to {$first['user_email']} in {$totalParts} email part(s).{$qualityNote}{$sizeNote}"
+                ? "Family order group ({$memberCount} users) " . ($isResend ? 're-sent' : 'approved') . " and completed. {$generatedReports} preview-quality reports and 1 consolidated invoice ({$totalAttachmentMb} MB) emailed to {$first['user_email']} in {$totalParts} email part(s).{$qualityNote}{$oversizeNote}"
                 : "Family order group was calculated, but the email to {$first['user_email']} FAILED to send ({$emailMsg}). The group was NOT marked complete - please fix the email issue and approve again.",
             'emailStatus' => $emailStatus,
             'emailMessage' => $emailMsg,

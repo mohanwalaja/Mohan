@@ -9,6 +9,14 @@ Paid customers receive the report and invoice rendered from the same browser HTM
 - The PHP API validates each uploaded PDF's header and EOF marker, page count, and embedded raster resolution before staging or mail dispatch. Missing, low-resolution, vector-only, truncated, or oversized documents are rejected.
 - Every report and invoice must pass before approval/resend. If a capture or upload fails, the action returns an error and **no email is sent**.
 
+### Upload size
+
+A real report is ~3–4 MB, so delivery bodies are several MB. The delivery routes read them with
+`astro_document_json_body()` (`api/request_body.php`, 64 MiB limit), never with `config.php`'s 1 MiB
+`getJsonBody()`, which silently returned an empty body and caused "Preview-quality report and invoice PDF
+did not reach the server". A body that is too large or discarded is answered with an explicit `413`. See
+[ADMIN_REPORT_DELIVERY_FIX.md](ADMIN_REPORT_DELIVERY_FIX.md).
+
 The raster and page checks are a technical floor, not a replacement for visual review. The browser tests also compare captured report text against preview screenshots for English, Tamil, and Hindi.
 
 ## PHP server-side PDF exports

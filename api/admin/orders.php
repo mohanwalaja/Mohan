@@ -15,6 +15,7 @@ require_once __DIR__ . '/../branding.php';
 require_once __DIR__ . '/../chat_alerts.php';
 require_once __DIR__ . '/../rate_limit.php';
 require_once __DIR__ . '/family_approval.php';
+require_once __DIR__ . '/../request_body.php';
 
 $pdo = getDbConnection();
 $admin = requireAdmin($pdo);
@@ -208,7 +209,7 @@ if ($method === 'POST' && $action === 'approve') {
     );
     $targetId = $_GET['id'] ?? ($_GET['group_id'] ?? '');
     if (empty($targetId)) {
-        $body = json_decode(file_get_contents('php://input'), true) ?: [];
+        $body = astro_document_json_body('approval');
         $targetId = $body['id'] ?? ($body['groupId'] ?? ($body['group_id'] ?? ''));
     }
 
@@ -241,48 +242,23 @@ if ($method === 'POST' && $action === 'approve') {
     if ($groupId) {
         // ONE payment => one delivery with every report + ONE consolidated
         // invoice (split into budget-sized emails when the bundle is too big).
-        sendJson(astroApproveFamilyGroup($pdo, $admin, $groupId, 'approve', getJsonBody()));
+        // The body carries (or points at staged) preview-quality PDFs, so it is
+        // read with the document-sized limit - see api/request_body.php.
+        sendJson(astroApproveFamilyGroup($pdo, $admin, $groupId, 'approve', astro_document_json_body('approval')));
     }
 
-    // Process approval & astrological calculations for each member
-    $calculatedResults = [];
-    $updateStmt = $pdo->prepare("UPDATE orders SET calculated_result = ?, status = 'COMPLETED', payment_confirmed = 1, email_status = 'SENT', email_sent_at = NOW(), has_pdf = 1, has_invoice = 1, updated_at = NOW() WHERE id = ?");
-
-    foreach ($matchedOrders as $o) {
-        $payload = json_decode($o['input_payload'], true) ?: [];
-        $res = !empty($o['calculated_result']) ? (is_array($o['calculated_result']) ? $o['calculated_result'] : json_decode($o['calculated_result'], true)) : null;
-
-        if (!$res || ($o['service_type'] === 'BABY_NAMING' && !AstroEngine::isCurrentBabyNamingResult($res)) || ($o['service_type'] === 'MUHURTHAM' && !AstroEngine::isCurrentMuhurthamResult($res))) {
-            if ($o['service_type'] === 'MARRIAGE_COMPATIBILITY') {
-                $res = AstroEngine::calculateMatchmaking($payload);
-            } elseif ($o['service_type'] === 'BABY_NAMING') {
-                $res = AstroEngine::calculateBabyNaming($payload);
-            } elseif ($o['service_type'] === 'MUHURTHAM') {
-                $res = AstroEngine::calculateMuhurtham($payload);
-            } else {
-                $res = AstroEngine::calculateHoroscope($payload);
-            }
-        }
-        $updateStmt->execute([json_encode($res, JSON_UNESCAPED_UNICODE), $o['id']]);
-        $calculatedResults[$o['id']] = $res;
-    }
-
-    // Best-effort WhatsApp/Viber "order complete" alert (never blocks approval).
-    foreach ($matchedOrders as &$alertOrder) {
-        $alertOrder['status'] = 'COMPLETED';
-    }
-    unset($alertOrder);
-    AstroChatAlerts::sendOrderAlerts($pdo, 'order_completed', $matchedOrders);
-
+    // A standalone order is never completed by this legacy action. It used to
+    // set status COMPLETED, email_status SENT, has_pdf = 1 and has_invoice = 1
+    // without validating, attaching or sending a single PDF - a bypass of the
+    // preview-quality delivery gate. The delivery route checks both documents,
+    // emails them, and only then completes the order.
     sendJson([
-        'success' => true,
-        'message' => count($matchedOrders) > 1 
-            ? "Family group ({$groupId}) approved successfully with " . count($matchedOrders) . " sub-orders."
-            : "Order {$firstOrder['order_number']} approved successfully.",
-        'groupId' => $groupId,
-        'approvedOrdersCount' => count($matchedOrders),
-        'orderIds' => array_column($matchedOrders, 'id')
-    ]);
+        'success' => false,
+        'requiresPreviewDelivery' => true,
+        'message' => 'Order ' . ($firstOrder['order_number'] ?? $targetId) . ' was not approved: standalone orders are approved with '
+            . 'POST /api/admin/orders/{id}/approve, which checks the preview-quality report and invoice PDFs and emails them first. '
+            . 'Nothing was changed.'
+    ], 409);
 }
 
 sendJson(['success' => false, 'message' => 'Method or action not supported'], 405);
