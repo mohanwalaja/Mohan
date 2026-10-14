@@ -640,6 +640,59 @@ export function assertPreviewQualityPdfBase64(
 }
 
 /**
+ * The failure text an admin sees when a device cannot capture at print density.
+ * It names the density, states that nothing left the server, and says what to
+ * do next — never a raw html2canvas/canvas error.
+ */
+export function emailPrintDensityFailureMessage(label: string, error?: unknown): string {
+  const raw = error instanceof Error && error.message ? error.message : String(error || '');
+  const detail = raw ? ` (${raw.length > 140 ? `${raw.slice(0, 137)}…` : raw})` : '';
+  return (
+    `${label} could not be rendered at print quality (300 dpi: ${A4_PRINT_MIN_WIDTH_PX} × ` +
+    `${A4_PRINT_MIN_HEIGHT_PX} px per A4 page) on this device${detail}. Nothing was emailed and the order ` +
+    'is still pending — ASTRO SIVAM never sends a report below 300 dpi. Close other tabs to free memory and ' +
+    'retry, or approve this order from a desktop browser.'
+  );
+}
+
+/**
+ * THE email render — every paid document (report, invoice, family member
+ * report, multi-person item) goes through this function.
+ *
+ * It captures at the print density and never below it. The admin's device is
+ * irrelevant to the result: 300 dpi from a phone, 300 dpi from a desktop. A
+ * capture that fails (usually a phone that cannot allocate the
+ * 2540 × 3592 px canvas) is retried ONCE at the SAME density, because canvas
+ * pressure is often transient, and then fails closed with the actionable
+ * message above. There is no lighter retry step here — that is the whole point.
+ */
+export async function renderEmailPdfBase64(
+  htmlContent: string,
+  label: string,
+  options?: HtmlPdfRenderOptions
+): Promise<string> {
+  const renderOptions = options || highQualityEmailRenderOptions();
+  const maxAttempts = 2;
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const pdfBase64 = await generatePdfBase64FromHtml(htmlContent, renderOptions);
+      assertPreviewQualityPdfBase64(pdfBase64, label, 8 * 1024);
+      return pdfBase64;
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts) {
+        await yieldToBrowser();
+        await new Promise(resolve => setTimeout(resolve, 600));
+      }
+    }
+  }
+
+  throw new Error(emailPrintDensityFailureMessage(label, lastError));
+}
+
+/**
  * Lets the browser paint pending UI updates before a heavy html2canvas render
  * (~8 s per report). Without this the progress bar would freeze on the first
  * member and the admin would think the family render had hung.
@@ -707,11 +760,9 @@ export async function generateOrderPdfsBase64(
 
   // Sequential rendering avoids competing canvas allocations and uses the
   // same density/quality profile as the admin live-preview download.
-  const reportPdfBase64 = await generatePdfBase64FromHtml(reportHtml, renderOptions);
-  assertPreviewQualityPdfBase64(reportPdfBase64, 'Report PDF', 8 * 1024);
+  const reportPdfBase64 = await renderEmailPdfBase64(reportHtml, 'Report PDF', renderOptions);
   await yieldToBrowser();
-  const invoicePdfBase64 = await generatePdfBase64FromHtml(invoiceHtml, renderOptions);
-  assertPreviewQualityPdfBase64(invoicePdfBase64, 'Invoice PDF', 8 * 1024);
+  const invoicePdfBase64 = await renderEmailPdfBase64(invoiceHtml, 'Invoice PDF', renderOptions);
 
   return { reportPdfBase64, invoicePdfBase64 };
 }
@@ -1017,12 +1068,10 @@ export async function generateFamilyInvoicePdfBase64(
   groupId?: string
 ): Promise<string> {
   const effectiveGroupId = getFamilyGroupId(orders, groupId);
-  const pdfBase64 = await generatePdfBase64FromHtml(
+  return renderEmailPdfBase64(
     buildFamilyInvoiceHtml(orders, effectiveGroupId),
-    highQualityEmailRenderOptions()
+    'Family invoice PDF'
   );
-  assertPreviewQualityPdfBase64(pdfBase64, 'Family invoice PDF', 8 * 1024);
-  return pdfBase64;
 }
 
 /**
@@ -1223,8 +1272,7 @@ export async function stageFamilyOrderPdfs(
     let finalRenderMs = 0;
     while (renderAttempts < 3) {
       const renderStart = Date.now();
-      pdfBase64 = await generatePdfBase64FromHtml(reportHtml, renderOptions);
-      assertPreviewQualityPdfBase64(pdfBase64, `Report PDF for ${order.orderNumber}`);
+      pdfBase64 = await renderEmailPdfBase64(reportHtml, `Report PDF for ${order.orderNumber}`, renderOptions);
       const renderMs = Date.now() - renderStart;
       finalRenderMs = renderMs;
       const b = base64ToBytes(pdfBase64);
@@ -1343,8 +1391,7 @@ export async function stageFamilyOrderPdfs(
   let finalInvoiceMs = 0;
   while (invAttempts < 3) {
     const invStart = Date.now();
-    invoicePdfBase64 = await generatePdfBase64FromHtml(invoiceHtml, renderOptions);
-    assertPreviewQualityPdfBase64(invoicePdfBase64, 'Family invoice PDF');
+    invoicePdfBase64 = await renderEmailPdfBase64(invoiceHtml, 'Family invoice PDF', renderOptions);
     const invMs = Date.now() - invStart;
     finalInvoiceMs = invMs;
     const invBytes = base64ToBytes(invoicePdfBase64);
@@ -1504,8 +1551,7 @@ export async function generateFamilyOrderPdfsBase64(
     let finalRenderMs = 0;
     while (attempts < 3) {
       const s = Date.now();
-      pdfBase64 = await generatePdfBase64FromHtml(reportHtml, renderOptions);
-      assertPreviewQualityPdfBase64(pdfBase64, `Report PDF for ${order.orderNumber}`);
+      pdfBase64 = await renderEmailPdfBase64(reportHtml, `Report PDF for ${order.orderNumber}`, renderOptions);
       const ms = Date.now() - s;
       finalRenderMs = ms;
       const b = Math.round((pdfBase64.length * 3) / 4);
@@ -1550,8 +1596,7 @@ export async function generateFamilyOrderPdfsBase64(
   let finalInvoiceMs = 0;
   while (invAttempts < 3) {
     const s = Date.now();
-    invoicePdfBase64 = await generatePdfBase64FromHtml(invoiceHtml, renderOptions);
-    assertPreviewQualityPdfBase64(invoicePdfBase64, 'Family invoice PDF');
+    invoicePdfBase64 = await renderEmailPdfBase64(invoiceHtml, 'Family invoice PDF', renderOptions);
     const ms = Date.now() - s;
     finalInvoiceMs = ms;
     const b = Math.round((invoicePdfBase64.length * 3) / 4);

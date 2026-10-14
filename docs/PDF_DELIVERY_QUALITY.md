@@ -29,6 +29,7 @@ customer's own download. There is no device-specific profile any more — the ol
 - Each A4 page must reach **2480 × 3508 px** (300 dpi) at JPEG quality 0.95. A capture that misses either dimension fails before upload/email; the email path never falls back to a smaller capture — a device that cannot allocate the print canvas fails closed instead of sending a lighter report.
 - The PHP API validates each uploaded PDF's header and EOF marker, page count, and embedded raster resolution before staging or mail dispatch. Missing, low-resolution (including the old 3× desktop raster, 2382 × 3369 px ≈ 288 dpi), vector-only, truncated, or oversized documents are rejected.
 - Every report and invoice must pass before approval/resend. If a capture or upload fails, the action returns an error and **no email is sent**.
+- **The approving device does not change the document.** An admin who approves from a phone gets the same 300 dpi A4 capture as one who approves from a desktop — every paid render goes through `renderEmailPdfBase64()` (one helper, one profile), which retries the *same* density once and then fails closed. There is no `deviceMemory`/user-agent branch left in the exporter.
 - The only reduced-density profile left in the app is `DOWNLOAD_RENDER_OPTIONS_SAFE` (1.8× ≈ 173 dpi). It is a **download-only** last resort for a device that rejects the print canvas twice; it can never reach an email.
 - Public **sample** reports keep their own lighter profile (2× ≈ 200 dpi) and must never reach a paid path — see the guard in `tests/pdf-pipeline-integrity.test.ts`.
 
@@ -46,6 +47,19 @@ never with `config.php`'s 1 MiB `getJsonBody()`, which silently returned an empt
 is answered with an explicit `413`. See [ADMIN_REPORT_DELIVERY_FIX.md](ADMIN_REPORT_DELIVERY_FIX.md).
 
 The raster and page checks are a technical floor, not a replacement for visual review. The browser tests also compare captured report text against preview screenshots for English, Tamil, and Hindi.
+
+### When a device cannot capture at 300 dpi
+
+A phone that cannot allocate the 2540 × 3592 px canvas cannot approve an order — by design. Instead of a
+raw canvas error the operator sees an actionable message (`emailPrintDensityFailureMessage()`):
+
+> Report PDF could not be rendered at print quality (300 dpi: 2480 × 3508 px per A4 page) on this device.
+> Nothing was emailed and the order is still pending — ASTRO SIVAM never sends a report below 300 dpi.
+> Close other tabs to free memory and retry, or approve this order from a desktop browser.
+
+The order stays `PENDING`, so the same order can be approved later from any device without double-sending.
+Reports for delivery are captured one page at a time (36 MB per page canvas, released immediately), which is
+what keeps the print density viable on a phone at all.
 
 ### Deploying a change to the floor
 
@@ -70,3 +84,12 @@ npm run build
 npm run test:php # requires a PHP CLI; checks PHP PDF quality gates and fail-closed behavior
 npm run test:pdf # browser capture / preview parity; requires Playwright Chromium
 ```
+
+Where each level of the 300 dpi contract is proven:
+
+| Claim | Evidence |
+|---|---|
+| the profile, the ladder and the failure text | `tests/pdf-pipeline-integrity.test.ts` (static, always runs) |
+| client and server floors agree (2480 × 3508, scale 3.2 ≥ 300 dpi) | `tests/admin-report-delivery.test.ts` |
+| the **emailed bytes** are print quality | the mailer double records each attachment's embedded rasters; every delivery assertion checks them |
+| a phone-sized viewport really produces a 300 dpi approval | `tests/browser/admin-report-delivery.spec.ts` (desktop and 390 × 844 cases, real Chromium → real PHP gate) |

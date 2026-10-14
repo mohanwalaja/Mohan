@@ -44,6 +44,9 @@ const exporter = read('src/services/jathagamPdfExporter.ts');
 const approveOrder = read('api/admin/approve_order.php');
 const familyDocs = read('api/admin/family_docs.php');
 const livePdfPreview = read('src/components/common/LivePdfPreviewModal.tsx');
+const adminPortal = read('src/pages/AdminPortal.tsx');
+const customerDashboard = read('src/pages/CustomerDashboard.tsx');
+const orderItems = read('src/services/orderItems.ts');
 
 /** The literal body of an exported constant object. */
 function objectLiteral(name: string): string {
@@ -132,6 +135,67 @@ check('the email path renders with the HIGH-quality profile', () => {
   const staging = exporter.slice(exporter.indexOf('export async function stageFamilyOrderPdfs'));
   assert.match(staging.slice(0, 4000), /const renderOptions = highQualityEmailRenderOptions\(\);/,
     'staged family documents must use the high-quality profile');
+});
+
+check('every PAID render goes through the one print-density email render', () => {
+  // One helper owns the email capture: it retries the SAME density and fails
+  // closed. Nothing else may call the raw renderer with the print profile, or a
+  // future edit could quietly reintroduce a lighter capture on one path.
+  const helper = exporter.slice(exporter.indexOf('export async function renderEmailPdfBase64'));
+  const helperBody = helper.slice(0, helper.indexOf('\n}' ));
+  assert.match(helperBody, /const renderOptions = options \|\| highQualityEmailRenderOptions\(\);/,
+    'the helper must default to the print profile');
+  assert.match(helperBody, /await generatePdfBase64FromHtml\(htmlContent, renderOptions\)/,
+    'the helper must render at that same profile on every attempt');
+  assert.doesNotMatch(helperBody, /DOWNLOAD_RENDER_OPTIONS_SAFE|SAMPLE_RENDER_OPTIONS|2\.5|1\.8/,
+    'the email retry must never drop to a lighter density');
+  assert.match(helperBody, /throw new Error\(emailPrintDensityFailureMessage\(label, lastError\)\)/);
+
+  // Raw call sites: only the helper itself, and the two non-paid sample paths.
+  const rawCalls = (exporter.match(/generatePdfBase64FromHtml\(/g) || []).length;
+  assert.equal(rawCalls, 2,
+    `only the helper and its declaration may call the raw renderer (found ${rawCalls})`);
+});
+
+check('the deviceless rule holds: admin approval is 300 dpi from mobile and desktop alike', () => {
+  // The exporter must not sniff the device to pick a profile any more.
+  assert.doesNotMatch(exporter, /deviceMemory|userAgent|isPhone/,
+    'no device sniff may choose a report profile');
+
+  // Every admin-side send path renders through the print-density helper:
+  // generateOrderPdfsBase64 (approve / resend / send-to-user / batch) and the
+  // multi-person item path.
+  const generator = exporter.slice(
+    exporter.indexOf('export async function generateOrderPdfsBase64'),
+    exporter.indexOf('export function safeFilePart')
+  );
+  assert.match(generator, /await renderEmailPdfBase64\(reportHtml, 'Report PDF', renderOptions\)/);
+  assert.match(generator, /await renderEmailPdfBase64\(invoiceHtml, 'Invoice PDF', renderOptions\)/);
+
+  const itemRenders = orderItems.match(/renderEmailPdfBase64\(/g) || [];
+  assert.ok(itemRenders.length >= 4,
+    `every multi-person item render must use the print-density helper (found ${itemRenders.length})`);
+  assert.doesNotMatch(orderItems, /generatePdfBase64FromHtml/,
+    'the item path must not call the raw renderer directly');
+
+  // The admin panel itself must not branch on the device around approval.
+  assert.doesNotMatch(adminPortal, /deviceMemory|window\.innerWidth < \d+ \?/,
+    'the admin approval flow must not change profile by viewport');
+  assert.match(adminPortal, /generateOrderPdfsBase64\(/);
+  assert.match(customerDashboard, /generateOrderPdfsBase64\(/);
+});
+
+check('a device that cannot capture at print density fails loudly, never lighter', () => {
+  const message = exporter.slice(exporter.indexOf('export function emailPrintDensityFailureMessage'));
+  const body = message.slice(0, message.indexOf('\n}'));
+  assert.match(body, /300 dpi/, 'the failure must name the density');
+  assert.match(body, /A4_PRINT_MIN_WIDTH_PX/, 'the failure must quote the pixel floor');
+  assert.match(body, /A4_PRINT_MIN_HEIGHT_PX/);
+  assert.match(body, /Nothing was emailed and the order/, 'the operator must know nothing shipped');
+  assert.match(body, /is still pending/, 'the order must be described as still pending');
+  assert.match(body, /desktop browser/, 'the failure must say what to do next');
+  assert.match(exporter, /const maxAttempts = 2;/,
+    'exactly one same-density retry: enough for transient canvas pressure, not a quality ladder');
 });
 
 check('every document is byte-checked before it can be staged or emailed', () => {

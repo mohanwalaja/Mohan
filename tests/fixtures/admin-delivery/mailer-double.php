@@ -26,11 +26,27 @@ class AstroMailer extends AstroMailerRealTransport
         $recorded = [];
         foreach ((array) $attachments as $attachment) {
             $content = (string) ($attachment['content'] ?? '');
+            // Record the embedded page rasters too, so a test can assert what
+            // was EMAILED is print quality (≥ 2480 × 3508 px per A4 page = 300
+            // dpi), not merely what the client claims to have rendered. Same
+            // dictionary shape the API's quality gate reads.
+            $raster = [];
+            if (preg_match_all(
+                '/\/Subtype\s*\/Image\b(?:(?!endobj)[\s\S])*?\/Width\s+(\d+)[\s\S]*?\/Height\s+(\d+)/',
+                $content,
+                $matches,
+                PREG_SET_ORDER
+            ) > 0) {
+                foreach ($matches as $match) {
+                    $raster[] = ['width' => (int) $match[1], 'height' => (int) $match[2]];
+                }
+            }
             $recorded[] = [
                 'name' => (string) ($attachment['name'] ?? ''),
                 'bytes' => strlen($content),
                 'sha256' => hash('sha256', $content),
                 'isPdf' => strncmp($content, '%PDF-', 5) === 0,
+                'raster' => $raster,
             ];
         }
 

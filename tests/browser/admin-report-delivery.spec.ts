@@ -21,6 +21,11 @@ import { test, expect } from '@playwright/test';
  * genuine browser output passes the server's preview-quality validator and is
  * emailed byte-for-byte to the right customer under the right order number.
  *
+ * The cases run from a DESKTOP and from a PHONE-sized viewport, because an
+ * admin approves orders from both and the delivered document must be the same
+ * 300 dpi A4 capture either way: the raster of what was actually emailed is
+ * asserted against the print floor (see the mailer double's `raster` field).
+ *
  * Requires the dev-only runtime: npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54
  */
 
@@ -30,9 +35,21 @@ const sha256 = (base64: string) => createHash('sha256').update(Buffer.from(base6
 
 test.skip(!runtimeInstalled, 'php-wasm is not installed (npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54)');
 
-for (const language of ['en', 'ta'] as const) {
-test(`browser-rendered ${language} report + invoice reach the real approval gate and are emailed to the right order`, async ({ page }) => {
+// 300 dpi A4 = 2480 × 3508 px per page. Mirrors PRINT_CAPTURE_SCALE /
+// A4_PRINT_MIN_* in src/services/jathagamPdfExporter.ts and the API's floor.
+const A4_PRINT_MIN_WIDTH_PX = 2480;
+const A4_PRINT_MIN_HEIGHT_PX = 3508;
+
+const approvalCases = [
+  { language: 'en' as const, device: 'desktop', viewport: { width: 1280, height: 900 } },
+  { language: 'ta' as const, device: 'mobile', viewport: { width: 390, height: 844 } }
+];
+
+for (const { language, device, viewport } of approvalCases) {
+test(`browser-rendered ${language} report + invoice reach the real approval gate from a ${device} and are emailed at 300 dpi`, async ({ page }) => {
   test.setTimeout(300_000);
+  // An admin on a phone must produce the same print-quality document.
+  await page.setViewportSize(viewport);
   const { createAdminApiBridge, TEST_ORDERS } = await import('../../scripts/php-admin-api-bridge.mjs');
   const bridge = await createAdminApiBridge();
   const A = TEST_ORDERS.single;
@@ -128,7 +145,7 @@ echo json_encode(AstroEngine::calculateHoroscope(json_decode(${JSON.stringify(JS
       };
     }, { order });
 
-    console.log(`  rendered in ${outcome.renderMs} ms; requests: ${requests.map(r => `${r.method} ${r.path} ${(r.bytes / 1048576).toFixed(2)} MiB -> ${r.status}`).join(', ')}`);
+    console.log(`  [${device}] rendered in ${outcome.renderMs} ms; requests: ${requests.map(r => `${r.method} ${r.path} ${(r.bytes / 1048576).toFixed(2)} MiB -> ${r.status}`).join(', ')}`);
 
     expect(outcome.res.success, outcome.res.message).toBe(true);
     const approve = requests.find(r => r.path.endsWith(`/admin/orders/${A.id}/approve`));
@@ -153,6 +170,19 @@ echo json_encode(AstroEngine::calculateHoroscope(json_decode(${JSON.stringify(JS
       expect(outbox[0].attachments[0].sha256).toBe(sha256(approveBodies[0].reportPdfBase64));
       expect(outbox[0].attachments[1].sha256).toBe(sha256(approveBodies[0].invoicePdfBase64));
     }
+    // What was EMAILED must be print quality on every device: each A4 page
+    // carries a raster of at least 2480 × 3508 px (A4 at 300 dpi).
+    for (const attachment of outbox[0].attachments as any[]) {
+      expect(attachment.raster?.length, `${attachment.name} embeds one raster per page`).toBeGreaterThan(0);
+      for (const pageRaster of attachment.raster as Array<{ width: number; height: number }>) {
+        expect(
+          pageRaster.width >= A4_PRINT_MIN_WIDTH_PX && pageRaster.height >= A4_PRINT_MIN_HEIGHT_PX,
+          `${device} ${language}: ${attachment.name} was emailed at ${pageRaster.width} × ${pageRaster.height} px, ` +
+            `below the 300 dpi A4 floor (${A4_PRINT_MIN_WIDTH_PX} × ${A4_PRINT_MIN_HEIGHT_PX} px)`
+        ).toBe(true);
+      }
+    }
+
     const row = await bridge.order(A.id);
     expect([row.status, row.email_status, Number(row.has_pdf), Number(row.has_invoice)]).toEqual(['COMPLETED', 'SENT', 1, 1]);
   } finally {
