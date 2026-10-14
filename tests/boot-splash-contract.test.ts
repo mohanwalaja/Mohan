@@ -295,7 +295,14 @@ await check('dismissBootSplash() fades, disarms and removes the splash exactly o
 
 const distDir = abs('dist');
 const routeFiles = fs.existsSync(distDir)
-  ? fs.readdirSync(distDir).filter((name) => name.endsWith('.html') && name !== '404.html')
+  ? [
+      ...fs.readdirSync(distDir).filter((name) => name.endsWith('.html') && name !== '404.html'),
+      ...(fs.existsSync(path.join(distDir, 'pages'))
+        ? fs.readdirSync(path.join(distDir, 'pages'))
+            .filter((name) => name.endsWith('.html'))
+            .map((name) => path.join('pages', name))
+        : []),
+    ]
   : [];
 
 if (!routeFiles.length) {

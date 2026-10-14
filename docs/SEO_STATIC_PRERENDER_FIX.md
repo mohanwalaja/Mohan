@@ -73,16 +73,20 @@ server-rendered document.
 
 ## Serving model (important)
 
-The route documents are **flat files** (`dist/services.html`, …), never one
-directory per route — `tests/dist-shape.test.ts` / `scripts/create_dist_zip.py`
-freeze the cPanel root folder list at `{assets, audio, video-scenes}` forever.
+Non-home route documents are **flat files** in the shared
+`dist/pages/` directory (`dist/pages/services.html`, …); `dist/index.html`,
+the sitemap and PWA/SEO files stay at the root. This avoids one directory per
+route while keeping route HTML and its compressed siblings out of the cPanel
+root. `tests/dist-shape.test.ts` / `scripts/create_dist_zip.py` freeze the
+frontend root folders at `{assets, audio, pages, video-scenes}`.
 
 `public/.htaccess` rule (g) internally rewrites the clean URL
-(`/services`) to `/services.html` when the file exists; the browser keeps the
-clean URL and the document's canonical names it. Each written file gets fresh
-`.br`/`.gz` siblings (stale ones are deleted first) because the .htaccess
-negotiates text assets to the pre-compressed copies — a stale `index.html.br`
-would otherwise keep serving the old empty shell.
+(`/services`) to `/pages/services.html` when the file exists; the browser keeps
+the clean URL and the document's canonical names it. Direct requests to the
+physical `pages/<route>.html` path 301 back to the clean URL. Each written file
+gets fresh `.br`/`.gz` siblings (stale ones are deleted first) because the
+.htaccess negotiates text assets to the pre-compressed copies — a stale
+`index.html.br` would otherwise keep serving the old empty shell.
 
 When the SPA boots, `src/main.tsx` removes the baked `[data-prerender-seo]`
 head tags before `createRoot` mounts. React 19 re-hoists its own identical
@@ -101,10 +105,11 @@ same routing production uses.
   any shipped source (comments excluded);
 - every indexable page source must declare its self-canonical; utility routes
   must carry `noindex`;
-- `.htaccess` must rewrite clean URLs to `$1.html` (guarded on file existence)
-  and must not fall back to the shell for prerendered routes;
-- with `dist/` present: every route document exists as a flat file with a
-  unique `<title>`, exactly one self-referencing canonical, correct robots
+- `.htaccess` must rewrite clean URLs to `pages/$1.html` (guarded on file
+  existence) and must not fall back to the shell for prerendered routes;
+- with `dist/` present: every route document exists at its approved location
+  (home at root, non-home pages in `pages/`) with a unique `<title>`, exactly
+  one self-referencing canonical, correct robots
   polarity, ≥400 visible characters of body text (≥50 for noindex gates), no
   leftover `/src/` dev URLs, and `.br`/`.gz` siblings that decompress to the
   exact bytes of the file they accompany.

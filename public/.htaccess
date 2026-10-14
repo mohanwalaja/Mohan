@@ -73,15 +73,16 @@
   RewriteEngine On
   RewriteBase /
 
-  # (c0) One canonical URL per page. The prerendered route documents live as
-  # flat <route>.html files (see rule (g)), so their physical URLs must 301 to
-  # the clean path — otherwise every page would be indexable twice. This must
-  # run BEFORE the pre-compression negotiation below (which would otherwise
-  # serve /services.html.br directly), and it tests THE_REQUEST so the internal
-  # /services -> /services.html rewrite never re-triggers it (no redirect loop).
+  # (c0) One canonical URL per page. The prerendered route documents live in
+  # pages/<route>.html (see rule (g)), so their physical URLs must 301 to the
+  # clean path — otherwise every page would be indexable twice. This must run
+  # BEFORE the pre-compression negotiation below (which would otherwise serve
+  # a .br sibling directly), and it tests THE_REQUEST so the internal
+  # /services -> /pages/services.html rewrite never re-triggers it. The
+  # optional pages/ prefix also keeps any legacy root-level .html URL canonical.
   RewriteCond %{THE_REQUEST} \s/index\.html[\s?]
   RewriteRule ^ / [R=301,L]
-  RewriteCond %{THE_REQUEST} \s/(services|birth-jathagam|marriage-compatibility|baby-naming|muhurtham|how-it-works|about|team|contact|login|register|dashboard|admin|privacy-policy|terms|payment-policy|refund-policy)\.html[\s?]
+  RewriteCond %{THE_REQUEST} \s/(?:pages/)?(services|birth-jathagam|marriage-compatibility|baby-naming|muhurtham|how-it-works|about|team|contact|login|register|dashboard|admin|privacy-policy|terms|payment-policy|refund-policy)\.html[\s?]
   RewriteRule ^ /%1 [R=301,L]
 
   # Prevent mod_deflate / mod_brotli from double-compressing negotiated .br / .gz siblings.
@@ -149,14 +150,14 @@
   RewriteRule ^ - [L]
 
   # (g) PRERENDERED ROUTE DOCUMENTS (SEO audit fix 2026-10-14, findings 1+2):
-  # scripts/prerender.mjs writes a flat <route>.html document per public route
-  # — each with its own <title>, meta description, self-referencing canonical
-  # and real body content — and the clean URL is internally rewritten to it.
-  # The browser keeps the clean URL; crawlers stop receiving the empty SPA
-  # shell. Flat files (never one folder per route) keep the cPanel root folder
-  # list exactly as the deployment contract requires.
-  RewriteCond %{DOCUMENT_ROOT}/$1.html -f
-  RewriteRule ^(services|birth-jathagam|marriage-compatibility|baby-naming|muhurtham|how-it-works|about|team|contact|login|register|dashboard|admin|privacy-policy|terms|payment-policy|refund-policy)/?$ /$1.html [L]
+  # scripts/prerender.mjs writes pages/<route>.html per public route — each
+  # with its own <title>, meta description, self-referencing canonical and
+  # real body content — and the clean URL is internally rewritten to it. The
+  # browser keeps the clean URL; crawlers stop receiving the empty SPA shell.
+  # One shared pages/ folder avoids one folder per route while keeping the
+  # prerendered HTML and compressed siblings out of the cPanel root.
+  RewriteCond %{DOCUMENT_ROOT}/pages/$1.html -f
+  RewriteRule ^(services|birth-jathagam|marriage-compatibility|baby-naming|muhurtham|how-it-works|about|team|contact|login|register|dashboard|admin|privacy-policy|terms|payment-policy|refund-policy)/?$ /pages/$1.html [L]
 
   # (g2) SPA Fallback: recognized client-side routes without a prerendered
   # document fall back to root index.html. This list mirrors the path->route
