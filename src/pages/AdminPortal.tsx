@@ -105,9 +105,9 @@ function describeEmailParts(response: any): string {
 }
 
 const SERVICE_DISPLAY: Record<string, string> = {
-  BIRTH_JATHAGAM: '🪐 Janma Jathagam',
-  MARRIAGE_COMPATIBILITY: '💍 Marriage Compatibility',
-  BABY_NAMING: '👶 Baby Naming',
+  BIRTH_JATHAGAM: '🪐 Birth Jathagam',
+  MARRIAGE_COMPATIBILITY: '💍 Wedding Matching',
+  BABY_NAMING: '👶 Baby Naming Syllables',
   MUHURTHAM: '📅 Subha Muhurtham',
   MULTI_PERSON: '👪 Multi-Person Order'
 };
@@ -2498,11 +2498,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                     </div>
                                     <div className="text-[11px] font-semibold text-amber-400">
                                       {mOrder.serviceType === 'BIRTH_JATHAGAM'
-                                        ? '🪐 Janma Jathagam'
+                                        ? '🪐 Birth Jathagam'
                                         : mOrder.serviceType === 'MARRIAGE_COMPATIBILITY'
-                                        ? '💍 Marriage Compatibility'
+                                        ? '💍 Wedding Matching'
                                         : mOrder.serviceType === 'BABY_NAMING'
-                                        ? '👶 Baby Naming'
+                                        ? '👶 Baby Naming Syllables'
                                         : mOrder.serviceType === 'MUHURTHAM'
                                         ? '📅 Subha Muhurtham'
                                         : mOrder.serviceType}
@@ -3092,11 +3092,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                             <span className="font-bold text-slate-900 dark:text-white text-xs">{mOrder.userName || mOrder.inputPayload?.name || 'User'}</span>
                                             <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                                               ({mOrder.serviceType === 'BIRTH_JATHAGAM'
-                                                ? '🪐 Janma Jathagam'
+                                                ? '🪐 Birth Jathagam'
                                                 : mOrder.serviceType === 'MARRIAGE_COMPATIBILITY'
-                                                ? '💍 Marriage Compatibility'
+                                                ? '💍 Wedding Matching'
                                                 : mOrder.serviceType === 'BABY_NAMING'
-                                                ? '👶 Baby Naming'
+                                                ? '👶 Baby Naming Syllables'
                                                 : mOrder.serviceType === 'MUHURTHAM'
                                                 ? '📅 Subha Muhurtham'
                                                 : mOrder.serviceType})
@@ -3727,7 +3727,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
               {/* Service 2: Marriage Compatibility */}
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                  <span>2. Marriage Compatibility (10 Poruthams)</span>
+                  <span>2. Wedding Matching (10 Poruthams)</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-bold">1 Page</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -3763,7 +3763,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
               {/* Service 3: Baby Naming */}
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                  <span>3. Baby Naming (Vedic Namakaran)</span>
+                  <span>3. Baby Naming Syllables (Vedic Namakaran)</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">1 Page</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

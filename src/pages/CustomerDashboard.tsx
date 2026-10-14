@@ -347,28 +347,28 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
             className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>Order Jathagam</span>
+            <span>Order Birth Jathagam</span>
           </button>
           <button
             onClick={() => onNavigate('marriage-compatibility')}
             className="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Heart className="w-3.5 h-3.5" />
-            <span>Order Match</span>
+            <span>Order Wedding Matching</span>
           </button>
           <button
             onClick={() => onNavigate('baby-naming')}
             className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Baby className="w-3.5 h-3.5" />
-            <span>Order Baby Naming</span>
+            <span>Order Baby Naming Syllables</span>
           </button>
           <button
             onClick={() => onNavigate('muhurtham')}
             className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span>Order Muhurtham</span>
+            <span>Order Subha Muhurtham</span>
           </button>
         </div>
       </div>
@@ -482,21 +482,21 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                   if (order.serviceType === 'BIRTH_JATHAGAM') {
                     return {
                       icon: '🪐',
-                      title: 'Janma Jathagam',
+                      title: 'Birth Jathagam',
                       sub: 'Comprehensive Birth Horoscope Report'
                     };
                   }
                   if (order.serviceType === 'MARRIAGE_COMPATIBILITY') {
                     return {
                       icon: '💍',
-                      title: 'Marriage Compatibility',
+                      title: 'Wedding Matching',
                       sub: '10-Porutham Wedding Synastry'
                     };
                   }
                   if (order.serviceType === 'BABY_NAMING') {
                     return {
                       icon: '👶',
-                      title: 'Baby Naming',
+                      title: 'Baby Naming Syllables',
                       sub: 'Peyar Sooduthal & Nakshatra Syllables'
                     };
                   }
