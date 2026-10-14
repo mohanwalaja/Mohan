@@ -21,14 +21,14 @@ import { test, expect } from '@playwright/test';
  * genuine browser output passes the server's preview-quality validator and is
  * emailed byte-for-byte to the right customer under the right order number.
  *
- * Requires the dev-only runtime: npm install --no-save @php-wasm/node @php-wasm/universal
+ * Requires the dev-only runtime: npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54
  */
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const runtimeInstalled = fs.existsSync(path.join(root, 'node_modules', '@php-wasm', 'node'));
 const sha256 = (base64: string) => createHash('sha256').update(Buffer.from(base64, 'base64')).digest('hex');
 
-test.skip(!runtimeInstalled, 'php-wasm is not installed (npm install --no-save @php-wasm/node @php-wasm/universal)');
+test.skip(!runtimeInstalled, 'php-wasm is not installed (npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54)');
 
 for (const language of ['en', 'ta'] as const) {
 test(`browser-rendered ${language} report + invoice reach the real approval gate and are emailed to the right order`, async ({ page }) => {

@@ -125,6 +125,24 @@ jobs:
       - name: Run the Node suites
         run: npm test
 
+      # The admin report delivery regression (the "Preview-quality report and
+      # invoice PDF did not reach the server" incident) has a static half, which
+      # ran inside npm test above, and a runtime half: the real api/admin/*.php
+      # routes on a throwaway SQLite DB with a recording mailer that never sends,
+      # driven by the real client upload code. That half needs PHP-WASM, which
+      # bundles every PHP version (~480 MB), so it is not a devDependency. It is
+      # installed here only: pinned, and --no-save so package.json and both
+      # lockfiles stay untouched. It runs after npm test on purpose, so the
+      # other optional php-wasm suites keep their current CI behaviour.
+      - name: Install the test-only PHP-WASM runtime (pinned)
+        run: npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54
+
+      - name: Admin report delivery regression (real PHP routes and client upload)
+        env:
+          # A missing runtime fails this step instead of skipping it.
+          ASTRO_REQUIRE_PHP_WASM_TESTS: '1'
+        run: npx tsx tests/admin-report-delivery.test.ts
+
   # ---------------------------------------------------------------------------
   # 3. Browser smoke test — the customer's first click, on desktop and mobile.
   # ---------------------------------------------------------------------------

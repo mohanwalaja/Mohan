@@ -7,7 +7,7 @@
  * filesystem. Use `--php 8.1` to match CI's PHP version.
  *
  * Usage (dev-only runtime, not in package.json):
- *   npm install --no-save @php-wasm/node @php-wasm/universal
+ *   npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54
  *   node scripts/php-wasm-run.mjs [--php 8.1|8.4] tests/admin-report-delivery.test.php
  *
  * Exits with the PHP script's exit code. Nothing outside the virtual

@@ -19,7 +19,7 @@
  * api/.user.ini so the runtime matches the deployed limits.
  *
  * Usage (dev-only runtime, not in package.json):
- *   npm install --no-save @php-wasm/node @php-wasm/universal
+ *   npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54
  *   const bridge = await createAdminApiBridge();
  *   const res = await bridge.request({ method: 'POST', url: '/api/admin/orders/<id>/approve', json: {...} });
  *
