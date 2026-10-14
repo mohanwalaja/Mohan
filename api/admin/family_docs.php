@@ -59,15 +59,21 @@ require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../request_body.php';
 
 if (!defined('ASTRO_FAMILY_DOC_MAX_BYTES')) {
-    // 40 MB per document - far above a 2 MB report rendered at scale 2.5,
-    // small enough to keep a hostile admin request from filling the disk.
+    // 40 MB per document - far above a multi-page 300 dpi report (the browser
+    // capture is ~1-3 MB per A4 page), small enough to keep a hostile admin
+    // request from filling the disk.
     define('ASTRO_FAMILY_DOC_MAX_BYTES', 40 * 1024 * 1024);
 }
 if (!defined('ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX')) {
-    define('ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX', 1900);
+    // A4 at 300 dpi = 2480 x 3508 px (8.2677in x 11.6929in @ 300 dpi). This is
+    // the print-quality floor for a PAID report: the browser captures at
+    // 2540 x 3592 px (~307 dpi), so the floor has headroom but never admits a
+    // sub-300-dpi document. Mirrored client-side by A4_PRINT_MIN_* in
+    // src/services/jathagamPdfExporter.ts.
+    define('ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX', 2480);
 }
 if (!defined('ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX')) {
-    define('ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX', 2800);
+    define('ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX', 3508);
 }
 if (!defined('ASTRO_FAMILY_DOC_TTL')) {
     // Staged documents are transient: they only need to survive the few
@@ -245,8 +251,8 @@ if (!function_exists('astroFamilyDocsIsPreviewQualityPdf')) {
     /**
      * Accept only the browser's print-density A4 captures used for customer
      * email. Each page must be represented by exactly one embedded raster at
-     * least 1900 × 2800 px; server-generated/vector or reduced-resolution PDFs
-     * do not satisfy this email contract.
+     * least 2480 × 3508 px (A4 at 300 dpi); server-generated/vector or
+     * reduced-resolution PDFs do not satisfy this email contract.
      */
     function astroFamilyDocsIsPreviewQualityPdf($binary): bool
     {

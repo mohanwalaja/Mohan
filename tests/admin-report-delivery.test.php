@@ -63,7 +63,7 @@ function removeTree(string $dir): void
  * XObject per page. $streamBytes pads each image so documents can be made
  * realistically large (a real report is ~2 MB).
  */
-function deliveryPdf(int $pages = 1, int $width = 1985, int $height = 2807, int $streamBytes = 2048): string
+function deliveryPdf(int $pages = 1, int $width = 2540, int $height = 3592, int $streamBytes = 2048): string
 {
     $pageIds = [];
     for ($i = 0; $i < $pages; $i++) {
@@ -102,8 +102,8 @@ function iniBytes(string $value): int
 try {
     echo "--- request body limits (api/request_body.php) ---\n";
 
-    $report = deliveryPdf(3, 1985, 2807, 600 * 1024);  // ~1.8 MB, like a real 3-page report
-    $invoice = deliveryPdf(1, 1985, 2807, 350 * 1024); // ~0.35 MB
+    $report = deliveryPdf(3, 2540, 3592, 600 * 1024);  // ~1.8 MB, like a real 3-page report
+    $invoice = deliveryPdf(1, 2540, 3592, 350 * 1024); // ~0.35 MB
     $approveJson = json_encode([
         'reportPdfBase64' => base64_encode($report),
         'invoicePdfBase64' => base64_encode($invoice),
@@ -179,8 +179,8 @@ try {
 
     $orderA = ['id' => 'ord_test_a.1', 'number' => 'ORD-TESTA0001'];
     $orderB = ['id' => 'ord_test_b.2', 'number' => 'ORD-TESTB0002'];
-    $reportA = deliveryPdf(2, 1985, 2807, 4096);
-    $reportB = deliveryPdf(2, 1985, 2807, 8192);
+    $reportA = deliveryPdf(2, 2540, 3592, 4096);
+    $reportB = deliveryPdf(2, 2540, 3592, 8192);
     $stagedInvoice = ['fileName' => 'invoice.pdf', 'content' => $invoice];
 
     $docs = astroSingleOrderClientDocs([], [

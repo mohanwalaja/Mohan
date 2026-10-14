@@ -1,6 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 import type { AppLanguage } from '../../src/types';
 
+// A4 at 300 dpi — the print-quality floor the PHP gate enforces
+// (ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX / _HEIGHT_PX in api/admin/family_docs.php).
+const A4_PRINT_MIN_WIDTH_PX = 2480;
+
 // Avoid CDN / font-download races in the regression test. The app already
 // ships these Indic and Latin fonts. Plus Jakarta Sans is aliased to the
 // bundled Latin face here; the important thing is that all three documents
@@ -107,14 +111,15 @@ for (const language of ['en', 'ta', 'hi'] as const) {
         const frame = document.getElementById('report') as HTMLIFrameElement;
         const pages = Array.from(frame.contentDocument!.querySelectorAll<HTMLElement>('.page'));
         const pdf = fromHtml
-          ? await exporter.renderHtmlToPdfDoc((window as any).reportHtml, { scale: 2.5, jpegQuality: 0.95 })
-          : await exporter.renderPageElementsToPdfDoc(pages, { scale: 2.5, jpegQuality: 0.95 });
+          ? await exporter.renderHtmlToPdfDoc((window as any).reportHtml, { scale: exporter.PRINT_CAPTURE_SCALE, jpegQuality: 0.95 })
+          : await exporter.renderPageElementsToPdfDoc(pages, { scale: exporter.PRINT_CAPTURE_SCALE, jpegQuality: 0.95 });
         // Inspect the image actually embedded in the PDF, not a separate canvas.
         const images = Object.values((pdf.internal as any).collections.addImage_images) as any[];
         return { pageCount: pdf.getNumberOfPages(), jpegs: images.map(image => btoa(image.data)), width: images[0].width, height: images[0].height };
       }, { fromHtml: mode.fromHtml });
       expect(captured.pageCount).toBe(2);
-      expect(captured.width).toBeGreaterThan(1900);
+      // The capture must clear the 300 dpi print floor the API enforces.
+      expect(captured.width).toBeGreaterThanOrEqual(A4_PRINT_MIN_WIDTH_PX);
 
       const comparisons = await page.evaluate(async ({ references, captured }) => {
         const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {

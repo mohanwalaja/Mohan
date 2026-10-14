@@ -54,25 +54,50 @@ function objectLiteral(name: string): string {
 
 console.log('--- PDF PIPELINE INTEGRITY ---');
 
-check('the email profile stays at print density (scale 3, JPEG 0.95, A4 raster floor)', () => {
+check('the print contract is 300 dpi: A4 = 2480 x 3508 px at scale 3.2', () => {
+  assert.match(exporter, /export const REPORT_PRINT_DPI = 300;/, 'the paid-report print density must stay 300 dpi');
+  assert.match(exporter, /export const A4_PRINT_MIN_WIDTH_PX = 2480;/, 'A4 at 300 dpi is 2480 px wide');
+  assert.match(exporter, /export const A4_PRINT_MIN_HEIGHT_PX = 3508;/, 'A4 at 300 dpi is 3508 px tall');
+  // dpi = 96 × scale, so 300 dpi needs ≥ 3.1246; 3.2 keeps a margin for
+  // html2canvas' integer canvas size (2540 × 3592 px ≈ 307 dpi).
+  assert.match(exporter, /export const PRINT_CAPTURE_SCALE = 3\.2;/, 'the print capture scale must stay 3.2');
+});
+
+check('the email profile renders at the print density and enforces the 300 dpi floor', () => {
   const body = objectLiteral('EMAIL_RENDER_OPTIONS');
-  assert.match(body, /scale:\s*3(?!\d)/, 'email capture density must stay at scale 3 (~300 dpi)');
+  assert.match(body, /scale:\s*PRINT_CAPTURE_SCALE/, 'email capture density must be the print profile');
   assert.match(body, /jpegQuality:\s*0\.95/, 'the email JPEG quality must stay at 0.95');
-  assert.match(body, /minimumCaptureWidthPx:\s*1900/, 'the A4 width floor must stay at 1900 px');
-  assert.match(body, /minimumCaptureHeightPx:\s*2800/, 'the A4 height floor must stay at 2800 px');
+  assert.match(body, /minimumCaptureWidthPx:\s*A4_PRINT_MIN_WIDTH_PX/, 'the A4 width floor must be the 300 dpi raster');
+  assert.match(body, /minimumCaptureHeightPx:\s*A4_PRINT_MIN_HEIGHT_PX/, 'the A4 height floor must be the 300 dpi raster');
 });
 
 check('the desktop download profile matches the email profile', () => {
   const body = objectLiteral('DOWNLOAD_RENDER_OPTIONS');
-  assert.match(body, /scale:\s*3(?!\d)/);
+  assert.match(body, /scale:\s*PRINT_CAPTURE_SCALE/, 'a download is a paid report: same 300 dpi capture');
   assert.match(body, /jpegQuality:\s*0\.95/);
 });
 
-check('the mobile and last-resort profiles are the only reduced densities', () => {
-  assert.match(objectLiteral('DOWNLOAD_RENDER_OPTIONS_MOBILE'), /scale:\s*2\.5/);
+check('no device gets a lighter paid profile any more', () => {
+  // The old mobile/低-memory branch (2.5× ≈ 240 dpi) is gone: a phone that
+  // cannot allocate the print canvas fails closed instead of silently
+  // delivering a sub-300-dpi email.
+  assert.doesNotMatch(exporter, /DOWNLOAD_RENDER_OPTIONS_MOBILE/, 'no reduced mobile profile may come back');
+  assert.doesNotMatch(exporter, /deviceMemory|navigator\.userAgent/, 'a device sniff must not lower report quality');
+
   const safe = objectLiteral('DOWNLOAD_RENDER_OPTIONS_SAFE');
   assert.match(safe, /scale:\s*1\.8/, 'the last-resort density is 1.8, not lower');
   assert.match(safe, /jpegQuality:\s*0\.92/, 'even the last-resort JPEG quality stays at 0.92');
+  assert.match(exporter, /DOWNLOADS ONLY\. The email path has no last-resort step/,
+    'the last-resort profile must stay documented as download-only');
+});
+
+check('the API enforces the same 300 dpi floor, independently of the client', () => {
+  assert.match(familyDocs, /define\('ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX', 2480\);/,
+    'the server width floor must be A4 at 300 dpi');
+  assert.match(familyDocs, /define\('ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX', 3508\);/,
+    'the server height floor must be A4 at 300 dpi');
+  assert.match(familyDocs, /ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX \. ' × ' \. ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX/,
+    'the rejection message must quote the enforced floor, not a stale number');
 });
 
 check('the last-resort profile is documented as a renderer-internal retry, not a substitution', () => {
@@ -93,7 +118,7 @@ check('a download ladder always tries a preview-exact capture first', () => {
 
 check('the email path renders with the HIGH-quality profile', () => {
   const highQuality = exporter.slice(exporter.indexOf('function highQualityEmailRenderOptions'));
-  assert.match(highQuality, /\.\.\.recommendedDownloadOptions\(\)/);
+  assert.match(highQuality, /\.\.\.DOWNLOAD_RENDER_OPTIONS/, 'the email capture spreads the print profile');
   assert.match(highQuality, /minimumCaptureWidthPx: EMAIL_RENDER_OPTIONS\.minimumCaptureWidthPx/);
   assert.match(highQuality, /minimumCaptureHeightPx: EMAIL_RENDER_OPTIONS\.minimumCaptureHeightPx/);
 

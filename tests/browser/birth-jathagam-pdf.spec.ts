@@ -2,6 +2,11 @@ import { test, expect, type Frame, type Page } from '@playwright/test';
 import { calculatePrecisionHoroscope } from '../../src/lib/astrology/astronomy';
 import { buildJathagamHtml, buildJathagamLifeCards } from '../../src/services/jathagamHtmlBuilder';
 
+// A4 at 300 dpi — the print-quality floor the PHP gate enforces
+// (ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX / _HEIGHT_PX in api/admin/family_docs.php).
+const A4_PRINT_MIN_WIDTH_PX = 2480;
+const A4_PRINT_MIN_HEIGHT_PX = 3508;
+
 // Use the real bundled Latin/Indic faces, without depending on the fonts CDN.
 const fontCss = [
   ['Plus Jakarta Sans', 'NotoSans'], ['Noto Sans', 'NotoSans'],
@@ -142,14 +147,15 @@ for (const language of ['en', 'ta', 'hi'] as const) {
         const doc = (document.getElementById('report') as HTMLIFrameElement).contentDocument!;
         const pages = Array.from(doc.querySelectorAll<HTMLElement>('.page'));
         const pdf = fromHtml
-          ? await exporter.renderHtmlToPdfDoc((window as any).reportHtml, { scale: 2.5, jpegQuality: 0.95 })
-          : await exporter.renderPageElementsToPdfDoc(pages, { scale: 2.5, jpegQuality: 0.95 });
+          ? await exporter.renderHtmlToPdfDoc((window as any).reportHtml, { scale: exporter.PRINT_CAPTURE_SCALE, jpegQuality: 0.95 })
+          : await exporter.renderPageElementsToPdfDoc(pages, { scale: exporter.PRINT_CAPTURE_SCALE, jpegQuality: 0.95 });
         const images = Object.values((pdf.internal as any).collections.addImage_images) as any[];
         return { pageCount: pdf.getNumberOfPages(), jpeg: btoa(images[1].data), width: images[1].width, height: images[1].height };
       }, mode.fromHtml);
       expect(captured.pageCount).toBe(3);
-      expect(captured.width).toBeGreaterThan(1900);
-      expect(captured.height).toBeGreaterThan(2800);
+      // The capture must clear the 300 dpi print floor the API enforces.
+      expect(captured.width).toBeGreaterThanOrEqual(A4_PRINT_MIN_WIDTH_PX);
+      expect(captured.height).toBeGreaterThanOrEqual(A4_PRINT_MIN_HEIGHT_PX);
 
       const comparisons = await page.evaluate(async ({ references, captured }) => {
         const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {

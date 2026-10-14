@@ -12,8 +12,8 @@ No email was sent and the order stayed pending. This happened on every attempt, 
 
 ## Root cause
 
-The browser renders the report and invoice (html2canvas + jsPDF, ≥ 1900 × 2800 px per A4 page) and posts
-them to the API. Real renders are large:
+The browser renders the report and invoice (html2canvas + jsPDF, ≥ 2480 × 3508 px per A4 page = A4 at
+300 dpi) and posts them to the API. Real renders are large:
 
 | Real Chromium render (desktop, 3× scale) | Report | Invoice | Approve request body |
 |---|---|---|---|
@@ -78,8 +78,9 @@ resend-email, family approve/resend, multi-person item send/send-all), `api/admi
 - Staging never reports success for a file it did not fully record. A short write or a failed manifest
   write removes the PDF and returns an error.
 
-**Safety gate unchanged:** the PDF validator (size, header/EOF, page count, ≥ 1900 × 2800 px raster per
-page) and the fail-closed `422` gate are untouched. A missing or low-resolution document still sends nothing.
+**Safety gate unchanged (now stricter):** the PDF validator (size, header/EOF, page count, ≥ 2480 × 3508 px
+raster per page = A4 at 300 dpi — see [PDF_DELIVERY_QUALITY.md](PDF_DELIVERY_QUALITY.md)) and the
+fail-closed `422` gate are untouched. A missing or low-resolution document still sends nothing.
 
 **Related hardening**
 
