@@ -253,7 +253,12 @@ const VENDOR_CHUNK_GROUPS: Array<{ name: string; packages: string[] }> = [
   },
   {
     name: 'vendor-astrology',
-    packages: ['astronomy-engine', 'tz-lookup'],
+    packages: ['astronomy-engine'],
+  },
+  {
+    // Form timezone lookup does not need the astronomy calculation engine.
+    name: 'vendor-timezone',
+    packages: ['tz-lookup'],
   },
   {
     name: 'vendor-maps',
@@ -310,7 +315,15 @@ export default defineConfig(() => {
             // the homepage downloaded jspdf + html2canvas to run a helper for
             // dynamic imports it had not made yet. Keep it in the chunk the
             // entry already needs.
-            if (id.includes('vite/preload-helper')) return 'vendor-core';
+            if (id.includes('vite/preload-helper') || id.includes('commonjsHelpers')) return 'vendor-core';
+            // Forms use timezone lookup, reports use its formatting helpers.
+            // Keep this shared utility out of the heavy report-builder chunks.
+            if (/\/lib\/timezone\.tsx?$/.test(id)) return 'timezone';
+            // The live Muhurtham form needs the scanner, not the report HTML.
+            // Explicit shared-engine boundaries stop report builders from
+            // absorbing calculation/data modules used by the form as well.
+            if (id.includes('/lib/astrology/') || id.includes('/services/jathagamDoshaData.')) return 'astrology-core';
+            if (/\/lib\/muhurtham\/(scanner\.ts|rules\.json)$/.test(id)) return 'scanner';
             // One chunk per report builder — see REPORT_BUILDER_CHUNKS.
             for (const builder of REPORT_BUILDER_CHUNKS) {
               if (new RegExp(`/services/${builder}\\.tsx?$`).test(id)) return builder;

@@ -236,3 +236,77 @@ test.describe('deferred heavy features', () => {
       .toBeGreaterThan(0);
   });
 });
+
+// Production HTML must be useful even when the entry download is still pending.
+// These tests intentionally serve empty JS: asserting DOM text alone would
+// miss a full-screen splash hiding otherwise-correct prerendered content.
+test.describe('immediate public page display', () => {
+  test.beforeEach(async ({ page }) => {
+    const response = await page.request.get('/');
+    test.skip(!((await response.text()).includes('data-prerendered="true"')), 'production build only');
+    await page.route('**/assets/*.js', route => route.fulfill({ contentType: 'text/javascript', body: '' }));
+  });
+
+  for (const path of [
+    '/', '/services', '/birth-jathagam', '/marriage-compatibility', '/baby-naming',
+    '/muhurtham', '/how-it-works', '/about', '/team', '/contact', '/login', '/register',
+    '/policy-privacy', '/policy-terms', '/policy-payment', '/policy-refund',
+  ]) {
+    test(`${path} displays real content without waiting for JavaScript`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page.locator('#root h1').first()).toBeVisible();
+      await expect(page.locator('#boot-splash')).toBeHidden();
+      await expect(page.getByRole('status', { name: 'Loading page', exact: true })).toHaveCount(0);
+    });
+  }
+});
+
+test('changing pages keeps the current content visible while the destination downloads', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' });
+  const heading = await page.locator('h1').first().textContent();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let intercepted!: () => void;
+  const requested = new Promise<void>(resolve => { intercepted = resolve; });
+  await page.route(/(?:AboutPage-.*\.js|\/src\/pages\/AboutPage\.tsx)/, async route => {
+    intercepted();
+    await gate;
+    await route.continue();
+  });
+  try {
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent('app:navigate', { detail: 'about' })));
+    await requested;
+    await expect(page.locator('h1').first()).toHaveText(heading!);
+    await expect(page.getByRole('status', { name: 'Loading page', exact: true })).toHaveCount(0);
+  } finally {
+    release();
+  }
+  await expect(page.locator('h1').first()).not.toHaveText(heading!);
+});
+
+for (const path of ['/birth-jathagam', '/marriage-compatibility', '/baby-naming', '/muhurtham']) {
+  test(`${path} leaves sample calculation and report rendering unloaded until requested`, async ({ page }) => {
+    const requested: string[] = [];
+    page.on('request', request => requested.push(request.url()));
+    await page.goto(path, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('button', { name: /sample report/i }).first()).toBeVisible();
+    expect(requested.filter(url => /sampleReports[-.]|LivePdfPreviewModal|HtmlBuilder-|vendor-pdf-/.test(url))).toEqual([]);
+  });
+}
+
+for (const path of ['/marriage-compatibility', '/baby-naming', '/muhurtham']) {
+  test(`${path} still opens its sample with the existing report system`, async ({ page }) => {
+    test.slow();
+    const errors: string[] = [];
+    const requested: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    page.on('request', request => requested.push(request.url()));
+    await page.goto(path, { waitUntil: 'networkidle' });
+    await trigger(page.getByRole('button', { name: /sample report/i }).first(), 'the sample button');
+    await expect(page.locator('iframe[title="Live PDF Report Preview"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.getByRole('button', { name: /download pdf/i }).first()).toBeEnabled({ timeout: 60000 });
+    expect(requested.some(url => /sampleReports[-.]/.test(url))).toBe(true);
+    expect(requested.filter(url => PDF_RENDERER_RE.test(url))).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+}

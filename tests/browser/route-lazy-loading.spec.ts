@@ -25,6 +25,13 @@ import fs from 'node:fs';
  * and are ignored; anything under /assets/ must succeed.
  */
 
+// This suite checks local route assets, not Google's availability/sign-in.
+// Keep it deterministic in CI and network-restricted preview environments.
+test.beforeEach(async ({ page }) => {
+  await page.route('https://accounts.google.com/gsi/client', route =>
+    route.fulfill({ contentType: 'text/javascript', body: '' }));
+});
+
 const ROUTES = [
   '/',
   '/services',

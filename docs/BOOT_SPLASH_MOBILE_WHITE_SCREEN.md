@@ -1,5 +1,60 @@
 # Boot Splash — the mobile white screen (2026-10-14)
 
+## Current behavior: show pages, not the splash
+
+The subsequent page-loading fix keeps the dark canvas but **does not cover
+prerendered production pages with the splash**. The implementation described
+below remains the safety fallback for dev/non-prerendered documents only.
+
+- The build marks prerendered documents with `data-prerendered="true"`; inline
+  CSS hides the splash immediately, without JavaScript or an extra request.
+- The page's own JS/static dependencies and any route-specific CSS are linked
+  from its HTML. Other pages and dynamic features are not preloaded.
+- Before `createRoot` replaces the static DOM, `capturePrerenderedPage` saves
+  the build-generated public `main` content. The initial Suspense fallback
+  displays that content until the route is ready, rather than flashing a spinner.
+- Subsequent navigation uses React transitions to keep the current content
+  visible while the destination downloads. Existing hover/focus/touch intent
+  prefetch stays enabled; there is no background download of every route.
+- Sample copy/watermarks live in `sampleReportInfo.ts`, with no calculation
+  imports. Only the sample click imports `sampleReports.ts`. All four samples
+  retain the existing calculations, report builders and downloads. The PDF
+  renderer still waits for Download; paid-report quality is unchanged.
+- Shared timezone, scanner and astrology chunks are separated from report HTML
+  builders. Service forms no longer accidentally download report builders just
+  to use a timezone helper. The Muhurtham form retains its working scanner.
+
+### cPanel and cleanup
+
+No new deployment-root folders or per-route root files are introduced: chunks
+stay under `assets/`, and route documents stay under `pages/`. The archive shape
+check still enforces the existing nine folders (`api`, `assets`, `audio`, `docs`,
+`knowledge`, `pages`, `scripts`, `src`, `video-scenes`).
+
+The only removed source file is `assets/.aistudio/.gitignore`, an unused editor
+placeholder containing just `*`. Its otherwise-empty root folder is removed;
+actual images in `src/assets/`, `public/assets/` and `api/assets/` are retained.
+An unused scanner import was removed as well. Historical patches, both tested
+lockfiles, knowledge/rules, runtime storage guards, backups and deployment
+scripts are retained. No live hosting files are deleted by these changes.
+
+Build with `npm run build:zip` and deploy the complete release using the existing
+[cPanel guide](BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md), preserving live credentials and
+runtime data. Uploading source files alone does not update the optimized site.
+The changes do not promise zero network latency: HTML/CSS and hosting response
+time still matter, and private dashboards still need session/API data.
+
+### Verification
+
+- `npm run lint`, `npm test` (optional PHP/WASM suites report skipped when absent).
+- Production Playwright tests assert real headings remain visible with all JS
+  responses empty, verify transitions during a deliberately delayed route fetch,
+  check that each service loads no sample/HTML/PDF code initially, and open all
+  four samples through the unchanged preview system.
+- `python3 scripts/create_dist_zip.py` validates the compact deployment layout.
+
+## Original splash investigation (historical)
+
 **Reported:** "I checked with 3 different mobile browsers. When opening
 astrosivam.com, a white screen comes for ~2 seconds. After that the site works
 fine. Can you remove the white screen?"

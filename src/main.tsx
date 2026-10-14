@@ -1,7 +1,7 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
-import {dismissBootSplash} from './services/bootSplash';
+import {dismissBootSplash, capturePrerenderedPage} from './services/bootSplash';
 import './index.css';
 
 // Prerendered documents (scripts/prerender.mjs) carry the page's SEO head
@@ -25,6 +25,7 @@ const resetHorizontalScroll = () => {
 };
 document.addEventListener('focusin', () => requestAnimationFrame(resetHorizontalScroll));
 
+capturePrerenderedPage();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

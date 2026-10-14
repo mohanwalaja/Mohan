@@ -118,6 +118,10 @@ await check('the splash costs no extra request and no inline script (the CSP for
   assert.doesNotMatch(scriptSrc, /'unsafe-inline'/, "inline <script> must stay blocked — do not 'fix' the splash with one");
 });
 
+await check('prerendered content is visible without waiting for JavaScript', () => {
+  assert.match(bootStyle(indexHtml), /html\[data-prerendered\] #boot-splash\s*\{\s*display:\s*none/);
+});
+
 await check('the splash is aria-hidden and does not impersonate the Suspense spinner', () => {
   assert.match(
     bootMarkup,
@@ -174,7 +178,7 @@ await check('the JS give-up timer fires before the CSS escape hatch', () => {
   assert.match(main, /window\.setTimeout\(dismissBootSplash,\s*BOOT_SPLASH_GIVE_UP_MS\)/);
   assert.match(
     main,
-    /import \{dismissBootSplash\} from '\.\/services\/bootSplash'/,
+    /import \{[^}]*dismissBootSplash[^}]*\} from '\.\/services\/bootSplash'/,
     'the timer needs the hand-off helper',
   );
 });
@@ -327,6 +331,7 @@ await check(`every prerendered document ships the splash before #root (${routeFi
       /^<div id="root">[\s\S]*<\/div>\s*<\/body>/,
       `dist/${file} must still satisfy the SEO body contract (everything up to the last </div> before </body> is #root content)`,
     );
+    assert.match(html, /<html[^>]*data-prerendered="true"/);
     bootStyle(html);
     assert.match(html, /<noscript><style>#boot-splash\{display:none!important\}<\/style><\/noscript>/);
     assert.match(html, /animation:\s*boot-splash-escape/, `dist/${file} lost the CSS escape hatch`);
