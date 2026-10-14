@@ -34,6 +34,14 @@ const testFiles = [
   // contract. A "performance" commit that lowers them to shave bytes would
   // still pass every other test in this suite.
   'tests/pdf-pipeline-integrity.test.ts',
+  // Right after the render contract: the rendered PDFs must also REACH the
+  // server. The admin "Approve / Send" routes once read their ~3 MB bodies
+  // through config.php's 1 MiB getJsonBody() cap, which silently emptied them
+  // ("Preview-quality report and invoice PDF did not reach the server"). Static
+  // route/limit contracts always run; with php-wasm installed it also executes
+  // the real routes (SQLite + a recording mailer that never sends) and the real
+  // client delivery code against them.
+  'tests/admin-report-delivery.test.ts',
   // The CDN safety contract: two "dormant" bugs (a cacheable API response and a
   // URL->encoding map without Vary) become customer-visible incidents the moment
   // a shared edge cache sits in front of the origin. It also EXECUTES the

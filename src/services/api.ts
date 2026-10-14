@@ -78,6 +78,15 @@ function getAuthHeader(): Record<string, string> {
   };
 }
 
+/**
+ * A web server / firewall (LiteSpeed, ModSecurity, a proxy) can refuse a large
+ * upload with its own HTML 413 page before PHP runs. Name that instead of the
+ * generic "not in JSON format", so a delivery failure is never misread.
+ */
+const HOST_REJECTED_TOO_LARGE_MESSAGE =
+  'The hosting server rejected the request as too large (HTTP 413) before the API could read it. ' +
+  "Nothing was saved or emailed; check the host's request-body limit (LiteSpeed / ModSecurity / proxy).";
+
 // Resilient JSON parser that gracefully handles server errors, HTML 404/500 pages, and empty responses without throwing JSON SyntaxError
 export async function safeJson<T = any>(res: Response): Promise<T> {
   try {
@@ -96,7 +105,7 @@ export async function safeJson<T = any>(res: Response): Promise<T> {
     if (trimmed.startsWith('<?php') || trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<?')) {
       return {
         success: false,
-        message: 'Server response was not in JSON format.',
+        message: res.status === 413 ? HOST_REJECTED_TOO_LARGE_MESSAGE : 'Server response was not in JSON format.',
         status: res.status === 200 ? 502 : res.status
       } as any;
     }
@@ -109,6 +118,8 @@ export async function safeJson<T = any>(res: Response): Promise<T> {
       fallbackMsg = 'Server Error (HTTP 500). Please check your MySQL database credentials in /api/config.php.';
     } else if (res.status === 403) {
       fallbackMsg = 'Access Denied: You do not have sufficient permissions.';
+    } else if (res.status === 413) {
+      fallbackMsg = HOST_REJECTED_TOO_LARGE_MESSAGE;
     }
     return {
       success: false,

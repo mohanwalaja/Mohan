@@ -11,6 +11,8 @@ require_once __DIR__ . '/../chat_alerts.php';
 require_once __DIR__ . '/../rate_limit.php';
 require_once __DIR__ . '/family_approval.php';
 require_once __DIR__ . '/family_docs.php';
+// Document-sized JSON bodies for the delivery routes (see api/request_body.php).
+require_once __DIR__ . '/../request_body.php';
 
 $pdo = getDbConnection();
 try {
@@ -367,20 +369,13 @@ if (preg_match('/(?:family-orders|admin\/orders)\/([^\/]+)\/stage-doc/', $path, 
 
     // A single order stages under "order_<id>" unless it belongs to a family
     // bundle, in which case the group id is the staging scope so ONE approve
-    // call can collect every member document.
-    $scope = $rawId;
-    if (!$isFamilyRoute) {
-        $stmt = $pdo->prepare("SELECT group_id FROM orders WHERE id = ? LIMIT 1");
-        $stmt->execute([$rawId]);
-        $row = $stmt->fetch();
-        if ($row && !empty($row['group_id'])) {
-            $scope = $row['group_id'];
-        } else {
-            $scope = 'order_' . $rawId;
-        }
-    }
+    // call can collect every member document. The owner is resolved from the
+    // database, never from the request body.
+    $target = astroFamilyDocsResolveTarget($pdo, $rawId, $isFamilyRoute);
 
     if ($method === 'DELETE') {
+        // Clearing is always safe; an unknown order simply has nothing staged.
+        $scope = $target['scope'] ?? ($isFamilyRoute ? $rawId : 'order_' . $rawId);
         jsonResponse([
             'success' => true,
             'removed' => astroClearStagedFamilyDocs($scope),
@@ -388,23 +383,30 @@ if (preg_match('/(?:family-orders|admin\/orders)\/([^\/]+)\/stage-doc/', $path, 
         ]);
     }
 
-    $body = getJsonBody();
-    if (empty($body)) {
-        // The request body was dropped (post_max_size / ModSecurity). Tell the
-        // admin panel explicitly; approval remains blocked until the exact
-        // preview-quality document can be uploaded.
+    if ($target === null) {
+        // 422, not 404: the admin panel treats a 404 from a staging URL as
+        // "route not deployed" and would try the next endpoint instead of
+        // showing this message.
         jsonResponse([
             'success' => false,
-            'message' => 'The document upload was rejected by the server before PHP could read it '
-                . '(request body too large). Raise post_max_size / upload_max_filesize in '
-                . 'public_html/api/.user.ini and retry.',
-            'bodyTooLarge' => true,
-            'postMaxSize' => ini_get('post_max_size'),
-            'uploadMaxFilesize' => ini_get('upload_max_filesize')
-        ], 413);
+            'message' => ($isFamilyRoute ? 'Family group' : 'Order') . ' not found; nothing was staged.'
+        ], 422);
     }
 
-    jsonResponse(astroStageFamilyDoc($pdo, $admin, $scope, $body));
+    // One preview-quality PDF is ~2.7 MB as base64 - above getJsonBody()'s
+    // 1 MiB cap, which silently returned [] and made every upload look like
+    // an empty request. The document reader has a document-sized limit and
+    // answers an explicit 413 (with the real cause) when a body is too large
+    // or was discarded before PHP could read it.
+    $body = astro_document_json_body('document upload');
+    if (empty($body)) {
+        jsonResponse([
+            'success' => false,
+            'message' => 'The document upload arrived without a PDF; nothing was staged. Render the document again and retry.'
+        ], 400);
+    }
+
+    jsonResponse(astroStageFamilyDoc($pdo, $admin, $target['scope'], $body, $target['orders']));
 }
 
 // 1g. Multi-person order items
@@ -422,13 +424,13 @@ if (preg_match('/admin\/orders\/([^\/]+)\/items\/(\d+)\/result/', $path, $matche
 if (preg_match('/admin\/orders\/([^\/]+)\/items\/(\d+)\/(send|resend)/', $path, $matches) && $method === 'POST') {
     astro_admin_action_limit($pdo, $admin, 'delivery');
     require_once __DIR__ . '/order_items.php';
-    astro_admin_order_item_action($pdo, $admin, $matches[1], $matches[2], $matches[3], getJsonBody());
+    astro_admin_order_item_action($pdo, $admin, $matches[1], $matches[2], $matches[3], astro_document_json_body('report delivery'));
 }
 
 if (preg_match('/admin\/orders\/([^\/]+)\/items\/send-all/', $path, $matches) && $method === 'POST') {
     astro_admin_action_limit($pdo, $admin, 'delivery');
     require_once __DIR__ . '/order_items.php';
-    astro_admin_order_item_action($pdo, $admin, $matches[1], null, 'send-all', getJsonBody());
+    astro_admin_order_item_action($pdo, $admin, $matches[1], null, 'send-all', astro_document_json_body('report delivery'));
 }
 
 // 2. POST /api/admin/orders/:id/approve
@@ -443,7 +445,12 @@ if (preg_match('/admin\/orders\/([^\/]+)\/approve/', $path, $matches) && $method
         jsonResponse(['success' => false, 'message' => 'Order not found'], 404);
     }
 
-    $body = getJsonBody();
+    // The preview-quality report + invoice travel inline in this body (~3 MB)
+    // or were staged beforehand. Read it with the document limit: getJsonBody()
+    // returned [] for anything over 1 MiB, so the gate below reported "did not
+    // reach the server" for PDFs that had in fact arrived. A body that cannot
+    // be used is answered explicitly here, before anything is changed.
+    $body = astro_document_json_body('approval');
 
     if ((float)($order['amount'] ?? 0) > 0) {
         $paymentStatus = strtoupper((string)($order['payment_status'] ?? ''));
@@ -658,7 +665,7 @@ if (preg_match('/admin\/orders\/([^\/]+)\/resend-email/', $path, $matches) && $m
         }
     }
 
-    $body = getJsonBody();
+    $body = astro_document_json_body('resend');
     if (!empty($order['group_id'])) {
         jsonResponse(astroApproveFamilyGroup($pdo, $admin, $order['group_id'], 'resend', $body));
     }
@@ -1209,7 +1216,7 @@ if (preg_match('/admin\/orders\/([^\/]+)\/process-refund/', $path, $matches) && 
 //     budget-sized emails when the bundle is too large for one message).
 if (preg_match('/family-orders\/([^\/]+)\/approve/', $path, $matches) && $method === 'POST') {
     astro_admin_action_limit($pdo, $admin, 'delivery');
-    jsonResponse(astroApproveFamilyGroup($pdo, $admin, $matches[1], 'approve', getJsonBody()));
+    jsonResponse(astroApproveFamilyGroup($pdo, $admin, $matches[1], 'approve', astro_document_json_body('approval')));
 }
 
 
@@ -1217,7 +1224,7 @@ if (preg_match('/family-orders\/([^\/]+)\/approve/', $path, $matches) && $method
 //     Re-delivery of the SAME single consolidated message.
 if (preg_match('/family-orders\/([^\/]+)\/resend-email/', $path, $matches) && $method === 'POST') {
     astro_admin_action_limit($pdo, $admin, 'delivery');
-    jsonResponse(astroApproveFamilyGroup($pdo, $admin, $matches[1], 'resend', getJsonBody()));
+    jsonResponse(astroApproveFamilyGroup($pdo, $admin, $matches[1], 'resend', astro_document_json_body('resend')));
 }
 
 

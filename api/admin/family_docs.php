@@ -32,6 +32,22 @@
  * If any required report or invoice never arrives, approval stops without
  * sending; nothing is replaced by a lower-quality server-rendered PDF.
  *
+ * THE APPLICATION-LEVEL LIMIT
+ * ---------------------------
+ * Raising post_max_size was not enough: config.php's getJsonBody() also caps
+ * JSON bodies at 1 MiB and silently returns [] above it, which dropped every
+ * staged document AND every inline single-order approval (both ~2-3 MB). The
+ * document routes therefore read their bodies through api/request_body.php
+ * (astro_document_json_body), which has its own document-sized limit and
+ * reports a too-large or discarded body explicitly instead of hiding it.
+ *
+ * ORDER ASSOCIATION
+ * -----------------
+ * The server, not the request, decides who owns a staged document: the scope
+ * comes from the order / group in the URL (astroFamilyDocsResolveTarget), a
+ * report must name an order that belongs to that scope, and approval only
+ * attaches a staged report whose recorded order matches exactly.
+ *
  * Entry points:
  *   POST /api/admin/family-orders/:groupId/stage-doc      (api/admin/index.php)
  *   POST /api/admin/family_docs.php?group_id=...          (direct, no rewrite)
@@ -40,6 +56,7 @@
 
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../request_body.php';
 
 if (!defined('ASTRO_FAMILY_DOC_MAX_BYTES')) {
     // 40 MB per document - far above a 2 MB report rendered at scale 2.5,
@@ -305,6 +322,55 @@ if (!function_exists('astroFamilyDocsDecodePdf')) {
     }
 }
 
+if (!function_exists('astroFamilyDocsResolveTarget')) {
+    /**
+     * Server-side owner of a staging request: the scope the documents are
+     * stored under and the orders that may own a report in it. The scope comes
+     * from the database, never from the request body, so a document cannot be
+     * filed under another customer's order.
+     *
+     *   - a standalone order stages under "order_<id>" and only it owns reports;
+     *   - a grouped order (or a family route) stages under its group_id and any
+     *     member of that group owns its own report.
+     *
+     * @return array{scope:string,orders:array<int,array{id:string,order_number:string}>}|null
+     *         null when the order / family group does not exist.
+     */
+    function astroFamilyDocsResolveTarget(PDO $pdo, $id, bool $isGroup): ?array
+    {
+        $id = trim((string) $id);
+        if ($id === '') {
+            return null;
+        }
+
+        if ($isGroup) {
+            $stmt = $pdo->prepare('SELECT id, order_number FROM orders WHERE group_id = ? ORDER BY group_order_index ASC, created_at ASC');
+            $stmt->execute([$id]);
+            $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if (empty($members)) {
+                return null;
+            }
+            return ['scope' => $id, 'orders' => array_map(static function ($row) {
+                return ['id' => (string) $row['id'], 'order_number' => (string) $row['order_number']];
+            }, $members)];
+        }
+
+        $stmt = $pdo->prepare('SELECT id, order_number, group_id FROM orders WHERE id = ? LIMIT 1');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+        if (!empty($row['group_id'])) {
+            return astroFamilyDocsResolveTarget($pdo, (string) $row['group_id'], true);
+        }
+        return [
+            'scope' => 'order_' . $row['id'],
+            'orders' => [['id' => (string) $row['id'], 'order_number' => (string) $row['order_number']]]
+        ];
+    }
+}
+
 if (!function_exists('astroStageFamilyDoc')) {
     /**
      * Store ONE preview-rendered document (a member report or the consolidated
@@ -317,9 +383,14 @@ if (!function_exists('astroStageFamilyDoc')) {
      *   fileName      attachment filename
      *   pdfBase64     the rendered PDF
      *
-     * @return array{success:bool,message:string,staged?:bool,docKey?:string,kind?:string,sizeBytes?:int,stagedReports?:int,stagedInvoice?:bool}
+     * @param array|null $scopeOrders orders that may own a report in this scope
+     *        (astroFamilyDocsResolveTarget()['orders']). When given, a report
+     *        naming any other order is refused, and the recorded identity is
+     *        the database's, so approval can match it exactly.
+     *
+     * @return array{success:bool,message:string,staged?:bool,docKey?:string,kind?:string,sizeBytes?:int,stagedReports?:int,stagedInvoice?:bool,orderMismatch?:bool}
      */
-    function astroStageFamilyDoc(PDO $pdo, array $admin, $scope, array $body): array
+    function astroStageFamilyDoc(PDO $pdo, array $admin, $scope, array $body, ?array $scopeOrders = null): array
     {
         $scope = astroFamilyDocsSanitizeKey($scope);
         if ($scope === '') {
@@ -347,6 +418,31 @@ if (!function_exists('astroStageFamilyDoc')) {
             return ['success' => false, 'message' => 'A staged report needs orderId or orderNumber.'];
         }
 
+        if ($kind === 'report' && is_array($scopeOrders)) {
+            // Every identifier the request gives must point at the SAME order,
+            // and that order must own documents in this scope.
+            $owner = null;
+            foreach ($scopeOrders as $candidate) {
+                $candidateId = astroFamilyDocsSanitizeKey($candidate['id'] ?? '');
+                $candidateNumber = astroFamilyDocsSanitizeKey($candidate['order_number'] ?? ($candidate['orderNumber'] ?? ''));
+                if (($orderId === '' || $orderId === $candidateId)
+                    && ($orderNumber === '' || $orderNumber === $candidateNumber)) {
+                    $owner = ['id' => $candidateId, 'orderNumber' => $candidateNumber];
+                    break;
+                }
+            }
+            if ($owner === null) {
+                return [
+                    'success' => false,
+                    'orderMismatch' => true,
+                    'message' => 'This report is labelled for order ' . ($orderNumber !== '' ? $orderNumber : $orderId)
+                        . ', which is not the order being delivered, so it was not staged. Re-render the report from the correct order and retry.'
+                ];
+            }
+            $orderId = $owner['id'];
+            $orderNumber = $owner['orderNumber'];
+        }
+
         $binary = astroFamilyDocsDecodePdf($body['pdfBase64'] ?? ($body['pdf_base64'] ?? ''));
         if ($binary === null) {
             return [
@@ -364,7 +460,10 @@ if (!function_exists('astroStageFamilyDoc')) {
         $dir = astroFamilyDocsGroupDir($scope);
         $target = $dir . '/' . $docKey . '.pdf';
 
-        if (@file_put_contents($target, $binary, LOCK_EX) === false) {
+        $written = @file_put_contents($target, $binary, LOCK_EX);
+        clearstatcache(true, $target);
+        if ($written !== strlen($binary) || @filesize($target) !== strlen($binary)) {
+            @unlink($target);
             error_log("ASTRO SIVAM: could not stage family document {$docKey} for {$scope} in {$dir}");
             return [
                 'success' => false,
@@ -393,7 +492,16 @@ if (!function_exists('astroStageFamilyDoc')) {
             'stagedAt' => date('c'),
             'stagedBy' => (string) ($admin['name'] ?? 'Administrator')
         ];
-        astroFamilyDocsWriteManifest($scope, $manifest);
+        if (!astroFamilyDocsWriteManifest($scope, $manifest)) {
+            // Without its manifest entry the approval would never find this PDF;
+            // never report it as uploaded.
+            @unlink($target);
+            error_log("ASTRO SIVAM: could not record staged document {$docKey} for {$scope} in its manifest");
+            return [
+                'success' => false,
+                'message' => 'The preview-quality PDF reached the server but could not be recorded in the staging manifest, so it was discarded. Retry the upload.'
+            ];
+        }
 
         $reportCount = 0;
         $hasInvoice = false;
@@ -524,15 +632,20 @@ if (!function_exists('astroSingleOrderClientDocs')) {
     {
         $stagedReports = (array) ($stagedDocs['reports'] ?? []);
         $report = astroFamilyDocsDecodePdf($body['reportPdfBase64'] ?? ($body['report_pdf_base64'] ?? ''));
+        // Staging records sanitised identifiers; compare like with like.
+        $orderId = astroFamilyDocsSanitizeKey($orderId);
+        $orderNumber = astroFamilyDocsSanitizeKey($orderNumber);
 
         if ($report === null) {
             foreach ($stagedReports as $staged) {
+                // Only a report recorded for THIS order may be attached. (A
+                // lone staged report used to be accepted whatever order it
+                // named; staging now records the database identity, so an
+                // exact match is always available for a legitimate upload.)
                 $matchesOrder =
                     ((string) $orderId !== '' && (string) ($staged['orderId'] ?? '') === (string) $orderId) ||
                     ((string) $orderNumber !== '' && (string) ($staged['orderNumber'] ?? '') === (string) $orderNumber);
-                // A single-order scope only ever holds that order's report, so a
-                // document staged without identifiers still belongs to it.
-                if ($matchesOrder || count($stagedReports) === 1) {
+                if ($matchesOrder) {
                     $report = (string) ($staged['content'] ?? '');
                     break;
                 }
@@ -567,31 +680,26 @@ if (basename((string) ($_SERVER['SCRIPT_NAME'] ?? '')) === 'family_docs.php') {
     $admin = requireAdmin($pdo);
 
     $method = $_SERVER['REQUEST_METHOD'];
-    $body = function_exists('getJsonBody') ? getJsonBody() : (json_decode(file_get_contents('php://input'), true) ?: []);
+    // Document-sized limit with explicit errors (see api/request_body.php);
+    // getJsonBody() would silently drop any PDF larger than 1 MiB.
+    $body = astro_document_json_body('document upload');
     $requestedGroupId = trim((string) ($_GET['group_id'] ?? ($_GET['groupId'] ?? ($body['group_id'] ?? ($body['groupId'] ?? '')))));
     $requestedOrderId = trim((string) ($_GET['order_id'] ?? ($body['orderId'] ?? ($body['order_id'] ?? ''))));
+
+    if ($requestedGroupId === '' && $requestedOrderId === '') {
+        jsonResponse(['success' => false, 'message' => 'Missing group_id / order_id'], 400);
+    }
 
     // Match the rewritten /admin/orders/:id/stage-doc route when this direct
     // PHP endpoint is used without URL rewriting. Standalone documents live in
     // order_<id>; grouped members share their actual group_id scope.
-    if ($requestedGroupId !== '') {
-        $scope = $requestedGroupId;
-    } elseif ($requestedOrderId !== '') {
-        $orderStmt = $pdo->prepare('SELECT group_id FROM orders WHERE id = ? LIMIT 1');
-        $orderStmt->execute([$requestedOrderId]);
-        $orderRow = $orderStmt->fetch(PDO::FETCH_ASSOC);
-        $scope = !empty($orderRow['group_id'])
-            ? (string) $orderRow['group_id']
-            : 'order_' . $requestedOrderId;
-    } else {
-        $scope = '';
-    }
-
-    if ($scope === '') {
-        jsonResponse(['success' => false, 'message' => 'Missing group_id / order_id'], 400);
-    }
+    $target = $requestedGroupId !== ''
+        ? astroFamilyDocsResolveTarget($pdo, $requestedGroupId, true)
+        : astroFamilyDocsResolveTarget($pdo, $requestedOrderId, false);
 
     if ($method === 'DELETE') {
+        // Clearing is always safe; an unknown order simply has nothing staged.
+        $scope = $target['scope'] ?? ($requestedGroupId !== '' ? $requestedGroupId : 'order_' . $requestedOrderId);
         jsonResponse([
             'success' => true,
             'removed' => astroClearStagedFamilyDocs($scope),
@@ -603,5 +711,10 @@ if (basename((string) ($_SERVER['SCRIPT_NAME'] ?? '')) === 'family_docs.php') {
         jsonResponse(['success' => false, 'message' => 'Only POST/DELETE are allowed'], 405);
     }
 
-    jsonResponse(astroStageFamilyDoc($pdo, $admin, $scope, $body));
+    if ($target === null) {
+        // 422, not 404: a 404 from a staging URL means "route not deployed" to the admin panel.
+        jsonResponse(['success' => false, 'message' => 'Order or family group not found; nothing was staged.'], 422);
+    }
+
+    jsonResponse(astroStageFamilyDoc($pdo, $admin, $target['scope'], $body, $target['orders']));
 }

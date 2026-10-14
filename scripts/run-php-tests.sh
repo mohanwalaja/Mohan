@@ -4,6 +4,7 @@ set -euo pipefail
 php_tests=(
   tests/astrology-accuracy-regression.test.php
   tests/preview-pdf-quality.test.php
+  tests/admin-report-delivery.test.php
   tests/muhurtham-reports.test.php
   tests/wedding-matching-report.test.php
   tests/sample-engine-meaning.test.php
