@@ -48,8 +48,8 @@ def create_dist_zip():
         # 1. Add all optimized static frontend files from dist/ to root of zip
         if os.path.exists(dist_dir):
             for root, dirs, files in os.walk(dist_dir):
-                # Filter out excluded directories
-                dirs[:] = [d for d in dirs if d not in excluded_dirs]
+                # Filter out excluded directories and Vite 6+ .vite/ cache
+                dirs[:] = [d for d in dirs if d not in excluded_dirs and not d.startswith('.')]
                 for file in files:
                     file_path = os.path.join(root, file)
                     if file in excluded_files or file.endswith('.map'):
@@ -100,9 +100,8 @@ def create_dist_zip():
             zipf.write('public/.htaccess', '.htaccess')
 
         # 4. Add the operator documentation referenced by the deployment guide.
-        #    The runbooks live under docs/ in the repository but ship at the zip
-        #    root (bare filenames), matching what the deployment guide tells the
-        #    operator to look for after extraction.
+        #    The runbooks live under docs/ in the repository and now ship under
+        #    docs/ in the zip too, keeping the deploy root clean.
         for doc in (
             'BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md',
             'RATE_LIMITING_AND_PAYMENT_RECOVERY.md',
@@ -112,7 +111,7 @@ def create_dist_zip():
         ):
             source = os.path.join('docs', doc)
             if os.path.exists(source):
-                zipf.write(source, doc)
+                zipf.write(source, os.path.join('docs', doc))
 
         # 5. Ops scripts the runbook schedules from cron (weekly backup, weekly
         #    log rotation). They must ship with the release: a host that is
@@ -142,12 +141,14 @@ def create_dist_zip():
 # Enforced by tests/dist-shape.test.ts and asserted again in CI's zip check.
 # ---------------------------------------------------------------------------
 EXPECTED_DIST_TOP_DIRS = {'assets', 'audio', 'video-scenes'}
-EXPECTED_ZIP_TOP_DIRS = {'api', 'assets', 'audio', 'knowledge', 'scripts', 'src', 'video-scenes'}
+EXPECTED_ZIP_TOP_DIRS = {'api', 'assets', 'audio', 'docs', 'knowledge', 'scripts', 'src', 'video-scenes'}
 
 
 def assert_deploy_shape(dist_dir='dist', zip_name='dist.zip'):
     if os.path.isdir(dist_dir):
-        dist_dirs = {e for e in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, e))}
+        # Vite 6+ creates a .vite/ cache directory inside dist/ — filter it out
+        # since it is a build artifact, not a deployment folder.
+        dist_dirs = {e for e in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, e)) and not e.startswith('.')}
         if dist_dirs != EXPECTED_DIST_TOP_DIRS:
             raise RuntimeError(
                 f'dist/ top-level folders changed: {sorted(dist_dirs)} (expected {sorted(EXPECTED_DIST_TOP_DIRS)})'

@@ -40,9 +40,9 @@ check('preloads are same-origin and limited to the body + home-hero faces', () =
     return href!;
   });
   assert.deepEqual(hrefs, [
-    '/plus-jakarta-sans-latin-wght-normal-153fc85b.woff2',
-    '/playfair-display-latin-wght-normal-e0c764a8.woff2',
-    '/playfair-display-latin-wght-italic-54af24bd.woff2',
+    '/assets/fonts/plus-jakarta-sans-latin-wght-normal-153fc85b.woff2',
+    '/assets/fonts/playfair-display-latin-wght-normal-e0c764a8.woff2',
+    '/assets/fonts/playfair-display-latin-wght-italic-54af24bd.woff2',
   ]);
 });
 
@@ -52,7 +52,7 @@ check('font URLs resolve to fingerprinted, valid WOFF2 files with license notice
   assert.equal(srcs.length, 8);
   const paths = new Set<string>();
   for (const src of srcs) {
-    assert.match(src, /^\/[a-z0-9-]+-[a-f0-9]{8}\.woff2$/i, `font should have a content-hashed root URL: ${src}`);
+    assert.match(src, /^\/assets\/fonts\/[a-z0-9-]+-[a-f0-9]{8}\.woff2$/i, `font should have a content-hashed path: ${src}`);
     assert.ok(!paths.has(src), `duplicate face source ${src}`);
     paths.add(src);
     const bytes = fs.readFileSync(path.join(projectRoot, 'public', src.slice(1)));
@@ -62,7 +62,7 @@ check('font URLs resolve to fingerprinted, valid WOFF2 files with license notice
   }
 
   for (const license of ['font-license-plus-jakarta-sans.txt', 'font-license-playfair-display.txt']) {
-    const text = fs.readFileSync(path.join(projectRoot, 'public', license), 'utf8');
+    const text = fs.readFileSync(path.join(projectRoot, 'public', 'assets', 'fonts', license), 'utf8');
     assert.match(text, /SIL OPEN FONT LICENSE Version 1\.1/);
   }
 });

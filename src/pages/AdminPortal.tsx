@@ -136,6 +136,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
   const [settings, setSettings] = useState<AppSettings | null>(authSettings);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [auditLogPage, setAuditLogPage] = useState(1);
+  const [auditLogTotalPages, setAuditLogTotalPages] = useState(1);
+  const [auditLogTotal, setAuditLogTotal] = useState(0);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [messagesList, setMessagesList] = useState<ContactMessage[]>([]);
   const [bannedIps, setBannedIps] = useState<BannedIpEntry[]>([]);
@@ -346,7 +349,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         setAutoEmail(settingsRes.settings.autoEmailReports);
       }
       if (usersRes.success && usersRes.users) setUsersList(Array.isArray(usersRes.users) ? usersRes.users : []);
-      if (logsRes.success && logsRes.logs) setAuditLogs(Array.isArray(logsRes.logs) ? logsRes.logs : []);
+      if (logsRes.success && logsRes.logs) {
+        setAuditLogs(Array.isArray(logsRes.logs) ? logsRes.logs : []);
+        if (logsRes.pagination) {
+          setAuditLogTotalPages(logsRes.pagination.totalPages);
+          setAuditLogTotal(logsRes.pagination.total);
+        }
+      }
       if (teamRes.success && teamRes.team) setTeamMembers(Array.isArray(teamRes.team) ? teamRes.team : []);
       if (msgsRes.success && msgsRes.messages) setMessagesList(Array.isArray(msgsRes.messages) ? msgsRes.messages : []);
       if (bannedRes.success && bannedRes.bannedIps) setBannedIps(Array.isArray(bannedRes.bannedIps) ? bannedRes.bannedIps : []);
@@ -362,6 +371,23 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       fetchAdminData();
     }
   }, [isAdmin]);
+
+  /** Fetch a specific page of audit logs (called by pagination controls). */
+  const loadAuditLogPage = async (page: number) => {
+    try {
+      const res = await api.getAdminAuditLogs({ page, limit: 50 });
+      if (res.success && res.logs) {
+        setAuditLogs(Array.isArray(res.logs) ? res.logs : []);
+        setAuditLogPage(page);
+        if (res.pagination) {
+          setAuditLogTotalPages(res.pagination.totalPages);
+          setAuditLogTotal(res.pagination.total);
+        }
+      }
+    } catch {
+      // Non-critical; existing logs stay visible
+    }
+  };
 
   const handleApproveOrder = async (orderId: string) => {
     startProcessing(orderId);
@@ -4225,25 +4251,62 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       {/* SECTION 5: AUDIT LOGS */}
       {activeSection === 'logs' && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-            System Event & Security Audit Trail
-          </h3>
-          <div className="space-y-2 max-h-96 overflow-y-auto font-mono text-[11px]">
-            {(auditLogs || []).map((log, idx) => (
-              <div
-                key={idx}
-                className="p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-between"
-              >
-                <div className="space-x-2">
-                  <span className="text-purple-600 dark:text-purple-400 font-bold">[{log.action}]</span>
-                  <span className="text-slate-700 dark:text-slate-300">{log.details}</span>
-                </div>
-                <div className="text-slate-400 text-[10px] shrink-0">
-                  {new Date(log.timestamp).toLocaleString()}
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              System Event &amp; Security Audit Trail
+            </h3>
+            <span className="text-xs text-slate-400">{auditLogTotal} events</span>
           </div>
+          <div className="space-y-2 max-h-[32rem] overflow-y-auto font-mono text-[11px]">
+            {(auditLogs || []).map((log, idx) => {
+              const ts = log.created_at ? new Date(log.created_at) : null;
+              const isValidDate = ts && !isNaN(ts.getTime());
+              return (
+                <div
+                  key={log.id || idx}
+                  className="p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl flex items-start justify-between gap-3"
+                >
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-purple-600 dark:text-purple-400 font-bold">[{log.action}]</span>
+                      {log.user_name && (
+                        <span className="text-slate-500 dark:text-slate-400 text-[10px]">by {log.user_name}</span>
+                      )}
+                    </div>
+                    <div className="text-slate-700 dark:text-slate-300 truncate">{log.details}</div>
+                  </div>
+                  <div className="text-slate-400 text-[10px] shrink-0 whitespace-nowrap">
+                    {isValidDate ? ts.toLocaleString() : '—'}
+                  </div>
+                </div>
+              );
+            })}
+            {auditLogs.length === 0 && (
+              <div className="text-center text-slate-400 py-8">No audit events recorded yet.</div>
+            )}
+          </div>
+          {/* Pagination controls */}
+          {auditLogTotalPages > 1 && (
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => loadAuditLogPage(auditLogPage - 1)}
+                disabled={auditLogPage <= 1}
+                className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                ← Previous
+              </button>
+              <span className="text-xs text-slate-500">
+                Page {auditLogPage} of {auditLogTotalPages}
+              </span>
+              <button
+                onClick={() => loadAuditLogPage(auditLogPage + 1)}
+                disabled={auditLogPage >= auditLogTotalPages}
+                className="px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       )}
 

@@ -347,7 +347,7 @@ jobs:
           # Deploy shape contract (audit S1): the cPanel root folder list must
           # stay exactly this set — code splitting adds files inside assets/,
           # never new folders. Keep in sync with scripts/create_dist_zip.py.
-          expected_dirs = {'api', 'assets', 'audio', 'knowledge', 'scripts', 'src', 'video-scenes'}
+          expected_dirs = {'api', 'assets', 'audio', 'docs', 'knowledge', 'scripts', 'src', 'video-scenes'}
           top_dirs = {name.split('/', 1)[0] for name in names if '/' in name}
           assert top_dirs == expected_dirs, f'Root folders changed: {sorted(top_dirs)}'
           for kb in (

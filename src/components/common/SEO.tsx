@@ -13,7 +13,7 @@ export interface SEOProps {
 
 const DEFAULT_TITLE = 'ASTRO SIVAM - Understand Your Life Through Vedic Astrology | astrosivam.com';
 const DEFAULT_DESCRIPTION = 'ASTRO SIVAM (astrosivam.com) - Authentic Vedic Astrology Platform. Get precision Birth Jathagam (Horoscope / Kundali), 10-Poruthams Marriage Compatibility Matching, Sacred Baby Naming (Namakaran) & Subha Muhurtham Auspicious Dates in Tamil, English & Hindi.';
-const DEFAULT_IMAGE = 'https://astrosivam.com/astrosivam_og_image.jpg?v=20261003';
+const DEFAULT_IMAGE = 'https://astrosivam.com/assets/images/astrosivam_og_image.jpg?v=20261003';
 const SITE_NAME = 'ASTRO SIVAM';
 const SITE_ORIGIN = 'https://astrosivam.com';
 
