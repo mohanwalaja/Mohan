@@ -40,7 +40,8 @@ const testFiles = [
   // ("Preview-quality report and invoice PDF did not reach the server"). Static
   // route/limit contracts always run; with php-wasm installed it also executes
   // the real routes (SQLite + a recording mailer that never sends) and the real
-  // client delivery code against them.
+  // client delivery code against them. CI installs the pinned runtime after
+  // this suite and runs that file again with it required (build.yml).
   'tests/admin-report-delivery.test.ts',
   // The CDN safety contract: two "dormant" bugs (a cacheable API response and a
   // URL->encoding map without Vary) become customer-visible incidents the moment

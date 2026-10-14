@@ -101,13 +101,29 @@ page) and the fail-closed `422` gate are untouched. A missing or low-resolution 
 | Suite | Runs in | Covers |
 |---|---|---|
 | `tests/admin-report-delivery.test.php` | CI PHP job (`npm run test:php`, PHP 8.1) | body reader limits and explicit errors; association rules; staging refusal and manifest-failure cleanup; staging targets from the DB |
-| `tests/admin-report-delivery.test.ts` | `npm test` | static route/limit/deploy contracts (always); with php-wasm: the real `api/admin/*.php` routes on a throwaway SQLite DB with a recording mailer that never sends: success, every failure path, cross-order association, mail failure, resend, fallback endpoints; the real client (`deliverOrderPdfPayload` → `api.approveOrder`), inline and staged; the PHP suite above under PHP 8.1 |
+| `tests/admin-report-delivery.test.ts` | `npm test` (static half); CI Node job, with the runtime required (all 35 checks) | static route/limit/deploy/CI contracts (always); with php-wasm: the real `api/admin/*.php` routes on a throwaway SQLite DB with a recording mailer that never sends: success, every failure path, cross-order association, mail failure, resend, fallback endpoints; the real client (`deliverOrderPdfPayload` → `api.approveOrder`), inline and staged; the PHP suite above under PHP 8.1 |
 | `tests/browser/admin-report-delivery.spec.ts` | manual (`npx playwright test …`), needs php-wasm | real Chromium renders (en + ta) through the real client into the real PHP gate; attachments byte-identical, named for the right order |
 
-The real-route tests need the optional dev runtime (`npm install --no-save @php-wasm/node @php-wasm/universal`).
-Without it they report SKIP, and the static contracts still run. With the original route files restored,
-27 of the 33 Node checks fail (the remaining 6 cover behavior that was already correct). The browser spec
-fails with the exact production message.
+The real-route checks need the test-only PHP-WASM runtime:
+`npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54`. It bundles every PHP version
+(~480 MB), so it is not a devDependency. Locally, without it, those checks report SKIP and the static
+contracts still run.
+
+In CI they cannot be skipped. The `Node test suite` job in `.github/workflows/build.yml` runs `npm test`,
+then installs exactly that pinned runtime (`--no-save`, so `package.json`, `package-lock.json` and
+`bun.lock` are untouched), then runs this file again with `ASTRO_REQUIRE_PHP_WASM_TESTS=1`. That flag
+turns a missing runtime into a failure, the same convention as `ASTRO_REQUIRE_MPDF_TESTS` in the PHP job.
+A static check in the file asserts this wiring. The runtime is installed after `npm test`, so the other
+optional php-wasm suites keep their existing CI behaviour.
+
+With the original route files from `9440d06` swapped in, 27 of the 35 Node checks fail. They include the
+end-to-end client check, which fails with the exact production message. The other 8 pass for two reasons:
+- They cover behaviour that was already correct: the 422 with no PDFs, the low-resolution rejection,
+  `approve_order.php`'s unbounded read, the client failure path, and no PHP warnings.
+- They test code the swap leaves in place: the limits contract, the client's 413 message, and the CI
+  wiring.
+
+The browser spec fails with the exact production message.
 
 Helpers: `scripts/php-admin-api-bridge.mjs` runs the real admin API under php-wasm (doubles only for the
 database connection and the SMTP transport, under `tests/fixtures/admin-delivery/`).
