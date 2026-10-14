@@ -191,11 +191,25 @@ check('the admin panel and the customer previews draw from the SAME renderer', (
   for (const consumer of [
     'src/pages/AdminPortal.tsx',
     'src/pages/CustomerDashboard.tsx',
-    'src/components/common/OrderReportModal.tsx',
-    'src/components/common/LivePdfPreviewModal.tsx'
+    'src/components/common/OrderReportModal.tsx'
   ]) {
     assert.match(read(consumer), /from '(\.\.\/)+services\/jathagamPdfExporter'/, `${consumer} must use the shared exporter`);
   }
+  // The live preview still uses the SAME exporter — but through a dynamic
+  // import at the download click (audit PERF-1), so that opening a report, and
+  // in particular a public sample, no longer downloads jspdf + html2canvas.
+  // What must never change is WHERE the bytes come from: one exporter, so a
+  // preview download and the admin approval render stay pixel-identical.
+  assert.match(
+    livePdfPreview,
+    /import\('\.\.\/\.\.\/services\/jathagamPdfExporter'\)/,
+    'the live preview must load the shared exporter on demand'
+  );
+  assert.doesNotMatch(
+    livePdfPreview,
+    /import[\s\S]{0,200}from '\.\.\/\.\.\/services\/jathagamPdfExporter'/,
+    'a STATIC exporter import in the preview modal would fetch the PDF engine for every preview'
+  );
   assert.match(livePdfPreview, /buildJathagamHtml|buildWeddingMatchHtml|buildBabyNamingHtml|buildMuhurthamHtml|buildInvoiceHtml/,
     'the preview must render through the shared HTML builders');
 });

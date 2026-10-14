@@ -169,6 +169,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               </button>
               <button
                 type="button"
+                data-route="how-it-works"
                 onClick={() => onNavigate('how-it-works')}
                 className="dark-quiet flex-1 sm:flex-initial justify-center !min-h-[46px] sm:!min-h-12 !px-3 sm:!px-6 !text-xs sm:!text-sm"
               >
@@ -234,6 +235,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
                   <button
                     type="button"
+                    data-route={service.route}
                     onClick={() => onNavigate(service.route)}
                     className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-400/30 bg-amber-500/15 px-4 text-sm font-bold text-amber-100 transition hover:bg-amber-500/25 sm:w-auto sm:self-start"
                   >

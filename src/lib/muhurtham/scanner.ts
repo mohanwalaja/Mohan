@@ -49,7 +49,7 @@ export type MuhurthamGrade = 'BEST' | 'GOOD' | 'FAIR' | 'AVOID';
  *     Uttamam needs a good Tara Bala for every person, and Sukra asta uses the
  *     classical 10° orb with boundary days excluded.
  */
-export const MUHURTHAM_ALGORITHM_VERSION = 6;
+export { MUHURTHAM_ALGORITHM_VERSION } from './algorithmVersion';
 
 /**
  * Asta (combustion) orbs in degrees from the Sun, measured at the local

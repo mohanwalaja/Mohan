@@ -3,27 +3,43 @@ import { X, Download, Eye, Languages, Sparkles, AlertCircle, RefreshCw, FileText
 import { AppLanguage, Order } from '../../types';
 import { api } from '../../services/api';
 import {
-  downloadHtmlPdf,
-  downloadPreviewPagesPdf,
-  downloadFromServerUrl,
-  deliverOrderPdfPayload,
-  generateOrderPdfsBase64,
-  prepareFamilyFulfilPayload,
   getFamilyGroupId,
   mergeOrderPayloadIntoResult,
   resultNeedsRecalculation,
-  canonicalCalculationPayload,
-  SAMPLE_RENDER_OPTIONS
-} from '../../services/jathagamPdfExporter';
-import { buildJathagamHtml } from '../../services/jathagamHtmlBuilder';
-import { buildWeddingMatchHtml } from '../../services/weddingHtmlBuilder';
-import { buildBabyNamingHtml } from '../../services/babyNamingHtmlBuilder';
-import { buildMuhurthamHtml, MuhurthamScanResult } from '../../services/muhurthamHtmlBuilder';
-import { buildInvoiceHtml, buildFamilyInvoiceHtml } from '../../services/invoiceHtmlBuilder';
+  canonicalCalculationPayload
+} from '../../services/orderPayload';
+import type { MuhurthamScanResult } from '../../services/muhurthamHtmlBuilder';
 import { describeFamilyRenderQuality } from '../../services/formatUtils';
 import { warmReportFonts } from '../../services/reportFonts';
 import { applySampleWatermark, SAMPLE_BANNER, sampleDetailsLine, sampleReportFileName, sampleReportTitle, type SampleServiceType } from '../../services/sampleReports';
 import { normalizeReportLanguage } from '../../services/reportLanguage';
+
+/**
+ * The PDF renderer (jspdf + html2canvas, ~950 KB with its raster helpers) is a
+ * DEFERRED feature (audit PERF-1): the modal above renders the report from
+ * HTML only. Fetching the renderer here — at the moment the visitor clicks
+ * Download or Send, never while the preview is being read — keeps an opened
+ * sample report ~1 MB lighter than it used to be, and the browser's module
+ * cache means the second download is instant. The returned promise is cached
+ * for the life of the tab, so the loading state appears at most once.
+ */
+/**
+ * The HTML report builders are DEFERRED PER REPORT TYPE (audit PERF-1). They
+ * are not equal: the Baby Naming builder carries the ~370 KB name tables and
+ * the Muhurtham builder the ~245 KB six-month scan data, while the horoscope
+ * sample needs neither. A visitor who opens one sample must download that
+ * sample's builder and nothing else, so the preview fetches the module for the
+ * report being shown (the import() calls in the preview effect below). The
+ * download path is unaffected: the exporter imports the same builders, so the
+ * preview and the PDF stay pixel-identical.
+ */
+let pdfRendererPromise: Promise<typeof import('../../services/jathagamPdfExporter')> | null = null;
+function loadReportPdfRenderer(): Promise<typeof import('../../services/jathagamPdfExporter')> {
+  if (!pdfRendererPromise) {
+    pdfRendererPromise = import('../../services/jathagamPdfExporter');
+  }
+  return pdfRendererPromise;
+}
 
 export interface LivePdfPreviewModalProps {
   isOpen: boolean;
@@ -161,37 +177,57 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
     return order ? mergeOrderPayloadIntoResult(order, rawResult) : rawResult;
   }, [rawResult, order]);
 
-  // Build the live HTML preview string based on the user's details and active language
+  // Build the live HTML preview string based on the user's details and active
+  // language. The builder for THIS report type is fetched here and only here,
+  // so no other report's tables are downloaded (see the comment above).
   useEffect(() => {
     if (!isOpen) return;
 
-    try {
-      let html = '';
-      if (serviceType === 'BIRTH_JATHAGAM' && effectiveResult) {
-        html = buildJathagamHtml(effectiveResult, selectedLang);
-      } else if (serviceType === 'MARRIAGE_COMPATIBILITY' && effectiveResult) {
-        html = buildWeddingMatchHtml(effectiveResult, selectedLang, { orderNumber: order?.orderNumber });
-      } else if (serviceType === 'BABY_NAMING' && effectiveResult) {
-        html = buildBabyNamingHtml(effectiveResult, selectedLang);
-      } else if (serviceType === 'MUHURTHAM' && effectiveResult) {
-        html = buildMuhurthamHtml(effectiveResult as MuhurthamScanResult, selectedLang);
-      } else if (serviceType === 'INVOICE' && order) {
-        // Family bundle → the consolidated family tax invoice rendered in the
-        // exact same high-quality design as the single-order tax invoice.
-        if (familyOrders && familyOrders.length > 0) {
-          html = buildFamilyInvoiceHtml(familyOrders, getFamilyGroupId(familyOrders));
-        } else {
-          html = buildInvoiceHtml({ ...order, language: 'en' });
+    let cancelled = false;
+
+    const buildPreviewHtml = async () => {
+      try {
+        let html = '';
+        if (serviceType === 'BIRTH_JATHAGAM' && effectiveResult) {
+          const { buildJathagamHtml } = await import('../../services/jathagamHtmlBuilder');
+          html = buildJathagamHtml(effectiveResult, selectedLang);
+        } else if (serviceType === 'MARRIAGE_COMPATIBILITY' && effectiveResult) {
+          const { buildWeddingMatchHtml } = await import('../../services/weddingHtmlBuilder');
+          html = buildWeddingMatchHtml(effectiveResult, selectedLang, { orderNumber: order?.orderNumber });
+        } else if (serviceType === 'BABY_NAMING' && effectiveResult) {
+          const { buildBabyNamingHtml } = await import('../../services/babyNamingHtmlBuilder');
+          html = buildBabyNamingHtml(effectiveResult, selectedLang);
+        } else if (serviceType === 'MUHURTHAM' && effectiveResult) {
+          const { buildMuhurthamHtml } = await import('../../services/muhurthamHtmlBuilder');
+          html = buildMuhurthamHtml(effectiveResult as MuhurthamScanResult, selectedLang);
+        } else if (serviceType === 'INVOICE' && order) {
+          // Family bundle → the consolidated family tax invoice rendered in the
+          // exact same high-quality design as the single-order tax invoice.
+          if (familyOrders && familyOrders.length > 0) {
+            const { buildFamilyInvoiceHtml } = await import('../../services/invoiceHtmlBuilder');
+            html = buildFamilyInvoiceHtml(familyOrders, getFamilyGroupId(familyOrders));
+          } else {
+            const { buildInvoiceHtml } = await import('../../services/invoiceHtmlBuilder');
+            html = buildInvoiceHtml({ ...order, language: 'en' });
+          }
         }
+        if (cancelled) return;
+        // Public samples carry a light per-page "SAMPLE" watermark so they can
+        // never be mistaken for a paid report — inside the preview and inside
+        // every downloaded copy, because the watermark lives in the report HTML.
+        setPreviewHtml(sampleMode && html ? applySampleWatermark(html) : html);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to build PDF preview HTML:', err);
+        setPreviewHtml('');
       }
-      // Public samples carry a light per-page "SAMPLE" watermark so they can
-      // never be mistaken for a paid report — inside the preview and inside
-      // every downloaded copy, because the watermark lives in the report HTML.
-      setPreviewHtml(sampleMode && html ? applySampleWatermark(html) : html);
-    } catch (err) {
-      console.error('Failed to build PDF preview HTML:', err);
-      setPreviewHtml('');
-    }
+    };
+
+    void buildPreviewHtml();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, serviceType, effectiveResult, order, familyOrders, selectedLang, sampleMode]);
 
   if (!isOpen) return null;
@@ -199,6 +235,10 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
   const handleSendToUserEmail = async () => {
     if (!order) return;
     setIsSendingEmail(true);
+    // Deferred renderer: this handler is the first moment the PDF engine is
+    // actually needed (see loadReportPdfRenderer).
+    const { prepareFamilyFulfilPayload, generateOrderPdfsBase64, deliverOrderPdfPayload } =
+      await loadReportPdfRenderer();
     setEmailStatusMsg({
       type: 'success',
       text: 'Preparing the preview-exact report & tax invoice for delivery…'
@@ -329,10 +369,20 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
      * Paid reports (customer download, admin approval, emailed PDFs) pass no
      * profile here and are untouched by this.
      */
-    const downloadProfile = sampleMode ? SAMPLE_RENDER_OPTIONS : undefined;
     setDownloadNote(sampleMode
-      ? 'Rendering the sample report — this takes a few seconds…'
-      : 'Rendering the report you see above at print resolution — this takes a few seconds…');
+      ? 'Preparing the sample report — this takes a few seconds…'
+      : 'Preparing the report you see above at print resolution — this takes a few seconds…');
+    // Deferred renderer (see loadReportPdfRenderer): opening a report — the
+    // public samples included — no longer downloads jspdf/html2canvas; the
+    // click that renders a PDF does. The module cache makes a repeat download
+    // instant, and the note above is already on screen while it arrives.
+    const {
+      downloadHtmlPdf,
+      downloadPreviewPagesPdf,
+      downloadFromServerUrl,
+      SAMPLE_RENDER_OPTIONS
+    } = await loadReportPdfRenderer();
+    const downloadProfile = sampleMode ? SAMPLE_RENDER_OPTIONS : undefined;
     try {
       if (!previewHtml) {
         throw new Error('The preview has no content to render yet.');

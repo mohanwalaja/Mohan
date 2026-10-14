@@ -90,6 +90,11 @@ const testFiles = [
   'tests/seo-prerender-contract.test.ts',
   // Lazy route modules must keep exporting the component names App.tsx maps.
   'tests/route-chunk-exports.test.ts',
+  // The initial-JS budget (audit PERF-1): the homepage must not download the
+  // PDF renderer or Leaflet — not on first paint, not on an idle callback —
+  // and the deferred features must stay reachable on demand. Runs both
+  // source-level checks and (when dist/ exists) checks over the shipped bytes.
+  'tests/initial-js-budget.test.ts',
   'tests/lockfile-drift.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');

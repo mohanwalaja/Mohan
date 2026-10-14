@@ -226,6 +226,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
                       )}
                       <button
                         type="button"
+                        data-route={route}
                         onClick={() => onNavigate(route)}
                         className="button-primary mt-4 w-full !min-h-[46px] !text-xs"
                       >
@@ -250,7 +251,12 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
               Follow the six steps from service selection and secure checkout to traditional review and delivery of your report and invoice.
             </p>
           </div>
-          <button type="button" onClick={() => onNavigate('how-it-works')} className="button-primary relative z-10 shrink-0">
+          <button
+            type="button"
+            data-route="how-it-works"
+            onClick={() => onNavigate('how-it-works')}
+            className="button-primary relative z-10 shrink-0"
+          >
             <span>See how it works</span>
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>

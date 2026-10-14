@@ -6,39 +6,82 @@ import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { HomePage } from './pages/HomePage';
-import { ServicesPage } from './pages/ServicesPage';
-import { AboutPage } from './pages/AboutPage';
-import { ContactPage } from './pages/ContactPage';
-import { PoliciesPage } from './pages/PoliciesPage';
-import { AstrologyTeamPage } from './pages/AstrologyTeamPage';
-import { NotFoundPage } from './pages/NotFoundPage';
-import { HowItWorksPage } from './pages/HowItWorksPage';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
 import {
   recoverFromChunkError,
   clearChunkRecoveryFlag,
   installChunkErrorRecovery,
-  prefetchRouteChunksOnIdle,
+  installRouteIntentPrefetch,
   safeImport,
 } from './services/routeChunks';
 
-// Heavy routes are code-split (audit S1): the admin portal, the customer
-// dashboard and the four report pages pull in the PDF/HTML report builders.
-// Each becomes its own chunk in the existing dist/assets/ folder — no new
-// top-level folders (tests/dist-shape.test.ts enforces this).
+// Routes are code-split (audit S1, widened by audit PERF-1): the admin portal,
+// the customer dashboard and the four report pages pull in the PDF/HTML report
+// builders; every other page is a chunk of its own too, because the homepage
+// only needs the shell and itself. Each becomes its own chunk in the existing
+// dist/assets/ folder — no new top-level folders
+// (tests/dist-shape.test.ts enforces this).
 //
 // WHITE-SCREEN SAFETY (a previous split attempt broke production):
 //   - home + the app shell stay eager, so the site always renders;
 //   - every lazy route sits behind <Suspense> with a themed fallback;
 //   - a failed chunk fetch reloads ONCE instead of dying blank
 //     (see src/services/routeChunks.ts);
-//   - chunks are warmed when the browser is idle, so navigation is as
-//     instant as the old single-bundle build;
+//   - a route's chunk is fetched when the visitor hovers/focuses its link
+//     (intent prefetch — see routeChunks.ts), never all of them on idle;
 //   - every loader goes through safeImport(): a SYNCHRONOUS throw while
 //     evaluating the import() wrapper (how the __VITE_PRELOAD__ incident
 //     escaped `.catch()` and landed in the ErrorBoundary) becomes a
 //     rejection that recoverFromChunkError handles instead.
+// The non-home page chunks: services, the static information pages, auth and
+// not-found. They are small, and a visitor reading the homepage has no use for
+// any of them — the first page they open is fetched then (and is prefetched on
+// link hover).
+const ServicesPage = lazy(() =>
+  safeImport(() => import('./pages/ServicesPage'))
+    .then((m) => ({ default: m.ServicesPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const HowItWorksPage = lazy(() =>
+  safeImport(() => import('./pages/HowItWorksPage'))
+    .then((m) => ({ default: m.HowItWorksPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const AboutPage = lazy(() =>
+  safeImport(() => import('./pages/AboutPage'))
+    .then((m) => ({ default: m.AboutPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const AstrologyTeamPage = lazy(() =>
+  safeImport(() => import('./pages/AstrologyTeamPage'))
+    .then((m) => ({ default: m.AstrologyTeamPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const ContactPage = lazy(() =>
+  safeImport(() => import('./pages/ContactPage'))
+    .then((m) => ({ default: m.ContactPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const PoliciesPage = lazy(() =>
+  safeImport(() => import('./pages/PoliciesPage'))
+    .then((m) => ({ default: m.PoliciesPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const LoginPage = lazy(() =>
+  safeImport(() => import('./pages/LoginPage'))
+    .then((m) => ({ default: m.LoginPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const RegisterPage = lazy(() =>
+  safeImport(() => import('./pages/RegisterPage'))
+    .then((m) => ({ default: m.RegisterPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const NotFoundPage = lazy(() =>
+  safeImport(() => import('./pages/NotFoundPage'))
+    .then((m) => ({ default: m.NotFoundPage }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+
 const AdminPortal = lazy(() =>
   safeImport(() => import('./pages/AdminPortal'))
     .then((m) => ({ default: m.AdminPortal }))
@@ -73,10 +116,58 @@ const MuhurthamPage = lazy(() =>
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AiAstrologerLauncher } from './components/ai-astrologer/AiAstrologerLauncher';
 import { CosmicBackground } from './components/common/CosmicBackground';
-import { CartProvider } from './context/CartContext';
-import { FamilyCartDrawer } from './components/cart/FamilyCartDrawer';
-import { UnifiedCheckoutModal } from './components/cart/UnifiedCheckoutModal';
+import { CartProvider, useCart } from './context/CartContext';
 import { FamilyCartFloatingBar } from './components/cart/FamilyCartFloatingBar';
+
+// THE CART LAYER IS A FEATURE, NOT THE SHELL (audit PERF-1)
+// ---------------------------------------------------------
+// The family tray and the unified checkout are opened by the visitor; until
+// they do, their code has no business being in the first download. Between
+// them they pull the location picker, the birth date/time fields, the
+// multi-person payload rules, the Subha Muhurtham scanner (astronomy engine +
+// rules JSON) and the IANA timezone tables — several hundred kilobytes that a
+// visitor who is only reading the homepage never uses.
+//
+// They were already rendered conditionally (both returned null while closed);
+// what changes here is that they are now FETCHED conditionally too. The cart
+// STATE stays eager in CartContext, and the floating bar (the ~4 kB trigger
+// that shows whether the tray holds anything) stays eager with it, so nothing
+// on the page changes until the visitor actually opens a cart surface.
+const FamilyCartDrawer = lazy(() =>
+  safeImport(() => import('./components/cart/FamilyCartDrawer'))
+    .then((m) => ({ default: m.FamilyCartDrawer }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+const UnifiedCheckoutModal = lazy(() =>
+  safeImport(() => import('./components/cart/UnifiedCheckoutModal'))
+    .then((m) => ({ default: m.UnifiedCheckoutModal }))
+    .catch((error) => recoverFromChunkError(error)),
+);
+
+/**
+ * Mounts each cart surface only while it is open, so its chunk is fetched by
+ * the open click. The brief gap while the chunk arrives shows nothing at all:
+ * the drawer/modal is the only thing being drawn at that moment, and the
+ * fallback is intentionally empty rather than a spinner over a page the
+ * visitor is not looking at.
+ */
+function DeferredCartLayer({ onNavigate }: { onNavigate: (route: string) => void }) {
+  const { isCartOpen, isCheckoutOpen } = useCart();
+  return (
+    <>
+      {isCartOpen && (
+        <Suspense fallback={null}>
+          <FamilyCartDrawer onNavigate={onNavigate} />
+        </Suspense>
+      )}
+      {isCheckoutOpen && (
+        <Suspense fallback={null}>
+          <UnifiedCheckoutModal onNavigate={onNavigate} />
+        </Suspense>
+      )}
+    </>
+  );
+}
 
 /** Themed spinner shown only in the brief moment a lazy route chunk loads. */
 function RouteFallback() {
@@ -211,12 +302,13 @@ function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentRoute]);
 
-  // Code-splitting support (audit S1): install the one-shot chunk-failure
-  // recovery, then warm the heavy route chunks when the browser is idle so
-  // navigating feels exactly as instant as the old single-bundle build.
+  // Code-splitting support (audit S1) + intent prefetch (audit PERF-1):
+  // install the one-shot chunk-failure recovery here, and let hover/focus on a
+  // navigation link fetch that route's chunk. Nothing is fetched speculatively
+  // for a visitor who never reaches for a link.
   useEffect(() => {
     installChunkErrorRecovery();
-    prefetchRouteChunksOnIdle();
+    return installRouteIntentPrefetch();
   }, []);
 
   const handleNavigate = (route: string) => {
@@ -304,10 +396,9 @@ function AppContent() {
       </main>
       <Footer onNavigate={handleNavigate} />
 
-      {/* Family Order Tray & Unified Checkout Components */}
+      {/* Family order tray trigger (eager) + the deferred cart surfaces. */}
       <FamilyCartFloatingBar onNavigate={handleNavigate} />
-      <FamilyCartDrawer onNavigate={handleNavigate} />
-      <UnifiedCheckoutModal onNavigate={handleNavigate} />
+      <DeferredCartLayer onNavigate={handleNavigate} />
       <AiAstrologerLauncher />
 
     </div>
