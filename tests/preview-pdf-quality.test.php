@@ -39,7 +39,7 @@ function previewPdfFixture(array $images, ?int $pageCount = null, bool $includeE
 }
 
 $high = previewPdfFixture([
-    ['width' => 1985, 'height' => 2808]
+    ['width' => 2540, 'height' => 3592]
 ]);
 checkPreviewPdfQuality(astroFamilyDocsIsPreviewQualityPdf($high), 'A high-resolution A4 browser capture passes the PDF quality gate');
 checkPreviewPdfQuality(astroFamilyDocsDecodePdf(base64_encode($high)) === $high, 'The base64 decoder accepts the validated preview PDF');
@@ -52,24 +52,34 @@ $low = previewPdfFixture([
     ['width' => 1800, 'height' => 2700]
 ]);
 checkPreviewPdfQuality(!astroFamilyDocsIsPreviewQualityPdf($low), 'A low-resolution PDF is rejected');
+
+// The old desktop raster (3x on A4 = 2382 x 3369 px, ~288 dpi) is no longer
+// enough: the floor is A4 at 300 dpi (2480 x 3508 px).
+$subThreeHundredDpi = previewPdfFixture([
+    ['width' => 2382, 'height' => 3369]
+]);
+checkPreviewPdfQuality(
+    !astroFamilyDocsIsPreviewQualityPdf($subThreeHundredDpi),
+    'A PDF just below the 300 dpi floor (the old 3x desktop raster) is rejected'
+);
 checkPreviewPdfQuality(astroFamilyDocsDecodePdf(base64_encode($low)) === null, 'A low-resolution PDF cannot be staged for customer email');
 
 $noPageImage = previewPdfFixture([]);
 checkPreviewPdfQuality(!astroFamilyDocsIsPreviewQualityPdf($noPageImage), 'A vector-only or image-missing PDF is rejected');
 
 $partialBundle = previewPdfFixture([
-    ['width' => 1985, 'height' => 2808]
+    ['width' => 2540, 'height' => 3592]
 ], 2);
 checkPreviewPdfQuality(!astroFamilyDocsIsPreviewQualityPdf($partialBundle), 'Every page in a multi-page PDF must have a high-resolution raster');
 
 $twoPages = previewPdfFixture([
-    ['width' => 2382, 'height' => 3369],
-    ['width' => 1985, 'height' => 2808]
+    ['width' => 2480, 'height' => 3508],
+    ['width' => 2540, 'height' => 3592]
 ]);
 checkPreviewPdfQuality(astroFamilyDocsIsPreviewQualityPdf($twoPages), 'A multi-page PDF passes when every page meets the minimum resolution');
 
 $truncated = previewPdfFixture([
-    ['width' => 1985, 'height' => 2808]
+    ['width' => 2540, 'height' => 3592]
 ], 1, false);
 checkPreviewPdfQuality(!astroFamilyDocsIsPreviewQualityPdf($truncated), 'A truncated PDF without an EOF marker fails closed');
 checkPreviewPdfQuality(astroFamilyDocsDecodePdf('not base64') === null, 'Malformed base64 is rejected');

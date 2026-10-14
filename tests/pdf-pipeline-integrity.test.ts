@@ -44,6 +44,9 @@ const exporter = read('src/services/jathagamPdfExporter.ts');
 const approveOrder = read('api/admin/approve_order.php');
 const familyDocs = read('api/admin/family_docs.php');
 const livePdfPreview = read('src/components/common/LivePdfPreviewModal.tsx');
+const adminPortal = read('src/pages/AdminPortal.tsx');
+const customerDashboard = read('src/pages/CustomerDashboard.tsx');
+const orderItems = read('src/services/orderItems.ts');
 
 /** The literal body of an exported constant object. */
 function objectLiteral(name: string): string {
@@ -54,25 +57,50 @@ function objectLiteral(name: string): string {
 
 console.log('--- PDF PIPELINE INTEGRITY ---');
 
-check('the email profile stays at print density (scale 3, JPEG 0.95, A4 raster floor)', () => {
+check('the print contract is 300 dpi: A4 = 2480 x 3508 px at scale 3.2', () => {
+  assert.match(exporter, /export const REPORT_PRINT_DPI = 300;/, 'the paid-report print density must stay 300 dpi');
+  assert.match(exporter, /export const A4_PRINT_MIN_WIDTH_PX = 2480;/, 'A4 at 300 dpi is 2480 px wide');
+  assert.match(exporter, /export const A4_PRINT_MIN_HEIGHT_PX = 3508;/, 'A4 at 300 dpi is 3508 px tall');
+  // dpi = 96 × scale, so 300 dpi needs ≥ 3.1246; 3.2 keeps a margin for
+  // html2canvas' integer canvas size (2540 × 3592 px ≈ 307 dpi).
+  assert.match(exporter, /export const PRINT_CAPTURE_SCALE = 3\.2;/, 'the print capture scale must stay 3.2');
+});
+
+check('the email profile renders at the print density and enforces the 300 dpi floor', () => {
   const body = objectLiteral('EMAIL_RENDER_OPTIONS');
-  assert.match(body, /scale:\s*3(?!\d)/, 'email capture density must stay at scale 3 (~300 dpi)');
+  assert.match(body, /scale:\s*PRINT_CAPTURE_SCALE/, 'email capture density must be the print profile');
   assert.match(body, /jpegQuality:\s*0\.95/, 'the email JPEG quality must stay at 0.95');
-  assert.match(body, /minimumCaptureWidthPx:\s*1900/, 'the A4 width floor must stay at 1900 px');
-  assert.match(body, /minimumCaptureHeightPx:\s*2800/, 'the A4 height floor must stay at 2800 px');
+  assert.match(body, /minimumCaptureWidthPx:\s*A4_PRINT_MIN_WIDTH_PX/, 'the A4 width floor must be the 300 dpi raster');
+  assert.match(body, /minimumCaptureHeightPx:\s*A4_PRINT_MIN_HEIGHT_PX/, 'the A4 height floor must be the 300 dpi raster');
 });
 
 check('the desktop download profile matches the email profile', () => {
   const body = objectLiteral('DOWNLOAD_RENDER_OPTIONS');
-  assert.match(body, /scale:\s*3(?!\d)/);
+  assert.match(body, /scale:\s*PRINT_CAPTURE_SCALE/, 'a download is a paid report: same 300 dpi capture');
   assert.match(body, /jpegQuality:\s*0\.95/);
 });
 
-check('the mobile and last-resort profiles are the only reduced densities', () => {
-  assert.match(objectLiteral('DOWNLOAD_RENDER_OPTIONS_MOBILE'), /scale:\s*2\.5/);
+check('no device gets a lighter paid profile any more', () => {
+  // The old mobile/低-memory branch (2.5× ≈ 240 dpi) is gone: a phone that
+  // cannot allocate the print canvas fails closed instead of silently
+  // delivering a sub-300-dpi email.
+  assert.doesNotMatch(exporter, /DOWNLOAD_RENDER_OPTIONS_MOBILE/, 'no reduced mobile profile may come back');
+  assert.doesNotMatch(exporter, /deviceMemory|navigator\.userAgent/, 'a device sniff must not lower report quality');
+
   const safe = objectLiteral('DOWNLOAD_RENDER_OPTIONS_SAFE');
   assert.match(safe, /scale:\s*1\.8/, 'the last-resort density is 1.8, not lower');
   assert.match(safe, /jpegQuality:\s*0\.92/, 'even the last-resort JPEG quality stays at 0.92');
+  assert.match(exporter, /DOWNLOADS ONLY\. The email path has no last-resort step/,
+    'the last-resort profile must stay documented as download-only');
+});
+
+check('the API enforces the same 300 dpi floor, independently of the client', () => {
+  assert.match(familyDocs, /define\('ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX', 2480\);/,
+    'the server width floor must be A4 at 300 dpi');
+  assert.match(familyDocs, /define\('ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX', 3508\);/,
+    'the server height floor must be A4 at 300 dpi');
+  assert.match(familyDocs, /ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX \. ' × ' \. ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX/,
+    'the rejection message must quote the enforced floor, not a stale number');
 });
 
 check('the last-resort profile is documented as a renderer-internal retry, not a substitution', () => {
@@ -93,7 +121,7 @@ check('a download ladder always tries a preview-exact capture first', () => {
 
 check('the email path renders with the HIGH-quality profile', () => {
   const highQuality = exporter.slice(exporter.indexOf('function highQualityEmailRenderOptions'));
-  assert.match(highQuality, /\.\.\.recommendedDownloadOptions\(\)/);
+  assert.match(highQuality, /\.\.\.DOWNLOAD_RENDER_OPTIONS/, 'the email capture spreads the print profile');
   assert.match(highQuality, /minimumCaptureWidthPx: EMAIL_RENDER_OPTIONS\.minimumCaptureWidthPx/);
   assert.match(highQuality, /minimumCaptureHeightPx: EMAIL_RENDER_OPTIONS\.minimumCaptureHeightPx/);
 
@@ -107,6 +135,67 @@ check('the email path renders with the HIGH-quality profile', () => {
   const staging = exporter.slice(exporter.indexOf('export async function stageFamilyOrderPdfs'));
   assert.match(staging.slice(0, 4000), /const renderOptions = highQualityEmailRenderOptions\(\);/,
     'staged family documents must use the high-quality profile');
+});
+
+check('every PAID render goes through the one print-density email render', () => {
+  // One helper owns the email capture: it retries the SAME density and fails
+  // closed. Nothing else may call the raw renderer with the print profile, or a
+  // future edit could quietly reintroduce a lighter capture on one path.
+  const helper = exporter.slice(exporter.indexOf('export async function renderEmailPdfBase64'));
+  const helperBody = helper.slice(0, helper.indexOf('\n}' ));
+  assert.match(helperBody, /const renderOptions = options \|\| highQualityEmailRenderOptions\(\);/,
+    'the helper must default to the print profile');
+  assert.match(helperBody, /await generatePdfBase64FromHtml\(htmlContent, renderOptions\)/,
+    'the helper must render at that same profile on every attempt');
+  assert.doesNotMatch(helperBody, /DOWNLOAD_RENDER_OPTIONS_SAFE|SAMPLE_RENDER_OPTIONS|2\.5|1\.8/,
+    'the email retry must never drop to a lighter density');
+  assert.match(helperBody, /throw new Error\(emailPrintDensityFailureMessage\(label, lastError\)\)/);
+
+  // Raw call sites: only the helper itself, and the two non-paid sample paths.
+  const rawCalls = (exporter.match(/generatePdfBase64FromHtml\(/g) || []).length;
+  assert.equal(rawCalls, 2,
+    `only the helper and its declaration may call the raw renderer (found ${rawCalls})`);
+});
+
+check('the deviceless rule holds: admin approval is 300 dpi from mobile and desktop alike', () => {
+  // The exporter must not sniff the device to pick a profile any more.
+  assert.doesNotMatch(exporter, /deviceMemory|userAgent|isPhone/,
+    'no device sniff may choose a report profile');
+
+  // Every admin-side send path renders through the print-density helper:
+  // generateOrderPdfsBase64 (approve / resend / send-to-user / batch) and the
+  // multi-person item path.
+  const generator = exporter.slice(
+    exporter.indexOf('export async function generateOrderPdfsBase64'),
+    exporter.indexOf('export function safeFilePart')
+  );
+  assert.match(generator, /await renderEmailPdfBase64\(reportHtml, 'Report PDF', renderOptions\)/);
+  assert.match(generator, /await renderEmailPdfBase64\(invoiceHtml, 'Invoice PDF', renderOptions\)/);
+
+  const itemRenders = orderItems.match(/renderEmailPdfBase64\(/g) || [];
+  assert.ok(itemRenders.length >= 4,
+    `every multi-person item render must use the print-density helper (found ${itemRenders.length})`);
+  assert.doesNotMatch(orderItems, /generatePdfBase64FromHtml/,
+    'the item path must not call the raw renderer directly');
+
+  // The admin panel itself must not branch on the device around approval.
+  assert.doesNotMatch(adminPortal, /deviceMemory|window\.innerWidth < \d+ \?/,
+    'the admin approval flow must not change profile by viewport');
+  assert.match(adminPortal, /generateOrderPdfsBase64\(/);
+  assert.match(customerDashboard, /generateOrderPdfsBase64\(/);
+});
+
+check('a device that cannot capture at print density fails loudly, never lighter', () => {
+  const message = exporter.slice(exporter.indexOf('export function emailPrintDensityFailureMessage'));
+  const body = message.slice(0, message.indexOf('\n}'));
+  assert.match(body, /300 dpi/, 'the failure must name the density');
+  assert.match(body, /A4_PRINT_MIN_WIDTH_PX/, 'the failure must quote the pixel floor');
+  assert.match(body, /A4_PRINT_MIN_HEIGHT_PX/);
+  assert.match(body, /Nothing was emailed and the order/, 'the operator must know nothing shipped');
+  assert.match(body, /is still pending/, 'the order must be described as still pending');
+  assert.match(body, /desktop browser/, 'the failure must say what to do next');
+  assert.match(exporter, /const maxAttempts = 2;/,
+    'exactly one same-density retry: enough for transient canvas pressure, not a quality ladder');
 });
 
 check('every document is byte-checked before it can be staged or emailed', () => {

@@ -38,6 +38,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   binaryBytesOfBase64,
+  PREVIEW_PAGE_HEIGHT,
+  PREVIEW_PAGE_WIDTH,
   buildPreviewPdfBase64,
   sha256OfBase64
 } from './helpers/previewPdfFixtures';
@@ -152,8 +154,34 @@ const ORDINARY_LIMIT = sizeExpression(requestBodyPhp, /define\('ASTRO_JSON_BODY_
 const MAX_DOCUMENT = sizeExpression(familyDocsPhp, /define\('ASTRO_FAMILY_DOC_MAX_BYTES',\s*([^)]+)\)/, 'ASTRO_FAMILY_DOC_MAX_BYTES');
 const SINGLE_INLINE = sizeExpression(exporterTs, /export const SINGLE_ORDER_INLINE_LIMIT_BYTES = ([^;]+);/, 'SINGLE_ORDER_INLINE_LIMIT_BYTES');
 const FAMILY_INLINE = sizeExpression(exporterTs, /const MAX_FAMILY_INLINE_BYTES = ([^;]+);/, 'MAX_FAMILY_INLINE_BYTES');
+// The print-quality floor, read from BOTH sides of the contract. They must
+// agree: a server enforcing a higher floor than the client captures at refuses
+// every delivery, and the reverse silently ships sub-300-dpi reports.
+const SERVER_MIN_WIDTH = sizeExpression(familyDocsPhp, /define\('ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX',\s*([^)]+)\)/, 'ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX');
+const SERVER_MIN_HEIGHT = sizeExpression(familyDocsPhp, /define\('ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX',\s*([^)]+)\)/, 'ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX');
+const CLIENT_MIN_WIDTH = sizeExpression(exporterTs, /export const A4_PRINT_MIN_WIDTH_PX = ([^;]+);/, 'A4_PRINT_MIN_WIDTH_PX');
+const CLIENT_MIN_HEIGHT = sizeExpression(exporterTs, /export const A4_PRINT_MIN_HEIGHT_PX = ([^;]+);/, 'A4_PRINT_MIN_HEIGHT_PX');
+const A4_PRINT_MIN_WIDTH_PX = SERVER_MIN_WIDTH;
+const A4_PRINT_MIN_HEIGHT_PX = SERVER_MIN_HEIGHT;
 const ENVELOPE = 64 * 1024;
 const asJsonBody = (pdfBytes: number) => Math.ceil(pdfBytes * 4 / 3) + ENVELOPE;
+
+await check('the 300 dpi floor is identical on the client and the API (A4 = 2480 x 3508)', () => {
+  assert.equal(CLIENT_MIN_WIDTH, SERVER_MIN_WIDTH, 'client and server width floors must match');
+  assert.equal(CLIENT_MIN_HEIGHT, SERVER_MIN_HEIGHT, 'client and server height floors must match');
+  assert.equal(CLIENT_MIN_WIDTH, 2480, 'A4 at 300 dpi is 2480 px wide');
+  assert.equal(CLIENT_MIN_HEIGHT, 3508, 'A4 at 300 dpi is 3508 px tall');
+  const scaleMatch = /export const PRINT_CAPTURE_SCALE = ([\d.]+);/.exec(exporterTs);
+  assert.ok(scaleMatch, 'the print capture scale must be declared');
+  const scale = Number(scaleMatch![1]);
+  // dpi = 96 x scale must clear 300, and the resulting raster must clear the floor.
+  assert.ok(96 * scale >= 300, `a capture scale of ${scale} is only ${(96 * scale).toFixed(0)} dpi`);
+  assert.ok(Math.floor(793.7 * scale) >= CLIENT_MIN_WIDTH && Math.floor(1122.5 * scale) >= CLIENT_MIN_HEIGHT,
+    `a capture at scale ${scale} must clear the ${CLIENT_MIN_WIDTH} x ${CLIENT_MIN_HEIGHT} px floor`);
+  // The fixtures must be print quality too, or these tests would prove the old floor.
+  assert.ok(PREVIEW_PAGE_WIDTH >= CLIENT_MIN_WIDTH && PREVIEW_PAGE_HEIGHT >= CLIENT_MIN_HEIGHT,
+    'the browser-output fixtures must be print quality');
+});
 
 await check('limits line up: client inline bodies < document limit < post_max_size; one max-size PDF fits', () => {
   const postMax = iniBytes(/^\s*post_max_size\s*=\s*(\S+)/m.exec(read('api/.user.ini'))![1]);
@@ -254,6 +282,25 @@ function assertDeliveredTo(order: { email: string; orderNumber: string }, report
   assert.ok(invoiceAttachment.name.includes(order.orderNumber) && /Invoice/i.test(invoiceAttachment.name), `invoice attachment named for ${order.orderNumber}`);
   assert.equal(reportAttachment.sha256, sha256OfBase64(report), 'the report attachment is byte-identical to the uploaded preview PDF');
   assert.equal(invoiceAttachment.sha256, sha256OfBase64(invoice), 'the invoice attachment is byte-identical to the uploaded preview PDF');
+  assertPrintQualityRaster(message, `order ${order.orderNumber}`);
+}
+
+/**
+ * The document that was EMAILED must be print quality: every A4 page needs a
+ * raster of at least 2480 × 3508 px (A4 at 300 dpi), whatever device approved
+ * the order. The mailer double records the embedded image dictionaries, so this
+ * asserts the delivered bytes, not the client's intent.
+ */
+function assertPrintQualityRaster(message: any, context: string) {
+  for (const attachment of message.attachments) {
+    assert.ok(Array.isArray(attachment.raster) && attachment.raster.length > 0,
+      `${context}: ${attachment.name} must embed one raster per A4 page`);
+    for (const page of attachment.raster) {
+      assert.ok(page.width >= A4_PRINT_MIN_WIDTH_PX && page.height >= A4_PRINT_MIN_HEIGHT_PX,
+        `${context}: ${attachment.name} was emailed at ${page.width} × ${page.height} px; the floor is ` +
+        `${A4_PRINT_MIN_WIDTH_PX} × ${A4_PRINT_MIN_HEIGHT_PX} px (A4 at 300 dpi)`);
+    }
+  }
 }
 
 await check(`regression: the ${(JSON.stringify(inlineA).length / MiB).toFixed(1)} MiB inline approve body the admin panel sends is accepted and emailed`, async () => {

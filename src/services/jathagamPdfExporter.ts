@@ -93,8 +93,8 @@ function fitPageToA4Element(pageEl: HTMLElement) {
  * Capture settings for the html2canvas → jsPDF pipeline.
  *
  * `scale` is the real quality knob: it multiplies the CSS pixel density of the
- * capture, so scale 3 on an A4 page produces a ~2480 × 3508 px raster (≈300 dpi
- * print quality) instead of the ~794 px the on-screen layout uses.
+ * capture, so a scale of 3.2 on an A4 page produces a 2540 × 3592 px raster
+ * (≈307 dpi print quality) instead of the ~794 px the on-screen layout uses.
  * `jpegQuality` only affects compression of that raster, never its resolution.
  */
 export interface HtmlPdfRenderOptions {
@@ -106,31 +106,64 @@ export interface HtmlPdfRenderOptions {
 }
 
 /**
+ * PRINT-QUALITY CONTRACT — paid reports are captured at 300 dpi (A4).
+ *
+ * A report page is a real A4 sheet laid out at 210mm × 297mm, which the browser
+ * paints as 793.7 × 1122.5 CSS px at 96 dpi. The capture scale is therefore a
+ * direct dpi multiplier:
+ *
+ *     dpi = 96 × scale          scale = dpi / 96
+ *
+ * A4 at 300 dpi is 2480 × 3508 px (8.2677in × 11.6929in at 300 dpi), so the
+ * scale must be ≥ 3.1246. We capture at 3.2 — the extra 2% keeps html2canvas'
+ * integer canvas size and pages whose height is stored in whole pixels from
+ * landing one pixel under the floor — for a 2540 × 3592 px raster (≈307 dpi).
+ *
+ * EVERY paid report and invoice is captured at this density on every device:
+ * the emailed document, a document staged for a family bundle, the admin's
+ * preview download and the customer's own download. Devices that cannot
+ * allocate the print canvas fail closed (email) or fall back to the documented
+ * last-resort capture below (download); they never silently deliver a lighter
+ * report. The PHP API enforces the same 300 dpi floor independently — see
+ * ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX / _HEIGHT_PX in api/admin/family_docs.php.
+ */
+export const REPORT_PRINT_DPI = 300;
+export const A4_PRINT_MIN_WIDTH_PX = 2480;
+export const A4_PRINT_MIN_HEIGHT_PX = 3508;
+export const PRINT_CAPTURE_SCALE = 3.2;
+
+/**
  * Email PDFs use the same print-density capture as the admin's preview download.
  * Family delivery is split into size-bounded emails, so reducing raster quality
  * just to squeeze 10–15 reports into one message is no longer necessary.
+ *
+ * There is no lighter email profile: an emailed document below the 300 dpi
+ * floor is refused before upload (here) and again by the API.
  */
 export const EMAIL_RENDER_OPTIONS: HtmlPdfRenderOptions = {
-  scale: 3,
+  scale: PRINT_CAPTURE_SCALE,
   jpegQuality: 0.95,
-  minimumCaptureWidthPx: 1900,
-  minimumCaptureHeightPx: 2800
+  minimumCaptureWidthPx: A4_PRINT_MIN_WIDTH_PX,
+  minimumCaptureHeightPx: A4_PRINT_MIN_HEIGHT_PX
 };
 
-/** Highest fidelity a desktop browser can capture without running out of memory. */
-export const DOWNLOAD_RENDER_OPTIONS: HtmlPdfRenderOptions = { scale: 3, jpegQuality: 0.95 };
-
-/** Phones get the preview's high-quality capture with a slightly smaller raster. */
-export const DOWNLOAD_RENDER_OPTIONS_MOBILE: HtmlPdfRenderOptions = { scale: 2.5, jpegQuality: 0.95 };
+/** A download is a paid report too: same 300 dpi capture as the emailed one. */
+export const DOWNLOAD_RENDER_OPTIONS: HtmlPdfRenderOptions = {
+  scale: PRINT_CAPTURE_SCALE,
+  jpegQuality: 0.95
+};
 
 /**
- * Last-resort capture density used only when the device rejects the two
- * attempts above (out of canvas memory, a tainted-canvas policy, …).
+ * Last-resort capture density used only when the device rejects the print
+ * attempt above (out of canvas memory, a tainted-canvas policy, …).
  *
  * It is still the SAME renderer and the SAME HTML as the preview — just a
  * smaller raster — which is why it is tried before the server-side renderer.
  * Switching engines is what made a download look different from the preview;
  * dropping from ~300 dpi to ~180 dpi never does.
+ *
+ * DOWNLOADS ONLY. The email path has no last-resort step: a document that
+ * misses the 300 dpi floor is not uploaded, and nothing is emailed.
  */
 export const DOWNLOAD_RENDER_OPTIONS_SAFE: HtmlPdfRenderOptions = { scale: 1.8, jpegQuality: 0.92 };
 
@@ -161,7 +194,7 @@ export const SAMPLE_RENDER_OPTIONS: HtmlPdfRenderOptions = { scale: 2, jpegQuali
  * an attempt fails — the device ran out of canvas memory.
  */
 export function downloadAttemptOptions(preferred?: HtmlPdfRenderOptions): HtmlPdfRenderOptions[] {
-  const first = preferred || recommendedDownloadOptions();
+  const first = preferred || DOWNLOAD_RENDER_OPTIONS;
   const candidates = [first, EMAIL_RENDER_OPTIONS, DOWNLOAD_RENDER_OPTIONS_SAFE];
   const pool = preferred
     ? candidates.filter(option => (option.scale ?? 0) <= (first.scale ?? 0))
@@ -176,25 +209,12 @@ export function downloadAttemptOptions(preferred?: HtmlPdfRenderOptions): HtmlPd
 }
 
 /**
- * A download must look exactly like the on-screen preview, so it is captured at
- * the highest density the device can handle. Desktops render at ~300 dpi;
- * phones (and any browser reporting ≤3 GB of memory) use the 2.5× capture that
- * the email pipeline already proves is stable there.
+ * Email delivery must never fall back to a reduced-resolution page capture:
+ * the emailed document is the print-density capture, or nothing is sent.
  */
-export function recommendedDownloadOptions(): HtmlPdfRenderOptions {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') return DOWNLOAD_RENDER_OPTIONS;
-  const deviceMemory = (navigator as any).deviceMemory;
-  const isPhone =
-    Math.min(window.innerWidth || 9999, window.screen?.width || 9999) < 820 ||
-    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
-  if (isPhone || (typeof deviceMemory === 'number' && deviceMemory <= 3)) return DOWNLOAD_RENDER_OPTIONS_MOBILE;
-  return DOWNLOAD_RENDER_OPTIONS;
-}
-
-/** Email delivery must never fall back to a reduced-resolution page capture. */
 function highQualityEmailRenderOptions(): HtmlPdfRenderOptions {
   return {
-    ...recommendedDownloadOptions(),
+    ...DOWNLOAD_RENDER_OPTIONS,
     minimumCaptureWidthPx: EMAIL_RENDER_OPTIONS.minimumCaptureWidthPx,
     minimumCaptureHeightPx: EMAIL_RENDER_OPTIONS.minimumCaptureHeightPx
   };
@@ -329,7 +349,7 @@ async function capturePageIntoDoc(
       // remain as crisp as the admin's high-resolution preview export.
       let imgData = canvas.toDataURL('image/jpeg', jpegQuality);
 
-      // Heuristic: a valid A4 JPEG at 2.5x or more should be >25KB. If it is
+      // Heuristic: a valid A4 JPEG at print density should be >25KB. If it is
       // tiny, the canvas was blank and we should retry.
       if (imgData.length < 25000 && attempts < 2) {
         imgData = '';
@@ -387,7 +407,7 @@ export async function renderPageElementsToPdfDoc(
   if (!pages || pages.length === 0) {
     throw new Error('No report pages available to render.');
   }
-  const captureScale = options?.scale ?? EMAIL_RENDER_OPTIONS.scale ?? 2.5;
+  const captureScale = options?.scale ?? PRINT_CAPTURE_SCALE;
   const jpegQuality = options?.jpegQuality ?? EMAIL_RENDER_OPTIONS.jpegQuality ?? 0.92;
 
   const task = async (): Promise<jsPDF> => {
@@ -430,7 +450,7 @@ export async function renderHtmlToPdfDoc(
   htmlContent: string,
   options?: HtmlPdfRenderOptions
 ): Promise<jsPDF> {
-  const captureScale = options?.scale ?? EMAIL_RENDER_OPTIONS.scale ?? 2.5;
+  const captureScale = options?.scale ?? PRINT_CAPTURE_SCALE;
   const jpegQuality = options?.jpegQuality ?? EMAIL_RENDER_OPTIONS.jpegQuality ?? 0.92;
 
   const task = async (): Promise<jsPDF> => {
@@ -549,8 +569,8 @@ export async function renderHtmlToPdfDoc(
 
       // Create the PDF before capturing pages and add each page immediately.
       //
-      // IMPORTANT: do not keep an imgDataList. A scale-2.5 A4 canvas is about
-      // 22 MB before encoding. Keeping every JPEG data URL until the end left
+      // IMPORTANT: do not keep an imgDataList. A print-density A4 canvas is
+      // about 36 MB before encoding. Keeping every JPEG data URL until the end left
       // several large UTF-16 strings alive after each report; by member 4 the
       // browser/GPU was under enough pressure that html2canvas returned a fast,
       // degraded capture. Incremental insertion keeps peak memory bounded by
@@ -617,6 +637,59 @@ export function assertPreviewQualityPdfBase64(
     throw new Error(`${label} is incomplete (${byteLength} bytes). Nothing was emailed.`);
   }
   return byteLength;
+}
+
+/**
+ * The failure text an admin sees when a device cannot capture at print density.
+ * It names the density, states that nothing left the server, and says what to
+ * do next — never a raw html2canvas/canvas error.
+ */
+export function emailPrintDensityFailureMessage(label: string, error?: unknown): string {
+  const raw = error instanceof Error && error.message ? error.message : String(error || '');
+  const detail = raw ? ` (${raw.length > 140 ? `${raw.slice(0, 137)}…` : raw})` : '';
+  return (
+    `${label} could not be rendered at print quality (300 dpi: ${A4_PRINT_MIN_WIDTH_PX} × ` +
+    `${A4_PRINT_MIN_HEIGHT_PX} px per A4 page) on this device${detail}. Nothing was emailed and the order ` +
+    'is still pending — ASTRO SIVAM never sends a report below 300 dpi. Close other tabs to free memory and ' +
+    'retry, or approve this order from a desktop browser.'
+  );
+}
+
+/**
+ * THE email render — every paid document (report, invoice, family member
+ * report, multi-person item) goes through this function.
+ *
+ * It captures at the print density and never below it. The admin's device is
+ * irrelevant to the result: 300 dpi from a phone, 300 dpi from a desktop. A
+ * capture that fails (usually a phone that cannot allocate the
+ * 2540 × 3592 px canvas) is retried ONCE at the SAME density, because canvas
+ * pressure is often transient, and then fails closed with the actionable
+ * message above. There is no lighter retry step here — that is the whole point.
+ */
+export async function renderEmailPdfBase64(
+  htmlContent: string,
+  label: string,
+  options?: HtmlPdfRenderOptions
+): Promise<string> {
+  const renderOptions = options || highQualityEmailRenderOptions();
+  const maxAttempts = 2;
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const pdfBase64 = await generatePdfBase64FromHtml(htmlContent, renderOptions);
+      assertPreviewQualityPdfBase64(pdfBase64, label, 8 * 1024);
+      return pdfBase64;
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts) {
+        await yieldToBrowser();
+        await new Promise(resolve => setTimeout(resolve, 600));
+      }
+    }
+  }
+
+  throw new Error(emailPrintDensityFailureMessage(label, lastError));
 }
 
 /**
@@ -687,11 +760,9 @@ export async function generateOrderPdfsBase64(
 
   // Sequential rendering avoids competing canvas allocations and uses the
   // same density/quality profile as the admin live-preview download.
-  const reportPdfBase64 = await generatePdfBase64FromHtml(reportHtml, renderOptions);
-  assertPreviewQualityPdfBase64(reportPdfBase64, 'Report PDF', 8 * 1024);
+  const reportPdfBase64 = await renderEmailPdfBase64(reportHtml, 'Report PDF', renderOptions);
   await yieldToBrowser();
-  const invoicePdfBase64 = await generatePdfBase64FromHtml(invoiceHtml, renderOptions);
-  assertPreviewQualityPdfBase64(invoicePdfBase64, 'Invoice PDF', 8 * 1024);
+  const invoicePdfBase64 = await renderEmailPdfBase64(invoiceHtml, 'Invoice PDF', renderOptions);
 
   return { reportPdfBase64, invoicePdfBase64 };
 }
@@ -975,7 +1046,8 @@ export async function exportOrderPdf(
  * The family package must be delivered with the EXACT same render quality as
  * the single-order "View" live preview in the admin panel. Everything below
  * reuses the same HTML builders + responsive high-resolution html2canvas/jsPDF
- * pipeline (3× desktop, 2.5× mobile), never a server-side substitute.
+ * pipeline (300 dpi / 2540 × 3592 px per A4 page on every device), never a
+ * server-side substitute.
  * ══════════════════════════════════════════════════════════════════════════ */
 
 export interface FamilyReportPdfItem {
@@ -996,12 +1068,10 @@ export async function generateFamilyInvoicePdfBase64(
   groupId?: string
 ): Promise<string> {
   const effectiveGroupId = getFamilyGroupId(orders, groupId);
-  const pdfBase64 = await generatePdfBase64FromHtml(
+  return renderEmailPdfBase64(
     buildFamilyInvoiceHtml(orders, effectiveGroupId),
-    highQualityEmailRenderOptions()
+    'Family invoice PDF'
   );
-  assertPreviewQualityPdfBase64(pdfBase64, 'Family invoice PDF', 8 * 1024);
-  return pdfBase64;
 }
 
 /**
@@ -1202,8 +1272,7 @@ export async function stageFamilyOrderPdfs(
     let finalRenderMs = 0;
     while (renderAttempts < 3) {
       const renderStart = Date.now();
-      pdfBase64 = await generatePdfBase64FromHtml(reportHtml, renderOptions);
-      assertPreviewQualityPdfBase64(pdfBase64, `Report PDF for ${order.orderNumber}`);
+      pdfBase64 = await renderEmailPdfBase64(reportHtml, `Report PDF for ${order.orderNumber}`, renderOptions);
       const renderMs = Date.now() - renderStart;
       finalRenderMs = renderMs;
       const b = base64ToBytes(pdfBase64);
@@ -1322,8 +1391,7 @@ export async function stageFamilyOrderPdfs(
   let finalInvoiceMs = 0;
   while (invAttempts < 3) {
     const invStart = Date.now();
-    invoicePdfBase64 = await generatePdfBase64FromHtml(invoiceHtml, renderOptions);
-    assertPreviewQualityPdfBase64(invoicePdfBase64, 'Family invoice PDF');
+    invoicePdfBase64 = await renderEmailPdfBase64(invoiceHtml, 'Family invoice PDF', renderOptions);
     const invMs = Date.now() - invStart;
     finalInvoiceMs = invMs;
     const invBytes = base64ToBytes(invoicePdfBase64);
@@ -1483,8 +1551,7 @@ export async function generateFamilyOrderPdfsBase64(
     let finalRenderMs = 0;
     while (attempts < 3) {
       const s = Date.now();
-      pdfBase64 = await generatePdfBase64FromHtml(reportHtml, renderOptions);
-      assertPreviewQualityPdfBase64(pdfBase64, `Report PDF for ${order.orderNumber}`);
+      pdfBase64 = await renderEmailPdfBase64(reportHtml, `Report PDF for ${order.orderNumber}`, renderOptions);
       const ms = Date.now() - s;
       finalRenderMs = ms;
       const b = Math.round((pdfBase64.length * 3) / 4);
@@ -1529,8 +1596,7 @@ export async function generateFamilyOrderPdfsBase64(
   let finalInvoiceMs = 0;
   while (invAttempts < 3) {
     const s = Date.now();
-    invoicePdfBase64 = await generatePdfBase64FromHtml(invoiceHtml, renderOptions);
-    assertPreviewQualityPdfBase64(invoicePdfBase64, 'Family invoice PDF');
+    invoicePdfBase64 = await renderEmailPdfBase64(invoiceHtml, 'Family invoice PDF', renderOptions);
     const ms = Date.now() - s;
     finalInvoiceMs = ms;
     const b = Math.round((invoicePdfBase64.length * 3) / 4);

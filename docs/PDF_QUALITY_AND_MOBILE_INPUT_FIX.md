@@ -8,6 +8,10 @@
 > literally the preview. The later downloaded-row clipping fix and localized
 > date-selection explanations are documented in `MUHURTHAM_TEXT_OVERLAP_FIX.md`.
 > The mobile date/time entry half of this document is unaffected.
+>
+> **Capture densities changed again since:** paid reports are now captured at
+> **300 dpi (2480 × 3508 px per A4 page, scale 3.2) on every device** — the 2.5×
+> phone profile described below is gone. See `docs/PDF_DELIVERY_QUALITY.md`.
 
 Two field reports drove this change:
 
@@ -42,11 +46,11 @@ previewHtml ──► html2canvas (scale 3 desktop / 2.5 phone) ──► JPEG 0
                         so a popup blocker cannot swallow the fallback
 ```
 
-Capture density is chosen per device in `recommendedDownloadOptions()`:
-`navigator.deviceMemory ≤ 3 GB` or a phone-sized viewport → 2.5× / 0.95,
-otherwise 3× / 0.95 (~300 dpi on A4). **Compression changes, resolution never
-does** — the old 0.92 stays the default for *emailed* documents so a ten-report
-family bundle cannot exceed SMTP size limits.
+Capture density *was* chosen per device here (`navigator.deviceMemory` / a phone-sized
+viewport → 2.5×, otherwise 3×). That device split is gone: every paid report is
+captured at 300 dpi (scale 3.2) on every device — see the note at the top of this
+document and `docs/PDF_DELIVERY_QUALITY.md`. **Compression changes, resolution never
+does.**
 
 ### Where it is wired
 

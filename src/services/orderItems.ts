@@ -21,11 +21,9 @@
 import { AppLanguage, Order, OrderItem, ServiceType } from '../types';
 import { api } from './api';
 import {
-  EMAIL_RENDER_OPTIONS,
-  assertPreviewQualityPdfBase64,
   buildOrderReportHtml,
-  generatePdfBase64FromHtml,
   mergeOrderPayloadIntoResult,
+  renderEmailPdfBase64,
   orderReportFileName,
   orderInvoiceFileName,
   yieldToBrowser
@@ -112,11 +110,9 @@ export async function prepareOrderItemPdfs(
     header.items && header.items.length > 0 ? header.items : [item]
   );
 
-  const reportPdfBase64 = await generatePdfBase64FromHtml(reportHtml, EMAIL_RENDER_OPTIONS);
-  assertPreviewQualityPdfBase64(reportPdfBase64, 'Report PDF', 8 * 1024);
+  const reportPdfBase64 = await renderEmailPdfBase64(reportHtml, 'Report PDF');
   await yieldToBrowser();
-  const invoicePdfBase64 = await generatePdfBase64FromHtml(invoiceHtml, EMAIL_RENDER_OPTIONS);
-  assertPreviewQualityPdfBase64(invoicePdfBase64, 'Invoice PDF', 8 * 1024);
+  const invoicePdfBase64 = await renderEmailPdfBase64(invoiceHtml, 'Invoice PDF');
 
   return {
     reportPdfBase64,
@@ -161,8 +157,10 @@ export async function prepareOrderItemsSendPayload(
     if (!reportHtml) {
       throw new Error(`No report template exists for ${calculated.item.serviceCode}. Nothing was emailed.`);
     }
-    const pdfBase64 = await generatePdfBase64FromHtml(reportHtml, EMAIL_RENDER_OPTIONS);
-    assertPreviewQualityPdfBase64(pdfBase64, 'Report PDF', 8 * 1024);
+    const pdfBase64 = await renderEmailPdfBase64(
+      reportHtml,
+      `Report PDF for ${calculated.item.personName || header.orderNumber || 'this order'}`
+    );
     reportPdfs.push({
       itemId: calculated.item.id,
       fileName: orderReportFileName(chartOrder, (calculated.item.language || 'ta') as AppLanguage),
@@ -173,8 +171,7 @@ export async function prepareOrderItemsSendPayload(
     if (index === 0) {
       invoiceFileName = orderInvoiceFileName(header);
       const invoiceHtml = buildOrderInvoiceHtmlForItems(header, items);
-      invoicePdfBase64 = await generatePdfBase64FromHtml(invoiceHtml, EMAIL_RENDER_OPTIONS);
-      assertPreviewQualityPdfBase64(invoicePdfBase64, 'Invoice PDF', 8 * 1024);
+      invoicePdfBase64 = await renderEmailPdfBase64(invoiceHtml, 'Invoice PDF');
     }
     await yieldToBrowser();
   }

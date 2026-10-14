@@ -17,9 +17,9 @@
 import { createHash } from 'node:crypto';
 import { jsPDF } from 'jspdf';
 
-/** Device pixels the browser renderer captures per A4 page (1900x2800 minimum). */
-export const PREVIEW_PAGE_WIDTH = 1985;
-export const PREVIEW_PAGE_HEIGHT = 2807;
+/** Device pixels the browser renderer captures per A4 page (300 dpi / 2480x3508 minimum). */
+export const PREVIEW_PAGE_WIDTH = 2540;
+export const PREVIEW_PAGE_HEIGHT = 3592;
 
 export function syntheticJpeg(width: number, height: number, scanBytes: number, seed = 1): Uint8Array {
   const app0 = [0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00];
