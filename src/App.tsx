@@ -13,6 +13,7 @@ import {
   installRouteIntentPrefetch,
   safeImport,
 } from './services/routeChunks';
+import { dismissBootSplash } from './services/bootSplash';
 
 // Routes are code-split (audit S1, widened by audit PERF-1): the admin portal,
 // the customer dashboard and the four report pages pull in the PDF/HTML report
@@ -209,14 +210,22 @@ function RouteFallback() {
 }
 
 /**
- * Mounts only after the (possibly lazy) route content has resolved. Used to
- * clear the one-shot chunk-recovery flag at the right moment: if the flag were
- * cleared when the Suspense boundary first renders its fallback, a failing
- * chunk could reload the page in an endless loop.
+ * Mounts only after the (possibly lazy) route content has resolved. Two jobs,
+ * both of which must happen exactly at that moment:
+ *
+ *   1. Clear the one-shot chunk-recovery flag: if the flag were cleared when
+ *      the Suspense boundary first renders its fallback, a failing chunk could
+ *      reload the page in an endless loop.
+ *   2. Hand the screen over from the boot splash to the app (white-screen fix,
+ *      2026-10-14 — see src/services/bootSplash.ts). Doing it HERE rather than
+ *      when the shell first commits means a lazy route's chunk is already
+ *      resolved, so the visitor never sees the Suspense spinner: the splash
+ *      covers the chunk load and fades directly into the finished page.
  */
 function RouteLoadedMarker() {
   useEffect(() => {
     clearChunkRecoveryFlag();
+    dismissBootSplash();
   }, []);
   return null;
 }

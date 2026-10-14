@@ -88,6 +88,12 @@ const testFiles = [
   // document with a self-referencing canonical and real body content — the
   // identical-empty-shell + homepage-canonical + fake-hreflang bug class.
   'tests/seo-prerender-contract.test.ts',
+  // The mobile white-screen fix (2026-10-14): the inline boot-critical style
+  // and the splash at the top of every prerendered document must keep painting
+  // the brand surface before the stylesheet and the bundle arrive — and must
+  // keep handing the screen to the app on every JS path (the hand-off helper
+  // is EXECUTED here against a stub DOM, not just read).
+  'tests/boot-splash-contract.test.ts',
   // Lazy route modules must keep exporting the component names App.tsx maps.
   'tests/route-chunk-exports.test.ts',
   // The initial-JS budget (audit PERF-1): the homepage must not download the

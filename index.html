@@ -1,7 +1,126 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" class="dark" style="background-color: #0b0718; color-scheme: dark">
   <head>
     <meta charset="UTF-8" />
+    <!-- BOOT CRITICAL (mobile white-screen fix, 2026-10-14). Reported: opening
+         astrosivam.com on a phone showed a WHITE screen for ~2 s. This document
+         is the whole first paint, but its styles live in /assets/index-*.css (a
+         render-blocking second request) and its pixels come from the React
+         bundle — so until both arrive the browser paints its own white canvas.
+         The inline style below paints the brand's dark surface and the ASTRO
+         SIVAM splash from the HTML alone: no extra request, no image, and no
+         JavaScript (the CSP allows inline styles but not inline scripts, so a
+         splash can only be CSS).
+
+         src/services/bootSplash.ts removes it once a route has rendered, and it
+         cannot trap a visitor when that JS never runs: <noscript> hides it, an
+         8 s CSS animation fades it, and main.tsx / App.tsx / the ErrorBoundary
+         each dismiss it on the JS paths.
+         Full story + how to verify: docs/BOOT_SPLASH_MOBILE_WHITE_SCREEN.md
+         Pinned by: tests/boot-splash-contract.test.ts
+         It is inlined into all 18 prerendered documents — keep it small. -->
+    <style id="boot-critical">
+      /* The dark canvas, for the frame(s) before the app stylesheet arrives. */
+      html,
+      body {
+        background-color: #0b0718;
+        color: #fffdfa;
+      }
+      html {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+      }
+      /* The splash itself: fixed overlay, painted above the (still unstyled)
+         prerendered document so the visitor never sees raw markup either. */
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483646;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(120% 90% at 50% 0%, #1a1233 0%, #0e0a1e 48%, #0b0718 100%);
+        animation: boot-splash-escape 600ms ease 8s forwards;
+      }
+      #boot-splash .boot-lockup {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 24px;
+        text-align: center;
+      }
+      #boot-splash .boot-orb {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+      }
+      #boot-splash .boot-ring {
+        position: absolute;
+        inset: 0;
+        border: 2px solid rgba(245, 196, 116, 0.18);
+        border-top-color: #f5c474;
+        border-radius: 50%;
+        animation: boot-splash-spin 1.05s linear infinite;
+      }
+      #boot-splash .boot-core {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #f5c474;
+        box-shadow: 0 0 18px 4px rgba(245, 196, 116, 0.45);
+      }
+      #boot-splash .boot-word {
+        margin: 0;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        letter-spacing: 0.32em;
+        text-indent: 0.32em;
+        color: #f5c474;
+      }
+      #boot-splash .boot-sub {
+        margin: 0;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        font-size: 0.68rem;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: rgba(255, 253, 250, 0.62);
+      }
+      @keyframes boot-splash-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes boot-splash-escape {
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot-splash .boot-ring {
+          animation: none;
+        }
+      }
+      /* Added by src/services/bootSplash.ts once the app has rendered. */
+      #boot-splash.boot-splash-hide {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 320ms ease, visibility 0s linear 320ms;
+      }
+    </style>
+    <!-- Every prerendered route document injects its own <title>/<meta>/
+         <link> tags here (scripts/prerender.mjs). The anchor sits after the
+         boot-critical style on purpose: <meta charset> and the first paint
+         styles must stay the first bytes of the head, and the route tags must
+         not push them past the spec's 1024-byte encoding-declaration window. -->
+    <!--prerender-head-->
     <!-- interactive-widget=resizes-content keeps the Android soft keyboard from
          squeezing / re-scaling the visual viewport while typing in the forms;
          user scaling stays enabled for accessibility (double-tap zoom is
@@ -132,6 +251,22 @@
     </script>
   </head>
   <body>
+    <!-- Boot splash (see the head comment). Placed BEFORE #root on purpose:
+         scripts/prerender.mjs fills #root with the route's real content and
+         tests/seo-prerender-contract.test.ts reads the body up to the last
+         </div> before </body>, so nothing may follow #root in this document. -->
+    <div id="boot-splash" aria-hidden="true">
+      <div class="boot-lockup">
+        <div class="boot-orb">
+          <div class="boot-ring"></div>
+          <div class="boot-core"></div>
+        </div>
+        <p class="boot-word">ASTRO SIVAM</p>
+        <p class="boot-sub">Vedic Astrology</p>
+      </div>
+    </div>
+    <!-- Escape hatch 1: a browser without scripting never sees the splash. -->
+    <noscript><style>#boot-splash{display:none!important}</style></noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

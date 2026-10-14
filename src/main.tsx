@@ -1,6 +1,7 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
+import {dismissBootSplash} from './services/bootSplash';
 import './index.css';
 
 // Prerendered documents (scripts/prerender.mjs) carry the page's SEO head
@@ -29,6 +30,21 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 );
+
+// Boot-splash safety valve (mobile white-screen fix, 2026-10-14 — see
+// src/services/bootSplash.ts for the whole story). The normal hand-off is
+// App.tsx's RouteLoadedMarker, which fires the moment a route has rendered.
+// This timer only matters when that never happens even though this module DID
+// execute: a render that throws outside the boundary, a route chunk the
+// recovery could not rescue, a locked-up main thread. On those days the visitor
+// gets the prerendered document (fully styled by now — the stylesheet is a
+// separate, earlier request) instead of a spinner that never ends.
+//
+// The value sits below the splash's own 8 s CSS escape hatch (index.html), so
+// the CSS fallback remains what saves a document where this file never runs —
+// a stale deploy whose entry chunk 404s, or a wrong content-encoding.
+const BOOT_SPLASH_GIVE_UP_MS = 6000;
+window.setTimeout(dismissBootSplash, BOOT_SPLASH_GIVE_UP_MS);
 
 // NOTE (2026-10-12): the offline service worker was removed (cache-first
 // served a stale app shell after deploys). public/sw.js now only self-retires

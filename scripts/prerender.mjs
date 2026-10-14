@@ -26,8 +26,11 @@
  *   same provider stack the SPA uses. React 19 hoists the page's <title>,
  *   <meta> and <link> tags (react-helmet-async v3 relies on that) into the
  *   render stream; we split them out of the body and place them in <head>
- *   together with the shared site chrome (fonts, favicons, Organization
- *   JSON-LD) taken from the Vite-built index.html template.
+ *   at the template's `<!--prerender-head-->` anchor (after <meta charset> and
+ *   the inline boot-critical style, so the encoding declaration stays in the
+ *   spec's 1024-byte window and the boot surface is parsed first), together
+ *   with the shared site chrome (fonts, favicons, Organization JSON-LD) taken
+ *   from the Vite-built index.html template.
  *
  *   Output is FLAT FILES — `dist/services.html`, `dist/about.html`, … — never
  *   one directory per route: create_dist_zip.py / dist-shape.test.ts pin the
@@ -563,15 +566,28 @@ function assembleDocument(baseHtml, route, headTags, bodyHtml) {
   let html = baseHtml;
 
   // Drop the template's homepage SEO tags — each route supplies its own.
-  html = html.replace(/<title>[\s\S]*?<\/title>\s*/i, '');
-  html = html.replace(/<meta name="description"[^>]*>\s*/gi, '');
-  html = html.replace(/<meta name="robots"[^>]*>\s*/gi, '');
-  html = html.replace(/<link rel="canonical"[^>]*>\s*/gi, '');
-  html = html.replace(/<meta property="og:[^>]*>\s*/gi, '');
-  html = html.replace(/<meta name="twitter:[^>]*>\s*/gi, '');
+  //
+  // Every pattern is LINE-ANCHORED (^…\n, multiline) on purpose, and that is
+  // not cosmetic. An unanchored /<title>[\s\S]*?<\/title>/ also matches a tag
+  // name merely MENTIONED in an HTML comment: the boot-critical comment block
+  // in index.html names <title> while explaining the head order, and the
+  // non-greedy match then ran from that mention all the way to the template's
+  // real </title> — silently deleting the `<!--prerender-head-->` anchor, the
+  // viewport meta, the font preloads, the favicons, <meta name="theme-color">
+  // and both JSON-LD blocks. The build still "succeeded" as far as Vite was
+  // concerned; only the anchor check below turned it into a hard failure.
+  // In the template each of these tags owns a whole line, so matching whole
+  // lines is both safer and sufficient. (If a future tag ever spans lines, the
+  // built-output contract fails loudly on "exactly one <title>", not silently.)
+  html = html.replace(/^[ \t]*<title>[^\n]*<\/title>[ \t]*\r?\n/im, '');
+  html = html.replace(/^[ \t]*<meta name="description"[^>]*>[ \t]*\r?\n/gim, '');
+  html = html.replace(/^[ \t]*<meta name="robots"[^>]*>[ \t]*\r?\n/gim, '');
+  html = html.replace(/^[ \t]*<link rel="canonical"[^>]*>[ \t]*\r?\n/gim, '');
+  html = html.replace(/^[ \t]*<meta property="og:[^>]*>[ \t]*\r?\n/gim, '');
+  html = html.replace(/^[ \t]*<meta name="twitter:[^>]*>[ \t]*\r?\n/gim, '');
   if (route.path !== '/') {
     // Site-wide keywords only make sense on the homepage document.
-    html = html.replace(/<meta name="keywords"[^>]*>\s*/gi, '');
+    html = html.replace(/^[ \t]*<meta name="keywords"[^>]*>[ \t]*\r?\n/gim, '');
   }
 
   // Enforce the robots policy from the route table even if a page's <SEO>
@@ -613,7 +629,22 @@ function assembleDocument(baseHtml, route, headTags, bodyHtml) {
     /data-prerender-seo/.test(t) ? t : t.replace(/^(<\w+)(?=[\s>])/, '$1 data-prerender-seo'),
   );
 
-  html = html.replace(/<head>/i, `<head>\n    ${marked.join('\n    ')}`);
+  // The route tags go to an explicit anchor in the template (index.html),
+  // which sits AFTER <meta charset> and the inline boot-critical style — not
+  // just "somewhere after <head>". Two reasons: the encoding declaration must
+  // stay inside the spec's first-1024-bytes window (it was being pushed out to
+  // ~10 kB by this injection, which is a silent risk the moment the server
+  // stops sending charset in the Content-Type), and the styles that paint the
+  // dark boot surface must be parsed before the rest of the head.
+  const HEAD_ANCHOR = '<!--prerender-head-->';
+  if (!html.includes(HEAD_ANCHOR)) {
+    throw new Error(
+      `prerender: index.html lost its ${HEAD_ANCHOR} anchor — the per-route head tags have nowhere to go`,
+    );
+  }
+  // A function replacer keeps `$&`/`$1` sequences inside a page's own meta
+  // description from being treated as replacement patterns.
+  html = html.replace(HEAD_ANCHOR, () => marked.join('\n    '));
   html = html.replace(/<div id="root"><\/div>/, `<div id="root">${bodyHtml}</div>`);
   if (!html.includes('<div id="root">')) {
     throw new Error('prerender: template lost its #root mount point');
