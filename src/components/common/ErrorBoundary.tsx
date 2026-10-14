@@ -1,4 +1,5 @@
 import React, { Component, ReactNode } from 'react';
+import { dismissBootSplash } from '../../services/bootSplash';
 
 interface Props {
   children: ReactNode;
@@ -35,6 +36,11 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // eslint-disable-next-line no-console
     console.error('ASTRO SIVAM Render Error:', error, errorInfo);
+    // Hand the screen over to this screen: the boot splash (index.html) sits
+    // ABOVE the app, so without this the support text would stay hidden for
+    // as long as the splash's own CSS escape hatch allows (2026-10-14 mobile
+    // white-screen fix — see src/services/bootSplash.ts).
+    dismissBootSplash();
   }
 
   render() {
