@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Deferred-feature network contract (audit PERF-1).
@@ -58,7 +58,35 @@ const ROUTE_PAGES = [
   'aiAstrologerApi',
 ];
 
-function trackRequests(page: Page): string[] {
+/**
+ * Trigger a control the way the UI does, without asking Playwright to place a
+ * pointer at coordinates.
+ *
+ * WHY NOT click(): every control in this spec BOOTS a deferred feature in its
+ * own click handler — the PDF engine (~950 kB) plus a three-page A4 raster, the
+ * Leaflet chunk, the local astrology calculation. Playwright's click() needs
+ * the page's main thread three times around that work: to prove the element is
+ * visible/enabled/STABLE (two animation frames), to compute a clickable point,
+ * and — after dispatching — to run its hit-target probe inside the page and
+ * retry the whole action if the verdict changed. With the handler owning the
+ * thread, that loop never gets its frames back and the run dies with a
+ * misleading "locator.click: Test timeout of 180000ms exceeded" (CI runs
+ * 38517294279 and 38518403692); forcing the click past those checks then
+ * dispatches at coordinates nothing verified, and the handler is simply never
+ * called (run 38519375452: zero renderer requests).
+ *
+ * element.click() IS the user's click at the DOM level — same event, same React
+ * handler, bubbles the same way — it just does not require the main thread to be
+ * free afterwards. The visible/enabled state that click()'s auto-wait would have
+ * verified is asserted explicitly before every trigger here, and what these
+ * tests pin is the network boundary anyway.
+ */
+async function trigger(control: Locator, label: string): Promise<void> {
+  await expect(control, `${label} must be on screen before it can be triggered`).toBeVisible();
+  await control.evaluate((element) => (element as HTMLButtonElement).click());
+}
+
+function trackRequests(page: Page, noise: RequestNoise): string[] {
   const requested: string[] = [];
   page.on('request', (request) => {
     try {
@@ -67,12 +95,24 @@ function trackRequests(page: Page): string[] {
       requested.push(request.url());
     }
   });
+  page.on('console', (message) => {
+    if (message.type() === 'error') noise.consoleErrors.push(message.text());
+  });
+  page.on('pageerror', (error) => noise.pageErrors.push(String(error.message || error)));
   return requested;
 }
 
+interface RequestNoise {
+  consoleErrors: string[];
+  pageErrors: string[];
+}
+
+const newNoise = (): RequestNoise => ({ consoleErrors: [], pageErrors: [] });
+
 test.describe('deferred heavy features', () => {
   test('the homepage never downloads the PDF renderer, Leaflet, or another page chunk', async ({ page }) => {
-    const requested = trackRequests(page);
+    const noise = newNoise();
+    const requested = trackRequests(page, noise);
     await page.goto('/', { waitUntil: 'networkidle' });
 
     // The removed prefetcher warmed all six heavy routes on requestIdleCallback.
@@ -95,7 +135,8 @@ test.describe('deferred heavy features', () => {
     // A normal visit has no entitlement to check, so it must not fetch the
     // launcher, the panel or the chat API client — this is the guard that a
     // future "let's just render it always" change would break.
-    const requested = trackRequests(page);
+    const noise = newNoise();
+    const requested = trackRequests(page, noise);
     await page.goto('/', { waitUntil: 'networkidle' });
     await page.waitForTimeout(4000);
 
@@ -105,7 +146,8 @@ test.describe('deferred heavy features', () => {
   });
 
   test('hovering a link prefetches that route — and only that route', async ({ page }) => {
-    const requested = trackRequests(page);
+    const noise = newNoise();
+    const requested = trackRequests(page, noise);
     await page.goto('/', { waitUntil: 'networkidle' });
     const before = requested.length;
 
@@ -136,17 +178,14 @@ test.describe('deferred heavy features', () => {
     // then rasterise it. CI containers are slower than any laptop — without the
     // extra budget the assertions below can starve the click of time.
     test.slow();
-    const requested = trackRequests(page);
+    const noise = newNoise();
+    const requested = trackRequests(page, noise);
     await page.goto('/birth-jathagam', { waitUntil: 'networkidle' });
 
     const sampleButton = page.getByRole('button', { name: /sample report/i }).first();
     await expect(sampleButton).toBeVisible({ timeout: 15000 });
     const beforeOpen = requested.length;
-    // force — see the note on the Download click below: every click in this
-    // spec happens to hand the main thread to the feature being loaded, and
-    // Playwright's pre-click "stable/enabled" checks and post-click hit-target
-    // interception both need that thread to answer.
-    await sampleButton.click({ force: true });
+    await trigger(sampleButton, 'the sample button');
 
     // The preview is ready once the download button is enabled (it is disabled
     // while the report HTML is still being built).
@@ -157,39 +196,36 @@ test.describe('deferred heavy features', () => {
     const renderer = requested.slice(beforeOpen).filter((url) => PDF_RENDERER_RE.test(url));
     expect(renderer, `opening a sample must not download the PDF engine: ${renderer.join(', ')}`).toEqual([]);
 
-    // Clicking Download is the deferred boundary: the renderer is fetched now.
-    //
-    // force is REQUIRED here, not a shortcut. A normal click() first asks the
-    // page whether the element is visible, enabled and STABLE (two animation
-    // frames), then — after dispatching — installs a hit-target interceptor in
-    // the page and waits for its verdict, retrying the whole thing when the
-    // verdict changes. Every one of those steps needs the page's main thread,
-    // and this handler takes it: it dynamic-imports the PDF engine (jspdf +
-    // html2canvas, ~950 kB) and then rasterises three A4 pages. The retry loop
-    // therefore never gets its frames back and the run dies with a misleading
-    // "locator.click: Test timeout of 180000ms exceeded" (CI runs 38517294279
-    // and 38518403692, 2026-10-14) — the app was fine both times. What this test
-    // asserts is the NETWORK boundary, not pointer physics, and the button's
-    // visible+enabled state is already asserted above.
-    await downloadButton.click({ force: true });
-    await expect
-      .poll(() => requested.filter((url) => PDF_RENDERER_RE.test(url)).length, {
-        timeout: 60000,
-        message: 'the download must fetch the PDF renderer on demand',
-      })
-      .toBeGreaterThan(0);
+    // Download is the deferred boundary: the renderer is fetched now, because
+    // the visitor asked for it — never while the preview was merely open.
+    const beforeDownload = requested.length;
+    await trigger(downloadButton, 'the download button');
+    try {
+      await expect
+        .poll(() => requested.filter((url) => PDF_RENDERER_RE.test(url)).length, { timeout: 60000 })
+        .toBeGreaterThan(0);
+    } catch (error) {
+      // Self-documenting failure: the next reader needs the request log and the
+      // console/page errors, not just "expected > 0, received 0".
+      throw new Error(
+        `${(error as Error).message}\n`
+          + `the Download click must fetch the PDF renderer on demand.\n`
+          + `Requests after the click: ${JSON.stringify(requested.slice(beforeDownload))}\n`
+          + `Console errors: ${JSON.stringify(noise.consoleErrors)}\n`
+          + `Page errors: ${JSON.stringify(noise.pageErrors)}`,
+      );
+    }
   });
 
   test('the map picker fetches Leaflet only when it is opened', async ({ page }) => {
-    const requested = trackRequests(page);
+    const noise = newNoise();
+    const requested = trackRequests(page, noise);
     await page.goto('/birth-jathagam', { waitUntil: 'networkidle' });
 
     const before = requested.filter((url) => LEAFLET_RE.test(url));
     expect(before, `Leaflet must not be part of a form page's initial load: ${before.join(', ')}`).toEqual([]);
 
-    // force — this click fetches the Leaflet chunk and mounts the map on the
-    // main thread, which stalls the hit-target probe (see the sample test).
-    await page.getByRole('button', { name: /map pinpoint/i }).first().click({ force: true });
+    await trigger(page.getByRole('button', { name: /map pinpoint/i }).first(), 'the map pinpoint button');
 
     await expect(page.getByText('Pinpoint Exact Birth Village or Area on Map')).toBeVisible({ timeout: 30000 });
     await expect
