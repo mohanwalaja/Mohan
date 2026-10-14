@@ -39,8 +39,11 @@
     <meta property="og:image:secure_url" content="https://astrosivam.com/astrosivam_og_image.jpg?v=20261003" />
     <meta property="og:image:alt" content="ASTRO SIVAM Authentic Vedic Astrology" />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:locale:alternate" content="ta_IN" />
-    <meta property="og:locale:alternate" content="hi_IN" />
+    <!-- Language alternates (og:locale:alternate / hreflang) are intentionally
+         absent: Tamil and Hindi translation is client-side only, so ?lang=ta and
+         ?lang=hi serve the same English document. Advertising them as alternates
+         was misleading to search engines (SEO audit 2026-10-14, finding 3).
+         Reintroduce only when each language is rendered server-side. -->
 
     <!-- Twitter / X Cards -->
     <meta name="twitter:card" content="summary_large_image" />

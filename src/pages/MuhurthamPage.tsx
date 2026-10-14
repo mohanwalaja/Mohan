@@ -568,6 +568,7 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
       <SEO
         title="Subha Muhurtham Report | ASTRO SIVAM"
         description="Request your personalized Subha Muhurtham dates. Complete one form, make payment, and receive the approved PDF report by email."
+        canonical="https://astrosivam.com/muhurtham"
       />
       <ServicePageHeader
         icon={CalendarDays}

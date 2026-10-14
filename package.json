@@ -14,7 +14,7 @@
     "test:preview": "npm run build && playwright test --config playwright.preview.config.ts",
     "test:php": "bash scripts/run-php-tests.sh",
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "vite build --manifest && node scripts/prerender.mjs",
     "build:zip": "npm run build && python3 scripts/create_dist_zip.py",
     "preview": "vite preview --host 0.0.0.0",
     "clean": "rm -rf dist dist.zip",

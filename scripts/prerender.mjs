@@ -1,231 +1,733 @@
 /**
- * ASTRO SIVAM — static prerender of the public routes.
+ * ASTRO SIVAM — build-time prerender of every public route.
  *
- * WHY: the app is a client-rendered SPA, so before this step EVERY route served
- * the identical <head> (same title, description, and a canonical that always
- * pointed at "/"). Crawlers that do not execute JavaScript therefore saw one
- * duplicated homepage. This script runs AFTER `vite build` and writes a
- * dedicated HTML file per public route, each carrying its own <title>,
- * description, canonical, Open Graph / Twitter tags and a Service JSON-LD block.
+ * WHY THIS EXISTS (SEO audit 2026-10-14, all three critical findings):
  *
- * HOW: it reuses the EXACT <script>/<link> asset tags emitted by Vite (with
- * their content hashes) so the prerendered pages boot the very same bundle. The
- * React app still mounts and react-helmet-async reconciles the head at runtime,
- * so the static tags and the live app never disagree. Pages that must stay out
- * of the index (login/register/dashboard/admin) get a noindex robots tag.
+ *   1. EMPTY SHELL: the site is a client-rendered SPA, so every URL served the
+ *      identical <head> and a body containing only `<div id="root"></div>`.
+ *      Google indexes the raw HTML first — the entire site (services, prices,
+ *      copy, trust signals) was invisible to crawlers and to social link
+ *      previews.
+ *   2. HOMEPAGE CANONICALS: because the shell was static, /services, /about,
+ *      /contact… all shipped `rel=canonical` + `og:url` pointing at "/".
+ *      Titles and descriptions were identical across every URL too, so any
+ *      rendered duplicates would be consolidated away.
+ *   3. DEAD HREFLANG: the sitemap advertised `?lang=ta` / `?lang=hi`
+ *      alternates that served the same English shell. Translation is
+ *      client-side only, so hreflang was meaningless to search engines and
+ *      has been dropped from the sitemap until it can be rendered
+ *      server-side.
  *
- * No external dependencies — Node's fs only, consistent with the other scripts.
+ * HOW IT WORKS:
+ *
+ *   `npm run build` = `vite build --manifest && node scripts/prerender.mjs`.
+ *   After the bundle is written, this script renders each public route to a
+ *   real HTML document with ReactDOMServer: Navbar + page + Footer inside the
+ *   same provider stack the SPA uses. React 19 hoists the page's <title>,
+ *   <meta> and <link> tags (react-helmet-async v3 relies on that) into the
+ *   render stream; we split them out of the body and place them in <head>
+ *   together with the shared site chrome (fonts, favicons, Organization
+ *   JSON-LD) taken from the Vite-built index.html template.
+ *
+ *   Output is FLAT FILES — `dist/services.html`, `dist/about.html`, … — never
+ *   one directory per route: create_dist_zip.py / dist-shape.test.ts pin the
+ *   cPanel root folder list to {assets, audio, video-scenes} forever.
+ *   public/.htaccess rewrites the clean URL (/services) to the matching file
+ *   internally, so the browser keeps the clean URL and each document's
+ *   self-referencing canonical names it. Every written file gets fresh
+ *   .br/.gz siblings (and stale siblings of overwritten files are removed),
+ *   because .htaccess negotiates text assets to the pre-compressed copies —
+ *   a stale index.html.br would otherwise keep serving the old empty shell.
+ *
+ *   Image /src/… URLs that Vite resolved in dev-server style are rewritten to
+ *   their hashed dist/assets equivalents via the build manifest (dist/.vite),
+ *   which is deleted afterwards so the deploy root keeps its approved shape.
+ *
+ *   The build FAILS LOUDLY on any route that cannot be rendered, has no
+ *   <title>, has a non-self canonical, or whose body text is trivially short.
+ *   A silently half-prerendered site is exactly how this bug shipped.
+ *
+ *   sitemap.xml is generated from the same ROUTES table (NO hreflang — see
+ *   finding 3) and written to dist/; public/sitemap.xml is kept byte-identical
+ *   by tests/seo-prerender-contract.test.ts.
+ *
+ * On the client, src/main.tsx removes the baked `[data-prerender-seo]` tags
+ * before React mounts (React 19 re-hoists its own copy; leaving both would
+ * let stale titles survive SPA navigation). Crawlers that never run JS keep
+ * the baked tags and the baked body — which is the whole point.
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { join, extname } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { brotliCompressSync, gzipSync, constants as zlibConstants } from 'node:zlib';
 
+export const ORIGIN = 'https://astrosivam.com';
 const DIST = join(process.cwd(), 'dist');
-const ORIGIN = 'https://astrosivam.com';
-const SITE_NAME = 'ASTRO SIVAM';
-const OG_IMAGE = `${ORIGIN}/astrosivam_og_image.jpg?v=20261003`;
 
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+/**
+ * Every URL that must ship as its own HTML document. `path` is the canonical
+ * clean URL; `file` is the flat prerender output name inside dist/.
+ * `noindex` routes still get a document (so the page is not an empty shell)
+ * but carry `noindex, nofollow` and are excluded from the sitemap.
+ */
+export const ROUTES = [
+  {
+    path: '/',
+    file: 'index.html',
+    routeKey: 'home',
+    module: '/src/pages/HomePage.tsx',
+    component: 'HomePage',
+    lastmod: '2026-10-14',
+    changefreq: 'daily',
+    priority: '1.0',
+  },
+  {
+    path: '/services',
+    file: 'services.html',
+    routeKey: 'services',
+    module: '/src/pages/ServicesPage.tsx',
+    component: 'ServicesPage',
+    lastmod: '2026-10-14',
+    changefreq: 'weekly',
+    priority: '0.9',
+  },
+  {
+    path: '/birth-jathagam',
+    file: 'birth-jathagam.html',
+    routeKey: 'birth-jathagam',
+    module: '/src/pages/BirthJathagamPage.tsx',
+    component: 'BirthJathagamPage',
+    lastmod: '2026-10-14',
+    changefreq: 'weekly',
+    priority: '0.9',
+  },
+  {
+    path: '/marriage-compatibility',
+    file: 'marriage-compatibility.html',
+    routeKey: 'marriage-compatibility',
+    module: '/src/pages/MarriageCompatibilityPage.tsx',
+    component: 'MarriageCompatibilityPage',
+    lastmod: '2026-10-14',
+    changefreq: 'weekly',
+    priority: '0.9',
+  },
+  {
+    path: '/baby-naming',
+    file: 'baby-naming.html',
+    routeKey: 'baby-naming',
+    module: '/src/pages/BabyNamingPage.tsx',
+    component: 'BabyNamingPage',
+    lastmod: '2026-10-14',
+    changefreq: 'weekly',
+    priority: '0.9',
+  },
+  {
+    path: '/muhurtham',
+    file: 'muhurtham.html',
+    routeKey: 'muhurtham',
+    module: '/src/pages/MuhurthamPage.tsx',
+    component: 'MuhurthamPage',
+    lastmod: '2026-10-14',
+    changefreq: 'weekly',
+    priority: '0.9',
+  },
+  {
+    path: '/how-it-works',
+    file: 'how-it-works.html',
+    routeKey: 'how-it-works',
+    module: '/src/pages/HowItWorksPage.tsx',
+    component: 'HowItWorksPage',
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.8',
+  },
+  {
+    path: '/about',
+    file: 'about.html',
+    routeKey: 'about',
+    module: '/src/pages/AboutPage.tsx',
+    component: 'AboutPage',
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.8',
+  },
+  {
+    path: '/contact',
+    file: 'contact.html',
+    routeKey: 'contact',
+    module: '/src/pages/ContactPage.tsx',
+    component: 'ContactPage',
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.8',
+  },
+  {
+    path: '/team',
+    file: 'team.html',
+    routeKey: 'team',
+    module: '/src/pages/AstrologyTeamPage.tsx',
+    component: 'AstrologyTeamPage',
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.8',
+  },
+  {
+    path: '/login',
+    file: 'login.html',
+    routeKey: 'login',
+    module: '/src/pages/LoginPage.tsx',
+    component: 'LoginPage',
+    noindex: true,
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.6',
+  },
+  {
+    path: '/register',
+    file: 'register.html',
+    routeKey: 'register',
+    module: '/src/pages/RegisterPage.tsx',
+    component: 'RegisterPage',
+    noindex: true,
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.6',
+  },
+  {
+    path: '/privacy-policy',
+    file: 'privacy-policy.html',
+    routeKey: 'policy-privacy',
+    module: '/src/pages/PoliciesPage.tsx',
+    component: 'PoliciesPage',
+    props: { type: 'privacy' },
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.5',
+  },
+  {
+    path: '/terms',
+    file: 'terms.html',
+    routeKey: 'policy-terms',
+    module: '/src/pages/PoliciesPage.tsx',
+    component: 'PoliciesPage',
+    props: { type: 'terms' },
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.5',
+  },
+  {
+    path: '/payment-policy',
+    file: 'payment-policy.html',
+    routeKey: 'policy-payment',
+    module: '/src/pages/PoliciesPage.tsx',
+    component: 'PoliciesPage',
+    props: { type: 'payment' },
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.5',
+  },
+  {
+    path: '/refund-policy',
+    file: 'refund-policy.html',
+    routeKey: 'policy-refund',
+    module: '/src/pages/PoliciesPage.tsx',
+    component: 'PoliciesPage',
+    props: { type: 'refund' },
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.5',
+  },
+  {
+    path: '/dashboard',
+    file: 'dashboard.html',
+    routeKey: 'dashboard',
+    module: '/src/pages/CustomerDashboard.tsx',
+    component: 'CustomerDashboard',
+    noindex: true,
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.3',
+  },
+  {
+    path: '/admin',
+    file: 'admin.html',
+    routeKey: 'admin',
+    module: '/src/pages/AdminPortal.tsx',
+    component: 'AdminPortal',
+    noindex: true,
+    lastmod: '2026-10-14',
+    changefreq: 'monthly',
+    priority: '0.1',
+  },
+];
+
+/** Sitemap XML for the indexable routes. NO hreflang: translations are
+ *  client-side only, so language alternates are not advertised (audit #3) until
+ *  each language can be rendered server-side. */
+export function renderSitemap() {
+  const urls = ROUTES.filter((r) => !r.noindex).map((r) => {
+    const loc = r.path === '/' ? `${ORIGIN}/` : `${ORIGIN}${r.path}`;
+    return [
+      '  <url>',
+      `    <loc>${loc}</loc>`,
+      `    <lastmod>${r.lastmod}</lastmod>`,
+      `    <changefreq>${r.changefreq}</changefreq>`,
+      `    <priority>${r.priority}</priority>`,
+      '  </url>',
+    ].join('\n');
+  });
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...urls,
+    '</urlset>',
+    '',
+  ].join('\n');
 }
 
-/** Build the SEO <head> fragment for one route. */
-function headTags(route, noindex) {
-  const url = route.path === '/' ? `${ORIGIN}/` : `${ORIGIN}${route.path}`;
-  const robots = noindex
-    ? 'noindex, nofollow'
-    : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
-  const tags = [
-    `<title>${esc(route.title)}</title>`,
-    `<meta name="description" content="${esc(route.description)}" />`,
-    `<link rel="canonical" href="${url}" />`,
-    `<meta name="robots" content="${robots}" />`,
-    `<meta property="og:site_name" content="${SITE_NAME}" />`,
-    `<meta property="og:type" content="website" />`,
-    `<meta property="og:url" content="${url}" />`,
-    `<meta property="og:title" content="${esc(route.title)}" />`,
-    `<meta property="og:description" content="${esc(route.description)}" />`,
-    `<meta property="og:image" content="${OG_IMAGE}" />`,
-    `<meta name="twitter:card" content="summary_large_image" />`,
-    `<meta name="twitter:title" content="${esc(route.title)}" />`,
-    `<meta name="twitter:description" content="${esc(route.description)}" />`,
-    `<meta name="twitter:image" content="${OG_IMAGE}" />`,
-  ];
-  if (route.service) {
-    const ld = {
-      '@context': 'https://schema.org',
-      '@type': 'Service',
-      name: route.service.name,
-      serviceType: route.service.serviceType,
-      description: route.service.description,
-      url,
-      provider: { '@type': 'Organization', name: SITE_NAME, url: `${ORIGIN}/` },
-      areaServed: 'Worldwide',
-    };
-    tags.push(`<script type="application/ld+json">${JSON.stringify(ld)}</script>`);
+export function sitemapLocs() {
+  return ROUTES.filter((r) => !r.noindex).map((r) => (r.path === '/' ? `${ORIGIN}/` : `${ORIGIN}${r.path}`));
+}
+
+// ---------------------------------------------------------------------------
+// Small HTML helpers
+// ---------------------------------------------------------------------------
+
+/** Mask <svg>…</svg> so SVG <title>/<desc> children are never mistaken for
+ *  document-level hoistable head tags. */
+function maskSvg(html) {
+  const spans = [];
+  const masked = html.replace(/<svg[\s\S]*?<\/svg>/gi, (m) => {
+    spans.push(m);
+    return `<!--__PRERENDER_SVG_${spans.length - 1}__-->`;
+  });
+  return {
+    masked,
+    unmask: (text) => text.replace(/<!--__PRERENDER_SVG_(\d+)__-->/g, (_m, i) => spans[Number(i)]),
+  };
+}
+
+/**
+ * React 19 + react-helmet-async v3 emit <title>/<meta>/<link> inside the
+ * component tree and rely on React's native hoisting to move them into
+ * <head>. renderToString leaves them in the stream — collect them (in order)
+ * and return a clean body. Anything hoistable left in the body would become a
+ * duplicate after the SPA mounts.
+ */
+function splitHeadFromBody(renderedHtml) {
+  const { masked, unmask } = maskSvg(renderedHtml);
+  const headTags = [];
+  let body = masked.replace(/<title[^>]*>[\s\S]*?<\/title>/gi, (m) => {
+    headTags.push(m);
+    return '';
+  });
+  body = body.replace(/<meta\s[^>]*>/gi, (m) => {
+    headTags.push(m);
+    return '';
+  });
+  body = body.replace(/<link\s[^>]*>/gi, (m) => {
+    headTags.push(m);
+    return '';
+  });
+  return { headTags, body: unmask(body) };
+}
+
+/** Rewrite dev-style /src/… URLs to the hashed dist asset paths from the Vite
+ *  build manifest. Assets below Vite's inline threshold never reach the
+ *  manifest (they become data: URIs inside the bundle) — inline those the same
+ *  way. An unmatched /src/ URL would 404 in production, so it fails the build. */
+const MIME_TYPES = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+};
+const ASSETS_INLINE_LIMIT = 4096; // Vite's default build.assetsInlineLimit
+
+function mapAssetUrls(html, manifest) {
+  return html.replace(/(\/src\/[^"'\s)>\\]+)/g, (m) => {
+    const key = m.slice(1).split('?')[0];
+    const entry = manifest[key];
+    if (entry && entry.file) return `/${entry.file}`;
+    const abs = join(process.cwd(), key);
+    if (existsSync(abs)) {
+      const bytes = readFileSync(abs);
+      const mime = MIME_TYPES[extname(abs).toLowerCase()];
+      if (bytes.length < ASSETS_INLINE_LIMIT && mime) {
+        return `data:${mime};base64,${bytes.toString('base64')}`;
+      }
+    }
+    throw new Error(`prerender: no build-manifest entry for ${m} (would 404 in production)`);
+  });
+}
+
+/** Write a file with fresh pre-compressed siblings, deleting any stale ones
+ *  first — .htaccess negotiates text assets to the .br/.gz copies, so a stale
+ *  sibling silently overrides the file we just wrote. */
+function writeWithSiblings(absPath, contents) {
+  for (const stale of [`${absPath}.br`, `${absPath}.gz`]) {
+    if (existsSync(stale)) rmSync(stale);
   }
-  return tags.join('\n    ');
+  writeFileSync(absPath, contents);
+  if (Buffer.byteLength(contents) >= 1024) {
+    writeFileSync(
+      `${absPath}.br`,
+      brotliCompressSync(contents, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } }),
+    );
+    writeFileSync(`${absPath}.gz`, gzipSync(contents, { level: 9 }));
+  }
 }
 
-/** Replace the homepage's SEO tags in the built head with route-specific ones. */
-function buildPage(baseHtml, route, noindex) {
+function attrValue(tag, attr) {
+  const m = tag.match(new RegExp(`${attr}="([^"]*)"`, 'i'));
+  return m ? m[1] : null;
+}
+
+function visibleTextLength(html) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z#0-9]+;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim().length;
+}
+
+// ---------------------------------------------------------------------------
+// Browser-global stubs (module-level browser API access in deps like Leaflet)
+// ---------------------------------------------------------------------------
+
+function installBrowserStubs() {
+  const storage = () => {
+    const map = new Map();
+    return {
+      getItem: (k) => (map.has(k) ? map.get(k) : null),
+      setItem: (k, v) => map.set(k, String(v)),
+      removeItem: (k) => map.delete(k),
+      clear: () => map.clear(),
+    };
+  };
+  globalThis.localStorage = storage();
+  globalThis.sessionStorage = storage();
+  const matchMedia = () => ({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+  });
+  globalThis.matchMedia = matchMedia;
+  globalThis.scrollTo = () => {};
+  globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+  globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
+  globalThis.IntersectionObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+  globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
+  if (!globalThis.window) globalThis.window = globalThis;
+  globalThis.window.matchMedia = matchMedia;
+  globalThis.window.scrollTo = globalThis.scrollTo;
+  globalThis.window.devicePixelRatio = 1;
+  const screenStub = {
+    width: 1920,
+    height: 1080,
+    availWidth: 1920,
+    availHeight: 1080,
+    deviceXDPI: 96,
+    logicalXDPI: 96,
+    colorDepth: 24,
+    pixelDepth: 24,
+    orientation: { type: 'landscape-primary', addEventListener() {}, removeEventListener() {} },
+  };
+  globalThis.window.screen = screenStub;
+  globalThis.screen = screenStub;
+  globalThis.window.location = {
+    href: `${ORIGIN}/`,
+    pathname: '/',
+    search: '',
+    hash: '',
+    origin: ORIGIN,
+    protocol: 'https:',
+    host: 'astrosivam.com',
+    hostname: 'astrosivam.com',
+  };
+  globalThis.location = globalThis.window.location;
+  if (!globalThis.navigator) {
+    Object.defineProperty(globalThis, 'navigator', {
+      value: { userAgent: 'prerender', language: 'en', onLine: true },
+      configurable: true,
+    });
+  }
+  globalThis.document = {
+    addEventListener() {},
+    removeEventListener() {},
+    getElementById: () => null,
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    createElement: () => ({
+      style: {},
+      setAttribute() {},
+      appendChild() {},
+      classList: { add() {}, remove() {}, contains: () => false },
+    }),
+    documentElement: { classList: { add() {}, remove() {}, contains: () => false }, style: {} },
+    body: { classList: { add() {}, remove() {} }, style: {}, appendChild() {} },
+    head: { appendChild() {} },
+    cookie: '',
+    title: '',
+  };
+}
+
+/** Point the window.location stub at one route so location-derived defaults
+ *  (e.g. the SEO component's self-canonical fallback) resolve per page. */
+function setLocationFor(route) {
+  const loc = globalThis.window.location;
+  loc.pathname = route.path;
+  loc.href = route.path === '/' ? `${ORIGIN}/` : `${ORIGIN}${route.path}`;
+}
+
+// ---------------------------------------------------------------------------
+// Page rendering
+// ---------------------------------------------------------------------------
+
+function buildPageTree(mods, route, React) {
+  const { Navbar, Footer } = mods.layout;
+  const pageModule = mods.pages[route.module];
+  const Page = pageModule ? pageModule[route.component] : undefined;
+  if (typeof Page !== 'function') {
+    throw new Error(`prerender: ${route.module} does not export ${route.component}`);
+  }
+
+  const onNavigate = () => {};
+  const pageEl = React.createElement(Page, { onNavigate, ...(route.props || {}) });
+  // The same visual shell App.tsx builds (minus the interactive overlays:
+  // cart drawers, checkout modals, AI launcher, background canvas — none of
+  // which carry crawlable content).
+  return React.createElement(
+    'div',
+    {
+      className:
+        'min-h-screen flex flex-col bg-[#0b0718] dark:bg-[#0b0718] text-[#fffdfa] font-sans antialiased selection:bg-amber-500 selection:text-slate-950 relative',
+    },
+    React.createElement(Navbar, { currentRoute: route.routeKey, onNavigate }),
+    React.createElement('main', { className: 'flex-grow relative z-10' }, pageEl),
+    React.createElement(Footer, { onNavigate }),
+  );
+}
+
+/** The same provider stack App.tsx builds (Helmet first, like the app). */
+function wrapWithProviders(mods, element, React) {
+  let el = element;
+  el = React.createElement(mods.providers.CartProvider, null, el);
+  el = React.createElement(mods.providers.ThemeProvider, null, el);
+  el = React.createElement(mods.providers.AuthProvider, null, el);
+  el = React.createElement(mods.providers.LanguageProvider, null, el);
+  el = React.createElement(mods.providers.HelmetProvider, null, el);
+  return el;
+}
+
+function assembleDocument(baseHtml, route, headTags, bodyHtml) {
   let html = baseHtml;
-  // Drop the homepage-only SEO tags; keep favicons/manifest/fonts/JSON-LD/asset tags.
+
+  // Drop the template's homepage SEO tags — each route supplies its own.
   html = html.replace(/<title>[\s\S]*?<\/title>\s*/i, '');
   html = html.replace(/<meta name="description"[^>]*>\s*/gi, '');
-  html = html.replace(/<meta name="keywords"[^>]*>\s*/gi, '');
   html = html.replace(/<meta name="robots"[^>]*>\s*/gi, '');
   html = html.replace(/<link rel="canonical"[^>]*>\s*/gi, '');
   html = html.replace(/<meta property="og:[^>]*>\s*/gi, '');
   html = html.replace(/<meta name="twitter:[^>]*>\s*/gi, '');
-  const injected = headTags(route, noindex);
-  return html.replace(/<head>/i, `<head>\n    ${injected}`);
-}
-
-/** Public routes worth prerendering. `path` becomes dist/<path>/index.html. */
-const ROUTES = [
-  {
-    path: '/',
-    title: 'ASTRO SIVAM - Understand Your Life Through Vedic Astrology',
-    description:
-      'Authentic Vedic astrology platform. Get precision Birth Jathagam (Kundali), 10-Poruthams Marriage Compatibility, Sacred Baby Naming & Subha Muhurtham auspicious dates in Tamil, English & Hindi.',
-  },
-  {
-    path: '/services',
-    title: 'Vedic Astrology Services - Jathagam, Marriage, Naming & Muhurtham | ASTRO SIVAM',
-    description:
-      'Explore authentic Vedic astrology services by ASTRO SIVAM: Birth Jathagam, 10-Poruthams Marriage Matching, Sacred Baby Naming, and a Subha Muhurtham Auspicious Date Calendar.',
-  },
-  {
-    path: '/birth-jathagam',
-    title: 'Birth Jathagam (Janma Kundali) Online Report | ASTRO SIVAM',
-    description:
-      'Calculate an accurate Birth Jathagam online with 12 Bhavas, Rasi & Navamsa charts, Vimshottari Mahadasa predictions, and Kuja dosha analysis in Tamil, English & Hindi.',
-    service: {
-      name: 'Birth Jathagam (Janma Kundali)',
-      serviceType: 'Vedic Astrology Horoscope Calculation',
-      description:
-        'Complete precision Vedic horoscope with 12 Bhavas, Rasi & Navamsa charts, Vimshottari Mahadasa timeline, Kuja dosha, and personalized life predictions.',
-    },
-  },
-  {
-    path: '/marriage-compatibility',
-    title: '10-Poruthams Thirumana Porutham (Marriage Matching) | ASTRO SIVAM',
-    description:
-      'Check classical 10-Porutham marriage compatibility online with Kuja Dosha, Papa Samyam balance, and authentic priest recommendations.',
-    service: {
-      name: 'Thirumana Porutham (10-Poruthams Marriage Compatibility)',
-      serviceType: 'Horoscope Synastry Matching',
-      description:
-        'Classical 10-Porutham marriage compatibility assessment with Kuja Dosha, Papa Samyam balance, and an authentic priest compatibility verdict.',
-    },
-  },
-  {
-    path: '/baby-naming',
-    title: 'Sacred Baby Naming (Namakaran / Peyar Sooduthal) | ASTRO SIVAM',
-    description:
-      'Find auspicious newborn baby naming syllables based on Janma Nakshatra Pada with deity alignment and meaningful Tamil, Sanskrit & Hindi name suggestions.',
-    service: {
-      name: 'Sacred Baby Naming (Namakaran / Peyar Sooduthal)',
-      serviceType: 'Nakshatra Baby Naming Ceremony',
-      description:
-        'Auspicious newborn baby naming based on Janma Nakshatra Pada syllables, deity alignment, and meaningful Tamil, Sanskrit & Hindi name suggestions.',
-    },
-  },
-  {
-    path: '/muhurtham',
-    title: 'Subha Muhurtham - Auspicious Dates Report | ASTRO SIVAM',
-    description:
-      'Get a personalized Subha Muhurtham auspicious date calendar across six months for 18 Vedic ceremonies, computed from tithi, nakshatra, lagna and Guru-Sukra strength.',
-    service: {
-      name: 'Subha Muhurtham (Auspicious Dates)',
-      serviceType: 'Auspicious Muhurtham Date Selection',
-      description:
-        'Personalized Subha Muhurtham date calendar for 18 Vedic ceremonies, computed from tithi, nakshatra, yoga, karana, lagna and Guru-Sukra strength.',
-    },
-  },
-  {
-    path: '/how-it-works',
-    title: 'How It Works - Authentic Vedic Astrology Process | ASTRO SIVAM',
-    description:
-      'See how ASTRO SIVAM guides you through service selection, secure checkout, traditional chart review, and report delivery by email.',
-  },
-  {
-    path: '/about',
-    title: 'About Us - Authentic Vedic Astrology Heritage | ASTRO SIVAM',
-    description:
-      "Learn about ASTRO SIVAM's mission to deliver uncompromisingly authentic Vedic astrology calculations, high-precision algorithms, and spiritual wisdom.",
-  },
-  {
-    path: '/team',
-    title: 'Our Vedic Scholars & Astrologers | ASTRO SIVAM',
-    description:
-      "Meet the expert Vedic scholars, Sanskrit pandits, and computational astrologers behind ASTRO SIVAM's precise calculations.",
-  },
-  {
-    path: '/contact',
-    title: 'Contact ASTRO SIVAM - Astrological Support & Inquiries',
-    description:
-      'Get in touch with ASTRO SIVAM for astrology consultations, order inquiries, and technical support. Available 7 days a week.',
-  },
-  {
-    path: '/privacy-policy',
-    title: 'Privacy Policy | ASTRO SIVAM',
-    description:
-      'How ASTRO SIVAM safeguards your birth data, personal information, and payment details with strict confidentiality.',
-  },
-  {
-    path: '/terms',
-    title: 'Terms of Service | ASTRO SIVAM',
-    description:
-      "Terms and Conditions governing the use of ASTRO SIVAM's Vedic astrology services, calculations, and digital deliverables.",
-  },
-  {
-    path: '/payment-policy',
-    title: 'Payment Policy | ASTRO SIVAM',
-    description:
-      'Accepted payment methods, secure transaction processing, and multi-currency billing at ASTRO SIVAM.',
-  },
-  {
-    path: '/refund-policy',
-    title: 'Refund & Cancellation Policy | ASTRO SIVAM',
-    description:
-      'Our policy on refunds and cancellations for personalized astrological calculations and digital PDF deliverables.',
-  },
-];
-
-/** Routes that must never be indexed but should still 200 (real SPA routes). */
-const NOINDEX = [
-  { path: '/login', title: 'Client Login | ASTRO SIVAM', description: 'Log in to your ASTRO SIVAM account to access your purchased reports and saved profiles.' },
-  { path: '/register', title: 'Create an Account | ASTRO SIVAM', description: 'Register for an ASTRO SIVAM account to save birth profiles, track orders, and access PDF reports.' },
-  { path: '/dashboard', title: 'Customer Order Dashboard | ASTRO SIVAM', description: 'Track your astrology orders, email-delivery status, and saved birth profile.' },
-];
-
-function main() {
-  const baseHtml = readFileSync(join(DIST, 'index.html'), 'utf8');
-  const all = [
-    ...ROUTES.map((r) => ({ ...r, noindex: false })),
-    ...NOINDEX.map((r) => ({ ...r, noindex: true })),
-  ];
-  let written = 0;
-
-  for (const route of all) {
-    const page = buildPage(baseHtml, route, route.noindex);
-    if (route.path === '/') {
-      writeFileSync(join(DIST, 'index.html'), page);
-    } else {
-      const dir = join(DIST, route.path);
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(join(dir, 'index.html'), page);
-    }
-    written += 1;
+  if (route.path !== '/') {
+    // Site-wide keywords only make sense on the homepage document.
+    html = html.replace(/<meta name="keywords"[^>]*>\s*/gi, '');
   }
 
-  console.log(`prerender: wrote ${written} static route(s) from dist/index.html`);
+  // Enforce the robots policy from the route table even if a page's <SEO>
+  // forgot its noindex flag.
+  let tags = headTags;
+  if (route.noindex) {
+    tags = tags.filter((t) => !/^<meta\s[^>]*name="robots"/i.test(t));
+    tags.push('<meta name="robots" content="noindex, nofollow" data-prerender-seo />');
+  }
+
+  const title = tags.find((t) => /^<title/i.test(t));
+  const descriptionTag = tags.find((t) => /^<meta\s[^>]*name="description"/i.test(t));
+  const description = descriptionTag ? attrValue(descriptionTag, 'content') || '' : '';
+
+  // Per-route WebPage entity (indexable routes only). Marked like the other
+  // baked tags so the SPA boot removes it — a fresh document load is the only
+  // place where it is meaningful.
+  if (!route.noindex && title) {
+    const url = route.path === '/' ? `${ORIGIN}/` : `${ORIGIN}${route.path}`;
+    const name = title.replace(/^<title[^>]*>/i, '').replace(/<\/title>$/i, '');
+    const ld = {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      '@id': url,
+      url,
+      name,
+      description,
+      isPartOf: { '@id': `${ORIGIN}/#webapp` },
+      inLanguage: 'en',
+    };
+    tags = [
+      ...tags,
+      `<script type="application/ld+json" data-prerender-seo>${JSON.stringify(ld)}</script>`,
+    ];
+  }
+
+  const marked = tags.map((t) =>
+    // Mark every baked head tag for removal when the SPA boots (see main.tsx).
+    /data-prerender-seo/.test(t) ? t : t.replace(/^(<\w+)(?=[\s>])/, '$1 data-prerender-seo'),
+  );
+
+  html = html.replace(/<head>/i, `<head>\n    ${marked.join('\n    ')}`);
+  html = html.replace(/<div id="root"><\/div>/, `<div id="root">${bodyHtml}</div>`);
+  if (!html.includes('<div id="root">')) {
+    throw new Error('prerender: template lost its #root mount point');
+  }
+  return html;
 }
 
-main();
+// ---------------------------------------------------------------------------
+// main
+// ---------------------------------------------------------------------------
 
+async function main() {
+  const distIndex = join(DIST, 'index.html');
+  const manifestPath = join(DIST, '.vite', 'manifest.json');
+  if (!existsSync(distIndex)) {
+    throw new Error('prerender: dist/index.html missing — run `vite build --manifest` first');
+  }
+  if (!existsSync(manifestPath)) {
+    throw new Error('prerender: dist/.vite/manifest.json missing — build with `vite build --manifest`');
+  }
+  const baseHtml = readFileSync(distIndex, 'utf8');
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+
+  installBrowserStubs();
+
+  const { createServer } = await import('vite');
+  const vite = await createServer({
+    root: process.cwd(),
+    logLevel: 'error',
+    appType: 'custom',
+    configFile: join(process.cwd(), 'vite.config.ts'),
+    server: { middlewareMode: true, hmr: false, watch: null },
+    optimizeDeps: { noDiscovery: true, include: [] },
+  });
+
+  try {
+    // React et al. are npm-externalized in Vite's SSR module graph (the pages
+    // resolve them to the same Node CJS copies), so import them directly —
+    // `ssrLoadModule('react')` would try to evaluate the CJS entry as ESM.
+    const React = (await import('react')).default;
+    const { renderToString } = await import('react-dom/server');
+    const { HelmetProvider } = await import('react-helmet-async');
+    const mods = {
+      providers: {
+        HelmetProvider,
+        LanguageProvider: (await vite.ssrLoadModule('/src/context/LanguageContext.tsx')).LanguageProvider,
+        ThemeProvider: (await vite.ssrLoadModule('/src/context/ThemeContext.tsx')).ThemeProvider,
+        AuthProvider: (await vite.ssrLoadModule('/src/context/AuthContext.tsx')).AuthProvider,
+        CartProvider: (await vite.ssrLoadModule('/src/context/CartContext.tsx')).CartProvider,
+      },
+      layout: {
+        Navbar: (await vite.ssrLoadModule('/src/components/layout/Navbar.tsx')).Navbar,
+        Footer: (await vite.ssrLoadModule('/src/components/layout/Footer.tsx')).Footer,
+      },
+      pages: {},
+    };
+    for (const route of ROUTES) {
+      if (!mods.pages[route.module]) {
+        mods.pages[route.module] = await vite.ssrLoadModule(route.module);
+      }
+    }
+
+    // Head extraction: react-helmet-async v3 on React 19 renders its tags
+    // inline in the tree (no context extraction) and relies on React's native
+    // hoisting — splitHeadFromBody collects them from the render stream.
+    const titles = new Map();
+    let written = 0;
+
+    for (const route of ROUTES) {
+      setLocationFor(route);
+      const tree = buildPageTree(mods, route, React);
+      const wrapped = wrapWithProviders(mods, tree, React);
+      const rendered = renderToString(wrapped);
+      const { headTags, body: rawBody } = splitHeadFromBody(rendered);
+      const bodyHtml = mapAssetUrls(rawBody, manifest);
+      const mappedHead = mapAssetUrls(headTags.join('\n    '), manifest).split('\n    ');
+
+      const titleTag = mappedHead.find((t) => /^<title/i.test(t));
+      const titleText = titleTag
+        ? titleTag.replace(/^<title[^>]*>/i, '').replace(/<\/title>$/i, '')
+        : '';
+      if (!titleText) {
+        throw new Error(`prerender: ${route.path} produced no <title> — every page must set one`);
+      }
+      const canonicalTag = mappedHead.find((t) => /rel="canonical"/i.test(t));
+      const canonical = canonicalTag ? attrValue(canonicalTag, 'href') : null;
+      const expectCanonical = route.path === '/' ? `${ORIGIN}/` : `${ORIGIN}${route.path}`;
+      if (canonical !== expectCanonical) {
+        throw new Error(
+          `prerender: ${route.path} canonical is ${JSON.stringify(canonical)}, expected ${expectCanonical} — ` +
+            'every page must ship a self-referencing canonical',
+        );
+      }
+      if (/hreflang/i.test(mappedHead.join(' '))) {
+        throw new Error(`prerender: ${route.path} emitted hreflang — language alternates are not server-rendered`);
+      }
+      // Indexable pages must carry real content for crawlers that never run
+      // JS (the audit's core complaint). noindex utility gates (admin login,
+      // dashboard sign-in) just need a non-empty document.
+      const minBodyText = route.noindex ? 50 : 400;
+      if (visibleTextLength(bodyHtml) < minBodyText) {
+        throw new Error(
+          `prerender: ${route.path} body has under ${minBodyText} visible characters — crawlers would see an empty page`,
+        );
+      }
+      if (titles.has(titleText)) {
+        throw new Error(
+          `prerender: duplicate <title> ${JSON.stringify(titleText)} on ${route.path} and ${titles.get(titleText)}`,
+        );
+      }
+      titles.set(titleText, route.path);
+
+      const pageHtml = assembleDocument(baseHtml, route, mappedHead, bodyHtml);
+      writeWithSiblings(join(DIST, route.file), pageHtml);
+      written += 1;
+    }
+
+    writeWithSiblings(join(DIST, 'sitemap.xml'), renderSitemap());
+    // The manifest exists only for the asset-URL rewriting above; leaving
+    // dist/.vite behind would add a top-level folder to the deploy root, which
+    // the dist-shape contract forbids.
+    rmSync(join(DIST, '.vite'), { recursive: true, force: true });
+
+    console.log(`prerender: wrote ${written} route document(s) + dist/sitemap.xml (flat files, compressed siblings refreshed)`);
+  } finally {
+    await vite.close();
+  }
+}
+
+const invokedDirectly =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
+  main().catch((err) => {
+    console.error(err && err.stack ? err.stack : err);
+    process.exit(1);
+  });
+}

@@ -15,11 +15,27 @@ const DEFAULT_TITLE = 'ASTRO SIVAM - Understand Your Life Through Vedic Astrolog
 const DEFAULT_DESCRIPTION = 'ASTRO SIVAM (astrosivam.com) - Authentic Vedic Astrology Platform. Get precision Birth Jathagam (Horoscope / Kundali), 10-Poruthams Marriage Compatibility Matching, Sacred Baby Naming (Namakaran) & Subha Muhurtham Auspicious Dates in Tamil, English & Hindi.';
 const DEFAULT_IMAGE = 'https://astrosivam.com/astrosivam_og_image.jpg?v=20261003';
 const SITE_NAME = 'ASTRO SIVAM';
+const SITE_ORIGIN = 'https://astrosivam.com';
+
+/**
+ * Self-referencing canonical for the current path. The previous hardcoded
+ * default ("https://astrosivam.com/") made EVERY page that forgot to pass a
+ * canonical declare itself a duplicate of the homepage (SEO audit 2026-10-14,
+ * finding 2) — derive it from the location instead so a missing prop can
+ * never consolidate interior pages away.
+ */
+function defaultCanonical(): string {
+  if (typeof window !== 'undefined' && window.location && window.location.pathname) {
+    const path = window.location.pathname.replace(/\/+$/, '');
+    return path === '' ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${path}`;
+  }
+  return `${SITE_ORIGIN}/`;
+}
 
 export const SEO: React.FC<SEOProps> = ({
   title = DEFAULT_TITLE,
   description = DEFAULT_DESCRIPTION,
-  canonical = 'https://astrosivam.com/',
+  canonical = defaultCanonical(),
   ogImage = DEFAULT_IMAGE,
   ogType = 'website',
   keywords,

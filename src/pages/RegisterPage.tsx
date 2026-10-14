@@ -195,6 +195,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigate }) => {
         title="Create an Account | ASTRO SIVAM"
         description="Register for an ASTRO SIVAM account to save your birth profiles, track astrology orders, and access instant PDF reports."
         canonical="https://astrosivam.com/register"
+        noindex={true}
       />
       
       {/* Header — emblem with the name and the slogan under it */}

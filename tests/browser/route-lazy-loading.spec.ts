@@ -105,9 +105,31 @@ function armNoiseCollection(page: Page): PageNoise {
 }
 
 /**
+ * Expected `rel=canonical` href for a route. Direct loads pass paths
+ * (/services, /policy-privacy); in-app navigation steps pass App route keys
+ * (admin, home). Legacy policy aliases canonicalize to their real path.
+ */
+function expectedCanonical(route: string): string {
+  const aliases: Record<string, string> = {
+    '/policy-privacy': '/privacy-policy',
+    '/policy-terms': '/terms',
+    '/policy-payment': '/payment-policy',
+    '/policy-refund': '/refund-policy',
+  };
+  if (aliases[route]) return `https://astrosivam.com${aliases[route]}`;
+  if (route === '/' || route === 'home' || route.startsWith('home ')) return 'https://astrosivam.com/';
+  return `https://astrosivam.com${route.startsWith('/') ? route : `/${route}`}`;
+}
+
+/**
  * The white-screen contract for a single page state: real content, no
  * ErrorBoundary, no stuck Suspense spinner. The 80-char poll alone is
- * insufficient — the ErrorBoundary renders happily past 80 chars.
+ * insufficient — the ErrorBoundary renders happily past 80 chars, AND since
+ * the SEO prerender (audit 2026-10-14) the static document body is non-empty
+ * even when the bundle never boots. The head assertions below close that hole:
+ * the baked [data-prerender-seo] tags must be gone (main.tsx ran) and React
+ * must have hoisted exactly one <title> and one self-referencing canonical
+ * (the SPA actually mounted and Helmet ran).
  */
 async function expectHealthyPage(page: Page, route: string): Promise<void> {
   await expect
@@ -122,6 +144,13 @@ async function expectHealthyPage(page: Page, route: string): Promise<void> {
     `ErrorBoundary rendered on ${route} — the route failed to load and recovery did not kick in`,
   ).not.toMatch(ERROR_BOUNDARY_TEXT_RE);
   await expect(page.locator('[role="status"][aria-label="Loading page"]')).toHaveCount(0);
+  await expect(page.locator('[data-prerender-seo]')).toHaveCount(0);
+  await expect(page.locator('head > title')).toHaveCount(1);
+  await expect(page.locator('head > link[rel="canonical"]')).toHaveCount(1);
+  await expect(page.locator('head > link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    expectedCanonical(route),
+  );
 }
 
 function expectNoPageErrors(noise: PageNoise, context: string): void {

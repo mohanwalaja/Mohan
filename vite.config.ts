@@ -17,6 +17,44 @@ import { compressBuildOutput } from './vite-plugin-compress';
  * travelled through the .br path, which the smoke never exercised. With this
  * middleware the smoke executes the very bytes Apache would serve.
  */
+/**
+ * Serve the prerendered per-route documents during `vite preview`, mirroring
+ * public/.htaccess rule (g): a clean URL like /services resolves to the flat
+ * dist/services.html that scripts/prerender.mjs wrote at build time.
+ *
+ * WHY: the preview smoke (playwright.preview.config.ts) claims to run against
+ * "the exact asset layout that ships to cPanel". Without this middleware
+ * /services would fall through to the SPA shell in preview while production
+ * serves the prerendered document — exactly the blind spot that hid the SEO
+ * audit findings (every URL returning the identical empty shell).
+ */
+function previewServePrerendered(): Plugin {
+  return {
+    name: 'astro-preview-prerendered',
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => {
+        try {
+          if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+          const rawUrl = req.url || '';
+          const urlPath = decodeURIComponent(rawUrl.split('?')[0]);
+          const match = urlPath.match(/^\/([a-z0-9-]+)\/?$/i);
+          if (!match) return next();
+          const outDir = path.resolve(server.config.root, server.config.build.outDir);
+          const candidate = path.join(outDir, `${match[1].toLowerCase()}.html`);
+          if (!candidate.startsWith(outDir + path.sep)) return next();
+          if (!fs.existsSync(candidate)) return next();
+          const qIdx = rawUrl.indexOf('?');
+          const query = qIdx === -1 ? '' : rawUrl.slice(qIdx);
+          req.url = `/${path.basename(candidate)}${query}`;
+          next();
+        } catch {
+          next();
+        }
+      });
+    },
+  };
+}
+
 function previewServePrecompressed(): Plugin {
   const COMPRESSIBLE =
     /\.(js|mjs|css|html|json|svg|txt|xml|webmanifest|wasm|map)$/;
@@ -153,7 +191,7 @@ export default defineConfig(() => {
         },
       },
     },
-    plugins: [react(), tailwindcss(), apiDevMiddleware(), previewServePrecompressed(), compressBuildOutput()],
+    plugins: [react(), tailwindcss(), apiDevMiddleware(), previewServePrerendered(), previewServePrecompressed(), compressBuildOutput()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
