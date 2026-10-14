@@ -44,6 +44,9 @@ const testFiles = [
   'tests/namakaran-meanings.test.ts',
   'tests/logo-assets.test.ts',
   'tests/mobile-inputs.test.tsx',
+  // Keep the render-critical shell self-hosted, subsetted and within its small
+  // preload budget so the Google Fonts CSS round-trip cannot creep back in.
+  'tests/self-hosted-fonts.test.ts',
   'tests/birth-details-validation.test.ts',
   'tests/birth-details-edge.test.ts',
   'tests/timezone-offset.test.ts',
