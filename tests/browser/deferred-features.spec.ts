@@ -142,10 +142,11 @@ test.describe('deferred heavy features', () => {
     const sampleButton = page.getByRole('button', { name: /sample report/i }).first();
     await expect(sampleButton).toBeVisible({ timeout: 15000 });
     const beforeOpen = requested.length;
-    // noWaitAfter: the handler computes the fixed sample (astronomy engine, on
-    // the main thread) and fetches two chunks — see the note on the Download
-    // click below for why the post-click hit-target probe must not be awaited.
-    await sampleButton.click({ noWaitAfter: true });
+    // force — see the note on the Download click below: every click in this
+    // spec happens to hand the main thread to the feature being loaded, and
+    // Playwright's pre-click "stable/enabled" checks and post-click hit-target
+    // interception both need that thread to answer.
+    await sampleButton.click({ force: true });
 
     // The preview is ready once the download button is enabled (it is disabled
     // while the report HTML is still being built).
@@ -158,17 +159,19 @@ test.describe('deferred heavy features', () => {
 
     // Clicking Download is the deferred boundary: the renderer is fetched now.
     //
-    // noWaitAfter is REQUIRED here, not a shortcut. After dispatching a click,
-    // Playwright evaluates the "did the hit target move?" probe inside the page
-    // and waits for it — but everything this handler does next runs on that same
-    // main thread: it dynamic-imports the PDF engine (jspdf + html2canvas,
-    // ~950 kB) and then rasterises every A4 page. The probe therefore cannot
-    // answer until the render finishes, so a plain click() sits there until the
-    // test times out and reports a misleading "locator.click: Test timeout"
-    // (observed in CI on run 38517294279, 2026-10-14). The assertion that
-    // actually matters is the one below: the renderer chunk is fetched only
-    // because this click happened.
-    await downloadButton.click({ noWaitAfter: true });
+    // force is REQUIRED here, not a shortcut. A normal click() first asks the
+    // page whether the element is visible, enabled and STABLE (two animation
+    // frames), then — after dispatching — installs a hit-target interceptor in
+    // the page and waits for its verdict, retrying the whole thing when the
+    // verdict changes. Every one of those steps needs the page's main thread,
+    // and this handler takes it: it dynamic-imports the PDF engine (jspdf +
+    // html2canvas, ~950 kB) and then rasterises three A4 pages. The retry loop
+    // therefore never gets its frames back and the run dies with a misleading
+    // "locator.click: Test timeout of 180000ms exceeded" (CI runs 38517294279
+    // and 38518403692, 2026-10-14) — the app was fine both times. What this test
+    // asserts is the NETWORK boundary, not pointer physics, and the button's
+    // visible+enabled state is already asserted above.
+    await downloadButton.click({ force: true });
     await expect
       .poll(() => requested.filter((url) => PDF_RENDERER_RE.test(url)).length, {
         timeout: 60000,
@@ -184,9 +187,9 @@ test.describe('deferred heavy features', () => {
     const before = requested.filter((url) => LEAFLET_RE.test(url));
     expect(before, `Leaflet must not be part of a form page's initial load: ${before.join(', ')}`).toEqual([]);
 
-    // noWaitAfter: this click pulls the Leaflet chunk and mounts the map on the
-    // main thread, which stalls Playwright's post-click hit-target probe.
-    await page.getByRole('button', { name: /map pinpoint/i }).first().click({ noWaitAfter: true });
+    // force — this click fetches the Leaflet chunk and mounts the map on the
+    // main thread, which stalls the hit-target probe (see the sample test).
+    await page.getByRole('button', { name: /map pinpoint/i }).first().click({ force: true });
 
     await expect(page.getByText('Pinpoint Exact Birth Village or Area on Map')).toBeVisible({ timeout: 30000 });
     await expect
