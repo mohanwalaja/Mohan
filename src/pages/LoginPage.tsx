@@ -48,6 +48,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
         title="Client Login | ASTRO SIVAM"
         description="Log in to your ASTRO SIVAM account to access your purchased Vedic horoscopes, family orders, and live astrological charts."
         canonical="https://astrosivam.com/login"
+        noindex={true}
       />
       
       {/* Brand Header — emblem with the name and the slogan under it */}

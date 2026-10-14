@@ -1235,25 +1235,42 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     }
   };
 
+  // Head metadata must render on EVERY branch (the auth-loading spinner and the
+  // admin login gate used to return before <SEO>, leaving the document with no
+  // title at all whenever a visitor landed there).
+  const seo = (
+    <SEO
+      title="Admin Management Portal | ASTRO SIVAM"
+      description="Secure administration portal for ASTRO SIVAM order processing, astrologer review, and financial metrics."
+      noindex={true}
+    />
+  );
+
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+      <>
+        {seo}
+        <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <RefreshCw className="w-10 h-10 text-amber-500 animate-spin mx-auto" />
           <p className="text-sm font-semibold text-slate-300">Authenticating Astro Sivam Admin Gateway...</p>
         </div>
       </div>
-    );
+    </>
+  );
   }
 
   if (!isAdmin) {
     return (
-      <AdminLogin
-        onNavigate={onNavigate}
-        onLoginSuccess={() => {
-          fetchAdminData();
-        }}
-      />
+      <>
+        {seo}
+        <AdminLogin
+          onNavigate={onNavigate}
+          onLoginSuccess={() => {
+            fetchAdminData();
+          }}
+        />
+      </>
     );
   }
 
@@ -1566,11 +1583,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 select-none">
-      <SEO
-        title="Admin Management Portal | ASTRO SIVAM"
-        description="Secure administration portal for ASTRO SIVAM order processing, astrologer review, and financial metrics."
-        noindex={true}
-      />
+      {seo}
       
       {/* Top Banner */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">

@@ -81,6 +81,10 @@ const testFiles = [
   // chunks must exist inside dist/assets, and the cPanel root folder list must
   // never grow. Runs its built-output checks whenever dist/ is present.
   'tests/dist-shape.test.ts',
+  // SEO prerender contract (audit 2026-10-14): every URL must ship its own
+  // document with a self-referencing canonical and real body content — the
+  // identical-empty-shell + homepage-canonical + fake-hreflang bug class.
+  'tests/seo-prerender-contract.test.ts',
   // Lazy route modules must keep exporting the component names App.tsx maps.
   'tests/route-chunk-exports.test.ts',
   'tests/lockfile-drift.test.ts'

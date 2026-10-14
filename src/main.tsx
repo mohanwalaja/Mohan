@@ -3,6 +3,16 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
+// Prerendered documents (scripts/prerender.mjs) carry the page's SEO head
+// tags baked into the static HTML for crawlers that never run JavaScript.
+// React 19 hoists its own <title>/<meta>/<link> when the SPA mounts, so the
+// baked copies must go first — otherwise SPA navigation would leave the first
+// page's stale title/canonical sitting next to the current one. The baked
+// body inside #root needs no cleanup: createRoot replaces it on first render.
+for (const el of Array.from(document.querySelectorAll('[data-prerender-seo]'))) {
+  el.remove();
+}
+
 // Mobile guard: the document must never pan sideways. On phones, focusing the
 // birth date / time inputs could trigger a programmatic horizontal scroll /
 // zoom toward the field that the visitor could not undo (only a reload reset

@@ -253,9 +253,21 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
     }
   };
 
+  // Head metadata must render on EVERY branch (the logged-out gate used to
+  // return before <SEO>, leaving the document with no title at all).
+  const seo = (
+    <SEO
+      title="Customer Order Dashboard | ASTRO SIVAM"
+      description="Track your astrology orders, email-delivery status, and saved birth profile."
+      noindex={true}
+    />
+  );
+
   if (!user) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-20 text-center space-y-6 animate-in fade-in">
+      <>
+        {seo}
+        <div className="max-w-lg mx-auto px-4 py-20 text-center space-y-6 animate-in fade-in">
         <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center mx-auto text-amber-500 shadow-xl shadow-amber-500/10">
           <User className="w-10 h-10" />
         </div>
@@ -286,7 +298,8 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           </button>
         </div>
       </div>
-    );
+    </>
+  );
   }
 
   // The chat speaks the language the customer selected for the report they
@@ -295,11 +308,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <SEO
-        title="Customer Order Dashboard | ASTRO SIVAM"
-        description="Track your astrology orders, email-delivery status, and saved birth profile."
-        noindex={true}
-      />
+      {seo}
 
       {aiChatOpen && user?.id && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/60 p-0 sm:p-4">
