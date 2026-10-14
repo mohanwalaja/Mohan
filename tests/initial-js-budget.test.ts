@@ -79,6 +79,8 @@ const DEFERRED_CHUNK_NAMES = [
   'vendor-pdf',
   'vendor-maps',
   'vendor-astrology',
+  'vendor-timezone',
+  'astrology-core',
   'vendor-charts',
   'scanner',
   'babynames',
@@ -296,6 +298,15 @@ check('the sample viewer is fetched when the visitor opens a sample', () => {
   );
 });
 
+check('sample calculation is a click-time import, separate from lightweight sample copy', () => {
+  const button = code('src/components/common/SampleReportButton.tsx');
+  assert.doesNotMatch(button, /from ['"][^'"]*\/sampleReports['"]/);
+  const handler = button.slice(button.indexOf('const openSample'));
+  assert.match(handler, /await import\('\.\.\/\.\.\/services\/sampleReports'\)/);
+  const info = code('src/services/sampleReportInfo.ts');
+  assert.doesNotMatch(info, /from ['"][^'"]*(scanner|api|astrology|HtmlBuilder)['"]/);
+});
+
 check('the PDF renderer is reached through one dynamic boundary', () => {
   const modal = code('src/components/common/LivePdfPreviewModal.tsx');
   assert.doesNotMatch(
@@ -495,6 +506,23 @@ check('none of the deferred chunks is part of the initial request set', () => {
     [],
     `the initial request set should be the entry + vendor-core and nothing else, found: ${unexpected.join(', ')}`,
   );
+});
+
+check('service forms do not import the sample calculator or report builders', () => {
+  const files = fs.readdirSync(abs('dist/assets'));
+  for (const page of ['BirthJathagamPage', 'MarriageCompatibilityPage', 'BabyNamingPage', 'MuhurthamPage']) {
+    const file = files.find((f) => f.startsWith(`${page}-`) && f.endsWith('.js'));
+    assert.ok(file, `${page} must ship`);
+    const dependencies = new Set<string>();
+    const visit = (url: string) => {
+      if (dependencies.has(url)) return;
+      dependencies.add(url);
+      for (const dep of staticImportsOf(url)) visit(dep);
+    };
+    visit(`/assets/${file}`);
+    assert.deepEqual([...dependencies].filter((url) => /sampleReports-|HtmlBuilder-|vendor-pdf-|LivePdfPreviewModal-/.test(url)), [],
+      `${page} must not load sample/report code before a click`);
+  }
 });
 
 check('the deferred features are still shipped and wired through dynamic imports', () => {

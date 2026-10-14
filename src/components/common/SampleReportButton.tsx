@@ -2,10 +2,9 @@ import React, { Suspense, lazy, useCallback, useState } from 'react';
 import { AlertCircle, Eye, Loader2 } from 'lucide-react';
 import { AppLanguage, ServiceType } from '../../types';
 import {
-  calculateSampleResult,
   SAMPLE_BIRTH_LABEL,
   SampleServiceType
-} from '../../services/sampleReports';
+} from '../../services/sampleReportInfo';
 
 /**
  * The sample viewer is a DEFERRED feature (audit PERF-1): this button sits on
@@ -79,6 +78,8 @@ export const SampleReportButton: React.FC<SampleReportButtonProps> = ({
     }
     setIsLoading(true);
     try {
+      // Import the engine only after this click, never with a service page.
+      const { calculateSampleResult } = await import('../../services/sampleReports');
       const sample = await calculateSampleResult(serviceType);
       setResult(sample);
       setIsOpen(true);

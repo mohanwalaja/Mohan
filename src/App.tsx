@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy, startTransition } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -13,7 +13,7 @@ import {
   installRouteIntentPrefetch,
   safeImport,
 } from './services/routeChunks';
-import { dismissBootSplash } from './services/bootSplash';
+import { dismissBootSplash, getPrerenderedPage, clearPrerenderedPage } from './services/bootSplash';
 
 // Routes are code-split (audit S1, widened by audit PERF-1): the admin portal,
 // the customer dashboard and the four report pages pull in the PDF/HTML report
@@ -196,8 +196,10 @@ function DeferredCartLayer({ onNavigate }: { onNavigate: (route: string) => void
   );
 }
 
-/** Themed spinner shown only in the brief moment a lazy route chunk loads. */
+/** Preserve the initial static page; use a spinner only for non-prerendered routes. */
 function RouteFallback() {
+  const initialPage = getPrerenderedPage();
+  if (initialPage) return <div dangerouslySetInnerHTML={{ __html: initialPage }} />;
   return (
     <div
       className="min-h-[55vh] flex items-center justify-center"
@@ -216,15 +218,14 @@ function RouteFallback() {
  *   1. Clear the one-shot chunk-recovery flag: if the flag were cleared when
  *      the Suspense boundary first renders its fallback, a failing chunk could
  *      reload the page in an endless loop.
- *   2. Hand the screen over from the boot splash to the app (white-screen fix,
- *      2026-10-14 — see src/services/bootSplash.ts). Doing it HERE rather than
- *      when the shell first commits means a lazy route's chunk is already
- *      resolved, so the visitor never sees the Suspense spinner: the splash
- *      covers the chunk load and fades directly into the finished page.
+ *   2. Release the initial static-page fallback and dismiss the dev/non-static
+ *      boot splash. Production's prerendered pages are already visible from
+ *      HTML; neither their first paint nor navigation waits behind an overlay.
  */
 function RouteLoadedMarker() {
   useEffect(() => {
     clearChunkRecoveryFlag();
+    clearPrerenderedPage();
     dismissBootSplash();
   }, []);
   return null;
@@ -316,7 +317,7 @@ function AppContent() {
   // Handle browser back/forward buttons and programmatic app:navigate events
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentRoute(getInitialRoute());
+      startTransition(() => setCurrentRoute(getInitialRoute()));
     };
     const handleAppNavigate = (e: any) => {
       if (e?.detail) {
@@ -348,7 +349,9 @@ function AppContent() {
 
   const handleNavigate = (route: string) => {
     const targetRoute = route === 'admin-portal' ? 'admin' : route;
-    setCurrentRoute(targetRoute);
+    // Keep the current content visible while the requested page chunk arrives.
+    // Hover/focus/touch prefetch still warms just the intended destination.
+    startTransition(() => setCurrentRoute(targetRoute));
     try {
       if (targetRoute === 'not-found') {
         // preserve current URL

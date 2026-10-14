@@ -565,8 +565,36 @@ function wrapWithProviders(mods, element, React) {
   return el;
 }
 
-function assembleDocument(baseHtml, route, headTags, bodyHtml) {
-  let html = baseHtml;
+function assembleDocument(baseHtml, route, headTags, bodyHtml, manifest) {
+  let html = baseHtml.replace('<html ', '<html data-prerendered="true" ');
+
+  // Fetch only THIS route's static dependencies alongside the entry, avoiding
+  // the entry -> route -> dependency waterfall. Never follow dynamicImports:
+  // samples, PDFs, maps and admin tools must remain click-time downloads.
+  const links = new Set();
+  const visited = new Set();
+  function preload(key) {
+    if (visited.has(key)) return;
+    visited.add(key);
+    const entry = manifest[key];
+    if (!entry) throw new Error(`prerender: missing route dependency ${key}`);
+    if (entry.file.endsWith('.js')) {
+      const href = `/${entry.file}`;
+      if (!baseHtml.includes(`href="${href}"`)) {
+        links.add(`<link rel="modulepreload" crossorigin href="${href}" />`);
+      }
+    }
+    for (const css of entry.css || []) {
+      if (!baseHtml.includes(`href="/${css}"`)) {
+        links.add(`<link rel="stylesheet" crossorigin href="/${css}" />`);
+      }
+    }
+    for (const dependency of entry.imports || []) preload(dependency);
+  }
+  const routeKey = route.module.replace(/^\//, '');
+  // The eager homepage is already owned by the entry, not a separate chunk.
+  if (manifest[routeKey]) preload(routeKey);
+  html = html.replace('</head>', `${[...links].join('\n    ')}\n  </head>`);
 
   // Drop the template's homepage SEO tags — each route supplies its own.
   //
@@ -762,7 +790,7 @@ async function main() {
       }
       titles.set(titleText, route.path);
 
-      const pageHtml = assembleDocument(baseHtml, route, mappedHead, bodyHtml);
+      const pageHtml = assembleDocument(baseHtml, route, mappedHead, bodyHtml, manifest);
       const outputPath = route.path === '/' ? join(DIST, route.file) : join(pagesDir, route.file);
       writeWithSiblings(outputPath, pageHtml);
       written += 1;

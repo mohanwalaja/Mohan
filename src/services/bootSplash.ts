@@ -24,6 +24,10 @@
  *   - src/components/common/ErrorBoundary.tsx: on a render crash, so the
  *     support screen is visible immediately instead of hiding behind it.
  *
+ * Prerendered production pages hide the splash using a build-time HTML
+ * attribute: they already have real content and must not wait for this code.
+ * capturePrerenderedPage below preserves that content during React startup.
+ *
  * The splash ITSELF also has two escape hatches that need no JavaScript at
  * all (they live in index.html): <noscript> hides it for browsers without
  * scripting, and an 8 s CSS animation fades it if this module never runs
@@ -64,4 +68,21 @@ export function dismissBootSplash(): void {
   window.setTimeout(() => {
     if (splash.parentNode) splash.parentNode.removeChild(splash);
   }, REMOVE_AFTER_MS);
+}
+
+
+// createRoot replaces the static DOM. Keep just its public page content as the
+// first Suspense fallback so a direct visit never flashes a loading spinner.
+// This is build-produced HTML, not an API response or user-provided markup.
+let prerenderedPage = '';
+export function capturePrerenderedPage(): void {
+  if (document.documentElement.hasAttribute('data-prerendered')) {
+    prerenderedPage = document.querySelector('#root main')?.innerHTML || '';
+  }
+}
+export function getPrerenderedPage(): string {
+  return prerenderedPage;
+}
+export function clearPrerenderedPage(): void {
+  prerenderedPage = '';
 }

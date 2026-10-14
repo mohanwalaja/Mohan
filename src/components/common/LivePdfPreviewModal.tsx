@@ -11,7 +11,7 @@ import {
 import type { MuhurthamScanResult } from '../../services/muhurthamHtmlBuilder';
 import { describeFamilyRenderQuality } from '../../services/formatUtils';
 import { warmReportFonts } from '../../services/reportFonts';
-import { applySampleWatermark, SAMPLE_BANNER, sampleDetailsLine, sampleReportFileName, sampleReportTitle, type SampleServiceType } from '../../services/sampleReports';
+import { applySampleWatermark, SAMPLE_BANNER, sampleDetailsLine, sampleReportFileName, sampleReportTitle, type SampleServiceType } from '../../services/sampleReportInfo';
 import { normalizeReportLanguage } from '../../services/reportLanguage';
 
 /**
