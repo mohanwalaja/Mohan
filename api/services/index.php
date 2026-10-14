@@ -1348,7 +1348,7 @@ if ($method === 'POST' && (
                 $paymentReference !== '' ? $paymentReference : null,
                 $capturedIntent['id'] ?? null,
                 $paymentStatus,
-                $capturedIntent ? 1 : 0,
+                ($capturedIntent || $paymentStatus === 'NOT_REQUIRED') ? 1 : 0,
                 json_encode($inputPayloadWithGroup, JSON_UNESCAPED_UNICODE),
                 json_encode($calculatedResult, JSON_UNESCAPED_UNICODE),
                 $clientIp
@@ -1372,7 +1372,7 @@ if ($method === 'POST' && (
                 $paymentReference !== '' ? $paymentReference : null,
                 $capturedIntent['id'] ?? null,
                 $paymentStatus,
-                $capturedIntent ? 1 : 0,
+                ($capturedIntent || $paymentStatus === 'NOT_REQUIRED') ? 1 : 0,
                 json_encode($inputPayloadWithGroup, JSON_UNESCAPED_UNICODE),
                 json_encode($calculatedResult, JSON_UNESCAPED_UNICODE),
                 $clientIp
@@ -1802,7 +1802,7 @@ if ($method === 'POST' && (
         $paymentReference !== '' ? $paymentReference : null,
         $capturedIntent['id'] ?? null,
         $paymentStatus,
-        $capturedIntent ? 1 : 0,
+        ($capturedIntent || $paymentStatus === 'NOT_REQUIRED') ? 1 : 0,
         json_encode($inputPayload, JSON_UNESCAPED_UNICODE),
         json_encode($calculatedResult, JSON_UNESCAPED_UNICODE),
         $clientIp

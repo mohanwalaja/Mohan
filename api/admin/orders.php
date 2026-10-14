@@ -26,13 +26,16 @@ $action = $_GET['action'] ?? '';
 // 1. GET /api/admin/orders.php (Grouped Family Orders + Sub-orders)
 // =========================================================================
 if ($method === 'GET') {
-    // Online-payments only: only surface orders with successfully captured payment
-    // (payment_confirmed=1) or free/charts that required no payment. Rejected/failed/
-    // pending-verification orders are hidden entirely from the admin dashboard.
+    // Surface orders with successfully captured payment (payment_confirmed=1)
+    // or free charts that required no payment (payment_status NOT_REQUIRED —
+    // the 1-free-per-IP beta order carries no intent, so payment_confirmed is
+    // 0 and must not hide it). Rejected/failed/pending-verification orders are
+    // hidden entirely from the admin dashboard.
     $stmt = $pdo->query("SELECT * FROM orders
         WHERE status NOT IN ('REJECTED','CANCELLED')
-          AND payment_confirmed = 1
-          AND (payment_status IS NULL OR payment_status IN ('CAPTURED','NOT_REQUIRED','CONSUMED'))
+          AND (payment_confirmed = 1
+               OR UPPER(COALESCE(NULLIF(payment_status, ''), 'PENDING_ADMIN')) = 'NOT_REQUIRED')
+          AND (payment_status IS NULL OR payment_status IN ('CAPTURED','NOT_REQUIRED','CONSUMED','VERIFIED_MANUAL'))
         ORDER BY created_at DESC");
     $rawRows = $stmt ? $stmt->fetchAll() : [];
 

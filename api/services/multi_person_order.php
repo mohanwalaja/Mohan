@@ -772,7 +772,7 @@ function astro_create_multi_person_order($pdo, array $user, array $body): void
             $paymentReference !== '' ? $paymentReference : null,
             $capturedIntent['id'] ?? null,
             $paymentStatus,
-            $capturedIntent ? 1 : 0,
+            ($capturedIntent || $paymentStatus === 'NOT_REQUIRED') ? 1 : 0,
             json_encode($headerPayload, JSON_UNESCAPED_UNICODE),
             $headerResult ? json_encode($headerResult, JSON_UNESCAPED_UNICODE) : null,
             $clientIp
