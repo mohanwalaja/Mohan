@@ -32,13 +32,15 @@
  *   with the shared site chrome (fonts, favicons, Organization JSON-LD) taken
  *   from the Vite-built index.html template.
  *
- *   Output is FLAT FILES — `dist/services.html`, `dist/about.html`, … — never
- *   one directory per route: create_dist_zip.py / dist-shape.test.ts pin the
- *   cPanel root folder list to {assets, audio, video-scenes} forever.
- *   public/.htaccess rewrites the clean URL (/services) to the matching file
- *   internally, so the browser keeps the clean URL and each document's
- *   self-referencing canonical names it. Every written file gets fresh
- *   .br/.gz siblings (and stale siblings of overwritten files are removed),
+ *   Route documents live in one shared `dist/pages/` folder —
+ *   `dist/pages/services.html`, `dist/pages/about.html`, … — while
+ *   `dist/index.html` stays at the root. This keeps the cPanel root tidy
+ *   without creating one directory per route; create_dist_zip.py and
+ *   dist-shape.test.ts pin the approved root folders. public/.htaccess rewrites
+ *   the clean URL (/services) to the matching file internally, so the browser
+ *   keeps the clean URL and each document's self-referencing canonical names
+ *   it. Every written file gets fresh .br/.gz siblings (and stale siblings of
+ *   overwritten files are removed),
  *   because .htaccess negotiates text assets to the pre-compressed copies —
  *   a stale index.html.br would otherwise keep serving the old empty shell.
  *
@@ -59,7 +61,7 @@
  * let stale titles survive SPA navigation). Crawlers that never run JS keep
  * the baked tags and the baked body — which is the whole point.
  */
-import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, rmSync, mkdirSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { brotliCompressSync, gzipSync, constants as zlibConstants } from 'node:zlib';
@@ -69,7 +71,8 @@ const DIST = join(process.cwd(), 'dist');
 
 /**
  * Every URL that must ship as its own HTML document. `path` is the canonical
- * clean URL; `file` is the flat prerender output name inside dist/.
+ * clean URL; `file` is the output basename (non-home documents go under
+ * dist/pages/ while index.html stays at the dist/ root).
  * `noindex` routes still get a document (so the page is not an empty shell)
  * but carry `noindex, nofollow` and are excluded from the sitemap.
  */
@@ -712,6 +715,8 @@ async function main() {
     // hoisting — splitHeadFromBody collects them from the render stream.
     const titles = new Map();
     let written = 0;
+    const pagesDir = join(DIST, 'pages');
+    mkdirSync(pagesDir, { recursive: true });
 
     for (const route of ROUTES) {
       setLocationFor(route);
@@ -758,7 +763,8 @@ async function main() {
       titles.set(titleText, route.path);
 
       const pageHtml = assembleDocument(baseHtml, route, mappedHead, bodyHtml);
-      writeWithSiblings(join(DIST, route.file), pageHtml);
+      const outputPath = route.path === '/' ? join(DIST, route.file) : join(pagesDir, route.file);
+      writeWithSiblings(outputPath, pageHtml);
       written += 1;
     }
 
@@ -768,7 +774,7 @@ async function main() {
     // the dist-shape contract forbids.
     rmSync(join(DIST, '.vite'), { recursive: true, force: true });
 
-    console.log(`prerender: wrote ${written} route document(s) + dist/sitemap.xml (flat files, compressed siblings refreshed)`);
+    console.log(`prerender: wrote ${written} route document(s) (non-index under dist/pages/; index.html and sitemap.xml stay at root; compressed siblings refreshed)`);
   } finally {
     await vite.close();
   }

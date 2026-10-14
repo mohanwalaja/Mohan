@@ -19,8 +19,8 @@ import { compressBuildOutput } from './vite-plugin-compress';
  */
 /**
  * Serve the prerendered per-route documents during `vite preview`, mirroring
- * public/.htaccess rule (g): a clean URL like /services resolves to the flat
- * dist/services.html that scripts/prerender.mjs wrote at build time.
+ * public/.htaccess rule (g): a clean URL like /services resolves to
+ * dist/pages/services.html that scripts/prerender.mjs wrote at build time.
  *
  * WHY: the preview smoke (playwright.preview.config.ts) claims to run against
  * "the exact asset layout that ships to cPanel". Without this middleware
@@ -40,12 +40,12 @@ function previewServePrerendered(): Plugin {
           const match = urlPath.match(/^\/([a-z0-9-]+)\/?$/i);
           if (!match) return next();
           const outDir = path.resolve(server.config.root, server.config.build.outDir);
-          const candidate = path.join(outDir, `${match[1].toLowerCase()}.html`);
+          const candidate = path.join(outDir, 'pages', `${match[1].toLowerCase()}.html`);
           if (!candidate.startsWith(outDir + path.sep)) return next();
           if (!fs.existsSync(candidate)) return next();
           const qIdx = rawUrl.indexOf('?');
           const query = qIdx === -1 ? '' : rawUrl.slice(qIdx);
-          req.url = `/${path.basename(candidate)}${query}`;
+          req.url = `/pages/${path.basename(candidate)}${query}`;
           next();
         } catch {
           next();

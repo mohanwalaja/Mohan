@@ -140,8 +140,8 @@ def create_dist_zip():
 # grows them, the packer FAILS instead of silently shipping a sprawled tree.
 # Enforced by tests/dist-shape.test.ts and asserted again in CI's zip check.
 # ---------------------------------------------------------------------------
-EXPECTED_DIST_TOP_DIRS = {'assets', 'audio', 'video-scenes'}
-EXPECTED_ZIP_TOP_DIRS = {'api', 'assets', 'audio', 'docs', 'knowledge', 'scripts', 'src', 'video-scenes'}
+EXPECTED_DIST_TOP_DIRS = {'assets', 'audio', 'pages', 'video-scenes'}
+EXPECTED_ZIP_TOP_DIRS = {'api', 'assets', 'audio', 'docs', 'knowledge', 'pages', 'scripts', 'src', 'video-scenes'}
 
 
 def assert_deploy_shape(dist_dir='dist', zip_name='dist.zip'):

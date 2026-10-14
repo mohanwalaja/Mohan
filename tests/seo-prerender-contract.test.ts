@@ -11,12 +11,12 @@
  * This test pins the fix from both sides:
  *   SOURCE side (always runs): the build is wired through scripts/prerender.mjs,
  *   the sitemap is the exact output of its route table and carries no hreflang,
- *   .htaccess serves the prerendered flat files, main.tsx removes the baked
- *   head tags on SPA boot, and every page's <SEO> block declares a
+ *   .htaccess serves the prerendered files from pages/, main.tsx removes the
+ *   baked head tags on SPA boot, and every page's <SEO> block declares a
  *   self-referencing canonical (and noindex where required).
- *   BUILT side (runs when dist/ exists): every route document exists as a
- *   FLAT file (the cPanel root folder list is frozen), each with a unique
- *   <title>, one self-referencing canonical, real body text, no leftover
+ *   BUILT side (runs when dist/ exists): every route document exists in its
+ *   approved location (home at the root, other routes in pages/), each with a
+ *   unique <title>, one self-referencing canonical, real body text, no leftover
  *   /src/ dev URLs, and .br/.gz siblings that decompress to the exact bytes
  *   of the file they accompany.
  */
@@ -84,8 +84,8 @@ check('prerender.mjs exports a route table covering every public route', () => {
     assert.ok(paths.includes(required), `route table is missing ${required}`);
   }
   assert.ok(new Set(paths).size === paths.length, 'duplicate paths in route table');
-  // FLAT FILES ONLY: one directory per route would break the frozen cPanel
-  // root folder list (create_dist_zip.py EXPECTED_DIST_TOP_DIRS).
+  // Keep each route's filename flat; non-home documents share pages/ rather
+  // than creating one directory per route or cluttering the cPanel root.
   for (const route of ROUTES) {
     assert.ok(
       !route.file.includes('/') && route.file.endsWith('.html'),
@@ -205,17 +205,17 @@ check('SEO.tsx derives a self-canonical from the location instead of defaulting 
 // Serving + SPA boot integration.
 // ---------------------------------------------------------------------------
 
-check('.htaccess internally rewrites clean URLs to the prerendered flat files', () => {
+check('.htaccess internally rewrites clean URLs to prerendered files in pages/', () => {
   const ht = read('public/.htaccess');
   assert.match(
     ht,
-    /RewriteCond %\{DOCUMENT_ROOT\}\/\$1\.html -f/,
-    'the prerendered-file rule must guard on the file existing',
+    /RewriteCond %\{DOCUMENT_ROOT\}\/pages\/\$1\.html -f/,
+    'the prerendered-file rule must guard on the pages/ file existing',
   );
   assert.match(
     ht,
-    /RewriteRule \^\(services\|birth-jathagam\|[^\n]*\)\s*\/\?\$ \/\$1\.html \[L\]/,
-    'clean URLs must resolve to their <route>.html document',
+    /RewriteRule \^\(services\|birth-jathagam\|[^\n]*\)\s*\/\?\$ \/pages\/\$1\.html \[L\]/,
+    'clean URLs must resolve to pages/<route>.html',
   );
   // The old unconditional shell rewrites must be gone for prerendered routes.
   assert.doesNotMatch(
@@ -224,8 +224,13 @@ check('.htaccess internally rewrites clean URLs to the prerendered flat files', 
     '/services must never fall back to the empty shell while services.html exists',
   );
   // Physical .html URLs must 301 to the clean path (one canonical URL per page),
-  // tested via THE_REQUEST so the internal rewrite cannot loop.
+  // tested via THE_REQUEST so the internal rewrite cannot loop. Cover the new
+  // pages/ path and legacy root-level route documents from an older deployment.
   assert.match(ht, /RewriteCond %\{THE_REQUEST\}/, '.html -> clean-URL redirects must key off THE_REQUEST');
+  assert.ok(
+    ht.includes(String.raw`RewriteCond %{THE_REQUEST} \s/(?:pages/)?(services|birth-jathagam|`),
+    'the .html redirect must canonicalize route files from pages/ (and legacy root-level files)',
+  );
   assert.match(ht, /R=301/);
 });
 
@@ -240,27 +245,39 @@ check('main.tsx removes the baked [data-prerender-seo] head tags when the SPA bo
 // ---------------------------------------------------------------------------
 
 const distDir = path.join(projectRoot, 'dist');
+const distRouteFile = (route: { path: string; file: string }) =>
+  route.path === '/' ? path.join(distDir, route.file) : path.join(distDir, 'pages', route.file);
+
 if (!fs.existsSync(distDir)) {
   console.log('  [SKIP] dist/ not built — run `npm run build` to verify the built documents.');
   console.log(`\nSEO prerender contract passed (${passed} checks).`);
   process.exit(0);
 }
 
-check('dist/ top-level folders are still exactly the approved three (flat files only)', () => {
+check('dist/ top-level folders are exactly the approved four, including pages/', () => {
   const top = fs
     .readdirSync(distDir, { withFileTypes: true })
     .filter((e) => e.isDirectory())
     .map((e) => e.name)
     .sort();
-  assert.deepEqual(top, ['assets', 'audio', 'video-scenes'], `dist/ top-level folders changed: ${top.join(', ')}`);
+  assert.deepEqual(top, ['assets', 'audio', 'pages', 'video-scenes'], `dist/ top-level folders changed: ${top.join(', ')}`);
   assert.ok(!fs.existsSync(path.join(distDir, '.vite')), 'dist/.vite (build manifest) must be deleted after prerendering');
 });
 
-check('every route shipped its flat document with unique title + self-canonical', () => {
+check('every route shipped its document in the approved location with unique title + self-canonical', () => {
   const titles = new Map<string, string>();
   for (const route of ROUTES) {
-    const file = path.join(distDir, route.file);
-    assert.ok(fs.existsSync(file), `missing prerendered document dist/${route.file} — did the build run prerender.mjs?`);
+    const file = distRouteFile(route);
+    const relativeFile = path.relative(distDir, file);
+    assert.ok(fs.existsSync(file), `missing prerendered document dist/${relativeFile} — did the build run prerender.mjs?`);
+    if (route.path !== '/') {
+      for (const suffix of ['', '.br', '.gz']) {
+        assert.ok(
+          !fs.existsSync(path.join(distDir, `${route.file}${suffix}`)),
+          `non-home prerendered file must not remain at dist root: ${route.file}${suffix}`,
+        );
+      }
+    }
     const html = fs.readFileSync(file, 'utf8');
     // SVG chart fragments legitimately contain their own <title> children —
     // mask them before counting document-level head tags (prerender.mjs does
@@ -268,23 +285,23 @@ check('every route shipped its flat document with unique title + self-canonical'
     const unmasked = html.replace(/<svg[\s\S]*?<\/svg>/gi, (m) => m.replace(/<title[\s\S]*?<\/title>/gi, ''));
 
     const titleMatches = unmasked.match(/<title[^>]*>([\s\S]*?)<\/title>/gi) ?? [];
-    assert.equal(titleMatches.length, 1, `dist/${route.file} must contain exactly one <title>, found ${titleMatches.length}`);
+    assert.equal(titleMatches.length, 1, `dist/${relativeFile} must contain exactly one <title>, found ${titleMatches.length}`);
     const titleText = titleMatches[0].replace(/^<title[^>]*>/i, '').replace(/<\/title>$/i, '');
-    assert.ok(titleText.length > 10, `dist/${route.file} title is too short: ${JSON.stringify(titleText)}`);
+    assert.ok(titleText.length > 10, `dist/${relativeFile} title is too short: ${JSON.stringify(titleText)}`);
     assert.ok(!titles.has(titleText), `duplicate title ${JSON.stringify(titleText)} on ${titles.get(titleText)} and ${route.file}`);
     titles.set(titleText, route.file);
 
     const canonicals = unmasked.match(/<link[^>]*rel="canonical"[^>]*>/gi) ?? [];
-    assert.equal(canonicals.length, 1, `dist/${route.file} must contain exactly one canonical, found ${canonicals.length}`);
+    assert.equal(canonicals.length, 1, `dist/${relativeFile} must contain exactly one canonical, found ${canonicals.length}`);
     const expected = route.path === '/' ? `${ORIGIN}/` : `${ORIGIN}${route.path}`;
-    assert.ok(canonicals[0].includes(`href="${expected}"`), `dist/${route.file} canonical must be ${expected}`);
+    assert.ok(canonicals[0].includes(`href="${expected}"`), `dist/${relativeFile} canonical must be ${expected}`);
 
     const robots = unmasked.match(/<meta[^>]*name="robots"[^>]*>/gi) ?? [];
-    assert.equal(robots.length, 1, `dist/${route.file} must contain exactly one robots meta`);
+    assert.equal(robots.length, 1, `dist/${relativeFile} must contain exactly one robots meta`);
     if (route.noindex) {
-      assert.match(robots[0], /noindex/, `dist/${route.file} must be noindex`);
+      assert.match(robots[0], /noindex/, `dist/${relativeFile} must be noindex`);
     } else {
-      assert.doesNotMatch(robots[0], /noindex/, `dist/${route.file} must be indexable`);
+      assert.doesNotMatch(robots[0], /noindex/, `dist/${relativeFile} must be indexable`);
     }
 
     // Finding 1: crawlers must see real content without executing JavaScript.
@@ -292,7 +309,7 @@ check('every route shipped its flat document with unique title + self-canonical'
     // of nested </div>s — grab everything up to the LAST </div> before </body>
     // (i.e. the #root close).
     const bodyMatch = unmasked.match(/<div id="root">([\s\S]*)<\/div>\s*<\/body>/);
-    assert.ok(bodyMatch, `dist/${route.file} lost its #root body`);
+    assert.ok(bodyMatch, `dist/${relativeFile} lost its #root body`);
     const text = bodyMatch[1]
       .replace(/<script[\s\S]*?<\/script>/gi, ' ')
       .replace(/<[^>]+>/g, ' ')
@@ -302,24 +319,25 @@ check('every route shipped its flat document with unique title + self-canonical'
     // Indexable pages must carry real no-JS content; noindex utility gates
     // (admin, dashboard) only need a non-empty document.
     const minText = route.noindex ? 50 : 400;
-    assert.ok(text.length >= minText, `dist/${route.file} body text is only ${text.length} chars — crawlers would see an empty page`);
+    assert.ok(text.length >= minText, `dist/${relativeFile} body text is only ${text.length} chars — crawlers would see an empty page`);
 
     // Finding 2: no homepage og:/twitter bleed-through.
     assert.doesNotMatch(html.replace(/<!--[\s\S]*?-->/g, ''), /hreflang/i);
     assert.ok(
       html.includes(`property="og:url" content="${expected}"`) || !html.includes('property="og:url"'),
-      `dist/${route.file} og:url must reference the page itself (${expected})`,
+      `dist/${relativeFile} og:url must reference the page itself (${expected})`,
     );
 
     // Dev-style asset URLs would 404 in production.
-    assert.doesNotMatch(html, /["'(]\/src\//, `dist/${route.file} still contains dev-style /src/ asset URLs`);
+    assert.doesNotMatch(html, /["'(]\/src\//, `dist/${relativeFile} still contains dev-style /src/ asset URLs`);
   }
 });
 
 check('prerendered documents carry fresh .br/.gz siblings matching their bytes', () => {
   const checked: string[] = [];
   for (const route of ROUTES) {
-    const file = path.join(distDir, route.file);
+    const file = distRouteFile(route);
+    const relativeFile = path.relative(distDir, file);
     const raw = fs.readFileSync(file);
     for (const [ext, decode] of [
       ['.br', brotliDecompressSync],
@@ -327,13 +345,13 @@ check('prerendered documents carry fresh .br/.gz siblings matching their bytes',
     ] as const) {
       const sibling = `${file}${ext}`;
       if (raw.length < 1024) {
-        assert.ok(!fs.existsSync(sibling), `${route.file}${ext} exists but the file is below the compression threshold`);
+        assert.ok(!fs.existsSync(sibling), `${relativeFile}${ext} exists but the file is below the compression threshold`);
         continue;
       }
-      assert.ok(fs.existsSync(sibling), `missing pre-compressed sibling ${route.file}${ext}`);
+      assert.ok(fs.existsSync(sibling), `missing pre-compressed sibling ${relativeFile}${ext}`);
       const decoded = decode(fs.readFileSync(sibling));
-      assert.ok(decoded.equals(raw), `${route.file}${ext} does not decompress to ${route.file} — a stale sibling would override it`);
-      checked.push(`${route.file}${ext}`);
+      assert.ok(decoded.equals(raw), `${relativeFile}${ext} does not decompress to ${relativeFile} — a stale sibling would override it`);
+      checked.push(`${relativeFile}${ext}`);
     }
   }
   assert.ok(checked.length >= ROUTES.length, 'expected compressed siblings for every route');
