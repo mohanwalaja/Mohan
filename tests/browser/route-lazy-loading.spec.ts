@@ -158,6 +158,41 @@ function expectNoPageErrors(noise: PageNoise, context: string): void {
   expect(noise.pageErrors, `uncaught page errors on ${context}`).toEqual([]);
 }
 
+test('the render-critical app fonts load from the same origin without Google Fonts', async ({ page }) => {
+  const googleFontRequests: string[] = [];
+  const localFontRequests: string[] = [];
+  page.on('request', request => {
+    const url = request.url();
+    if (/fonts\.(?:googleapis|gstatic)\.com/i.test(url)) googleFontRequests.push(url);
+    if (/\.woff2?(?:\?|$)/i.test(url)) localFontRequests.push(new URL(url).pathname);
+  });
+
+  await page.goto('/', { waitUntil: 'networkidle' });
+  const fonts = await page.evaluate(async () => {
+    await Promise.all([
+      document.fonts.load('400 16px "Plus Jakarta Sans"', 'ASTRO SIVAM'),
+      document.fonts.load('700 32px "Playfair Display"', 'Understand your life'),
+      document.fonts.load('italic 400 32px "Playfair Display"', 'Vedic astrology'),
+    ]);
+    await document.fonts.ready;
+    return {
+      plusJakarta: document.fonts.check('400 16px "Plus Jakarta Sans"', 'ASTRO SIVAM'),
+      playfair: document.fonts.check('700 32px "Playfair Display"', 'Understand your life'),
+      playfairItalic: document.fonts.check('italic 400 32px "Playfair Display"', 'Vedic astrology'),
+      bodyFamily: getComputedStyle(document.body).fontFamily,
+    };
+  });
+
+  expect(googleFontRequests).toEqual([]);
+  expect(localFontRequests.some(path => /plus-jakarta-sans-latin-wght-normal-[a-f0-9]{8}\.woff2$/i.test(path))).toBe(true);
+  expect(localFontRequests.some(path => /playfair-display-latin-wght-normal-[a-f0-9]{8}\.woff2$/i.test(path))).toBe(true);
+  expect(localFontRequests.some(path => /playfair-display-latin-wght-italic-[a-f0-9]{8}\.woff2$/i.test(path))).toBe(true);
+  expect(fonts.plusJakarta).toBe(true);
+  expect(fonts.playfair).toBe(true);
+  expect(fonts.playfairItalic).toBe(true);
+  expect(fonts.bodyFamily).toContain('Plus Jakarta Sans');
+});
+
 test.afterAll(() => {
   // CI proof-of-execution: the 2026-10 incident showed job status APIs can
   // report success while steps sit "pending". This marker can only appear if

@@ -55,8 +55,8 @@
   # keeps sessions in an httpOnly cookie, so every script/source that may load
   # is explicitly allow-listed here:
   #   script-src  - own bundles, Google Sign-In, Razorpay checkout
-  #   style-src   - own CSS, React inline styles, Google Fonts CSS
-  #   font-src    - Google Fonts files, inline data: fonts
+  #   style-src   - own CSS, React inline styles, Google Fonts CSS used only by report documents
+  #   font-src    - self-hosted app fonts, report Google Fonts files, inline data: fonts
   #   img-src     - own assets, data:/blob: exports, map tiles + provider logos (https:)
   #   connect-src - /api (self), Google sign-in, Razorpay, the Leaflet geocoders
   #   frame-src   - PDF preview iframes (blob:), Google + Razorpay payment frames
