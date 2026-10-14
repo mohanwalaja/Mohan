@@ -117,12 +117,21 @@ function astroOmitBlankAdminSecrets($body) {
 // 1. GET /api/admin/orders
 if (strpos($path, 'admin/orders') !== false && $method === 'GET' && !preg_match('/admin\/orders\/[^\/]+/', $path)) {
     // Defensive: older databases may predate the family-bundle columns.
-    try {
-        $pdo->exec("ALTER TABLE `orders` ADD COLUMN `group_id` VARCHAR(64) NULL AFTER `order_number`");
-    } catch (\Throwable $e) {}
-    try {
-        $pdo->exec("ALTER TABLE `orders` ADD COLUMN `group_order_index` INT NOT NULL DEFAULT 0 AFTER `group_id`");
-    } catch (\Throwable $e) {}
+    // Use a single SHOW COLUMNS check instead of per-column ALTER + catch
+    // to avoid 2 extra DB round-trips on every admin page load.
+    static $ordersSchemaReady = false;
+    if (!$ordersSchemaReady) {
+        try {
+            $existingCols = $pdo->query("SHOW COLUMNS FROM `orders`")->fetchAll(PDO::FETCH_COLUMN, 0);
+            if (!in_array('group_id', $existingCols, true)) {
+                $pdo->exec("ALTER TABLE `orders` ADD COLUMN `group_id` VARCHAR(64) NULL AFTER `order_number`");
+            }
+            if (!in_array('group_order_index', $existingCols, true)) {
+                $pdo->exec("ALTER TABLE `orders` ADD COLUMN `group_order_index` INT NOT NULL DEFAULT 0 AFTER `group_id`");
+            }
+        } catch (\Throwable $e) {}
+        $ordersSchemaReady = true;
+    }
 
     // Surface every fulfilable order: paid orders whose payment was captured
     // (or verified by an admin), PLUS free-beta charts that never required a
@@ -1623,9 +1632,27 @@ if ((strpos($path, 'admin/testing/payment') !== false || strpos($path, 'admin/se
 
 // 6. GET /api/admin/audit-logs
 if (strpos($path, 'admin/audit-logs') !== false && $method === 'GET') {
-    $stmt = $pdo->query("SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 100");
+    $page = max(1, (int)($_GET['page'] ?? 1));
+    $limit = max(1, min(200, (int)($_GET['limit'] ?? 100)));
+    $offset = ($page - 1) * $limit;
+
+    $countStmt = $pdo->query("SELECT COUNT(*) FROM audit_logs");
+    $totalCount = (int)$countStmt->fetchColumn();
+
+    $stmt = $pdo->prepare("SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ? OFFSET ?");
+    $stmt->execute([$limit, $offset]);
     $rows = $stmt->fetchAll();
-    jsonResponse(['success' => true, 'logs' => $rows]);
+
+    jsonResponse([
+        'success' => true,
+        'logs' => $rows,
+        'pagination' => [
+            'page' => $page,
+            'limit' => $limit,
+            'total' => $totalCount,
+            'totalPages' => max(1, (int)ceil($totalCount / $limit))
+        ]
+    ]);
 }
 
 // 7. GET /api/admin/contact-messages

@@ -620,7 +620,8 @@ export interface FinancialSummaryReport {
 
 export interface AuditLog {
   id: string;
-  timestamp: string;
+  /** Database column: created_at (TIMESTAMP / DATETIME) */
+  created_at: string;
   actorId: string;
   actorName: string;
   actorRole: UserRole;

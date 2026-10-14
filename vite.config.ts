@@ -276,6 +276,12 @@ function nodePackageName(id: string): string {
 export default defineConfig(() => {
   return {
     base: '/',
+    // Strip console.log/debug/info in production builds to keep the shipped
+    // JS clean; console.warn and console.error are preserved so operators can
+    // still see real warnings in the browser console.
+    esbuild: {
+      drop: process.env.NODE_ENV === 'production' ? ['console'] : [],
+    },
     // No source maps in production builds: they are stripped from every deploy
     // path anyway, and skipping them keeps the pre-compression step (below)
     // from generating .map.br / .map.gz files that would never be served.

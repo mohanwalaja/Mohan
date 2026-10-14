@@ -1673,8 +1673,9 @@ export const api = {
     return { ...res, stats: res.statistics };
   },
 
-  async getAdminAuditLogs(): Promise<{ success: boolean; logs: AuditLog[] }> {
-    const res = await fetch(`${API_BASE}/admin/audit-logs`, {
+  async getAdminAuditLogs(params?: { page?: number; limit?: number }): Promise<{ success: boolean; logs: AuditLog[]; pagination?: { page: number; limit: number; total: number; totalPages: number } }> {
+    const query = params ? new URLSearchParams({ page: String(params.page || 1), limit: String(params.limit || 100) }).toString() : '';
+    const res = await fetch(`${API_BASE}/admin/audit-logs${query ? `?${query}` : ''}`, {
       headers: { ...getAuthHeader() }
     });
     return safeJson(res);
