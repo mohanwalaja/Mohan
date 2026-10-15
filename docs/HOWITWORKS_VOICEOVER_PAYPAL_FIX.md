@@ -1,5 +1,12 @@
 # How-It-Works Voice-Over: PayPal Narration Replaces the Retired Local-Wallet Script
 
+> **Superseded in part (2026-10-15):** the six clips were re-recorded again in a
+> new Indian-English voice, a "Vanakkam / welcome to Astrosivam" prologue clip was
+> added, and the chapter windows below were replaced by a derived timeline with a
+> two-second pause between steps — see
+> [`HOWITWORKS_VANAKKAM_INTRO_AND_TWO_SECOND_GAPS.md`](./HOWITWORKS_VANAKKAM_INTRO_AND_TWO_SECOND_GAPS.md).
+> The payment wording this document fixed is unchanged and still verified.
+
 > Field feedback: *"In how it works the voice still says local clients pay with a
 > mobile wallet. Just mention all over website with pay PayPal — can pay with
 > VISA and Mastercard which is supported by PayPal."*

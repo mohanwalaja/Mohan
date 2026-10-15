@@ -110,7 +110,12 @@ const testFiles = [
   // and the deferred features must stay reachable on demand. Runs both
   // source-level checks and (when dist/ exists) checks over the shipped bytes.
   'tests/initial-js-budget.test.ts',
-  'tests/lockfile-drift.test.ts'
+  'tests/lockfile-drift.test.ts',
+  // The How-It-Works voice-over contract (2026-10-15): the owner asked for a
+  // "Vanakkam, welcome to Astrosivam" opening followed by the six steps with
+  // only TWO seconds of silence between them. This frame-walks the shipped
+  // MP3s, so the promise is measured against the audio, not the source table.
+  'tests/howitworks-narration-timing.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 

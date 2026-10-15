@@ -32,16 +32,15 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { SEO } from '../components/common/SEO';
+import {
+  NARRATION_SEGMENTS,
+  buildNarrationTimeline,
+  type CaptionLine,
+} from './howItWorksNarration';
 import './HowItWorksPage.css';
 
 interface HowItWorksPageProps {
   onNavigate: (route: string) => void;
-}
-
-interface CaptionLine {
-  start: number;
-  end: number;
-  text: string;
 }
 
 interface StepDetail {
@@ -57,6 +56,9 @@ interface StepDetail {
   narrationDuration: number;
   captions: CaptionLine[];
 }
+
+/** Presentation metadata for the six narrated steps; the voice-over data lives in `howItWorksNarration.ts`. */
+type StepBlueprint = Omit<StepDetail, 'startSec' | 'endSec' | 'narrationDuration' | 'captions'>;
 
 interface CinemaShot {
   id: string;
@@ -75,142 +77,129 @@ type SpeechEnvelope = {
   duration: number;
 };
 
-const TOTAL_VIDEO_DURATION = 108;
 const WAVEFORM_BAR_COUNT = 28;
-const AUDIO_BASE = '/audio/step-';
 const SCENE_BASE = '/video-scenes/';
 
-const STEPS: StepDetail[] = [
+// The voice-over: a "Vanakkam" prologue clip plus the six step clips. Every
+// chapter window is derived from its own clip length plus a two-second pause
+// (see howItWorksNarration.ts) — no hand-typed start/end times any more.
+const NARRATION_TIMELINE = buildNarrationTimeline();
+const PROLOGUE_SEGMENT = NARRATION_SEGMENTS[0];
+const PROLOGUE_END_SEC = NARRATION_TIMELINE[0].end;
+const PROLOGUE = {
+  title: 'Vanakkam · Welcome to ASTRO SIVAM',
+  tagline: 'Six steps, from sign-in to delivery.',
+  narrationDuration: PROLOGUE_SEGMENT.duration,
+  captions: PROLOGUE_SEGMENT.captions,
+};
+const TOTAL_VIDEO_DURATION = NARRATION_TIMELINE[NARRATION_TIMELINE.length - 1].end;
+const RUNTIME_SECONDS = Math.round(TOTAL_VIDEO_DURATION);
+
+/** 0 = the prologue clip, 1…6 = the six step clips. */
+const clipUrlForTrack = (track: number) => NARRATION_SEGMENTS[track].url;
+const trackStartForIndex = (track: number) => NARRATION_TIMELINE[track].start;
+const trackDurationForIndex = (track: number) => NARRATION_SEGMENTS[track].duration;
+const trackCaptionsForIndex = (track: number) => NARRATION_SEGMENTS[track].captions;
+const trackIndexForTime = (time: number) => {
+  let index = 0;
+  for (let candidate = 0; candidate < NARRATION_TIMELINE.length; candidate += 1) {
+    if (time >= NARRATION_TIMELINE[candidate].start) index = candidate;
+  }
+  return index;
+};
+
+const STEP_BLUEPRINTS: StepBlueprint[] = [
   {
     id: 1,
     title: 'Sign in securely',
     shortTitle: '01 · Sign in',
-    startSec: 0,
-    endSec: 17,
     icon: <UserCheck aria-hidden="true" />,
     tagline: 'A private user account, ready in moments.',
     description: 'Sign in with Google or your email to open a secure, personal ASTRO SIVAM dashboard.',
     features: ['Google or email sign-in', 'Private user dashboard', 'A simple, guided start'],
-    narrationDuration: 12.17,
-    captions: [
-      { start: 0, end: 2.41, text: 'Step one: Login and access your account.' },
-      { start: 2.41, end: 5.21, text: 'Sign in easily using Google or your email.' },
-      { start: 5.21, end: 8.68, text: 'Your account gives you secure, private access' },
-      { start: 8.68, end: 12.17, text: 'to your personalized astrological dashboard.' },
-    ],
   },
   {
     id: 2,
     title: 'Choose a service',
     shortTitle: '02 · Service',
-    startSec: 17,
-    endSec: 37,
     icon: <Sparkles aria-hidden="true" />,
     tagline: 'Find the Vedic service that fits your occasion.',
     description: 'Explore Janma Kundali, marriage compatibility, baby naming, and Subha Muhurtham services.',
     features: ['Birth Jathagam & Kundali', '10-Porutham matching', 'Baby naming & Muhurtham'],
-    narrationDuration: 12.41,
-    captions: [
-      { start: 0, end: 2.43, text: 'Step two: Select your astrological service.' },
-      { start: 2.43, end: 4.73, text: 'Choose a Janma Kundali birth chart,' },
-      { start: 4.73, end: 6.9, text: 'marriage compatibility, auspicious baby naming,' },
-      { start: 6.9, end: 12.41, text: 'or Subha Muhurtham dates for eighteen sacred ceremonies.' },
-    ],
   },
   {
     id: 3,
     title: 'Share the details',
     shortTitle: '03 · Details',
-    startSec: 37,
-    endSec: 56,
     icon: <Calendar aria-hidden="true" />,
     tagline: 'Birth information or ceremony preferences, entered with care.',
     description: 'Provide the birth or event details needed for a careful reading; location search helps map coordinates.',
     features: ['Exact date and time', 'Ceremony and month preferences', 'Place search with coordinates'],
-    narrationDuration: 12.48,
-    captions: [
-      { start: 0, end: 2.77, text: 'Step three: Fill in user and event details.' },
-      { start: 2.77, end: 6.22, text: 'Enter birth data, or choose your ceremony' },
-      { start: 6.22, end: 9.06, text: 'and a starting month for Subha Muhurtham.' },
-      { start: 9.06, end: 12.48, text: 'Place search helps map precise planetary coordinates.' },
-    ],
   },
   {
     id: 4,
     title: 'Complete payment',
     shortTitle: '04 · Payment',
-    startSec: 56,
-    endSec: 70,
     icon: <Receipt aria-hidden="true" />,
     tagline: 'Choose a convenient payment option for your region.',
     description: 'Review the available checkout options: Google Pay / UPI in India, and PayPal with VISA, Mastercard, American Express and Discover for international customers worldwide.',
     features: ['Google Pay / UPI · India', 'PayPal · Worldwide', 'VISA · Mastercard · Amex · Discover'],
-    narrationDuration: 11.59,
-    captions: [
-      { start: 0, end: 2.94, text: 'Step four: Make a secure payment.' },
-      { start: 2.94, end: 6.05, text: 'Use Google Pay or UPI for India,' },
-      { start: 6.05, end: 8.63, text: 'PayPal for international clients,' },
-      { start: 8.63, end: 11.59, text: 'accepting VISA, Mastercard, Amex, and Discover.' },
-    ],
   },
   {
     id: 5,
     title: 'The priest team prepares your report',
     shortTitle: '05 · Analysis',
-    startSec: 70,
-    endSec: 89,
     icon: <Compass aria-hidden="true" />,
     tagline: 'A considered review of charts, timing, and tradition.',
     description: 'Senior Sivachariyar scholars review the relevant chart, compatibility factors, or Panchanga windows for your service.',
     features: ['12-house Rāsi & D-9 preview', 'Dasha and Bhukti review', 'Panchanga & Tara Balam'],
-    narrationDuration: 14.57,
-    captions: [
-      { start: 0, end: 3.2, text: 'Step five: Priest team chart analysis.' },
-      { start: 3.2, end: 7.05, text: 'Our senior Sivachariyar Vedic scholars and astrologers' },
-      { start: 7.05, end: 10.65, text: 'carefully analyze your planetary chart and Dasha Bhukti,' },
-      { start: 10.65, end: 14.57, text: 'or six-month Panchanga Shuddhi Muhurtham windows.' },
-    ],
   },
   {
     id: 6,
     title: 'Review, approve, and deliver',
     shortTitle: '06 · Delivery',
-    startSec: 89,
-    endSec: 108,
     icon: <Send aria-hidden="true" />,
     tagline: 'Your report and official tax invoice travel together.',
     description: 'After the administration reviews the order, the horoscope report and tax invoice are prepared and emailed directly to you.',
     features: ['Report PDF', 'Official tax invoice PDF', 'Email and client-portal delivery'],
-    narrationDuration: 14.57,
-    captions: [
-      { start: 0, end: 3.08, text: 'Step six: Admin approval and delivery.' },
-      { start: 3.08, end: 6.16, text: 'The administrator verifies and approves your order.' },
-      { start: 6.16, end: 10.32, text: 'Your Astrological Report PDF and Tax Invoice' },
-      { start: 10.32, end: 14.57, text: 'are prepared daily 9 to 11 AM India time and emailed after approval.' },
-    ],
   },
 ];
 
-// Every cut uses a supplied photographic plate; the inserts are intentional mid-step B-roll.
+// Windows come straight from the narration table: each step's window is its own
+// clip plus exactly STEP_GAP_SEC seconds of silence, so the voice pauses for two
+// seconds between steps instead of the old four-to-five seconds of dead air.
+const STEPS: StepDetail[] = STEP_BLUEPRINTS.map((blueprint, index) => ({
+  ...blueprint,
+  startSec: NARRATION_TIMELINE[index + 1].start,
+  endSec: NARRATION_TIMELINE[index + 1].end,
+  narrationDuration: NARRATION_SEGMENTS[index + 1].duration,
+  captions: NARRATION_SEGMENTS[index + 1].captions,
+}));
+
+// One photographic plate per cut, the same montage language as the first cut of the film.
+// Every time is derived from the narration windows above (clip + 2 s pause), never hand-typed.
 const CINEMA_SHOTS: CinemaShot[] = [
-  { id: 'login-wide', start: 0, end: 9, image: `${SCENE_BASE}scene-1-login.jpg`, label: 'CAM 01 · USER PORTAL', camera: 1 },
-  { id: 'temple-login-insert', start: 9, end: 12, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · LAMP-LIT SANCTUM', broll: true, camera: 3 },
-  { id: 'login-close', start: 12, end: 17, image: `${SCENE_BASE}scene-1-login.jpg`, label: 'CAM 02 · ACCOUNT ACCESS', camera: 2 },
-  { id: 'services-wide', start: 17, end: 27, image: `${SCENE_BASE}scene-2-services.jpg`, label: 'CAM 01 · SERVICE SELECTION', camera: 2 },
-  { id: 'temple-service-insert', start: 27, end: 30, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · PRAYER & TRADITION', broll: true, camera: 1 },
-  { id: 'services-close', start: 30, end: 37, image: `${SCENE_BASE}scene-2-services.jpg`, label: 'CAM 02 · CHOOSE YOUR SERVICE', camera: 3 },
-  { id: 'details-wide', start: 37, end: 44, image: `${SCENE_BASE}scene-3-details.jpg`, label: 'CAM 01 · USER DETAILS', camera: 3 },
-  { id: 'rasi-details-insert', start: 44, end: 48, image: `${SCENE_BASE}broll-rasi-chart-hands.jpg`, label: 'B-ROLL · RĀSI CHART STUDY', broll: true, camera: 2 },
-  { id: 'details-close', start: 48, end: 56, image: `${SCENE_BASE}scene-3-details.jpg`, label: 'CAM 02 · PLACE & BIRTH DATA', camera: 1 },
-  { id: 'payment-wide', start: 56, end: 62, image: `${SCENE_BASE}scene-4-payment.jpg`, label: 'CAM 01 · SECURE CHECKOUT', camera: 2 },
-  { id: 'temple-payment-insert', start: 62, end: 66, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · A MOMENT OF STILLNESS', broll: true, camera: 3 },
-  { id: 'payment-close', start: 66, end: 70, image: `${SCENE_BASE}scene-4-payment.jpg`, label: 'CAM 02 · PAYMENT CONFIRMATION', camera: 1 },
-  { id: 'priest-wide', start: 70, end: 78, image: `${SCENE_BASE}scene-5-priest.jpg`, label: 'CAM 01 · SENIOR SCHOLAR REVIEW', camera: 1 },
-  { id: 'rasi-priest-insert', start: 78, end: 83, image: `${SCENE_BASE}broll-rasi-chart-hands.jpg`, label: 'B-ROLL · TWELVE-HOUSE READING', broll: true, camera: 3 },
-  { id: 'priest-close', start: 83, end: 89, image: `${SCENE_BASE}scene-5-priest.jpg`, label: 'CAM 02 · REPORT PREPARATION', camera: 2 },
-  { id: 'delivery-wide', start: 89, end: 98, image: `${SCENE_BASE}scene-6-delivery.jpg`, label: 'CAM 01 · QUALITY REVIEW', camera: 3 },
-  { id: 'temple-delivery-insert', start: 98, end: 102, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · PRAYERFUL CLOSE', broll: true, camera: 2 },
-  { id: 'delivery-close', start: 102, end: 108, image: `${SCENE_BASE}scene-6-delivery.jpg`, label: 'CAM 02 · REPORT + INVOICE', camera: 1 },
+  { id: 'prologue-lamp', start: 0, end: 5.6, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'TITLE · LAMP-LIT SANCTUM', camera: 1 },
+  { id: 'prologue-narrator', start: 5.6, end: 10.4, image: `${SCENE_BASE}narrator-acharya.jpg`, label: 'NARRATOR · VANAKKAM GREETING', camera: 2 },
+  { id: 'prologue-rasi-insert', start: 10.4, end: 15.32, image: `${SCENE_BASE}broll-rasi-chart-hands.jpg`, label: 'INSERT · RĀSI CHART STUDY', broll: true, camera: 3 },
+  { id: 'login-wide', start: 15.32, end: 21.92, image: `${SCENE_BASE}scene-1-login.jpg`, label: 'CAM 01 · USER PORTAL', camera: 1 },
+  { id: 'login-temple-insert', start: 21.92, end: 25.32, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · LAMP-LIT SANCTUM', broll: true, camera: 3 },
+  { id: 'login-close', start: 25.32, end: 29.008, image: `${SCENE_BASE}scene-1-login.jpg`, label: 'CAM 02 · ACCOUNT ACCESS', camera: 2 },
+  { id: 'services-wide', start: 29.008, end: 35.408, image: `${SCENE_BASE}scene-2-services.jpg`, label: 'CAM 01 · SERVICE SELECTION', camera: 2 },
+  { id: 'services-temple-insert', start: 35.408, end: 38.808, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · PRAYER & TRADITION', broll: true, camera: 1 },
+  { id: 'services-close', start: 38.808, end: 42.144, image: `${SCENE_BASE}scene-2-services.jpg`, label: 'CAM 02 · CHOOSE YOUR SERVICE', camera: 3 },
+  { id: 'details-wide', start: 42.144, end: 49.144, image: `${SCENE_BASE}scene-3-details.jpg`, label: 'CAM 01 · USER DETAILS', camera: 3 },
+  { id: 'details-rasi-insert', start: 49.144, end: 52.744, image: `${SCENE_BASE}broll-rasi-chart-hands.jpg`, label: 'B-ROLL · RĀSI CHART STUDY', broll: true, camera: 2 },
+  { id: 'details-close', start: 52.744, end: 56.624, image: `${SCENE_BASE}scene-3-details.jpg`, label: 'CAM 02 · PLACE & BIRTH DATA', camera: 1 },
+  { id: 'payment-wide', start: 56.624, end: 63.224, image: `${SCENE_BASE}scene-4-payment.jpg`, label: 'CAM 01 · SECURE CHECKOUT', camera: 2 },
+  { id: 'payment-temple-insert', start: 63.224, end: 66.524, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · A MOMENT OF STILLNESS', broll: true, camera: 3 },
+  { id: 'payment-close', start: 66.524, end: 70.216, image: `${SCENE_BASE}scene-4-payment.jpg`, label: 'CAM 02 · PAYMENT CONFIRMATION', camera: 1 },
+  { id: 'priest-wide', start: 70.216, end: 78.416, image: `${SCENE_BASE}scene-5-priest.jpg`, label: 'CAM 01 · SENIOR SCHOLAR REVIEW', camera: 1 },
+  { id: 'priest-rasi-insert', start: 78.416, end: 82.016, image: `${SCENE_BASE}broll-rasi-chart-hands.jpg`, label: 'B-ROLL · TWELVE-HOUSE READING', broll: true, camera: 3 },
+  { id: 'priest-close', start: 82.016, end: 86.784, image: `${SCENE_BASE}scene-5-priest.jpg`, label: 'CAM 02 · REPORT PREPARATION', camera: 2 },
+  { id: 'delivery-wide', start: 86.784, end: 95.184, image: `${SCENE_BASE}scene-6-delivery.jpg`, label: 'CAM 01 · QUALITY REVIEW', camera: 3 },
+  { id: 'delivery-temple-insert', start: 95.184, end: 98.684, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · PRAYERFUL CLOSE', broll: true, camera: 2 },
+  { id: 'delivery-close', start: 98.684, end: 103.352, image: `${SCENE_BASE}scene-6-delivery.jpg`, label: 'CAM 02 · REPORT + INVOICE', camera: 1 },
 ];
 
 const SERVICE_CHOICES = [
@@ -255,6 +244,20 @@ const formatTime = (time: number) => {
   return `${minutes}:${String(seconds).padStart(2, '0')}.${tenths}`;
 };
 
+/** Minutes:seconds, the runtime shown on the poster, end card and hero facts. */
+const formatClock = (time: number) => {
+  const safeTime = Math.max(0, Math.round(time));
+  return `${Math.floor(safeTime / 60)}:${String(safeTime % 60).padStart(2, '0')}`;
+};
+
+const runtimeWords = (total: number) => {
+  const seconds = Math.round(total);
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  if (minutes === 0) return `${rest} seconds`;
+  return rest === 0 ? `${minutes} minute${minutes === 1 ? '' : 's'}` : `${minutes} minute${minutes === 1 ? '' : 's'} ${rest} seconds`;
+};
+
 const revealText = (value: string, localTime: number, start: number, duration: number) => {
   if (localTime <= start) return '';
   const amount = Math.min(1, (localTime - start) / duration);
@@ -280,7 +283,9 @@ const getCursorPosition = (stepIndex: number, localTime: number) => {
   return localTime < 7 ? { x: 30, y: 69 } : { x: 73, y: 69 };
 };
 
-const clickMomentsByStep = [[4.6, 11.2], [6.3, 7.9, 9.4, 13.6], [4.7, 9.6, 12.2], [5.5, 8.2, 11.1], [7.6, 12.4], [6.8, 12.8, 16.4]];
+// Cursor clicks inside each step's UI walkthrough, in clip-relative seconds —
+// every moment stays inside its own window (clip + the two-second pause).
+const clickMomentsByStep = [[4.6, 11.2], [6.3, 7.9, 9.4, 12.4], [4.7, 9.6, 12.2], [5.5, 8.2, 11.1], [7.6, 12.4], [6.8, 12.8, 15.6]];
 
 const SouthIndianChart: React.FC<{ localTime: number }> = ({ localTime }) => {
   const navamsaView = localTime >= 9.3;
@@ -529,10 +534,10 @@ const NarratorPip: React.FC<{ waveform: number[]; waveformMode: string; isSpeaki
         />
       </div>
       <div className="hiw-narrator-pip__info">
-        <div className="hiw-narrator-pip__eyebrow"><span className={isSpeaking ? 'is-live' : ''} /> SOUTH INDIAN VOICE</div>
+        <div className="hiw-narrator-pip__eyebrow"><span className={isSpeaking ? 'is-live' : ''} /> INDIAN ENGLISH VOICE</div>
         <strong>Siva Sri Mohan Sivam</strong>
         <div className="hiw-narrator-pip__meta-row">
-          <span className="hiw-narrator-pip__role">Original male narration</span>
+          <span className="hiw-narrator-pip__role">Original Indian English narration</span>
           {customPhoto && (
             <button
               type="button"
@@ -582,12 +587,18 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
   const speechEnvelopeRef = useRef<Record<number, SpeechEnvelope>>({});
   const waveformModeRef = useRef('VOICE METER');
 
-  const activeStepIndex = activeStepForTime(currentTime);
+  // The film opens with the prologue clip (track 0); the six steps follow it.
+  const isPrologue = currentTime < PROLOGUE_END_SEC;
+  const activeTrackIndex = trackIndexForTime(currentTime);
+  const activeTrackStart = trackStartForIndex(activeTrackIndex);
+  const activeTrackDuration = trackDurationForIndex(activeTrackIndex);
+  const activeStepIndex = activeStepForTime(Math.max(currentTime, PROLOGUE_END_SEC));
   const activeStep = STEPS[activeStepIndex];
   const localTime = Math.max(0, currentTime - activeStep.startSec);
   const activeShot = getShotForTime(currentTime);
   const progress = (currentTime / TOTAL_VIDEO_DURATION) * 100;
-  const activeCaption = activeStep.captions.find((caption) => localTime >= caption.start && localTime < caption.end)?.text;
+  const trackLocalTime = Math.max(0, currentTime - activeTrackStart);
+  const activeCaption = trackCaptionsForIndex(activeTrackIndex).find((caption) => trackLocalTime >= caption.start && trackLocalTime < caption.end)?.text;
   const isComplete = currentTime >= TOTAL_VIDEO_DURATION;
   // Before the first play the frame is a poster: only the title card, the corner mark and the narrator stay on screen,
   // so no walkthrough panel, chapter line or caption can collide with the poster text.
@@ -604,9 +615,9 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
     if (envelopeLoadStartedRef.current) return;
     envelopeLoadStartedRef.current = true;
 
-    void Promise.all(STEPS.map(async (step, index) => {
+    void Promise.all(NARRATION_SEGMENTS.map(async (segment, index) => {
       try {
-        const response = await fetch(`${AUDIO_BASE}${index + 1}.mp3`);
+        const response = await fetch(segment.url);
         if (!response.ok) return;
         const encodedAudio = await response.arrayBuffer();
         const decodedAudio = await context.decodeAudioData(encodedAudio.slice(0));
@@ -630,7 +641,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
             envelope[bucket] = Math.min(1, Math.pow(envelope[bucket] / peak, 0.68));
           }
         }
-        speechEnvelopeRef.current[index + 1] = { values: envelope, duration: decodedAudio.duration || step.narrationDuration };
+        speechEnvelopeRef.current[index] = { values: envelope, duration: decodedAudio.duration || segment.duration };
       } catch {
         // The analyser remains available even if a browser declines offline decoding.
       }
@@ -747,16 +758,20 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
       return () => { narrationRequestRef.current += 1; };
     }
 
-    const step = STEPS[activeStepIndex];
-    const clipUrl = `${AUDIO_BASE}${activeStepIndex + 1}.mp3`;
-    const seekOffset = Math.max(0, playheadRef.current - step.startSec);
+    // Track 0 is the "Vanakkam" prologue; tracks 1…6 are the step clips. The
+    // clip plays from the start of its own window, so the fixed gap between two
+    // windows is heard as pure silence between the two recordings.
+    const clipUrl = clipUrlForTrack(activeTrackIndex);
+    const clipStart = trackStartForIndex(activeTrackIndex);
+    const clipDuration = trackDurationForIndex(activeTrackIndex);
+    const seekOffset = Math.max(0, playheadRef.current - clipStart);
     audio.muted = false;
     audio.playbackRate = playbackSpeed;
 
     const playFromOffset = () => {
       if (requestId !== narrationRequestRef.current) return;
       audio.playbackRate = playbackSpeed;
-      const duration = Number.isFinite(audio.duration) ? audio.duration : step.narrationDuration;
+      const duration = Number.isFinite(audio.duration) ? audio.duration : clipDuration;
       if (seekOffset >= duration) {
         audio.pause();
         return;
@@ -765,9 +780,9 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
       void audio.play().catch(() => undefined);
     };
 
-    if (audio.dataset.clip !== String(activeStepIndex + 1)) {
+    if (audio.dataset.clip !== String(activeTrackIndex)) {
       audio.pause();
-      audio.dataset.clip = String(activeStepIndex + 1);
+      audio.dataset.clip = String(activeTrackIndex);
       audio.src = clipUrl;
       audio.load();
     }
@@ -776,7 +791,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
     else audio.addEventListener('loadedmetadata', playFromOffset, { once: true });
 
     return () => { narrationRequestRef.current += 1; };
-  }, [activeStepIndex, isComplete, isMuted, isPlaying, playbackSpeed, seekRevision]);
+  }, [activeTrackIndex, isComplete, isMuted, isPlaying, playbackSpeed, seekRevision]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -807,10 +822,10 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
           });
           label = 'LIVE · ANALYSER';
         } else {
-          const stepIndex = activeStepForTime(playheadRef.current);
-          const speech = speechEnvelopeRef.current[stepIndex + 1];
+          const trackIndex = trackIndexForTime(playheadRef.current);
+          const speech = speechEnvelopeRef.current[trackIndex];
           if (speech) {
-            const audioPosition = Math.max(0, Math.min(speech.duration, audio?.currentTime ?? playheadRef.current - STEPS[stepIndex].startSec));
+            const audioPosition = Math.max(0, Math.min(speech.duration, audio?.currentTime ?? playheadRef.current - trackStartForIndex(trackIndex)));
             const center = Math.floor((audioPosition / Math.max(0.1, speech.duration)) * (speech.values.length - 1));
             const spacing = Math.max(1, Math.floor(speech.values.length / WAVEFORM_BAR_COUNT));
             nextBars = Array.from({ length: WAVEFORM_BAR_COUNT }, (_, index) => {
@@ -912,7 +927,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
     setPlaybackSpeed(speed);
   };
 
-  const subtitle = captionsOn && !isPosterState && activeCaption && currentTime < activeStep.startSec + activeStep.narrationDuration ? activeCaption : null;
+  const subtitle = captionsOn && !isPosterState && activeCaption && currentTime < activeTrackStart + activeTrackDuration ? activeCaption : null;
 
   return (
     <main className="hiw-page">
@@ -928,9 +943,9 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
             <span>A closer look at the process</span>
           </div>
           <h1>How ASTRO SIVAM works</h1>
-          <p>A six-step journey, told through real South Indian cinema-inspired imagery and an original South Indian male narration. From your first sign-in to the report arriving in your inbox.</p>
+          <p>A six-step journey, told through real South Indian cinema-inspired imagery and an original Indian English male narration. It opens with Vanakkam — welcome — and then walks every step from sign-in to delivery.</p>
           <div className="hiw-hero__facts">
-            <span><Clock className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" /> 1 minute 48 seconds</span>
+            <span><Clock className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" /> {runtimeWords(TOTAL_VIDEO_DURATION)}</span>
             <i />
             <span><Sparkles className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" /> Six clear steps</span>
             <i />
@@ -971,25 +986,31 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
             <div className="hiw-cinema__vignette" />
             <div className="hiw-cinema__grain" />
             <div className="hiw-cinema__lamp-glow" />
-            <div className="hiw-cinema__corner-mark"><span>ASTRO SIVAM</span><i /> <span>108 SEC · SOUTH INDIAN VOICE</span></div>
-            {!isPosterState && <div className="hiw-cinema__step-caption"><span>CHAPTER {String(activeStep.id).padStart(2, '0')}</span><strong>{activeStep.title}</strong><small>{activeStep.tagline}</small></div>}
+            <div className="hiw-cinema__corner-mark"><span>ASTRO SIVAM</span><i /> <span>{RUNTIME_SECONDS} SEC · INDIAN ENGLISH VOICE</span></div>
+            {!isPosterState && (
+              <div className="hiw-cinema__step-caption">
+                {isPrologue
+                  ? <><span>PROLOGUE</span><strong>{PROLOGUE.title}</strong><small>{PROLOGUE.tagline}</small></>
+                  : <><span>CHAPTER {String(activeStep.id).padStart(2, '0')}</span><strong>{activeStep.title}</strong><small>{activeStep.tagline}</small></>}
+              </div>
+            )}
 
-            {viewMode !== 'cinema' && !isPosterState && <WalkthroughPanel key={activeStepIndex} stepIndex={activeStepIndex} localTime={localTime} />}
-            <NarratorPip waveform={waveform} waveformMode={waveformMode} isSpeaking={isPlaying && !isMuted && localTime < activeStep.narrationDuration} />
+            {viewMode !== 'cinema' && !isPosterState && !isPrologue && <WalkthroughPanel key={activeStepIndex} stepIndex={activeStepIndex} localTime={localTime} />}
+            <NarratorPip waveform={waveform} waveformMode={waveformMode} isSpeaking={isPlaying && !isMuted && currentTime < activeTrackStart + activeTrackDuration} />
 
             {subtitle && <div className="hiw-subtitle" role="status" aria-live="polite"><span>CC</span>{subtitle}</div>}
 
             {isPosterState && (
               <div className="hiw-play-intro">
-                <button type="button" onClick={() => void playFromHere()} aria-label="Play the 108-second ASTRO SIVAM walkthrough"><Play aria-hidden="true" /></button>
-                <div><span>THE USER JOURNEY · 01:48</span><strong>Begin the walkthrough</strong><small>Six steps · original South Indian male narration</small></div>
+                <button type="button" onClick={() => void playFromHere()} aria-label={`Play the ${RUNTIME_SECONDS}-second ASTRO SIVAM walkthrough`}><Play aria-hidden="true" /></button>
+                <div><span>THE USER JOURNEY · {formatClock(TOTAL_VIDEO_DURATION)}</span><strong>Begin the walkthrough</strong><small>Vanakkam welcome · six steps · Indian English narration</small></div>
               </div>
             )}
 
             {!isPlaying && isComplete && (
               <div className="hiw-film-end">
                 <div className="hiw-film-end__seal"><CheckCircle2 aria-hidden="true" /></div>
-                <span>END OF FILM · 01:48</span>
+                <span>END OF FILM · {formatClock(TOTAL_VIDEO_DURATION)}</span>
                 <h2>Your journey, clearly explained.</h2>
                 <p>From first sign-in to a reviewed report and invoice, every step has a place.</p>
                 <div><button type="button" onClick={() => void restartPlayback()}><RotateCcw aria-hidden="true" /> Replay film</button><button type="button" onClick={() => onNavigate('birth-jathagam')}>Start an order <ArrowRight aria-hidden="true" /></button></div>
@@ -1006,13 +1027,13 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
                 max={TOTAL_VIDEO_DURATION}
                 step="0.1"
                 value={currentTime}
-                aria-label="Seek through the 108-second film"
+                aria-label={`Seek through the ${RUNTIME_SECONDS}-second film`}
                 aria-valuetext={`${formatTime(currentTime)} of ${formatTime(TOTAL_VIDEO_DURATION)}`}
                 style={{ '--progress': `${progress}%` } as React.CSSProperties}
                 onChange={(event) => seekTo(Number(event.currentTarget.value))}
               />
               <div className="hiw-timeline__chapters" aria-hidden="true">
-                {STEPS.slice(1).map((step) => <i key={step.id} style={{ left: `${(step.startSec / TOTAL_VIDEO_DURATION) * 100}%` }} />)}
+                {STEPS.map((step) => <i key={step.id} style={{ left: `${(step.startSec / TOTAL_VIDEO_DURATION) * 100}%` }} />)}
               </div>
             </div>
             <div className="hiw-control-row">
@@ -1022,7 +1043,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
                 <span className="hiw-runtime"><b>{formatTime(currentTime)}</b><i>/</i>{formatTime(TOTAL_VIDEO_DURATION)}</span>
               </div>
               <div className="hiw-chapter-tabs" aria-label="Jump to a chapter">
-                {STEPS.map((step, index) => <button key={step.id} type="button" className={index === activeStepIndex ? 'is-active' : ''} aria-current={index === activeStepIndex ? 'step' : undefined} onClick={() => void jumpToStep(index)}><i>{String(step.id).padStart(2, '0')}</i><span>{step.shortTitle.split('· ')[1]}</span></button>)}
+                {STEPS.map((step, index) => <button key={step.id} type="button" className={!isPrologue && index === activeStepIndex ? 'is-active' : ''} aria-current={!isPrologue && index === activeStepIndex ? 'step' : undefined} onClick={() => void jumpToStep(index)}><i>{String(step.id).padStart(2, '0')}</i><span>{step.shortTitle.split('· ')[1]}</span></button>)}
               </div>
             </div>
           </div>
@@ -1036,7 +1057,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
           </div>
           <div className="hiw-step-grid">
             {STEPS.map((step, index) => (
-              <button key={step.id} type="button" className={`hiw-step-card${index === activeStepIndex ? ' is-current' : ''}`} onClick={() => void jumpToStep(index)} aria-current={index === activeStepIndex ? 'step' : undefined}>
+              <button key={step.id} type="button" className={`hiw-step-card${!isPrologue && index === activeStepIndex ? ' is-current' : ''}`} onClick={() => void jumpToStep(index)} aria-current={!isPrologue && index === activeStepIndex ? 'step' : undefined}>
                 <span className="hiw-step-card__top"><span className="hiw-step-card__icon">{step.icon}</span><span className="hiw-step-card__time">{formatTime(step.startSec)} — {formatTime(step.endSec)}</span></span>
                 <span className="hiw-step-card__title">{step.title}</span>
                 <span className="hiw-step-card__tagline">{step.tagline}</span>
