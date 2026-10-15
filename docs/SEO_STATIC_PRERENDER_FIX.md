@@ -127,3 +127,45 @@ no longer fake a healthy page).
 - Self-hosting the Google Fonts families (pre-existing perf advisory).
 - `npm run dev` intentionally serves the SPA shell (no prerender); the
   prerendered documents exist in `dist/` after `npm run build`.
+
+## Follow-up audit — 2026-10-15
+
+- Removed the remaining homepage `meta name="keywords"` from the template,
+  removed the unused `SEO` keywords prop, and made template cleanup apply to
+  every prerendered route (including `/`).
+- A fresh local production build already emitted `twitter:card`,
+  `twitter:title`, `twitter:description`, and `twitter:image` on all routes;
+  the reported missing-card output was not reproduced in this checkout.
+  Removed the unverified `twitter:site` handle from both shared SEO and the
+  template. The contract now requires exactly one of each card tag in the
+  built **head**, matching each page's title/description/OG image, with no
+  keywords or unverified handle. This also runs before compression checks,
+  which verify that deployed `.br`/`.gz` bytes match the tested HTML.
+- Shortened the homepage title to 58 characters and the brand-first services
+  title to 38 characters; the services description is now 154 characters.
+  Updated shared defaults and the template's home/OG/X metadata consistently.
+  Tests enforce a 60-character title and 160-character description budget on
+  these two pages. These are editorial budgets, not guarantees of search
+  display length (which also depends on pixel width and search-engine rewrites).
+
+### Tamil/Hindi milestone remains open
+
+The current `LanguageContext.tsx` has only an English translation dictionary;
+public page copy is also hardcoded in English. Report translations are not
+localized public-page content. No localized documents or hreflang have been
+added in this follow-up. `?lang=ta` / `?lang=hi` still do not expose translated
+HTML to crawlers.
+
+Acceptance criteria for the next milestone:
+
+1. Supply reviewed Tamil/Hindi public-page and shared navigation/footer copy,
+   including localized titles and descriptions (not just English fallbacks).
+2. Make language selection deterministic from `/ta/…` and `/hi/…` in both
+   build-time rendering and client routing. Direct loads and SPA navigation
+   must retain the same language and document `lang`.
+3. Extend the prerender route table, Apache/preview rewrites, deployment-layout
+   contracts, and sitemap for those real documents. Each localized page needs
+   a self-canonical, localized structured data, and correct social metadata.
+4. Only then publish reciprocal `en`/`ta`/`hi` and `x-default` alternates.
+   Verify distinct translated body text with JavaScript disabled, plus client
+   navigation, clean URLs, and compressed-output parity before release.

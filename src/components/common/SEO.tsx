@@ -7,12 +7,11 @@ export interface SEOProps {
   canonical?: string;
   ogImage?: string;
   ogType?: 'website' | 'article' | 'profile';
-  keywords?: string;
   noindex?: boolean;
 }
 
-const DEFAULT_TITLE = 'ASTRO SIVAM - Understand Your Life Through Vedic Astrology | astrosivam.com';
-const DEFAULT_DESCRIPTION = 'ASTRO SIVAM (astrosivam.com) - Authentic Vedic Astrology Platform. Get precision Birth Jathagam (Horoscope / Kundali), 10-Poruthams Marriage Compatibility Matching, Sacred Baby Naming (Namakaran) & Subha Muhurtham Auspicious Dates in Tamil, English & Hindi.';
+const DEFAULT_TITLE = 'ASTRO SIVAM - Understand Your Life Through Vedic Astrology';
+const DEFAULT_DESCRIPTION = 'ASTRO SIVAM offers Birth Jathagam, 10-Poruthams Marriage Compatibility, Vedic Baby Naming, and Subha Muhurtham reports in Tamil, English, and Hindi.';
 const DEFAULT_IMAGE = 'https://astrosivam.com/assets/images/astrosivam_og_image.jpg?v=20261003';
 const SITE_NAME = 'ASTRO SIVAM';
 const SITE_ORIGIN = 'https://astrosivam.com';
@@ -38,7 +37,6 @@ export const SEO: React.FC<SEOProps> = ({
   canonical = defaultCanonical(),
   ogImage = DEFAULT_IMAGE,
   ogType = 'website',
-  keywords,
   noindex = false,
 }) => {
   return (
@@ -46,7 +44,6 @@ export const SEO: React.FC<SEOProps> = ({
       {/* Standard Meta Tags */}
       <title>{title}</title>
       <meta name="description" content={description} />
-      {keywords && <meta name="keywords" content={keywords} />}
       <link rel="canonical" href={canonical} />
       {noindex ? (
         <meta name="robots" content="noindex, nofollow" />
@@ -66,7 +63,6 @@ export const SEO: React.FC<SEOProps> = ({
 
       {/* Twitter Card Meta Tags */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:site" content="@astrosivam" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />

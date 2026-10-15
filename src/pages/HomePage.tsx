@@ -134,7 +134,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   return (
     <div className="home-page space-y-16 sm:space-y-20 pb-12 sm:pb-16 w-full overflow-x-hidden">
       <SEO
-        title="ASTRO SIVAM - Understand Your Life Through Vedic Astrology | astrosivam.com"
+        title="ASTRO SIVAM - Understand Your Life Through Vedic Astrology"
         description="ASTRO SIVAM offers Birth Jathagam, 10-Poruthams Marriage Compatibility, Vedic Baby Naming, and Subha Muhurtham reports in Tamil, English, and Hindi."
         canonical="https://astrosivam.com/"
       />
