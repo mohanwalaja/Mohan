@@ -2,6 +2,7 @@ import React from 'react';
 import { Compass, Home, Sparkles, ArrowRight, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { SEO } from '../components/common/SEO';
+import { RouteLink } from '../components/common/RouteLink';
 
 interface NotFoundPageProps {
   onNavigate: (route: string) => void;
@@ -84,21 +85,23 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onNavigate }) => {
 
         {/* Primary Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-          <button
-            onClick={() => onNavigate('home')}
+          <RouteLink
+            route="home"
+            onNavigate={onNavigate}
             className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <Home className="w-4 h-4" />
             <span>{t.returnHome}</span>
-          </button>
+          </RouteLink>
 
-          <button
-            onClick={() => onNavigate('services')}
+          <RouteLink
+            route="services"
+            onNavigate={onNavigate}
             className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
           >
             <Sparkles className="w-4 h-4 text-amber-400" />
             <span>{t.exploreServices}</span>
-          </button>
+          </RouteLink>
         </div>
 
         {/* Popular Services Quick-Links Card */}
@@ -108,9 +111,10 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onNavigate }) => {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {t.services.map((svc) => (
-              <button
+              <RouteLink
                 key={svc.id}
-                onClick={() => onNavigate(svc.id)}
+                route={svc.id}
+                onNavigate={onNavigate}
                 className="group p-3.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-amber-500/40 transition-all text-left flex flex-col justify-between"
               >
                 <div>
@@ -125,7 +129,7 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onNavigate }) => {
                   <span>View Details</span>
                   <ArrowRight className="w-3 h-3 ml-1 transition-transform group-hover:translate-x-1" />
                 </div>
-              </button>
+              </RouteLink>
             ))}
           </div>
         </div>

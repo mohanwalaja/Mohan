@@ -2058,6 +2058,29 @@ if (preg_match('/admin\/orders\/([^\/]+)\/ban-ip/', $path, $matches) && $method 
     ]);
 }
 
+// 12b. CUSTOMER REVIEW MODERATION (SEO audit 2026-10-15) — api/reviews.php.
+// Placed before section 13 on purpose: that section runs the payment-table DDL
+// at top level, which a review request has no reason to pay for.
+//   GET    /api/admin/reviews?status=ALL|PENDING|APPROVED|REJECTED
+//   POST   /api/admin/reviews/:id/approve   publish (re-checks the order is still paid + delivered)
+//   POST   /api/admin/reviews/:id/reject    hide, with an optional reason the customer sees
+//   DELETE /api/admin/reviews/:id
+if (preg_match('#/admin/reviews(?:/([^/]+))?(?:/(approve|reject))?/?$#', $path, $reviewRoute)) {
+    require_once __DIR__ . '/../reviews.php';
+    $reviewId = isset($reviewRoute[1]) ? rawurldecode($reviewRoute[1]) : '';
+    $reviewDecision = $reviewRoute[2] ?? '';
+    if ($method === 'GET' && $reviewId === '') {
+        astro_reviews_route_admin_list($pdo);
+    }
+    if ($method === 'POST' && $reviewId !== '' && $reviewDecision !== '') {
+        astro_reviews_route_admin_moderate($pdo, $admin, $reviewId, $reviewDecision, getJsonBody());
+    }
+    if ($method === 'DELETE' && $reviewId !== '' && $reviewDecision === '') {
+        astro_reviews_route_admin_delete($pdo, $admin, $reviewId);
+    }
+    jsonResponse(['success' => false, 'message' => 'Unsupported review moderation request.'], 405);
+}
+
 // ---------------------------------------------------------------------------
 // 13. PAYMENT RECOVERY — webhook audit trail + reconciliation of stale sessions
 //

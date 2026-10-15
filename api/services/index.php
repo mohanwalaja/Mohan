@@ -1903,6 +1903,32 @@ if ((strpos($path, 'services/my-orders') !== false || $action === 'my-orders' ||
     jsonResponse(['success' => true, 'orders' => $orders]);
 }
 
+// 6b. Verified customer reviews (SEO audit 2026-10-15) — rules and handlers in
+// api/reviews.php. Only the owner of a paid, delivered order may write one, and
+// nothing is public until an administrator approves it.
+//   GET  /api/services/my-reviews   customer: own reviews + reviewable orders
+//   GET  /api/services/reviews      public: published reviews + rating totals
+//   POST /api/services/reviews      customer: create or edit a review
+// Anchored patterns, so neither path can be confused with another route.
+if (preg_match('#/services/my-reviews/?$#', $path) || $action === 'my-reviews') {
+    require_once __DIR__ . '/../reviews.php';
+    if ($method !== 'GET') {
+        jsonResponse(['success' => false, 'message' => 'Method not allowed'], 405);
+    }
+    astro_reviews_route_mine($pdo, requireAuth($pdo));
+}
+if (preg_match('#/services/reviews/?$#', $path) || in_array($action, ['reviews', 'submit-review'], true)) {
+    require_once __DIR__ . '/../reviews.php';
+    if ($method === 'GET' || $method === 'HEAD') {
+        astro_reviews_route_public_list($pdo);
+    }
+    if ($method === 'POST') {
+        $reviewUser = requireAuth($pdo);
+        astro_reviews_route_submit($pdo, $reviewUser, $jsonBody);
+    }
+    jsonResponse(['success' => false, 'message' => 'Method not allowed'], 405);
+}
+
 // 7. (Removed) Customer-facing GET /api/services/orders/:id/pdf & invoice-pdf endpoint.
 // Report/invoice PDFs are only generated server-side when emailing the customer
 // (see the resend-email / order-approval flow) and are never served directly over HTTP

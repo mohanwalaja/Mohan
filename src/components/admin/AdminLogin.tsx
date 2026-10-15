@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Shield, Lock, KeyRound, AlertCircle, ArrowRight, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BrandLockup } from '../common/BrandLockup';
+import { RouteLink } from '../common/RouteLink';
 
 interface AdminLoginProps {
   onNavigate: (route: string) => void;
@@ -142,13 +143,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onNavigate, onLoginSucce
 
         {/* Return to Customer Portal / Public Site */}
         <div className="text-center">
-          <button
-            onClick={() => onNavigate('home')}
+          <RouteLink
+            route="home"
+            onNavigate={onNavigate}
             className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-400 transition-colors font-semibold"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Return to ASTRO SIVAM Public Site</span>
-          </button>
+          </RouteLink>
         </div>
 
       </div>

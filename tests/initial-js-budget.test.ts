@@ -137,10 +137,17 @@ check('route chunks are prefetched from visitor intent (hover/focus/touch), Save
   for (const evt of ['pointerenter', 'focusin', 'touchstart']) {
     assert.ok(routeChunks.includes(evt), `intent prefetch must handle ${evt}`);
   }
+  // Internal links are real <a href> elements rendered by RouteLink (SEO audit
+  // 2026-10-15), which stamps data-route on every one of them.
+  assert.match(
+    read('src/components/common/RouteLink.tsx'),
+    /data-route=\{route\}/,
+    'RouteLink must render data-route so hovering any internal link warms the target chunk',
+  );
   assert.match(
     read('src/components/layout/Navbar.tsx'),
-    /data-route=\{link\.route\}/,
-    'the navbar links must carry data-route so hovering them warms the target chunk',
+    /<RouteLink[^>]*?route=\{link\.route\}/,
+    'the navbar links must be RouteLinks (data-route) so hovering them warms the target chunk',
   );
 });
 
@@ -148,10 +155,11 @@ check('the links the visitor actually hovers carry data-route', () => {
   // Without the attribute the intent prefetcher has nothing to listen to, so
   // every page that links to a lazy route must mark its links — the footer and
   // the two pages that sell the report pages above all.
+  // RouteLink renders the attribute, so a RouteLink to the route counts.
   const expectations: Array<[string, RegExp, string]> = [
-    ['src/components/layout/Footer.tsx', /data-route="birth-jathagam"/, 'footer service links'],
-    ['src/pages/HomePage.tsx', /data-route=\{service\.route\}/, 'the homepage service cards'],
-    ['src/pages/ServicesPage.tsx', /data-route=\{route\}/, 'the services page cards'],
+    ['src/components/layout/Footer.tsx', /<RouteLink\s+route="birth-jathagam"/, 'footer service links'],
+    ['src/pages/HomePage.tsx', /<RouteLink\s+route=\{service\.route\}/, 'the homepage service cards'],
+    ['src/pages/ServicesPage.tsx', /<RouteLink\s+route=\{route\}/, 'the services page cards'],
   ];
   for (const [file, pattern, label] of expectations) {
     assert.match(read(file), pattern, `${label} must carry data-route so hovering them warms the target chunk`);
@@ -174,7 +182,8 @@ check('every navigational data-route key maps to a prefetchable chunk', () => {
     'src/pages/HomePage.tsx',
     'src/pages/ServicesPage.tsx',
   ]) {
-    for (const match of read(file).matchAll(/data-route="([\w-]+)"/g)) declared.add(match[1]);
+    // Literal keys on raw elements (data-route="x") and on RouteLinks (route="x").
+    for (const match of read(file).matchAll(/\b(?:data-)?route="([\w-]+)"/g)) declared.add(match[1]);
   }
   // 'home' is the eager shell — it is meant to have no chunk.
   const dead = [...declared].filter((key) => key !== 'home' && !keys.has(key));

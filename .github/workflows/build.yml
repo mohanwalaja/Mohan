@@ -143,6 +143,16 @@ jobs:
           ASTRO_REQUIRE_PHP_WASM_TESTS: '1'
         run: npx tsx tests/admin-report-delivery.test.ts
 
+      # Same runtime, same rule for the verified customer reviews (SEO audit
+      # 2026-10-15): eligibility (paid + delivered + not refunded + own order),
+      # moderation, the public field set and refund-after-publish run against
+      # the real api/services + api/admin routes. Inside npm test above this
+      # half SKIPs (no runtime yet); here a missing runtime fails the step.
+      - name: Customer review routes (real PHP routes)
+        env:
+          ASTRO_REQUIRE_PHP_WASM_TESTS: '1'
+        run: npx tsx tests/customer-reviews.test.ts
+
   # ---------------------------------------------------------------------------
   # 3. Browser smoke test — the customer's first click, on desktop and mobile.
   # ---------------------------------------------------------------------------

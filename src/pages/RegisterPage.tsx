@@ -5,6 +5,7 @@ import { GoogleLoginButton } from '../components/common/GoogleLoginButton';
 import { PersonNameField } from '../components/common/PersonNameField';
 import { normalizePersonName } from '../utils/birthDetails';
 import { SEO } from '../components/common/SEO';
+import { RouteLink } from '../components/common/RouteLink';
 import { BrandLockup } from '../components/common/BrandLockup';
 
 function getPasswordStrength(value: string): { score: number; label: string } {
@@ -354,12 +355,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigate }) => {
 
         <div className="text-center text-xs text-slate-500 pt-2">
           Already have an account?{' '}
-          <button
-            onClick={() => onNavigate('login')}
+          <RouteLink
+            route="login"
+            onNavigate={onNavigate}
             className="font-bold text-amber-600 dark:text-amber-400 hover:underline"
           >
             Sign In
-          </button>
+          </RouteLink>
         </div>
 
       </div>

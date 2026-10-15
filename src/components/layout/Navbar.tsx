@@ -22,6 +22,7 @@ import { resolveDisplayName } from '../../utils/displayName';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { BrandWordmark } from '../common/BrandLockup';
+import { RouteLink } from '../common/RouteLink';
 
 interface NavbarProps {
   currentRoute: string;
@@ -67,19 +68,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
         <div className="flex h-16 items-center justify-between sm:h-20 md:h-22">
 
           {/* Compact on phones; the full brand lock-up returns above 640px. */}
-          <button
-            type="button"
-            data-route="home"
-            onClick={() => navTo('home')}
+          <RouteLink
+            route="home"
+            onNavigate={navTo}
             className="group flex shrink-0 items-center gap-2 py-1 text-left sm:gap-3.5"
             title="ASTRO SIVAM - Indian Vedic Astrology"
             aria-label="ASTRO SIVAM home"
           >
             {/* Identical to the footer lock-up — same shared component, so the
                 header and footer brand blocks cannot drift apart. emblemAlt is
-                empty because the button already carries the name in aria-label. */}
+                empty because the link already carries the name in aria-label. */}
             <BrandWordmark emblemAlt="" />
-          </button>
+          </RouteLink>
 
           {/* Right Action Cluster: User & Auth Buttons & Family Tray */}
           <div className="flex items-center gap-2 sm:gap-3">
@@ -141,9 +141,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
                     </div>
 
                     <div className="space-y-1 pt-1">
-                      <button
-                        data-route="dashboard"
-                        onClick={() => navTo('dashboard')}
+                      <RouteLink
+                        route="dashboard"
+                        onNavigate={navTo}
                         className="w-full text-left px-3 py-2 rounded-xl text-slate-200 hover:bg-amber-400/10 hover:text-amber-200 flex items-center gap-2.5 transition-colors font-medium group"
                       >
                         <div className="w-7 h-7 rounded-lg bg-amber-400/15 border border-amber-400/25 flex items-center justify-center text-amber-300 group-hover:bg-amber-400/25">
@@ -154,12 +154,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
                           <div className="text-[10px] text-slate-400">View horoscope PDFs &amp; charts</div>
                         </div>
                         <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-300 transition-colors" />
-                      </button>
+                      </RouteLink>
 
                       {isAdmin && (
-                        <button
-                          data-route="admin"
-                          onClick={() => navTo('admin')}
+                        <RouteLink
+                          route="admin"
+                          onNavigate={navTo}
                           className="w-full text-left px-3 py-2 rounded-xl text-purple-200 hover:bg-purple-950/40 flex items-center gap-2.5 transition-colors font-medium border border-purple-500/20 group"
                         >
                           <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 group-hover:bg-purple-500/30">
@@ -170,7 +170,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
                             <div className="text-[10px] text-purple-300/70">Manage orders &amp; settings</div>
                           </div>
                           <ChevronRight className="w-3.5 h-3.5 text-purple-400/60 group-hover:text-purple-300 transition-colors" />
-                        </button>
+                        </RouteLink>
                       )}
                     </div>
 
@@ -191,20 +191,20 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
               </div>
             ) : (
               <div className="hidden items-center gap-2 lg:flex">
-                <button
-                  data-route="login"
-                  onClick={() => navTo('login')}
+                <RouteLink
+                  route="login"
+                  onNavigate={navTo}
                   className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold text-slate-200 hover:text-white bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/40 rounded-xl backdrop-blur-sm transition-all duration-200 active:scale-95 shadow-xs whitespace-nowrap"
                 >
                   {t('login')}
-                </button>
-                <button
-                  data-route="register"
-                  onClick={() => navTo('register')}
+                </RouteLink>
+                <RouteLink
+                  route="register"
+                  onNavigate={navTo}
                   className="px-3.5 sm:px-4.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:from-[#ffc324] hover:to-[#fc911b] text-slate-950 text-xs font-black shadow-md hover:shadow-[0_4px_16px_rgba(251,133,0,0.4)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 whitespace-nowrap"
                 >
                   {t('register')}
-                </button>
+                </RouteLink>
               </div>
             )}
 
@@ -229,10 +229,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
             const isActive = currentRoute === link.route;
             const Icon = link.icon;
             return (
-              <button
+              <RouteLink
                 key={link.key}
-                data-route={link.route}
-                onClick={() => navTo(link.route)}
+                route={link.route}
+                onNavigate={navTo}
                 aria-current={isActive ? 'page' : undefined}
                 className={`group flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold tracking-wide whitespace-nowrap transition-all duration-200 cursor-pointer ${
                   isActive
@@ -244,7 +244,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
                 <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-amber-300' : 'text-slate-400 group-hover:text-amber-300'}`} strokeWidth={1.9} />
                 <span>{link.label}</span>
                 {isActive && <span className="w-1.5 h-1.5 rounded-full bg-amber-300 ml-0.5" />}
-              </button>
+              </RouteLink>
             );
           })}
         </nav>
@@ -263,11 +263,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
                 const isActive = currentRoute === link.route;
                 const Icon = link.icon;
                 return (
-                  <button
-                    type="button"
+                  <RouteLink
                     key={link.key}
-                    data-route={link.route}
-                    onClick={() => navTo(link.route)}
+                    route={link.route}
+                    onNavigate={navTo}
                     aria-current={isActive ? 'page' : undefined}
                     className={`flex min-h-12 w-full items-center gap-3.5 rounded-2xl border px-3.5 text-left text-[15px] transition-all duration-150 ${
                       isActive
@@ -282,7 +281,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
                     </div>
                     <span className="flex-1 font-semibold">{link.label}</span>
                     <ChevronRight className={`h-4 w-4 transition-transform ${isActive ? 'text-amber-300' : 'text-slate-600'}`} />
-                  </button>
+                  </RouteLink>
                 );
               })}
             </div>
@@ -332,10 +331,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
                   </div>
 
                   {/* Primary Action Card: Orders & Delivery Status */}
-                  <button
-                    type="button"
-                    data-route="dashboard"
-                    onClick={() => navTo('dashboard')}
+                  <RouteLink
+                    route="dashboard"
+                    onNavigate={navTo}
                     className="group flex w-full items-center gap-3.5 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-left transition-all duration-200 hover:border-amber-400/40 hover:bg-amber-400/[0.08] active:scale-[0.99]"
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 shadow-inner transition-colors group-hover:bg-amber-400/25 group-hover:text-amber-200">
@@ -352,14 +350,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
                         Track horoscope PDFs, charts &amp; consultations
                       </p>
                     </div>
-                  </button>
+                  </RouteLink>
 
                   {/* Admin Control Center Card (if admin) */}
                   {isAdmin && (
-                    <button
-                      type="button"
-                      data-route="admin"
-                      onClick={() => navTo('admin')}
+                    <RouteLink
+                      route="admin"
+                      onNavigate={navTo}
                       className="group flex w-full items-center gap-3.5 rounded-2xl border border-purple-500/25 bg-purple-950/25 p-3 text-left transition-all duration-200 hover:border-purple-400/40 hover:bg-purple-950/45 active:scale-[0.99]"
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-300 shadow-inner transition-colors group-hover:bg-purple-500/30 group-hover:text-purple-200">
@@ -376,27 +373,25 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
                           Manage orders, report approvals &amp; system settings
                         </p>
                       </div>
-                    </button>
+                    </RouteLink>
                   )}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    data-route="login"
-                    onClick={() => navTo('login')}
-                    className="min-h-11 rounded-xl border border-white/20 bg-white/5 px-3 text-sm font-bold text-slate-100 transition-colors hover:bg-white/10"
+                  <RouteLink
+                    route="login"
+                    onNavigate={navTo}
+                    className="flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-3 text-center text-sm font-bold text-slate-100 transition-colors hover:bg-white/10"
                   >
                     {t('login')}
-                  </button>
-                  <button
-                    type="button"
-                    data-route="register"
-                    onClick={() => navTo('register')}
-                    className="min-h-11 rounded-xl bg-gradient-to-r from-[#ffb703] to-[#fb8500] px-3 text-sm font-black text-slate-950 shadow-md"
+                  </RouteLink>
+                  <RouteLink
+                    route="register"
+                    onNavigate={navTo}
+                    className="flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-[#ffb703] to-[#fb8500] px-3 text-center text-sm font-black text-slate-950 shadow-md"
                   >
                     {t('register')}
-                  </button>
+                  </RouteLink>
                 </div>
               )}
             </div>

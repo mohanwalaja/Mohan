@@ -83,7 +83,8 @@ export const ROUTES = [
     routeKey: 'home',
     module: '/src/pages/HomePage.tsx',
     component: 'HomePage',
-    lastmod: '2026-10-14',
+    // Verified reviews + FAQPage/Review structured data (SEO audit 2026-10-15).
+    lastmod: '2026-10-15',
     changefreq: 'daily',
     priority: '1.0',
   },
@@ -393,6 +394,150 @@ function writeWithSiblings(absPath, contents) {
 function attrValue(tag, attr) {
   const m = tag.match(new RegExp(`${attr}="([^"]*)"`, 'i'));
   return m ? m[1] : null;
+}
+
+// ---------------------------------------------------------------------------
+// SEO audit 2026-10-15 — build-time guards. Each returns a list of problems
+// (empty = OK); main() turns any problem into a failed build, and
+// tests/crawlable-links.test.tsx + tests/homepage-structured-data.test.ts
+// execute the same functions.
+// ---------------------------------------------------------------------------
+
+/** Value of a double-quoted attribute in one start tag (null when absent). */
+function tagAttribute(tag, name) {
+  const m = tag.match(new RegExp(`\\s${name}="([^"]*)"`, 'i'));
+  return m ? m[1] : null;
+}
+
+/** Text a visitor can read: tags dropped, the entities React emits decoded. */
+export function readableText(html) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Links every document must carry (header + footer chrome) so crawlers can reach each page. */
+export const REQUIRED_SITE_LINKS = [
+  '/',
+  '/services',
+  '/birth-jathagam',
+  '/marriage-compatibility',
+  '/baby-naming',
+  '/muhurtham',
+  '/how-it-works',
+  '/about',
+  '/team',
+  '/contact',
+  '/privacy-policy',
+  '/terms',
+  '/payment-policy',
+  '/refund-policy',
+];
+
+/**
+ * Finding 1: internal navigation must be crawlable. A `<button data-route>`
+ * is invisible to crawlers and cannot be opened in a new tab; every
+ * `<a data-route>` must carry the canonical URL of a prerendered document
+ * (never an alias that only 301s, never a 404), and the shared chrome must
+ * link every public page.
+ */
+export function crawlableLinkProblems(bodyHtml) {
+  const problems = [];
+  const canonicalPaths = new Set(ROUTES.map((r) => r.path));
+  for (const match of bodyHtml.matchAll(/<button\b[^>]*>/gi)) {
+    const route = tagAttribute(match[0], 'data-route');
+    if (route !== null) problems.push(`<button data-route="${route}"> is not a crawlable link`);
+  }
+  const hrefs = new Set();
+  for (const match of bodyHtml.matchAll(/<a\b[^>]*>/gi)) {
+    const href = tagAttribute(match[0], 'href');
+    if (href !== null) hrefs.add(href);
+    const route = tagAttribute(match[0], 'data-route');
+    if (route === null) continue;
+    if (!href) problems.push(`<a data-route="${route}"> has no href`);
+    else if (!canonicalPaths.has(href)) {
+      problems.push(`<a data-route="${route}" href="${href}"> does not point at a prerendered canonical URL`);
+    }
+  }
+  for (const required of REQUIRED_SITE_LINKS) {
+    if (!hrefs.has(required)) problems.push(`no <a href="${required}"> in the document`);
+  }
+  return problems;
+}
+
+/** Parsed `<script type="application/ld+json" data-schema="…">` blocks rendered by the page. */
+export function pageJsonLdBlocks(bodyHtml) {
+  const blocks = [];
+  for (const match of bodyHtml.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    if (!/\stype="application\/ld\+json"/i.test(` ${match[1]}`)) continue;
+    const schema = tagAttribute(` ${match[1]}`, 'data-schema');
+    if (schema === null) continue;
+    let data = null;
+    try {
+      data = JSON.parse(match[2]);
+    } catch {
+      data = null;
+    }
+    blocks.push({ schema, data, raw: match[2] });
+  }
+  return blocks;
+}
+
+/**
+ * Finding 2: the homepage ships FAQPage + Review/AggregateRating JSON-LD that
+ * describes ONLY what the page displays; no other document carries them (the
+ * FAQ and the reviews are homepage content).
+ */
+export function homepageStructuredDataProblems(route, bodyHtml) {
+  const problems = [];
+  const blocks = pageJsonLdBlocks(bodyHtml);
+  for (const block of blocks) {
+    if (block.data === null) problems.push(`data-schema="${block.schema}" is not valid JSON`);
+    if (/<\/?script|<!--/i.test(block.raw)) problems.push(`data-schema="${block.schema}" contains raw markup`);
+  }
+  const faq = blocks.find((b) => b.schema === 'faq')?.data;
+  const reviews = blocks.find((b) => b.schema === 'reviews')?.data;
+  if (route.path !== '/') {
+    if (faq || reviews) problems.push('FAQPage / Review JSON-LD belongs to the homepage only');
+    return problems;
+  }
+  const text = readableText(bodyHtml);
+  if (!faq || faq['@type'] !== 'FAQPage' || !Array.isArray(faq.mainEntity) || faq.mainEntity.length < 5) {
+    problems.push('the homepage is missing its FAQPage JSON-LD (5+ questions)');
+  } else {
+    for (const q of faq.mainEntity) {
+      if (q['@type'] !== 'Question' || q.acceptedAnswer?.['@type'] !== 'Answer') problems.push('FAQPage entries must be Question + acceptedAnswer');
+      if (!text.includes(q.name)) problems.push(`FAQ question not visible on the page: ${q.name}`);
+      if (!text.includes(q.acceptedAnswer?.text ?? '\u0000')) problems.push(`FAQ answer not visible on the page: ${q.name}`);
+    }
+  }
+  const graph = Array.isArray(reviews?.['@graph']) ? reviews['@graph'] : [];
+  const reviewNodes = graph.filter((n) => n['@type'] === 'Review');
+  const rating = graph.find((n) => n.aggregateRating)?.aggregateRating;
+  if (reviewNodes.length === 0) problems.push('the homepage is missing its Review JSON-LD');
+  for (const node of reviewNodes) {
+    if (!node.author?.name || !node.datePublished || !node.reviewBody || !node.reviewRating?.ratingValue || !node.itemReviewed?.url) {
+      problems.push(`Review ${node['@id']} lacks author, datePublished, reviewBody, reviewRating or itemReviewed`);
+      continue;
+    }
+    if (!text.includes(node.reviewBody)) problems.push(`review body not visible on the page: ${node['@id']}`);
+    if (!text.includes(node.author.name)) problems.push(`review author not visible on the page: ${node.author.name}`);
+  }
+  if (!rating || rating.reviewCount < reviewNodes.length || !(rating.ratingValue >= 1 && rating.ratingValue <= 5)) {
+    problems.push('the homepage AggregateRating is missing or inconsistent with its reviews');
+  } else if (!text.includes(`${Number(rating.ratingValue).toFixed(1)} out of 5`)) {
+    problems.push('the AggregateRating value is not visible on the page');
+  }
+  return problems;
 }
 
 function visibleTextLength(html) {
@@ -752,6 +897,16 @@ async function main() {
       const { headTags, body: rawBody } = splitHeadFromBody(rendered);
       const bodyHtml = mapAssetUrls(rawBody, manifest);
       const mappedHead = mapAssetUrls(headTags.join('\n    '), manifest).split('\n    ');
+
+      // SEO audit 2026-10-15: crawlable internal links (finding 1) and the
+      // homepage-only FAQPage/Review JSON-LD matching visible text (finding 2).
+      const seoProblems = [
+        ...crawlableLinkProblems(bodyHtml),
+        ...homepageStructuredDataProblems(route, bodyHtml),
+      ];
+      if (seoProblems.length > 0) {
+        throw new Error(`prerender: ${route.path} failed the crawlability/structured-data guard:\n  - ${seoProblems.slice(0, 12).join('\n  - ')}`);
+      }
 
       const titleTag = mappedHead.find((t) => /^<title/i.test(t));
       const titleText = titleTag

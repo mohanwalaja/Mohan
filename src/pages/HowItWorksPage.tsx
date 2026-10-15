@@ -32,6 +32,7 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { SEO } from '../components/common/SEO';
+import { RouteLink } from '../components/common/RouteLink';
 import './HowItWorksPage.css';
 
 interface HowItWorksPageProps {
@@ -998,7 +999,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
                 <span>END OF FILM · 01:30</span>
                 <h2>Your journey, clearly explained.</h2>
                 <p>From first sign-in to a reviewed report and invoice, every step has a place.</p>
-                <div><button type="button" onClick={() => void restartPlayback()}><RotateCcw aria-hidden="true" /> Replay film</button><button type="button" onClick={() => onNavigate('birth-jathagam')}>Start an order <ArrowRight aria-hidden="true" /></button></div>
+                <div><button type="button" onClick={() => void restartPlayback()}><RotateCcw aria-hidden="true" /> Replay film</button><RouteLink route="birth-jathagam" onNavigate={onNavigate}>Start an order <ArrowRight aria-hidden="true" /></RouteLink></div>
               </div>
             )}
           </div>
@@ -1057,13 +1058,13 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
         <section className="hiw-trust-band">
           <div className="hiw-trust-band__icon"><ShieldCheck aria-hidden="true" /></div>
           <div className="hiw-trust-band__copy"><span>TRADITIONAL REVIEW · CLEAR DELIVERY</span><h2>Thoughtful astrology, with a process you can follow.</h2><p>Our team reviews each order before delivery. Your astrological report and tax invoice are prepared as separate documents and sent together after approval.</p></div>
-          <button type="button" onClick={() => onNavigate('birth-jathagam')}>Explore services <ArrowRight aria-hidden="true" /></button>
+          <RouteLink route="birth-jathagam" onNavigate={onNavigate}>Explore services <ArrowRight aria-hidden="true" /></RouteLink>
         </section>
 
         <section className="hiw-final-cta">
           <div className="hiw-final-cta__ornament">✦</div>
           <div><span>BEGIN WHEN YOU’RE READY</span><h2>Start with the service that matters to you.</h2><p>Explore a birth Jathagam, marriage compatibility, baby naming, or an auspicious Muhurtham consultation.</p></div>
-          <div className="hiw-final-cta__actions"><button type="button" onClick={() => onNavigate('birth-jathagam')}>Explore services <ArrowRight aria-hidden="true" /></button><button type="button" onClick={() => onNavigate('login')}>User login <ChevronRight aria-hidden="true" /></button></div>
+          <div className="hiw-final-cta__actions"><RouteLink route="birth-jathagam" onNavigate={onNavigate}>Explore services <ArrowRight aria-hidden="true" /></RouteLink><RouteLink route="login" onNavigate={onNavigate}>User login <ChevronRight aria-hidden="true" /></RouteLink></div>
         </section>
       </div>
     </main>

@@ -193,7 +193,9 @@
 .hiw-chapter-tabs button,
 .hiw-step-card,
 .hiw-trust-band button,
-.hiw-final-cta button {
+.hiw-final-cta button,
+.hiw-trust-band a,
+.hiw-final-cta a {
   font: inherit;
 }
 
@@ -1874,7 +1876,8 @@
 .hiw-film-end p { margin: 0; color: #c5b9aa; font-size: 10px; }
 .hiw-film-end > div:last-child { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 9px; }
 
-.hiw-film-end button {
+.hiw-film-end button,
+.hiw-film-end a {
   display: inline-flex;
   min-height: 34px;
   align-items: center;
@@ -1890,13 +1893,15 @@
   font-weight: 700;
 }
 
-.hiw-film-end button:last-child {
+.hiw-film-end button:last-child,
+.hiw-film-end a:last-child {
   border-color: rgba(239, 199, 139, .62);
   color: #24170d;
   background: #e9bd7b;
 }
 
-.hiw-film-end button svg { width: 13px; height: 13px; }
+.hiw-film-end button svg,
+.hiw-film-end a svg { width: 13px; height: 13px; }
 
 .hiw-player__controls {
   padding: 13px 17px 15px;
@@ -2250,7 +2255,9 @@
 .hiw-trust-band p { max-width: 760px; margin: 8px 0 0; color: #cbd5e1; font-size: 12px; line-height: 1.6; }
 
 .hiw-trust-band > button,
-.hiw-final-cta__actions button {
+.hiw-final-cta__actions button,
+.hiw-trust-band > a,
+.hiw-final-cta__actions a {
   display: inline-flex;
   min-height: 42px;
   align-items: center;
@@ -2269,9 +2276,13 @@
 }
 
 .hiw-trust-band > button:hover,
-.hiw-final-cta__actions button:hover { color: #1c1429; background: #f5c474; transform: translateY(-1px); }
+.hiw-final-cta__actions button:hover,
+.hiw-trust-band > a:hover,
+.hiw-final-cta__actions a:hover { color: #1c1429; background: #f5c474; transform: translateY(-1px); }
 .hiw-trust-band > button svg,
-.hiw-final-cta__actions button svg { width: 15px; height: 15px; }
+.hiw-final-cta__actions button svg,
+.hiw-trust-band > a svg,
+.hiw-final-cta__actions a svg { width: 15px; height: 15px; }
 
 .hiw-final-cta {
   position: relative;
@@ -2313,9 +2324,12 @@
 .hiw-final-cta h2 { margin-top: 5px; font-size: 22px; line-height: 1.25; }
 .hiw-final-cta p { margin: 7px 0 0; color: #e3d7c5; font-size: 12px; line-height: 1.55; }
 .hiw-final-cta__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-.hiw-final-cta__actions button:first-child { color: #271a0f; border-color: #f2cf95; background: #e6b773; }
-.hiw-final-cta__actions button:first-child:hover { background: #f0cb8c; }
-.hiw-final-cta__actions button:last-child { color: #f5e9d5; border-color: rgba(255, 255, 255, .2); background: rgba(0, 0, 0, .18); }
+.hiw-final-cta__actions button:first-child,
+.hiw-final-cta__actions a:first-child { color: #271a0f; border-color: #f2cf95; background: #e6b773; }
+.hiw-final-cta__actions button:first-child:hover,
+.hiw-final-cta__actions a:first-child:hover { background: #f0cb8c; }
+.hiw-final-cta__actions button:last-child,
+.hiw-final-cta__actions a:last-child { color: #f5e9d5; border-color: rgba(255, 255, 255, .2); background: rgba(0, 0, 0, .18); }
 
 .hiw-player:fullscreen {
   width: 100vw;
@@ -2495,7 +2509,8 @@
   .hiw-film-end > span { font-size: 6px; }
   .hiw-film-end h2 { font-size: 21px; }
   .hiw-film-end p { max-width: 290px; font-size: 8px; }
-  .hiw-film-end button { min-height: 29px; padding: 0 8px; font-size: 7px; }
+  .hiw-film-end button,
+  .hiw-film-end a { min-height: 29px; padding: 0 8px; font-size: 7px; }
   .hiw-player__controls { padding: 11px 11px 12px; }
   .hiw-control-row { gap: 7px; margin-top: 8px; }
   .hiw-control-row__transport { gap: 5px; }
@@ -2518,13 +2533,15 @@
   .hiw-trust-band__icon svg { width: 19px; height: 19px; }
   .hiw-trust-band h2 { font-size: 17px; }
   .hiw-trust-band p { font-size: 11px; }
-  .hiw-trust-band > button { grid-column: 1 / -1; justify-self: start; }
+  .hiw-trust-band > button,
+  .hiw-trust-band > a { grid-column: 1 / -1; justify-self: start; }
   .hiw-final-cta { grid-template-columns: auto minmax(0, 1fr); gap: 12px; margin-top: 10px; padding: 17px; }
   .hiw-final-cta__ornament { width: 38px; height: 38px; font-size: 18px; }
   .hiw-final-cta h2 { font-size: 18px; }
   .hiw-final-cta p { font-size: 11px; }
   .hiw-final-cta__actions { grid-column: 1 / -1; justify-content: flex-start; }
-  .hiw-final-cta__actions button { min-height: 36px; padding: 0 11px; font-size: 9px; }
+  .hiw-final-cta__actions button,
+  .hiw-final-cta__actions a { min-height: 36px; padding: 0 11px; font-size: 9px; }
   .hiw-player:fullscreen .hiw-cinema__viewport { height: calc(100vh - 245px); min-height: 280px; }
 }
 

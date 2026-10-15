@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { BrandWordmark } from '../common/BrandLockup';
+import { RouteLink } from '../common/RouteLink';
 
 interface FooterProps {
   onNavigate: (route: string) => void;
@@ -34,13 +35,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           
           {/* Brand & Contact (Span 4) */}
           <div className="lg:col-span-4 space-y-3.5">
-            <div
-              onClick={() => onNavigate('home')}
+            <RouteLink
+              route="home"
+              onNavigate={onNavigate}
               className="inline-flex items-center gap-3 cursor-pointer group"
+              aria-label="ASTRO SIVAM home"
             >
-              {/* The reference lock-up — the navbar renders this same component. */}
-              <BrandWordmark />
-            </div>
+              {/* The reference lock-up — the navbar renders this same component.
+                  emblemAlt is empty because the link carries the name. */}
+              <BrandWordmark emblemAlt="" />
+            </RouteLink>
 
             <p className="text-xs text-slate-400 leading-relaxed pr-2">
               Authentic Vedic horoscope calculations, 10-Poruthams marriage compatibility, auspicious baby naming ceremonies, and Subha Muhurtham dates computed with Lahiri sidereal ephemeris.
@@ -73,13 +77,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <Facebook className="w-3.5 h-3.5 text-[#1877F2]" />
                 <span>Facebook</span>
               </a>
-              <button
-                type="button"
-                onClick={() => onNavigate('contact')}
+              <RouteLink
+                route="contact"
+                onNavigate={onNavigate}
                 className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
               >
                 <span>Contact Us</span>
-              </button>
+              </RouteLink>
             </div>
           </div>
 
@@ -91,54 +95,54 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                  <button
-                    data-route="birth-jathagam"
-                    onClick={() => onNavigate('birth-jathagam')}
+                <RouteLink
+                  route="birth-jathagam"
+                  onNavigate={onNavigate}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
                   <span>{t('birth_jathagam')} (Horoscope)</span>
-                </button>
+                </RouteLink>
               </li>
               <li>
-                  <button
-                    data-route="marriage-compatibility"
-                    onClick={() => onNavigate('marriage-compatibility')}
+                <RouteLink
+                  route="marriage-compatibility"
+                  onNavigate={onNavigate}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
                   <span>{t('marriage_compatibility')} (10 Poruthams)</span>
-                </button>
+                </RouteLink>
               </li>
               <li>
-                  <button
-                    data-route="baby-naming"
-                    onClick={() => onNavigate('baby-naming')}
+                <RouteLink
+                  route="baby-naming"
+                  onNavigate={onNavigate}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
                   <span>{t('baby_naming')} & Nakshatra Letters</span>
-                </button>
+                </RouteLink>
               </li>
               <li>
-                  <button
-                    data-route="muhurtham"
-                    onClick={() => onNavigate('muhurtham')}
+                <RouteLink
+                  route="muhurtham"
+                  onNavigate={onNavigate}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
                   <span>Subha Muhurtham Finder (Auspicious Dates)</span>
-                </button>
+                </RouteLink>
               </li>
               <li>
-                  <button
-                    data-route="services"
-                    onClick={() => onNavigate('services')}
+                <RouteLink
+                  route="services"
+                  onNavigate={onNavigate}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
                   <span>Full Service Catalogue & Plans</span>
-                </button>
+                </RouteLink>
               </li>
             </ul>
           </div>
@@ -150,54 +154,54 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                  <button
-                    data-route="how-it-works"
-                    onClick={() => onNavigate('how-it-works')}
+                <RouteLink
+                  route="how-it-works"
+                  onNavigate={onNavigate}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
                   <span>{t('how_it_works')}</span>
-                </button>
+                </RouteLink>
               </li>
               <li>
-                  <button
-                    data-route="team"
-                    onClick={() => onNavigate('team')}
+                <RouteLink
+                  route="team"
+                  onNavigate={onNavigate}
                   className="group flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-amber-500 group-hover:translate-x-0.5 transition-transform" />
                   <span>Astrology Team</span>
-                </button>
+                </RouteLink>
               </li>
               <li>
-                  <button
-                    data-route="about"
-                    onClick={() => onNavigate('about')}
+                <RouteLink
+                  route="about"
+                  onNavigate={onNavigate}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
                   <span>{t('about')}</span>
-                </button>
+                </RouteLink>
               </li>
               <li>
-                  <button
-                    data-route="contact"
-                    onClick={() => onNavigate('contact')}
+                <RouteLink
+                  route="contact"
+                  onNavigate={onNavigate}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
                   <span>{t('contact')}</span>
-                </button>
+                </RouteLink>
               </li>
               <li>
-                  <button
-                    data-route="dashboard"
-                    onClick={() => onNavigate('dashboard')}
+                <RouteLink
+                  route="dashboard"
+                  onNavigate={onNavigate}
                   className="group flex items-center gap-1.5 text-slate-400 hover:text-amber-300 transition-colors text-left"
                 >
                   <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-amber-400 transition-transform group-hover:translate-x-0.5" />
                   <span>Customer Dashboard</span>
-                </button>
+                </RouteLink>
               </li>
             </ul>
           </div>
@@ -255,37 +259,37 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
-              <button
-                data-route="policy-privacy"
-                onClick={() => onNavigate('policy-privacy')}
+            <RouteLink
+              route="policy-privacy"
+              onNavigate={onNavigate}
               className="hover:text-amber-300 transition-colors"
             >
               {t('privacy_policy')}
-            </button>
+            </RouteLink>
             <span className="text-slate-600">•</span>
-              <button
-                data-route="policy-terms"
-                onClick={() => onNavigate('policy-terms')}
+            <RouteLink
+              route="policy-terms"
+              onNavigate={onNavigate}
               className="hover:text-amber-300 transition-colors"
             >
               {t('terms_conditions')}
-            </button>
+            </RouteLink>
             <span className="text-slate-600">•</span>
-              <button
-                data-route="policy-payment"
-                onClick={() => onNavigate('policy-payment')}
+            <RouteLink
+              route="policy-payment"
+              onNavigate={onNavigate}
               className="hover:text-amber-300 transition-colors"
             >
               {t('payment_policy')}
-            </button>
+            </RouteLink>
             <span className="text-slate-600">•</span>
-              <button
-                data-route="policy-refund"
-                onClick={() => onNavigate('policy-refund')}
+            <RouteLink
+              route="policy-refund"
+              onNavigate={onNavigate}
               className="hover:text-amber-300 transition-colors"
             >
               {t('refund_policy')}
-            </button>
+            </RouteLink>
           </div>
 
           <button

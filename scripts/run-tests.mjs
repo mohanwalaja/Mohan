@@ -104,6 +104,17 @@ const testFiles = [
   // document with a self-referencing canonical and real body content — the
   // identical-empty-shell + homepage-canonical + fake-hreflang bug class.
   'tests/seo-prerender-contract.test.ts',
+  // SEO audit 2026-10-15. (1) Internal navigation is real <a href> links to
+  // canonical URLs — the prerendered homepage used to ship two anchors and no
+  // followable internal link; RouteLink's click semantics are executed here.
+  'tests/crawlable-links.test.tsx',
+  // (2) Homepage FAQPage + Review/AggregateRating JSON-LD, built from the same
+  // arrays as the visible FAQ and review cards, homepage-only.
+  'tests/homepage-structured-data.test.ts',
+  // (3) Verified reviews from paid, delivered orders: client logic and wiring
+  // always; the real PHP routes (eligibility, moderation, public fields,
+  // refund-after-publish) whenever the dev-only php-wasm runtime is present.
+  'tests/customer-reviews.test.ts',
   // The mobile white-screen fix (2026-10-14): the inline boot-critical style
   // and the splash at the top of every prerendered document must keep painting
   // the brand surface before the stylesheet and the bundle arrive — and must

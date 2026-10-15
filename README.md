@@ -72,6 +72,7 @@ All runbooks and records live in [`docs/`](docs/). Most used:
 - [Rate limiting & payment recovery](docs/RATE_LIMITING_AND_PAYMENT_RECOVERY.md)
 - [Cloudflare CDN setup](docs/CLOUDFLARE_CDN_SETUP.md)
 - [Boot splash — mobile white screen](docs/BOOT_SPLASH_MOBILE_WHITE_SCREEN.md)
+- [Crawlable links, homepage structured data & verified customer reviews](docs/SEO_CRAWLABLE_LINKS_STRUCTURED_DATA_AND_REVIEWS.md)
 - Latest full audit: [docs/FULL_AUDIT_2026_10_13.md](docs/FULL_AUDIT_2026_10_13.md)
 
 ## Secrets

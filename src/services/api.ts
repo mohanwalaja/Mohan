@@ -1,4 +1,4 @@
-import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession } from '../types';
+import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus } from '../types';
 
 export function getApiBase(): string {
   // Always default to relative '/api' in browser contexts.
@@ -1828,6 +1828,78 @@ export const api = {
 
   async banIpFromOrder(orderId: string, reason?: string): Promise<{ success: boolean; message: string; ip?: string; entry?: BannedIpEntry }> {
     return this.banOrderIp(orderId, reason);
+  },
+
+  // Customer reviews (SEO audit 2026-10-15, finding 3) — api/reviews.php.
+  // Only customers with a paid, delivered order can write one; an
+  // administrator publishes it before it appears on the homepage.
+
+  /**
+   * Published reviews for the homepage. Public and cookie-less, and never
+   * reported as a client error: when the endpoint is unavailable the homepage
+   * simply keeps showing its curated testimonials.
+   */
+  async getPublishedReviews(limit = 12): Promise<{ success: boolean; reviews: PublishedReview[]; aggregate?: ReviewAggregate; message?: string }> {
+    try {
+      const res = await fetch(`${getApiBase()}/services/reviews?limit=${encodeURIComponent(String(limit))}`, {
+        headers: { Accept: 'application/json' },
+        credentials: 'omit'
+      });
+      if (!res.ok || !hasJsonContentType(res)) {
+        return { success: false, reviews: [], message: `Reviews unavailable (HTTP ${res.status}).` };
+      }
+      const data = await safeJson<any>(res);
+      return {
+        success: data?.success === true,
+        reviews: Array.isArray(data?.reviews) ? data.reviews : [],
+        aggregate: data?.aggregate,
+        message: data?.message
+      };
+    } catch (error: any) {
+      return { success: false, reviews: [], message: error?.message || 'Reviews unavailable.' };
+    }
+  },
+
+  /** The signed-in customer's reviews and the orders they may still review. */
+  async getMyReviews(): Promise<{ success: boolean; reviews: CustomerReview[]; eligibleOrders: ReviewEligibleOrder[]; message?: string }> {
+    const res = await apiFetch(`${API_BASE}/services/my-reviews`);
+    const data = await safeJson<any>(res);
+    return {
+      ...data,
+      success: data?.success === true,
+      reviews: Array.isArray(data?.reviews) ? data.reviews : [],
+      eligibleOrders: Array.isArray(data?.eligibleOrders) ? data.eligibleOrders : []
+    };
+  },
+
+  /** Create (or edit) the review of one service of one paid, delivered order. */
+  async submitReview(input: ReviewSubmission): Promise<{ success: boolean; review?: CustomerReview; message?: string; errors?: Record<string, string>; code?: string }> {
+    const res = await apiFetch(`${API_BASE}/services/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input)
+    });
+    return safeJson(res);
+  },
+
+  async getAdminReviews(status: ReviewStatus | 'ALL' = 'ALL'): Promise<{ success: boolean; reviews: AdminReview[]; counts?: Record<string, number>; message?: string }> {
+    const res = await apiFetch(`${API_BASE}/admin/reviews?status=${encodeURIComponent(status)}`);
+    const data = await safeJson<any>(res);
+    return { ...data, success: data?.success === true, reviews: Array.isArray(data?.reviews) ? data.reviews : [] };
+  },
+
+  async moderateReview(id: string, decision: 'approve' | 'reject', reason?: string): Promise<{ success: boolean; review?: AdminReview; message?: string }> {
+    const res = await apiFetch(`${API_BASE}/admin/reviews/${encodeURIComponent(id)}/${decision}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reason ? { reason } : {})
+    });
+    return safeJson(res);
+  },
+
+  async deleteReview(id: string): Promise<{ success: boolean; message?: string }> {
+    const res = await apiFetch(`${API_BASE}/admin/reviews/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    return safeJson(res);
   }
 };
 
