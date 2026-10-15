@@ -29,6 +29,12 @@
 # ============================================================================
 name: Production monitoring
 
+# Supply-chain pins: every third-party action in this file is pinned to a full
+# commit SHA (the tag is kept as a trailing comment for readability). Tags are
+# moving refs — a compromised or re-pushed tag could otherwise ship arbitrary
+# code into CI. Refresh a pin with:
+#   curl -s https://api.github.com/repos/<owner>/<repo>/commits/<tag>
+
 on:
   schedule:
     # Weekly, Monday 06:15 UTC. Tuesdays catch the host's Sunday
@@ -49,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Verify PRODUCTION_URL is configured
         env:

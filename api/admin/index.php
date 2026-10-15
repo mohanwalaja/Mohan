@@ -118,24 +118,44 @@ function astroOmitBlankAdminSecrets($body) {
     return $body;
 }
 
+/**
+ * Fail-loud schema guards for objects that used to be created inline on web
+ * requests. The DDL now lives in api/migrations/013 (fresh installs get it
+ * from api/schema.sql instead), and the web DB user is granted no ALTER
+ * privilege — so these helpers only VERIFY, and answer 503 with a log line
+ * naming the migration when a database was never migrated.
+ */
+function astroAdminRequireTable($pdo, $table, $migrationFile) {
+    try {
+        $found = $pdo->query("SHOW TABLES LIKE '" . str_replace("'", "", (string)$table) . "'")->fetchColumn();
+    } catch (Exception $e) {
+        $found = false;
+    }
+    if (!$found) {
+        error_log("ASTRO SIVAM: table {$table} is missing; run {$migrationFile} on this database.");
+        jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
+    }
+}
+
+function astroAdminRequireColumns($pdo, $table, $columns, $migrationFile) {
+    try {
+        $existing = $pdo->query("SHOW COLUMNS FROM `{$table}`")->fetchAll(PDO::FETCH_COLUMN, 0);
+    } catch (Exception $e) {
+        $existing = [];
+    }
+    foreach ((array)$columns as $column) {
+        if (!in_array($column, $existing, true)) {
+            error_log("ASTRO SIVAM: {$table}.{$column} is missing; run {$migrationFile} on this database.");
+            jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
+        }
+    }
+}
+
 // 1. GET /api/admin/orders
 if (strpos($path, 'admin/orders') !== false && $method === 'GET' && !preg_match('/admin\/orders\/[^\/]+/', $path)) {
-    // Defensive: older databases may predate the family-bundle columns.
-    // Use a single SHOW COLUMNS check instead of per-column ALTER + catch
-    // to avoid 2 extra DB round-trips on every admin page load.
-    static $ordersSchemaReady = false;
-    if (!$ordersSchemaReady) {
-        try {
-            $existingCols = $pdo->query("SHOW COLUMNS FROM `orders`")->fetchAll(PDO::FETCH_COLUMN, 0);
-            if (!in_array('group_id', $existingCols, true)) {
-                $pdo->exec("ALTER TABLE `orders` ADD COLUMN `group_id` VARCHAR(64) NULL AFTER `order_number`");
-            }
-            if (!in_array('group_order_index', $existingCols, true)) {
-                $pdo->exec("ALTER TABLE `orders` ADD COLUMN `group_order_index` INT NOT NULL DEFAULT 0 AFTER `group_id`");
-            }
-        } catch (\Throwable $e) {}
-        $ordersSchemaReady = true;
-    }
+    // The family-bundle columns live in api/migrations/013 (fresh installs: api/schema.sql).
+    // Verified, never altered, on web requests — see astroAdminRequireColumns.
+    astroAdminRequireColumns($pdo, 'orders', ['group_id', 'group_order_index'], 'api/migrations/013_web_request_ddl_consolidation.sql');
 
     // Surface every fulfilable order: paid orders whose payment was captured
     // (or verified by an admin), PLUS free-beta charts that never required a
@@ -228,10 +248,8 @@ if (preg_match('/admin\/orders\/([^\/]+)\/verify-payment/', $path, $matches) && 
         jsonResponse(['success' => false, 'message' => 'This order does not require payment verification.'], 400);
     }
 
-    foreach ([
-        "ALTER TABLE orders ADD COLUMN payment_intent_id VARCHAR(80) NULL",
-        "ALTER TABLE orders ADD COLUMN payment_status VARCHAR(32) NOT NULL DEFAULT 'PENDING_ADMIN'"
-    ] as $migration) { try { $pdo->exec($migration); } catch (Exception $e) {} }
+    // The online-payment columns live in api/migrations/013 — verified, never altered, here.
+    astroAdminRequireColumns($pdo, 'orders', ['payment_intent_id', 'payment_status'], 'api/migrations/013_web_request_ddl_consolidation.sql');
 
     $adminNotes = trim((string)($body['adminNotes'] ?? 'Payment manually verified by administrator.'));
     if (!empty($order['group_id'])) {
@@ -291,7 +309,7 @@ if (strpos($path, 'admin/preview-html') !== false && $method === 'POST') {
     $result = $body['result'] ?? [];
     $order = $body['order'] ?? [
         'service_type' => $serviceType,
-        'order_number' => 'PREVIEW-' . strtoupper(substr(md5(uniqid()), 0, 6)),
+        'order_number' => 'PREVIEW-' . strtoupper(astro_random_hex(6)),
         'language' => $lang,
         'user_name' => $result['nativeName'] ?? ($result['devoteeName'] ?? 'Valued User')
     ];
@@ -851,7 +869,11 @@ if (preg_match('/admin\/orders\/([^\/]+)\/cancel/', $path, $matches) && $method 
 
     $orderId = $matches[1];
     $body = getJsonBody();
-    $reason = trim($body['reason'] ?? 'Cancelled by administrator');
+    $reason = trim((string)($body['reason'] ?? 'Cancelled by administrator'));
+    $reason = function_exists('mb_substr') ? mb_substr($reason, 0, 500, 'UTF-8') : substr($reason, 0, 500);
+    if ($reason === '') {
+        $reason = 'Cancelled by administrator';
+    }
 
     $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ? LIMIT 1");
     $stmt->execute([$orderId]);
@@ -859,6 +881,28 @@ if (preg_match('/admin\/orders\/([^\/]+)\/cancel/', $path, $matches) && $method 
 
     if (!$order) {
         jsonResponse(['success' => false, 'message' => 'Order not found'], 404);
+    }
+
+    // STATUS GUARD (mirrors the customer cancel): cancelling a delivered order
+    // would hide an emailed report behind CANCELLED. Paid-but-delivered is
+    // already non-refundable; free-but-delivered simply stays delivered.
+    $adminCancelStatus = strtoupper(trim((string)($order['status'] ?? '')));
+    if ($adminCancelStatus === 'CANCELLED') {
+        jsonResponse(['success' => true, 'message' => "Order #{$order['order_number']} is already cancelled."]);
+    }
+    if (!in_array($adminCancelStatus, ['PENDING', 'PENDING_APPROVAL', 'PENDING_PAYMENT_VERIFICATION'], true)) {
+        if (astro_refund_status_is_delivered($adminCancelStatus)) {
+            jsonResponse([
+                'success' => false,
+                'code' => 'ORDER_ALREADY_DELIVERED',
+                'message' => "Order #{$order['order_number']} was already approved and delivered, so it cannot be cancelled. Delete it instead if it must disappear entirely."
+            ], 409);
+        }
+        jsonResponse([
+            'success' => false,
+            'code' => 'ORDER_NOT_CANCELLABLE',
+            'message' => "Order #{$order['order_number']} cannot be cancelled in its current state ({$adminCancelStatus})."
+        ], 409);
     }
 
     if ((float) ($order['amount'] ?? 0) > 0 && (int) ($order['payment_confirmed'] ?? 0) === 1 && !astro_refund_is_already_refunded($order)) {
@@ -869,8 +913,22 @@ if (preg_match('/admin\/orders\/([^\/]+)\/cancel/', $path, $matches) && $method 
         ], 409);
     }
 
-    $upd = $pdo->prepare("UPDATE orders SET status = 'CANCELLED', admin_notes = ?, refund_reason = ?, updated_at = NOW() WHERE id = ?");
+    // Atomic against a concurrent customer self-cancel or second admin click.
+    $upd = $pdo->prepare("UPDATE orders SET status = 'CANCELLED', admin_notes = ?, refund_reason = ?, updated_at = NOW() WHERE id = ? AND status IN ('PENDING', 'PENDING_APPROVAL', 'PENDING_PAYMENT_VERIFICATION')");
     $upd->execute([$reason, $reason, $orderId]);
+    if ($upd->rowCount() !== 1) {
+        $adminRefetch = $pdo->prepare("SELECT status FROM orders WHERE id = ? LIMIT 1");
+        $adminRefetch->execute([$orderId]);
+        $adminNowStatus = strtoupper(trim((string)($adminRefetch->fetchColumn() ?: $adminCancelStatus)));
+        if ($adminNowStatus === 'CANCELLED') {
+            jsonResponse(['success' => true, 'message' => "Order #{$order['order_number']} is already cancelled."]);
+        }
+        jsonResponse([
+            'success' => false,
+            'code' => 'ORDER_STATUS_CHANGED',
+            'message' => "Order #{$order['order_number']} changed while the cancellation was processed (now {$adminNowStatus}). Please refresh and try again."
+        ], 409);
+    }
 
     logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'ORDER_CANCELLED', "Cancelled order #{$order['order_number']}: {$reason}");
 
@@ -1248,7 +1306,11 @@ if (preg_match('/family-orders\/([^\/]+)\/cancel/', $path, $matches) && $method 
 
     $groupId = $matches[1];
     $body = getJsonBody();
-    $reason = trim($body['reason'] ?? 'Cancelled by administrator');
+    $reason = trim((string)($body['reason'] ?? 'Cancelled by administrator'));
+    $reason = function_exists('mb_substr') ? mb_substr($reason, 0, 500, 'UTF-8') : substr($reason, 0, 500);
+    if ($reason === '') {
+        $reason = 'Cancelled by administrator';
+    }
 
     $stmt = $pdo->prepare("SELECT * FROM orders WHERE group_id = ?");
     $stmt->execute([$groupId]);
@@ -1256,6 +1318,29 @@ if (preg_match('/family-orders\/([^\/]+)\/cancel/', $path, $matches) && $method 
 
     if (empty($groupOrders)) {
         jsonResponse(['success' => false, 'message' => 'Family order group not found'], 404);
+    }
+
+    // STATUS GUARD: one click must never half-cancel a bundle. If any chart
+    // was already delivered, the whole group stays as it is.
+    $pendingMembers = 0;
+    foreach ($groupOrders as $member) {
+        $memberStatus = strtoupper(trim((string)($member['status'] ?? '')));
+        if ($memberStatus === 'CANCELLED') {
+            continue;
+        }
+        if (astro_refund_status_is_delivered($memberStatus)) {
+            jsonResponse([
+                'success' => false,
+                'code' => 'ORDER_ALREADY_DELIVERED',
+                'message' => "Chart #{$member['order_number']} in this bundle was already approved and delivered, so the family package cannot be cancelled."
+            ], 409);
+        }
+        if (in_array($memberStatus, ['PENDING', 'PENDING_APPROVAL', 'PENDING_PAYMENT_VERIFICATION'], true)) {
+            $pendingMembers++;
+        }
+    }
+    if ($pendingMembers === 0) {
+        jsonResponse(['success' => true, 'message' => "Family package {$groupId} has no cancellable charts left; nothing was changed."]);
     }
 
     $paidGroupTotal = 0.0;
@@ -1272,12 +1357,15 @@ if (preg_match('/family-orders\/([^\/]+)\/cancel/', $path, $matches) && $method 
         ], 409);
     }
 
-    $upd = $pdo->prepare("UPDATE orders SET status = 'CANCELLED', admin_notes = ?, refund_reason = ?, updated_at = NOW() WHERE group_id = ?");
+    // Atomic: only still-queued members flip, so a concurrent approval of one
+    // chart cannot be overwritten back to CANCELLED by this bundle update.
+    $upd = $pdo->prepare("UPDATE orders SET status = 'CANCELLED', admin_notes = ?, refund_reason = ?, updated_at = NOW() WHERE group_id = ? AND status IN ('PENDING', 'PENDING_APPROVAL', 'PENDING_PAYMENT_VERIFICATION')");
     $upd->execute([$reason, $reason, $groupId]);
+    $cancelledMembers = $upd->rowCount();
 
-    logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'FAMILY_ORDER_CANCELLED', "Cancelled family order group {$groupId} (" . count($groupOrders) . " charts): {$reason}");
+    logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'FAMILY_ORDER_CANCELLED', "Cancelled family order group {$groupId} ({$cancelledMembers} of " . count($groupOrders) . " charts): {$reason}");
 
-    jsonResponse(['success' => true, 'message' => "Entire family package (" . count($groupOrders) . " charts) has been cancelled successfully."]);
+    jsonResponse(['success' => true, 'message' => "Entire family package ({$cancelledMembers} of " . count($groupOrders) . " charts) has been cancelled successfully."]);
 }
 
 // 3h. GET /api/admin/family-orders/:groupId/invoice-pdf (consolidated invoice, admin-authenticated)
@@ -1397,7 +1485,18 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
         $body = astroOmitBlankAdminSecrets(getJsonBody());
         // Automated M-PAiSA checkout/capture is not implemented in this API.
         if (($body['vodafoneMPaisaPaymentMode'] ?? null) === 'online') $body['vodafoneMPaisaPaymentMode'] = 'offline';
-        
+
+        // Fail fast on SSRF-unsafe gateway URLs: a stored http/internal webhook
+        // would otherwise fail closed at send time with no hint at save time.
+        // Only newly provided values are checked (blanks were stripped above
+        // and mean "keep the stored value"), so unrelated saves are unaffected.
+        foreach (['whatsapp', 'viber'] as $webhookChannel) {
+            $webhookCandidate = $body['chatAlertSettings'][$webhookChannel]['webhookUrl'] ?? null;
+            if (is_string($webhookCandidate) && trim($webhookCandidate) !== '' && !AstroChatAlerts::isValidWebhookUrl($webhookCandidate)) {
+                jsonResponse(['success' => false, 'message' => 'The ' . $webhookChannel . ' webhook URL must be an https URL with a public host. Nothing was saved.'], 400);
+            }
+        }
+
         // Fetch current row to merge changes
         $stmt = $pdo->query("SELECT * FROM system_settings ORDER BY id ASC LIMIT 1");
         $existingRow = $stmt->fetch();
@@ -1886,7 +1985,7 @@ if (strpos($path, 'admin/team') !== false) {
         jsonResponse(['success' => true, 'team' => $team]);
     } elseif ($method === 'POST') {
         $body = getJsonBody();
-        $id = $body['id'] ?? ('tm_' . uniqid());
+        $id = $body['id'] ?? astro_random_id('tm_', 8);
         $name = $body['fullName'] ?? $body['nameEn'] ?? $body['name'] ?? 'Team Scholar';
         $name_ta = $body['nameTa'] ?? '';
         $title = $body['titleEn'] ?? $body['title'] ?? 'Vedic Astrologer';
@@ -1965,15 +2064,8 @@ if (strpos($path, 'admin/users') !== false && $method === 'GET') {
 
 // 11. BANNED IPS MANAGEMENT (GET, POST, DELETE /api/admin/banned-ips)
 if (strpos($path, 'admin/banned-ips') !== false) {
-    // Ensure table exists
-    $pdo->exec("CREATE TABLE IF NOT EXISTS `banned_ips` (
-      `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-      `ip_address` VARCHAR(64) NOT NULL UNIQUE,
-      `reason` VARCHAR(255) NOT NULL DEFAULT 'Repeated fake orders / policy violation',
-      `banned_by` VARCHAR(191) NULL DEFAULT 'Admin',
-      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      INDEX `idx_banned_ip` (`ip_address`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+    // banned_ips lives in api/migrations/013 (fresh installs: api/schema.sql) — verified, never created, here.
+    astroAdminRequireTable($pdo, 'banned_ips', 'api/migrations/013_web_request_ddl_consolidation.sql');
 
     if ($method === 'GET') {
         $stmt = $pdo->query("SELECT * FROM banned_ips ORDER BY created_at DESC");
@@ -2048,14 +2140,8 @@ if (preg_match('/admin\/orders\/([^\/]+)\/ban-ip/', $path, $matches) && $method 
         jsonResponse(['success' => false, 'message' => 'This order does not contain an IP address.'], 400);
     }
 
-    $pdo->exec("CREATE TABLE IF NOT EXISTS `banned_ips` (
-      `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-      `ip_address` VARCHAR(64) NOT NULL UNIQUE,
-      `reason` VARCHAR(255) NOT NULL DEFAULT 'Repeated fake orders / policy violation',
-      `banned_by` VARCHAR(191) NULL DEFAULT 'Admin',
-      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      INDEX `idx_banned_ip` (`ip_address`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+    // banned_ips lives in api/migrations/013 — verified, never created, here.
+    astroAdminRequireTable($pdo, 'banned_ips', 'api/migrations/013_web_request_ddl_consolidation.sql');
 
     $ins = $pdo->prepare("INSERT INTO banned_ips (ip_address, reason, banned_by, created_at) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE reason = VALUES(reason), banned_by = VALUES(banned_by), created_at = NOW()");
     $ins->execute([$ip, $reason . " (#" . $order['order_number'] . ")", $admin['name'] ?? 'Admin']);
@@ -2234,8 +2320,9 @@ function astroAdminEnsureAiChatTables($pdo) {
             try {
                 $pdo->exec($statement);
             } catch (\Throwable $e) {
-                // CREATE TABLE IF NOT EXISTS: any error here is surfaced by
-                // the SELECT below, not swallowed silently.
+                // CREATE TABLE IF NOT EXISTS: a real failure is logged here and
+                // re-surfaced by the SELECT below — never swallowed silently.
+                error_log('ASTRO SIVAM: AI chat table bootstrap statement failed: ' . $e->getMessage());
             }
         }
     }

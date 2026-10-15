@@ -291,8 +291,8 @@ class AstroMailer
 
     private static function sendViaNativeMail($toEmail, $toName, $subject, $htmlContent, $attachments, $fromEmail, $fromName, $replyTo, $inlineImages = [])
     {
-        $outerBoundary = "==Multipart_Boundary_x" . md5(time() . uniqid('', true)) . "x";
-        $innerBoundary = "==Related_Boundary_x" . md5(time() . uniqid('rel', true)) . "x";
+        $outerBoundary = "==Multipart_Boundary_x" . bin2hex(random_bytes(16)) . "x";
+        $innerBoundary = "==Related_Boundary_x" . bin2hex(random_bytes(16)) . "x";
 
         $headers = "From: =?UTF-8?B?" . base64_encode($fromName) . "?= <{$fromEmail}>\r\n";
         $headers .= "Reply-To: {$replyTo}\r\n";

@@ -704,8 +704,8 @@ function astro_create_multi_person_order($pdo, array $user, array $body): void
     // ---- 6. ONE transaction: header + people + items + claim + intent -----
     astro_ensure_multi_person_tables($pdo);
 
-    $orderId = 'ord_' . uniqid('', true);
-    $orderNumber = 'ORD-' . strtoupper(substr(uniqid(), -6));
+    $orderId = astro_random_id('ord_', 16);
+    $orderNumber = 'ORD-' . strtoupper(astro_random_hex(6));
     $singleItem = count($items) === 1;
     $headerServiceType = $singleItem ? $items[0]['serviceCode'] : 'MULTI_PERSON';
     $orderServiceMode = $requiresPayment ? 'PAID' : 'FREE_BETA';

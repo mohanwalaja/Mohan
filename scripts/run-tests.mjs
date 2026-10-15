@@ -115,6 +115,11 @@ const testFiles = [
   // always; the real PHP routes (eligibility, moderation, public fields,
   // refund-after-publish) whenever the dev-only php-wasm runtime is present.
   'tests/customer-reviews.test.ts',
+  // Chat-gateway webhook SSRF guard (audit 2026-10-15): both sender branches
+  // validate the admin-configured URL before the order payload is posted, the
+  // transport cannot be bounced off-host by a redirect, and saving a bad URL
+  // in admin settings fails fast.
+  'tests/chat-webhook-ssrf.test.ts',
   // The mobile white-screen fix (2026-10-14): the inline boot-critical style
   // and the splash at the top of every prerendered document must keep painting
   // the brand surface before the stylesheet and the bundle arrive — and must

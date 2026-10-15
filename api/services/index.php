@@ -17,7 +17,6 @@ require_once __DIR__ . '/../payments.php';
 $pdo = getDbConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
-$fullUri = $_SERVER['REQUEST_URI'] ?? '';
 $jsonBody = getJsonBody();
 $action = $_GET['action'] ?? $jsonBody['action'] ?? $_POST['action'] ?? '';
 
@@ -243,19 +242,29 @@ function astro_ensure_beta_ip_claims_table($pdo) {
 }
 
 /**
- * Keep the repeat-order abuse guard compatible with older cPanel schemas.
- * The rate limit is on outstanding unpaid checkout groups, not individual
- * family chart rows; a captured online payment is already verified.
+ * Verifies the family-bundle and online-payment columns exist on `orders` —
+ * WITHOUT running DDL.
+ *
+ * Those columns live in api/migrations/013_web_request_ddl_consolidation.sql
+ * (and api/schema.sql for fresh installs). Web requests must never ALTER
+ * TABLE: the web DB user is granted no ALTER privilege. This check fails
+ * loudly at the point of use instead. It runs once per process.
  */
 function astro_ensure_order_limit_columns($pdo) {
     static $ready = false;
     if ($ready) return;
 
-    foreach ([
-        "ALTER TABLE orders ADD COLUMN group_id VARCHAR(64) NULL AFTER order_number",
-        "ALTER TABLE orders ADD COLUMN payment_status VARCHAR(32) NOT NULL DEFAULT 'PENDING_ADMIN'"
-    ] as $migration) {
-        try { $pdo->exec($migration); } catch (Throwable $e) {}
+    try {
+        $existing = $pdo->query("SHOW COLUMNS FROM `orders`")->fetchAll(PDO::FETCH_COLUMN, 0);
+    } catch (Exception $e) {
+        error_log('ASTRO SIVAM: order schema check failed - ' . $e->getMessage());
+        jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
+    }
+    foreach (['group_id', 'group_order_index', 'payment_intent_id', 'payment_status'] as $column) {
+        if (!in_array($column, $existing, true)) {
+            error_log("ASTRO SIVAM: orders.{$column} is missing; run api/migrations/013_web_request_ddl_consolidation.sql on this database.");
+            jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
+        }
     }
     $ready = true;
 }
@@ -321,7 +330,7 @@ function astro_setting_value($general, $keys, $envKeys = []) {
 
 function astro_new_payment_intent_id() {
     try { return 'pi_' . bin2hex(random_bytes(16)); }
-    catch (Exception $e) { return 'pi_' . str_replace('.', '', uniqid('', true)); }
+    catch (Exception $e) { throw new Exception('Could not create a secure payment session. Please try again.'); }
 }
 
 /**
@@ -343,9 +352,11 @@ function astro_enforce_contact_rate_limit($pdo) {
 }
 
 // 1. GET /api/services/settings
+// Anchored match: the old bare-substring checks (notably strpos($fullUri,
+// 'settings')) would also catch any future route whose name merely contains
+// "settings". Every route in this file is matched the same anchored way.
 if (($method === 'GET' || $method === 'HEAD') && (
-    strpos($path, 'services/settings') !== false ||
-    strpos($fullUri, 'settings') !== false ||
+    preg_match('#/services/settings/?$#', $path) ||
     $action === 'settings'
 )) {
     $stmt = $pdo->query("SELECT * FROM system_settings ORDER BY id ASC LIMIT 1");
@@ -484,7 +495,7 @@ if (($method === 'GET' || $method === 'HEAD') && (
 }
 
 // 2. GET /api/services/team
-if ((strpos($path, 'services/team') !== false || $action === 'team') && $method === 'GET') {
+if ((preg_match('#/services/team/?$#', $path) || $action === 'team') && $method === 'GET') {
     $stmt = $pdo->query("SELECT * FROM team_members WHERE is_active = 1 ORDER BY display_order ASC, created_at ASC");
     $rows = $stmt->fetchAll();
     $team = array_map(function($r) {
@@ -509,7 +520,7 @@ if ((strpos($path, 'services/team') !== false || $action === 'team') && $method 
 }
 
 // 3. GET & POST /api/services/profile
-if (strpos($path, 'services/profile') !== false || $action === 'profile' || $action === 'get-profile' || $action === 'save-profile') {
+if (preg_match('#/services/profile/?$#', $path) || $action === 'profile' || $action === 'get-profile' || $action === 'save-profile') {
     $user = requireAuth($pdo);
     if ($method === 'GET' || $action === 'get-profile') {
         $stmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? LIMIT 1");
@@ -542,7 +553,7 @@ if (strpos($path, 'services/profile') !== false || $action === 'profile' || $act
                 $user['id']
             ]);
         } else {
-            $bpId = 'bp_' . uniqid('', true);
+            $bpId = astro_random_id('bp_', 16);
             $ins = $pdo->prepare("INSERT INTO birth_profiles (id, user_id, name, dob, tob, birth_place, country, latitude, longitude, timezone_offset_hours, gender, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
             $ins->execute([
                 $bpId,
@@ -578,7 +589,7 @@ if (strpos($path, 'services/profile') !== false || $action === 'profile' || $act
 }
 
 // 4. POST /api/services/calculate-preview
-if ((strpos($path, 'services/calculate-preview') !== false || $action === 'calculate-preview') && $method === 'POST') {
+if ((preg_match('#/services/calculate-preview/?$#', $path) || $action === 'calculate-preview') && $method === 'POST') {
     // The calculator runs the full ephemeris; keep it to 20/minute per network.
     astro_rate_limit_enforce($pdo, 'calculate-preview-ip', getClientIpAddress(), 20, 60,
         'Too many calculation requests. Please wait a moment and try again.');
@@ -622,7 +633,7 @@ if ((strpos($path, 'services/calculate-preview') !== false || $action === 'calcu
 }
 
 // 4b. POST /api/services/payment/create-session (durable provider order)
-if ((strpos($path, 'payment/create-session') !== false || $action === 'create-payment-session') && $method === 'POST') {
+if ((preg_match('#/services/payment/create-session/?$#', $path) || $action === 'create-payment-session') && $method === 'POST') {
     $user = requireAuth($pdo);
     // 8 sessions/10 min per user and 20/10 min per network.
     astro_rate_limit_enforce($pdo, 'payment-create-user', $user['id'], 8, 600,
@@ -651,7 +662,11 @@ if ((strpos($path, 'payment/create-session') !== false || $action === 'create-pa
     $sStmt = $pdo->query("SELECT * FROM system_settings ORDER BY id ASC LIMIT 1");
     $sRow = $sStmt->fetch();
     $general = $sRow ? (json_decode($sRow['general_settings'] ?? '{}', true) ?: []) : [];
-    $intentId = astro_new_payment_intent_id();
+    try {
+        $intentId = astro_new_payment_intent_id();
+    } catch (Exception $e) {
+        jsonResponse(['success' => false, 'message' => $e->getMessage()], 502);
+    }
     $expiresAt = date('Y-m-d H:i:s', time() + 1800);
     $gatewayOrderId = '';
     $provider = '';
@@ -672,7 +687,7 @@ if ((strpos($path, 'payment/create-session') !== false || $action === 'create-pa
             if ($mode !== 'online' || $provider !== 'razorpay' || $keyId === '' || $keySecret === '') {
                 jsonResponse(['success' => false, 'message' => 'Razorpay online checkout is not configured.'], 503);
             }
-            $receipt = 'ASTRO-' . strtoupper(substr(str_replace('.', '', uniqid('', true)), -18));
+            $receipt = 'ASTRO-' . strtoupper(astro_random_hex(18));
             $providerResponse = astro_http_json(
                 'https://api.razorpay.com/v1/orders',
                 'POST',
@@ -760,7 +775,7 @@ if ((strpos($path, 'payment/create-session') !== false || $action === 'create-pa
 }
 
 // 4c. POST /api/services/payment/verify-session (provider verification)
-if ((strpos($path, 'payment/verify-session') !== false || $action === 'verify-payment-session') && $method === 'POST') {
+if ((preg_match('#/services/payment/verify-session/?$#', $path) || $action === 'verify-payment-session') && $method === 'POST') {
     $user = requireAuth($pdo);
     // 20 verifications/10 min per user and 40/10 min per network.
     astro_rate_limit_enforce($pdo, 'payment-verify-user', $user['id'], 20, 600,
@@ -907,11 +922,18 @@ if ((strpos($path, 'payment/verify-session') !== false || $action === 'verify-pa
 // would leave the customer's 90% pre-approval refund unrecorded. The customer
 // is told to write to admin@astrosivam.com so the administrator can approve the
 // refund with one click. Unpaid (free beta / unverified) orders cancel freely.
-if ((preg_match('/services\/orders\/([^\/]+)\/cancel/', $path, $matches) || $action === 'cancel-order') && $method === 'POST') {
+if ((preg_match('#/services/orders/([^/]+)/cancel/?$#', $path, $matches) || $action === 'cancel-order') && $method === 'POST') {
     $body = getJsonBody();
     $orderId = !empty($matches[1]) ? $matches[1] : ($body['orderId'] ?? $_GET['id'] ?? '');
     $user = requireAuth($pdo);
-    $reason = trim($body['reason'] ?? 'Cancelled by user');
+    // The reason is persisted to admin_notes + refund_reason and echoed into
+    // the audit trail: cap it so a hostile client cannot stuff kilobytes of
+    // text into those columns and the admin list rendering.
+    $reason = trim((string)($body['reason'] ?? 'Cancelled by user'));
+    $reason = function_exists('mb_substr') ? mb_substr($reason, 0, 500, 'UTF-8') : substr($reason, 0, 500);
+    if ($reason === '') {
+        $reason = 'Cancelled by user';
+    }
 
     $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ? LIMIT 1");
     $stmt->execute([$orderId]);
@@ -926,6 +948,35 @@ if ((preg_match('/services\/orders\/([^\/]+)\/cancel/', $path, $matches) || $act
     }
 
     require_once __DIR__ . '/../refunds.php';
+
+    // STATUS GUARD: only a still-queued order can be cancelled. Without this,
+    // an unpaid or free order could be cancelled AFTER the admin approved and
+    // emailed it — the customer would keep the delivered PDFs while the order
+    // disappears from the fulfilment list as CANCELLED.
+    $cancelStatus = strtoupper(trim((string)($order['status'] ?? '')));
+    if ($cancelStatus === 'CANCELLED') {
+        jsonResponse([
+            'success' => true,
+            'message' => "Order #{$order['order_number']} is already cancelled.",
+            'order' => array_merge($order, ['status' => 'CANCELLED'])
+        ]);
+    }
+    $cancellableStatuses = ['PENDING', 'PENDING_APPROVAL', 'PENDING_PAYMENT_VERIFICATION'];
+    if (!in_array($cancelStatus, $cancellableStatuses, true)) {
+        if (astro_refund_status_is_delivered($cancelStatus)) {
+            jsonResponse([
+                'success' => false,
+                'code' => 'ORDER_ALREADY_DELIVERED',
+                'message' => "Order #{$order['order_number']} has already been approved and delivered, so it can no longer be cancelled. If something is wrong with the report, please email admin@astrosivam.com."
+            ], 409);
+        }
+        jsonResponse([
+            'success' => false,
+            'code' => 'ORDER_NOT_CANCELLABLE',
+            'message' => "Order #{$order['order_number']} cannot be cancelled in its current state ({$cancelStatus})."
+        ], 409);
+    }
+
     if ((float) ($order['amount'] ?? 0) > 0
         && (int) ($order['payment_confirmed'] ?? 0) === 1
         && !astro_refund_is_already_refunded($order)) {
@@ -936,8 +987,30 @@ if ((preg_match('/services\/orders\/([^\/]+)\/cancel/', $path, $matches) || $act
         ], 409);
     }
 
-    $upd = $pdo->prepare("UPDATE orders SET status = 'CANCELLED', admin_notes = ?, refund_reason = ?, updated_at = NOW() WHERE id = ?");
+    // ATOMIC UPDATE: the status predicate makes this single statement the
+    // guard, so an admin approval committing between the SELECT above and this
+    // UPDATE wins the race instead of being silently overwritten to CANCELLED.
+    $upd = $pdo->prepare("UPDATE orders SET status = 'CANCELLED', admin_notes = ?, refund_reason = ?, updated_at = NOW() WHERE id = ? AND status IN ('PENDING', 'PENDING_APPROVAL', 'PENDING_PAYMENT_VERIFICATION')");
     $upd->execute(["Cancelled: {$reason}", $reason, $orderId]);
+
+    if ($upd->rowCount() !== 1) {
+        // Lost the race (or a double submit): re-read the truth and answer it.
+        $refetchStmt = $pdo->prepare("SELECT status FROM orders WHERE id = ? LIMIT 1");
+        $refetchStmt->execute([$orderId]);
+        $nowStatus = strtoupper(trim((string)($refetchStmt->fetchColumn() ?: $cancelStatus)));
+        if ($nowStatus === 'CANCELLED') {
+            jsonResponse([
+                'success' => true,
+                'message' => "Order #{$order['order_number']} is already cancelled.",
+                'order' => array_merge($order, ['status' => 'CANCELLED'])
+            ]);
+        }
+        jsonResponse([
+            'success' => false,
+            'code' => 'ORDER_STATUS_CHANGED',
+            'message' => "Order #{$order['order_number']} changed while the cancellation was processed (now {$nowStatus}). Please refresh and try again."
+        ], 409);
+    }
 
     logAudit($pdo, $user['id'], $user['name'], $user['role'] ?? 'user', 'ORDER_CANCELLED', "Order #{$order['order_number']} cancelled: {$reason}");
 
@@ -957,8 +1030,7 @@ if ((preg_match('/services\/orders\/([^\/]+)\/cancel/', $path, $matches) || $act
 // (one orders row per chart, grouped by group_id) is untouched for old clients
 // and for carts saved before this change.
 if ($method === 'POST' && (
-    (strpos($path, 'services/order') !== false || strpos($fullUri, 'services/order') !== false
-        || strpos($path, 'multi-order') !== false || strpos($fullUri, 'multi-order') !== false
+    (preg_match('#/services/(order|orders|multi-order|multiOrder)/?$#', $path)
         || in_array($action, ['order', 'orders', 'place-order', 'multi-order', 'multiOrder', 'multi-person-order'], true))
     && isset($jsonBody['people']) && is_array($jsonBody['people']) && count($jsonBody['people']) > 0
 )) {
@@ -969,13 +1041,14 @@ if ($method === 'POST' && (
 
 // 5c. POST /api/services/multi-order or services.php?action=multi-order (Unified batch family checkout)
 if ($method === 'POST' && (
-    strpos($path, 'multi-order') !== false ||
-    strpos($fullUri, 'multi-order') !== false ||
-    strpos($path, 'multiOrder') !== false ||
-    strpos($fullUri, 'multiOrder') !== false ||
+    preg_match('#/services/(multi-order|multiOrder)/?$#', $path) ||
     $action === 'multi-order' ||
     $action === 'multiOrder' ||
-    (isset($jsonBody['items']) && is_array($jsonBody['items']) && count($jsonBody['items']) > 0)
+    // Legacy fallback: very old clients POST the tray to the bare endpoint
+    // with no path or action. Scoped to exactly that shape so a future route
+    // that merely carries an `items` array can never land here by accident.
+    ((isset($jsonBody['items']) && is_array($jsonBody['items']) && count($jsonBody['items']) > 0)
+        && $action === '' && preg_match('#/services(\.php)?/?$#', $path))
 )) {
     $user = requireAuth($pdo);
     $isAdmin = strtolower((string)($user['role'] ?? 'customer')) === 'admin';
@@ -1244,19 +1317,11 @@ if ($method === 'POST' && (
         }
     }
 
-    // Ensure group_id column exists
-    try {
-        $pdo->exec("ALTER TABLE `orders` ADD COLUMN `group_id` VARCHAR(64) NULL AFTER `order_number`");
-    } catch (Exception $e) {}
-    try {
-        $pdo->exec("ALTER TABLE `orders` ADD COLUMN `group_order_index` INT NOT NULL DEFAULT 0 AFTER `group_id`");
-    } catch (Exception $e) {}
-    foreach ([
-        "ALTER TABLE orders ADD COLUMN payment_intent_id VARCHAR(80) NULL",
-        "ALTER TABLE orders ADD COLUMN payment_status VARCHAR(32) NOT NULL DEFAULT 'PENDING_ADMIN'"
-    ] as $migration) { try { $pdo->exec($migration); } catch (Exception $e) {} }
+    // The family-bundle and payment columns must already exist (migration 013);
+    // web requests never ALTER TABLE, so verify instead of self-migrating.
+    astro_ensure_order_limit_columns($pdo);
 
-    $groupId = 'GRP-' . date('Y') . '-' . strtoupper(substr(uniqid(), -5));
+    $groupId = 'GRP-' . date('Y') . '-' . strtoupper(astro_random_hex(5));
     $createdOrders = [];
 
     // Reserve the Free Beta slot inside the same transaction as order creation.
@@ -1310,8 +1375,8 @@ if ($method === 'POST' && (
         // Every chart of the family is priced in the SAME currency, so these add up.
         $groupTotal += (float)$itemAmount;
 
-        $orderId = 'ord_' . uniqid('', true) . '_' . ($idx + 1);
-        $orderNumber = 'ORD-' . strtoupper(substr(uniqid(), -6));
+        $orderId = astro_random_id('ord_', 16) . '_' . ($idx + 1);
+        $orderNumber = 'ORD-' . strtoupper(astro_random_hex(6));
 
         // Pre-calculate Vedic astrological result
         $calculatedResult = null;
@@ -1488,13 +1553,14 @@ if ($method === 'POST' && (
 
 // 5b. POST /api/services/order or /api/services/orders
 if ($method === 'POST' && (
-    preg_match('/services\/(order|orders)$/', rtrim($path, '/')) ||
-    strpos($path, 'services/order') !== false ||
-    strpos($fullUri, 'services/order') !== false ||
+    preg_match('#/services/orders?/?$#', $path) ||
     $action === 'order' ||
     $action === 'orders' ||
     $action === 'place-order' ||
-    (isset($jsonBody['serviceType']) && isset($jsonBody['inputPayload']))
+    // Legacy fallback, scoped like the multi-order one above: only the bare
+    // endpoint with no action may be routed by body shape alone.
+    ((isset($jsonBody['serviceType']) && isset($jsonBody['inputPayload']))
+        && $action === '' && preg_match('#/services(\.php)?/?$#', $path))
 )) {
     $user = requireAuth($pdo);
     $isAdmin = strtolower((string)($user['role'] ?? 'customer')) === 'admin';
@@ -1722,7 +1788,7 @@ if ($method === 'POST' && (
             } else {
                 $bpIns = $pdo->prepare("INSERT INTO birth_profiles (id, user_id, name, dob, tob, birth_place, country, latitude, longitude, timezone_offset_hours, gender, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
                 $bpIns->execute([
-                    'bp_' . uniqid('', true),
+                    astro_random_id('bp_', 16),
                     $user['id'],
                     $bpTarget['name'] ?? $user['name'],
                     $bpTarget['dob'],
@@ -1738,8 +1804,8 @@ if ($method === 'POST' && (
         }
     }
 
-    $orderId = 'ord_' . uniqid('', true);
-    $orderNumber = 'ORD-' . strtoupper(substr(uniqid(), -6));
+    $orderId = astro_random_id('ord_', 16);
+    $orderNumber = 'ORD-' . strtoupper(astro_random_hex(6));
 
     // Pre-calculate Vedic astrological result
     $calculatedResult = null;
@@ -1753,11 +1819,9 @@ if ($method === 'POST' && (
         $calculatedResult = AstroEngine::calculateHoroscope($inputPayload);
     }
 
-    // Existing shared-hosting installations may predate the payment columns.
-    foreach ([
-        "ALTER TABLE orders ADD COLUMN payment_intent_id VARCHAR(80) NULL",
-        "ALTER TABLE orders ADD COLUMN payment_status VARCHAR(32) NOT NULL DEFAULT 'PENDING_ADMIN'"
-    ] as $migration) { try { $pdo->exec($migration); } catch (Exception $e) {} }
+    // Existing shared-hosting installations predate the payment columns until
+    // migration 013 is applied; verify instead of ALTERing on a web request.
+    astro_ensure_order_limit_columns($pdo);
 
     // Reserve the free slot and create the order in one InnoDB transaction.
     $betaClaimTransactionStarted = false;
@@ -1889,7 +1953,7 @@ if ($method === 'POST' && (
 }
 
 // 6. GET /api/services/my-orders
-if ((strpos($path, 'services/my-orders') !== false || $action === 'my-orders' || $action === 'myOrders') && $method === 'GET') {
+if ((preg_match('#/services/my-orders/?$#', $path) || $action === 'my-orders' || $action === 'myOrders') && $method === 'GET') {
     $user = requireAuth($pdo);
     $stmt = $pdo->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC");
     $stmt->execute([$user['id']]);
@@ -1939,7 +2003,7 @@ if (preg_match('#/services/reviews/?$#', $path) || in_array($action, ['reviews',
 // able to preview before paying. Hardened instead with a strict per-IP rate
 // limit and a diagonal PREVIEW watermark on every page (paid order PDFs sent
 // by email carry no watermark).
-if ((strpos($path, 'services/export-preview-pdf') !== false || $action === 'export-preview-pdf') && $method === 'POST') {
+if ((preg_match('#/services/export-preview-pdf/?$#', $path) || $action === 'export-preview-pdf') && $method === 'POST') {
     // 10 exports / IP / hour: generous for genuine previews, tight for scraping.
     astro_rate_limit_enforce(
         $pdo,
@@ -1962,7 +2026,7 @@ if ((strpos($path, 'services/export-preview-pdf') !== false || $action === 'expo
     $fakeOrder = [
         'service_type' => $serviceType,
         'language' => $lang,
-        'order_number' => 'PREVIEW-' . strtoupper(substr(md5(uniqid()), 0, 6)),
+        'order_number' => 'PREVIEW-' . strtoupper(astro_random_hex(6)),
         'user_name' => $result['nativeName'] ?? ($result['devoteeName'] ?? ($body['inputPayload']['name'] ?? 'Valued User')),
         'currency' => DEFAULT_CURRENCY,
         'amount' => 0,
@@ -2005,7 +2069,7 @@ if ((strpos($path, 'services/export-preview-pdf') !== false || $action === 'expo
 }
 
 // 8. POST /api/services/contact
-if ((strpos($path, 'services/contact') !== false || $action === 'contact') && $method === 'POST') {
+if ((preg_match('#/services/contact/?$#', $path) || $action === 'contact') && $method === 'POST') {
     astro_enforce_contact_rate_limit($pdo);
     $body = getJsonBody();
     $name = is_string($body['name'] ?? null) ? trim($body['name']) : '';
@@ -2024,7 +2088,7 @@ if ((strpos($path, 'services/contact') !== false || $action === 'contact') && $m
         jsonResponse(['success' => false, 'message' => 'One or more fields exceed the supported length.'], 400);
     }
 
-    $id = 'msg_' . uniqid('', true);
+    $id = astro_random_id('msg_', 16);
     $stmt = $pdo->prepare("INSERT INTO contact_messages (id, name, email, mobile, subject, message, status, created_at) VALUES (?, ?, ?, ?, ?, ?, 'UNREAD', NOW())");
     $stmt->execute([$id, $name, $email, $mobile, $subject, $message]);
 
@@ -2086,13 +2150,21 @@ if ((strpos($path, 'services/contact') !== false || $action === 'contact') && $m
         try {
             static $contactEmailColumnsReady = false;
             if (!$contactEmailColumnsReady) {
-                foreach ([
-                    "ALTER TABLE contact_messages ADD COLUMN email_status VARCHAR(16) NOT NULL DEFAULT 'PENDING'",
-                    "ALTER TABLE contact_messages ADD COLUMN email_recipient VARCHAR(191) NULL",
-                    "ALTER TABLE contact_messages ADD COLUMN email_dispatched_at DATETIME NULL",
-                    "ALTER TABLE contact_messages ADD COLUMN email_last_status_message VARCHAR(255) NULL"
-                ] as $contactMigration) {
-                    try { $pdo->exec($contactMigration); } catch (Exception $e) {}
+                // Web requests never ALTER TABLE: these columns live in
+                // api/migrations/015_contact_email_columns.sql (and api/schema.sql
+                // for fresh installs). A database that predates them only skips
+                // this UPDATE — the inquiry itself is already stored above.
+                $contactCols = $pdo->query("SHOW COLUMNS FROM `contact_messages`")->fetchAll(PDO::FETCH_COLUMN, 0);
+                $contactColsMissing = false;
+                foreach (['email_status', 'email_recipient', 'email_dispatched_at', 'email_last_status_message'] as $contactCol) {
+                    if (!in_array($contactCol, $contactCols, true)) {
+                        error_log("ASTRO SIVAM: contact_messages.{$contactCol} is missing; run api/migrations/015_contact_email_columns.sql on this database.");
+                        $contactColsMissing = true;
+                        break;
+                    }
+                }
+                if ($contactColsMissing) {
+                    throw new RuntimeException('contact email outcome columns are not migrated; outcome not stored.');
                 }
                 $contactEmailColumnsReady = true;
             }
