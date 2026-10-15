@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, MapPin, Send, CheckCircle2, MessageSquare, Clock, ShieldCheck, BadgeCheck, AlertCircle, Loader2, Facebook, ExternalLink } from 'lucide-react';
+import { Mail, MapPin, Send, CheckCircle2, MessageSquare, ShieldCheck, BadgeCheck, AlertCircle, Loader2, Facebook, ExternalLink } from 'lucide-react';
 import { api } from '../services/api';
 import { SEO } from '../components/common/SEO';
 import { PersonNameField } from '../components/common/PersonNameField';
@@ -135,14 +135,6 @@ export const ContactPage: React.FC = () => {
                     <span>facebook.com/Astrosivamofficial</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <div className="font-bold text-white">Consultation Hours</div>
-                  <p className="text-slate-400 mt-0.5">Monday – Saturday: 8:00 AM – 8:00 PM (IST, UTC+5:30)</p>
                 </div>
               </div>
             </div>
