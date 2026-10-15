@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldCheck, FileText, CreditCard, RotateCcw } from 'lucide-react';
 import { SEO } from '../components/common/SEO';
+import { RouteLink } from '../components/common/RouteLink';
 
 interface PoliciesProps {
   type: 'privacy' | 'terms' | 'payment' | 'refund';
@@ -43,8 +44,10 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
       
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-        <button
-          onClick={() => onNavigate('policy-privacy')}
+        <RouteLink
+          route="policy-privacy"
+          onNavigate={onNavigate}
+          aria-current={type === 'privacy' ? 'page' : undefined}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
             type === 'privacy'
               ? 'bg-amber-500 text-slate-950 shadow-sm'
@@ -53,10 +56,12 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
         >
           <ShieldCheck className="w-3.5 h-3.5" />
           <span>Privacy Policy</span>
-        </button>
+        </RouteLink>
 
-        <button
-          onClick={() => onNavigate('policy-terms')}
+        <RouteLink
+          route="policy-terms"
+          onNavigate={onNavigate}
+          aria-current={type === 'terms' ? 'page' : undefined}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
             type === 'terms'
               ? 'bg-amber-500 text-slate-950 shadow-sm'
@@ -65,10 +70,12 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
         >
           <FileText className="w-3.5 h-3.5" />
           <span>Terms & Conditions</span>
-        </button>
+        </RouteLink>
 
-        <button
-          onClick={() => onNavigate('policy-payment')}
+        <RouteLink
+          route="policy-payment"
+          onNavigate={onNavigate}
+          aria-current={type === 'payment' ? 'page' : undefined}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
             type === 'payment'
               ? 'bg-amber-500 text-slate-950 shadow-sm'
@@ -77,10 +84,12 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
         >
           <CreditCard className="w-3.5 h-3.5" />
           <span>Payment Policy</span>
-        </button>
+        </RouteLink>
 
-        <button
-          onClick={() => onNavigate('policy-refund')}
+        <RouteLink
+          route="policy-refund"
+          onNavigate={onNavigate}
+          aria-current={type === 'refund' ? 'page' : undefined}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
             type === 'refund'
               ? 'bg-amber-500 text-slate-950 shadow-sm'
@@ -89,7 +98,7 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Refund & Cancellation</span>
-        </button>
+        </RouteLink>
       </div>
 
       {/* Policy Content */}
@@ -178,7 +187,7 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
               When placing a paid order, clients must submit their transaction reference/receipt number. The order is reviewed by the administrator before calculations are finalized and dispatched.
             </p>
             <p>
-              Until that review is completed the order is still changeable: cancelling before admin approval entitles you to a <strong>90% refund</strong>, settled within <strong>3 working days</strong>. Once approved and emailed, the order is completed and non-refundable. See our <button type="button" onClick={() => onNavigate('policy-refund')} className="text-amber-700 dark:text-amber-400 font-semibold underline cursor-pointer">Refund &amp; Cancellation Policy</button> for the full details.
+              Until that review is completed the order is still changeable: cancelling before admin approval entitles you to a <strong>90% refund</strong>, settled within <strong>3 working days</strong>. Once approved and emailed, the order is completed and non-refundable. See our <RouteLink route="policy-refund" onNavigate={onNavigate} className="text-amber-700 dark:text-amber-400 font-semibold underline cursor-pointer">Refund &amp; Cancellation Policy</RouteLink> for the full details.
             </p>
           </div>
         )}

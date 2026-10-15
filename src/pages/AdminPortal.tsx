@@ -49,7 +49,8 @@ import {
   Copy,
   Calendar,
   MapPin,
-  Palette
+  Palette,
+  Star
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -93,6 +94,7 @@ import { SystemHealthPanel } from '../components/admin/SystemHealthPanel';
 import { SetupChecklistPanel } from '../components/admin/SetupChecklistPanel';
 import { GoogleSetupPanel } from '../components/admin/GoogleSetupPanel';
 import { SecurityBannedIpPanel } from '../components/admin/SecurityBannedIpPanel';
+import { CustomerReviewsPanel } from '../components/admin/CustomerReviewsPanel';
 import { SEO } from '../components/common/SEO';
 
 interface AdminPortalProps {
@@ -157,7 +159,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     setExpandedGroupIds(prev => ({ ...prev, [groupId]: !prev[groupId] }));
 
   const [activeSection, setActiveSection] = useState<
-    'orders' | 'analytics' | 'financial' | 'payments' | 'emails' | 'alerts' | 'aiastrologer' | 'database' | 'health' | 'checklist' | 'messages' | 'team' | 'settings' | 'users' | 'logs' | 'google' | 'security' | 'errors' | 'escalations'
+    'orders' | 'analytics' | 'financial' | 'payments' | 'emails' | 'alerts' | 'aiastrologer' | 'database' | 'health' | 'checklist' | 'messages' | 'reviews' | 'team' | 'settings' | 'users' | 'logs' | 'google' | 'security' | 'errors' | 'escalations'
   >('orders');
 
   // Astrologer escalation queue: complaints forwarded from the source-based chat and
@@ -1998,6 +2000,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
             />
           </svg>
           <span>Google Setup</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSection('reviews')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            activeSection === 'reviews'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+          }`}
+        >
+          <Star className="w-3.5 h-3.5 text-amber-400" />
+          <span>Customer Reviews</span>
         </button>
 
         <button
@@ -4138,6 +4152,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
             </div>
           )}
         </div>
+      )}
+
+      {activeSection === 'reviews' && (
+        <CustomerReviewsPanel
+          onSetSuccess={(msg) => {
+            setSuccessMessage(msg);
+            setTimeout(() => setSuccessMessage(''), 5000);
+          }}
+          onSetError={(msg) => {
+            setErrorMessage(msg);
+            setTimeout(() => setErrorMessage(''), 6000);
+          }}
+        />
       )}
 
       {activeSection === 'messages' && (

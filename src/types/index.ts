@@ -811,3 +811,106 @@ export interface ThemeTemplateConfig {
     sectionDividerStyle: string;
   };
 }
+
+// ---------------------------------------------------------------------------
+// Customer reviews (SEO audit 2026-10-15, finding 3). Server side: api/reviews.php.
+// A review is always about ONE report service of ONE paid, delivered order.
+// ---------------------------------------------------------------------------
+
+/** A review names exactly one of the four report services. */
+export type ReviewServiceCode = ServiceType;
+/** PENDING until an administrator approves (publishes) or rejects it. */
+export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+/**
+ * One review as the homepage renders it — a verified customer review from the
+ * API or a curated testimonial from src/data/testimonials.ts.
+ */
+export interface DisplayReview {
+  id: string;
+  authorName: string;
+  location?: string;
+  serviceCode: ReviewServiceCode;
+  /** The customer's own wording for what they ordered (falls back to the service name). */
+  serviceLabel?: string;
+  /** Whole stars, 1-5. */
+  rating: number;
+  title?: string;
+  body: string;
+  /** ISO 8601: YYYY-MM-DD, or YYYY-MM when only the month is known. */
+  datePublished: string;
+  /** True only for reviews written through the customer's own paid, delivered order. */
+  verifiedPurchase: boolean;
+}
+
+/** GET /api/services/reviews — a published review (public fields only). */
+export interface PublishedReview {
+  id: string;
+  serviceCode: ReviewServiceCode;
+  rating: number;
+  title: string | null;
+  body: string;
+  displayName: string;
+  location: string | null;
+  /** YYYY-MM-DD */
+  publishedAt: string;
+  verifiedPurchase: boolean;
+}
+
+/** Totals over every published review (not only the page returned). */
+export interface ReviewAggregate {
+  reviewCount: number;
+  ratingTotal: number;
+  ratingValue: number | null;
+}
+
+/** The signed-in customer's own review, in any moderation state. */
+export interface CustomerReview {
+  id: string;
+  orderId: string;
+  orderNumber: string | null;
+  serviceCode: ReviewServiceCode;
+  rating: number;
+  title: string | null;
+  body: string;
+  displayName: string;
+  location: string | null;
+  status: ReviewStatus;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+  publishedAt: string | null;
+}
+
+/** An order the customer may review, with the services it contained. */
+export interface ReviewEligibleOrder {
+  orderId: string;
+  orderNumber: string;
+  services: ReviewServiceCode[];
+}
+
+/** POST /api/services/reviews body. */
+export interface ReviewSubmission {
+  orderId: string;
+  serviceCode: ReviewServiceCode;
+  rating: number;
+  title?: string;
+  body: string;
+  displayName: string;
+  location?: string;
+  /** The customer confirms it is their own experience and agrees to publication. */
+  consent: boolean;
+}
+
+/** Admin moderation view: the review plus the order it is verified against. */
+export interface AdminReview extends CustomerReview {
+  userId: string;
+  customerName: string | null;
+  customerEmail: string | null;
+  orderServiceType: string | null;
+  orderAmount: number | null;
+  orderCurrency: string | null;
+  orderStatus: string | null;
+  moderatedAt: string | null;
+  moderatedBy: string | null;
+}

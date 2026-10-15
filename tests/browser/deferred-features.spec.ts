@@ -151,8 +151,9 @@ test.describe('deferred heavy features', () => {
     await page.goto('/', { waitUntil: 'networkidle' });
     const before = requested.length;
 
-    // The homepage service card for the Birth Jathagam report ("Choose …").
-    const link = page.locator('button[data-route="birth-jathagam"]:visible').first();
+    // The homepage service card for the Birth Jathagam report ("Choose …") — a
+    // real <a href> since the crawlable-links fix, still carrying data-route.
+    const link = page.locator('a[data-route="birth-jathagam"]:visible').first();
     await expect(link).toBeVisible();
     await link.hover();
 

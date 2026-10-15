@@ -14,6 +14,7 @@ import {
   safeImport,
 } from './services/routeChunks';
 import { dismissBootSplash, getPrerenderedPage, clearPrerenderedPage } from './services/bootSplash';
+import { routeHref } from './services/routePaths';
 
 // Routes are code-split (audit S1, widened by audit PERF-1): the admin portal,
 // the customer dashboard and the four report pages pull in the PDF/HTML report
@@ -357,8 +358,10 @@ function AppContent() {
         // preserve current URL
         return;
       }
-      const cleanPath = targetRoute === 'home' ? '/' : `/${targetRoute}`;
-      const url = new URL(cleanPath, window.location.origin);
+      // The canonical URL of the page (the same href its links carry), e.g.
+      // 'policy-privacy' -> /privacy-policy rather than the /policy-privacy
+      // alias that .htaccess 301s — the address bar must show the indexed URL.
+      const url = new URL(routeHref(targetRoute), window.location.origin);
       if (targetRoute === 'dashboard') {
         const currentParams = new URLSearchParams(window.location.search);
         const order = currentParams.get('order');

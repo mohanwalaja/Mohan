@@ -3,6 +3,7 @@ import { Sparkles, ShieldCheck, Clock, CheckCircle2, ArrowRight } from 'lucide-r
 import { AstrologyTeamSection } from '../components/common/AstrologyTeamSection';
 import { useLanguage } from '../context/LanguageContext';
 import { SEO } from '../components/common/SEO';
+import { RouteLink } from '../components/common/RouteLink';
 
 interface AstrologyTeamPageProps {
   onNavigate: (route: string) => void;
@@ -96,13 +97,14 @@ export const AstrologyTeamPage: React.FC<AstrologyTeamPageProps> = ({ onNavigate
         </div>
 
         <div className="pt-4 flex justify-center">
-          <button
-            onClick={() => onNavigate('birth-jathagam')}
+          <RouteLink
+            route="birth-jathagam"
+            onNavigate={onNavigate}
             className="button-primary text-xs !min-h-[44px] !px-6 flex items-center gap-2"
           >
             <span>Order Your Birth Jathagam Report</span>
             <ArrowRight className="w-4 h-4" />
-          </button>
+          </RouteLink>
         </div>
       </div>
 

@@ -40,6 +40,7 @@ import {
 import { MAX_FAMILY_ORDER_ITEMS, hasFamilyOrderCapacity } from '../services/familyOrderLimits';
 import { AppLanguage } from '../types';
 import { SEO } from '../components/common/SEO';
+import { RouteLink } from '../components/common/RouteLink';
 import { SampleReportButton } from '../components/common/SampleReportButton';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
@@ -405,12 +406,13 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
-                <button
-                  onClick={() => onNavigate('dashboard')}
+                <RouteLink
+                  route="dashboard"
+                  onNavigate={onNavigate}
                   className="px-5 py-2.5 bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs rounded-xl shadow-md transition-all"
                 >
                   View in Customer Dashboard
-                </button>
+                </RouteLink>
                 <button
                   onClick={() => {
                     setOrderSuccess(null);

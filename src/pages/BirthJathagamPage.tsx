@@ -43,6 +43,7 @@ import {
 import { MAX_FAMILY_ORDER_ITEMS, hasFamilyOrderCapacity } from '../services/familyOrderLimits';
 import { AppLanguage } from '../types';
 import { SEO } from '../components/common/SEO';
+import { RouteLink } from '../components/common/RouteLink';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
   isValidBirthTime,
@@ -333,12 +334,13 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
-                <button
-                  onClick={() => onNavigate('dashboard')}
+                <RouteLink
+                  route="dashboard"
+                  onNavigate={onNavigate}
                   className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all"
                 >
                   View in Customer Dashboard
-                </button>
+                </RouteLink>
                 <button
                   onClick={() => {
                     setOrderSuccess(null);

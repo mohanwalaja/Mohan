@@ -26,13 +26,18 @@ import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { normalizeReportLanguage } from '../services/reportLanguage';
 import { generateOrderPdfsBase64, prepareFamilyFulfilPayload, deliverOrderPdfPayload } from '../services/jathagamPdfExporter';
-import { Order, BirthProfile } from '../types';
+import { Order, BirthProfile, CustomerReview, ReviewEligibleOrder } from '../types';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
 import { BirthDateField, BirthTimeField, BirthTimeZoneNotice } from '../components/common/BirthDateTimeFields';
 import { PersonNameField } from '../components/common/PersonNameField';
 import { resolveDisplayName } from '../utils/displayName';
 import AiAstrologerPanel from '../components/ai-astrologer/AiAstrologerPanel';
 import { SEO } from '../components/common/SEO';
+import { RouteLink } from '../components/common/RouteLink';
+import { OrderReviewStrip } from '../components/reviews/OrderReviewStrip';
+import { ReviewFormModal } from '../components/reviews/ReviewFormModal';
+import { defaultReviewDisplayName } from '../services/reviews';
+import { captureReviewInvite, clearReviewInvite, resolveReviewInvite } from '../services/reviewInvite';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
   isValidBirthTime,
@@ -89,6 +94,37 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   const [isResending, setIsResending] = useState(false);
   const [resendFeedback, setResendFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Verified reviews (SEO audit 2026-10-15): the server says which paid,
+  // delivered orders can be reviewed; the strip + form only appear for those.
+  const [myReviews, setMyReviews] = useState<CustomerReview[]>([]);
+  const [reviewableOrders, setReviewableOrders] = useState<ReviewEligibleOrder[]>([]);
+  const [reviewOrderId, setReviewOrderId] = useState<string | null>(null);
+  const [reviewNotice, setReviewNotice] = useState<{ tone: 'success' | 'info'; text: string } | null>(null);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
+  // "Rate your report" link from a delivery email (/dashboard?review=<order
+  // number>), remembered across the sign-in detour — services/reviewInvite.ts.
+  const [reviewInvite, setReviewInvite] = useState<string | null>(null);
+
+  const fetchMyReviews = async () => {
+    try {
+      const res = await api.getMyReviews();
+      if (res.success) {
+        setMyReviews(res.reviews);
+        setReviewableOrders(res.eligibleOrders);
+        setReviewsLoaded(true);
+      }
+    } catch (err) {
+      // Reviews are optional on this screen; the orders still render.
+      console.error('Failed to fetch reviews:', err);
+    }
+  };
+
+  const handleReviewSaved = (review: CustomerReview, message: string) => {
+    setMyReviews(prev => [review, ...prev.filter(existing => existing.id !== review.id)]);
+    setReviewOrderId(null);
+    setReviewNotice({ tone: 'success', text: message });
+  };
+
   const fetchOrders = async () => {
     setIsLoadingOrders(true);
     try {
@@ -105,8 +141,38 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
   useEffect(() => {
     fetchOrders();
-    if (user) refreshProfile();
+    if (user) {
+      refreshProfile();
+    }
+    setReviewInvite(captureReviewInvite());
   }, []);
+
+  // Reviews belong to the signed-in customer. A fresh page load — such as the
+  // "Rate your report" link in a delivery email — mounts the dashboard before
+  // the session check (GET /api/auth/me) has resolved, so this runs again as
+  // soon as the customer is known instead of only once on mount.
+  useEffect(() => {
+    if (user?.id) fetchMyReviews();
+  }, [user?.id]);
+
+  // Open the invited order's review form once the server has said which
+  // orders this account may review; explain when it is not one of them.
+  useEffect(() => {
+    if (!user || !reviewInvite || !reviewsLoaded) return;
+    const target = resolveReviewInvite(reviewInvite, reviewableOrders);
+    clearReviewInvite();
+    setReviewInvite(null);
+    setActiveTab('orders');
+    if (target) {
+      setReviewNotice(null);
+      setReviewOrderId(target.orderId);
+    } else {
+      setReviewNotice({
+        tone: 'info',
+        text: `Order #${reviewInvite} cannot be reviewed from this account. Reviews open for paid orders once the report has been delivered — if you ordered with a different account, sign in with that one.`
+      });
+    }
+  }, [user, reviewInvite, reviewsLoaded, reviewableOrders]);
 
   useEffect(() => {
     if (isEditingProfile) return;
@@ -282,20 +348,27 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
             Please log in with your email or Google account to view your past orders, delivery statuses, and access your saved birth chart.
           </p>
+          {reviewInvite && (
+            <p data-review-invite-pending className="text-sm text-amber-200 max-w-md mx-auto leading-relaxed rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+              Sign in with the account you ordered with to review order <strong>#{reviewInvite}</strong> — the review form opens as soon as you are signed in.
+            </p>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
-          <button
-            onClick={() => onNavigate('login')}
-            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-sm font-black shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+          <RouteLink
+            route="login"
+            onNavigate={onNavigate}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-sm font-black text-center shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
           >
             Log In to Account
-          </button>
-          <button
-            onClick={() => onNavigate('register')}
-            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold border border-slate-700 transition-all cursor-pointer"
+          </RouteLink>
+          <RouteLink
+            route="register"
+            onNavigate={onNavigate}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold text-center border border-slate-700 transition-all cursor-pointer"
           >
             Create Free Account
-          </button>
+          </RouteLink>
         </div>
       </div>
     </>
@@ -342,34 +415,38 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
         {/* Quick Service Ordering Buttons */}
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => onNavigate('birth-jathagam')}
+          <RouteLink
+            route="birth-jathagam"
+            onNavigate={onNavigate}
             className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Compass className="w-3.5 h-3.5" />
             <span>Order Birth Jathagam</span>
-          </button>
-          <button
-            onClick={() => onNavigate('marriage-compatibility')}
+          </RouteLink>
+          <RouteLink
+            route="marriage-compatibility"
+            onNavigate={onNavigate}
             className="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Heart className="w-3.5 h-3.5" />
             <span>Order Wedding Matching</span>
-          </button>
-          <button
-            onClick={() => onNavigate('baby-naming')}
+          </RouteLink>
+          <RouteLink
+            route="baby-naming"
+            onNavigate={onNavigate}
             className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Baby className="w-3.5 h-3.5" />
             <span>Order Baby Naming Syllables</span>
-          </button>
-          <button
-            onClick={() => onNavigate('muhurtham')}
+          </RouteLink>
+          <RouteLink
+            route="muhurtham"
+            onNavigate={onNavigate}
             className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5" />
             <span>Order Subha Muhurtham</span>
-          </button>
+          </RouteLink>
         </div>
       </div>
 
@@ -401,7 +478,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
         <div className="ml-auto">
           <button
-            onClick={fetchOrders}
+            onClick={() => { fetchOrders(); fetchMyReviews(); }}
             className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 text-xs flex items-center gap-1 cursor-pointer"
             title="Refresh Orders"
           >
@@ -438,6 +515,47 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
             </div>
           </div>
 
+          {reviewNotice && (
+            <div
+              role="status"
+              data-review-notice={reviewNotice.tone}
+              className={`rounded-2xl px-4 py-3 text-xs flex items-start gap-2.5 border ${
+                reviewNotice.tone === 'success'
+                  ? 'bg-emerald-950/50 border-emerald-700/70 text-emerald-200'
+                  : 'bg-amber-950/50 border-amber-700/70 text-amber-100'
+              }`}
+            >
+              {reviewNotice.tone === 'success'
+                ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                : <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />}
+              <span className="flex-1">{reviewNotice.text}</span>
+              <button
+                type="button"
+                onClick={() => setReviewNotice(null)}
+                className={reviewNotice.tone === 'success' ? 'text-emerald-300 hover:text-white' : 'text-amber-300 hover:text-white'}
+                aria-label="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {reviewOrderId && (() => {
+            const target = reviewableOrders.find(entry => entry.orderId === reviewOrderId);
+            if (!target) return null;
+            return (
+              <ReviewFormModal
+                orderId={target.orderId}
+                orderNumber={target.orderNumber}
+                services={target.services}
+                existing={myReviews.filter(review => review.orderId === target.orderId)}
+                defaults={{ displayName: defaultReviewDisplayName(displayName), location: user?.country || '' }}
+                onClose={() => setReviewOrderId(null)}
+                onSaved={handleReviewSaved}
+              />
+            );
+          })()}
+
           {isLoadingOrders ? (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-500 space-y-3">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-amber-500" />
@@ -454,12 +572,13 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
                 You haven&apos;t placed any astrology orders yet. Select a service below to request your certified Vedic horoscope report.
               </p>
-              <button
-                onClick={() => onNavigate('birth-jathagam')}
-                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+              <RouteLink
+                route="birth-jathagam"
+                onNavigate={onNavigate}
+                className="inline-block px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
               >
                 Place Birth Jathagam Order
-              </button>
+              </RouteLink>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
@@ -525,6 +644,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 };
 
                 const serviceInfo = getServiceName();
+                const reviewEligibility = reviewableOrders.find(entry => entry.orderId === order.id) || null;
                 const personName = order.inputPayload?.name || order.userName || displayName || 'User';
                 const birthPlace = order.inputPayload?.birthPlace;
                 const dob = order.inputPayload?.dob;
@@ -813,6 +933,15 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                       )}
 
                     </div>
+
+                    {/* Verified review — paid, delivered orders only (server-decided). */}
+                    {reviewEligibility && (
+                      <OrderReviewStrip
+                        eligibility={reviewEligibility}
+                        reviews={myReviews.filter(review => review.orderId === order.id)}
+                        onOpen={() => { setReviewNotice(null); setReviewOrderId(order.id); }}
+                      />
+                    )}
 
                   </div>
                 );

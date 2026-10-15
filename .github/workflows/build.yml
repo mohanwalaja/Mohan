@@ -143,6 +143,16 @@ jobs:
           ASTRO_REQUIRE_PHP_WASM_TESTS: '1'
         run: npx tsx tests/admin-report-delivery.test.ts
 
+      # Same runtime, same rule for the verified customer reviews (SEO audit
+      # 2026-10-15): eligibility (paid + delivered + not refunded + own order),
+      # moderation, the public field set and refund-after-publish run against
+      # the real api/services + api/admin routes. Inside npm test above this
+      # half SKIPs (no runtime yet); here a missing runtime fails the step.
+      - name: Customer review routes (real PHP routes)
+        env:
+          ASTRO_REQUIRE_PHP_WASM_TESTS: '1'
+        run: npx tsx tests/customer-reviews.test.ts
+
   # ---------------------------------------------------------------------------
   # 3. Browser smoke test — the customer's first click, on desktop and mobile.
   # ---------------------------------------------------------------------------
@@ -176,6 +186,22 @@ jobs:
             grep -nE "Error|expect|Timed out|Received|Expected|✘|failed" /tmp/playwright-smoke.log \
               | head -25 | while IFS= read -r line; do
                   echo "::error title=Playwright smoke failure::${line}"
+                done
+            exit "$STATUS"
+          fi
+
+      # The "Rate your report" link of every paid delivery email
+      # (/dashboard?review=<order number>): a fresh page load, often signed
+      # out — the invitation must survive sign-in and open that order's form.
+      - name: Review invitation link (customer dashboard)
+        run: |
+          set +e
+          npx playwright test tests/browser/review-invite.spec.ts 2>&1 | tee /tmp/playwright-review-invite.log
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            grep -nE "Error|expect|Timed out|Received|Expected|✘|failed" /tmp/playwright-review-invite.log \
+              | head -25 | while IFS= read -r line; do
+                  echo "::error title=Review invitation failure::${line}"
                 done
             exit "$STATUS"
           fi

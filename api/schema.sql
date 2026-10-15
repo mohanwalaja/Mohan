@@ -273,6 +273,33 @@ CREATE TABLE IF NOT EXISTS `contact_messages` (
   INDEX `idx_contact_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 8. Verified customer reviews (see api/migrations/011_customer_reviews.sql and
+--    api/reviews.php). Only the owner of a paid, delivered order may write one;
+--    one review per service per order; public only once an admin approves it.
+CREATE TABLE IF NOT EXISTS `customer_reviews` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `order_id` VARCHAR(64) NOT NULL,
+  `user_id` VARCHAR(64) NOT NULL,
+  `service_code` VARCHAR(64) NOT NULL,
+  `rating` TINYINT UNSIGNED NOT NULL,
+  `title` VARCHAR(191) NULL,
+  `body` TEXT NOT NULL,
+  `display_name` VARCHAR(100) NOT NULL,
+  `location` VARCHAR(120) NULL,
+  `status` VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+  `rejection_reason` VARCHAR(255) NULL,
+  `moderated_by` VARCHAR(64) NULL,
+  `moderated_at` DATETIME NULL,
+  `published_at` DATETIME NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `uq_customer_reviews_order_service` (`order_id`, `service_code`),
+  INDEX `idx_customer_reviews_status_published` (`status`, `published_at`),
+  INDEX `idx_customer_reviews_user` (`user_id`),
+  CONSTRAINT `fk_customer_reviews_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_customer_reviews_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- User accounts are never seeded with shared/default credentials.
 -- Create the first administrator with the trusted CLI provisioning tool.
 

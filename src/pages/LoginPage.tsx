@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { GoogleLoginButton } from '../components/common/GoogleLoginButton';
 import { SEO } from '../components/common/SEO';
+import { RouteLink } from '../components/common/RouteLink';
 import { BrandLockup } from '../components/common/BrandLockup';
 import { ForgotPasswordForm } from '../components/common/ForgotPasswordForm';
 
@@ -172,12 +173,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
         {/* Register link */}
         <div className="text-center text-xs text-slate-500 pt-2">
           Don&apos;t have an ASTRO SIVAM customer account?{' '}
-          <button
-            onClick={() => onNavigate('register')}
+          <RouteLink
+            route="register"
+            onNavigate={onNavigate}
             className="font-bold text-amber-600 dark:text-amber-400 hover:underline"
           >
             Register Here
-          </button>
+          </RouteLink>
         </div>
           </>
         )}

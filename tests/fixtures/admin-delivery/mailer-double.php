@@ -56,6 +56,9 @@ class AstroMailer extends AstroMailerRealTransport
             'toName' => (string) $toName,
             'subject' => (string) $subject,
             'attachments' => $recorded,
+            // The assembled body, so a test can assert what the customer reads
+            // (e.g. the "Rate your report" invitation of api/reviews.php).
+            'html' => (string) $htmlContent,
             'inlineImages' => count((array) $inlineImages),
             'accepted' => $accept,
         ];

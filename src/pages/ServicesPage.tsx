@@ -14,6 +14,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { SEO } from '../components/common/SEO';
+import { RouteLink } from '../components/common/RouteLink';
 
 interface ServicesPageProps {
   onNavigate: (route: string) => void;
@@ -224,15 +225,14 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
                           One free report per customer; additional reports are charged at the standard price.
                         </p>
                       )}
-                      <button
-                        type="button"
-                        data-route={route}
-                        onClick={() => onNavigate(route)}
+                      <RouteLink
+                        route={route}
+                        onNavigate={onNavigate}
                         className="button-primary mt-4 w-full !min-h-[46px] !text-xs"
                       >
                         <span>{action}</span>
                         <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                      </button>
+                      </RouteLink>
                     </div>
                   </div>
                 </div>
@@ -251,15 +251,14 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
               Follow the six steps from service selection and secure checkout to traditional review and delivery of your report and invoice.
             </p>
           </div>
-          <button
-            type="button"
-            data-route="how-it-works"
-            onClick={() => onNavigate('how-it-works')}
+          <RouteLink
+            route="how-it-works"
+            onNavigate={onNavigate}
             className="button-primary relative z-10 shrink-0"
           >
             <span>See how it works</span>
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </button>
+          </RouteLink>
         </section>
       </div>
     </div>

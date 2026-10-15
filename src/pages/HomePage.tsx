@@ -14,6 +14,10 @@ import {
 } from 'lucide-react';
 import { TestimonialsSection } from '../components/common/TestimonialsSection';
 import { SEO } from '../components/common/SEO';
+import { JsonLd } from '../components/common/JsonLd';
+import { RouteLink } from '../components/common/RouteLink';
+import { HOME_FAQ_ITEMS } from '../data/homeFaq';
+import { buildFaqPageJsonLd } from '../services/structuredData';
 import type { ServiceType } from '../types';
 import logoImg from '../assets/astrosivam_appicon.png';
 
@@ -103,28 +107,8 @@ const HOW_IT_WORKS = [
   }
 ];
 
-const FAQ_ITEMS = [
-  {
-    question: 'When and how will I receive my report?',
-    answer: 'Every day between 9:00 AM and 11:00 AM IST (India Standard Time), our India-based priest team prepares and reviews the astrological charts. Following administrator review and approval, your official PDF report and Tax Invoice are emailed directly to your registered address.'
-  },
-  {
-    question: 'What birth details do I need?',
-    answer: 'Please provide the person’s name, date of birth, exact time of birth, and birth place. Marriage Compatibility needs these details for both people. An accurate birth time and place improve the chart calculation.'
-  },
-  {
-    question: 'Which calculation system and languages do you use?',
-    answer: 'ASTRO SIVAM uses the sidereal zodiac with Chitra Paksha Lahiri Ayanamsa. Reports can be prepared in English, Tamil, or Hindi.'
-  },
-  {
-    question: 'Which payment methods can I use?',
-    answer: 'Available checkout methods include PayPal (accepting VISA, Mastercard, American Express, Discover and more), Credit/Debit Cards, and Google Pay / UPI for India. The options available to you are shown during checkout.'
-  },
-  {
-    question: 'Can I see the report format before ordering?',
-    answer: 'Yes. Each service page has an ‘Open sample PDF’ option that opens a full example made with fixed sample details. No customer data is used in a sample report.'
-  }
-];
+/** FAQPage JSON-LD for the FAQ list below (same array — the markup always matches the page). */
+const FAQ_JSON_LD = buildFaqPageJsonLd(HOME_FAQ_ITEMS);
 
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const scrollToSection = (id: string) => {
@@ -167,15 +151,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 <span>View services</span>
                 <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
-              <button
-                type="button"
-                data-route="how-it-works"
-                onClick={() => onNavigate('how-it-works')}
+              <RouteLink
+                route="how-it-works"
+                onNavigate={onNavigate}
                 className="dark-quiet flex-1 sm:flex-initial justify-center !min-h-[46px] sm:!min-h-12 !px-3 sm:!px-6 !text-xs sm:!text-sm"
               >
                 <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span>How it works</span>
-              </button>
+              </RouteLink>
             </div>
 
             <div className="mt-8 flex flex-col gap-3 border-t border-white/10 pt-5 text-sm text-amber-100/90 sm:flex-row sm:flex-wrap sm:gap-x-7">
@@ -233,15 +216,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                     <span>{service.detail}</span>
                   </div>
 
-                  <button
-                    type="button"
-                    data-route={service.route}
-                    onClick={() => onNavigate(service.route)}
+                  <RouteLink
+                    route={service.route}
+                    onNavigate={onNavigate}
                     className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-400/30 bg-amber-500/15 px-4 text-sm font-bold text-amber-100 transition hover:bg-amber-500/25 sm:w-auto sm:self-start"
                   >
                     Choose {service.title}
                     <ArrowRight className="h-4 w-4" />
-                  </button>
+                  </RouteLink>
                 </div>
               </article>
             );
@@ -280,11 +262,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
       {/* 4. REVIEWS */}
       <section id="reviews" className="site-container scroll-mt-24">
-        <TestimonialsSection />
+        <TestimonialsSection onNavigate={onNavigate} />
       </section>
 
       {/* 5. FAQ */}
       <section id="faq" className="site-container scroll-mt-24">
+        <JsonLd data={FAQ_JSON_LD} id="faq" />
         <div className="mx-auto mb-8 max-w-2xl text-center sm:mb-10">
           <div className="eyebrow">Frequently asked questions</div>
           <h2 className="display-serif mt-3 text-3xl font-bold text-ink sm:text-4xl">
@@ -296,7 +279,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
 
         <div className="mx-auto max-w-3xl space-y-3">
-          {FAQ_ITEMS.map((item, index) => (
+          {HOME_FAQ_ITEMS.map((item) => (
             <details
               key={item.question}
               className="group rounded-2xl border border-amber-500/20 bg-[#181230]/90 px-5 py-1 transition-colors open:border-amber-500/45 sm:px-6"
