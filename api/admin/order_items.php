@@ -34,6 +34,8 @@ require_once __DIR__ . '/../astrology/engine.php';
 require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../branding.php';
 require_once __DIR__ . '/../chat_alerts.php';
+// The "Rate your reports" block of the delivery email.
+require_once __DIR__ . '/../reviews.php';
 require_once __DIR__ . '/family_docs.php';
 // Provides astro_ensure_multi_person_tables() and the service catalogue.
 require_once __DIR__ . '/../services/multi_person_order.php';
@@ -257,8 +259,38 @@ function astro_order_item_label(array $item): string
     return $person !== '' ? $person . ' - ' . $service : $service;
 }
 
-/** The branded delivery email: one order, one invoice, one PDF per item. */
-function astro_order_items_email_html(array $order, array $items, array $attachments, int $partIndex = 0, int $partCount = 1): string
+/**
+ * Does sending these items deliver the WHOLE order? A multi-person order is
+ * COMPLETED - and only then reviewable - once every item has been sent, so the
+ * review invitation rides on the email that completes it, or on a re-delivery
+ * of an order that is already complete. Never on a partial delivery.
+ */
+function astro_order_items_send_completes_order($pdo, array $order, array $sendingItemIds): bool
+{
+    $status = strtoupper(trim((string)($order['status'] ?? '')));
+    if (in_array($status, ['COMPLETED', 'GENERATED'], true)) {
+        return true;
+    }
+    $sending = array_flip(array_map('intval', $sendingItemIds));
+    $stmt = $pdo->prepare("SELECT id, report_status FROM order_items WHERE order_id = ?");
+    $stmt->execute([(string)($order['id'] ?? '')]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (empty($rows)) {
+        return false;
+    }
+    foreach ($rows as $row) {
+        if (!isset($sending[(int)$row['id']]) && strtoupper((string)($row['report_status'] ?? '')) !== 'SENT') {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * The branded delivery email: one order, one invoice, one PDF per item.
+ * $reviewInviteHtml (api/reviews.php) is shown in the first part only.
+ */
+function astro_order_items_email_html(array $order, array $items, array $attachments, int $partIndex = 0, int $partCount = 1, string $reviewInviteHtml = ''): string
 {
     $orderNumber = htmlspecialchars((string)($order['order_number'] ?? ''));
     $userName = htmlspecialchars((string)($order['user_name'] ?? 'User'));
@@ -273,6 +305,8 @@ function astro_order_items_email_html(array $order, array $items, array $attachm
     $partNote = $partCount > 1
         ? "<div style='background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:12px 14px; margin-bottom:18px; font-size:12.5px; color:#92400e; line-height:1.6;'><strong>Large delivery:</strong> this is part " . ($partIndex + 1) . ' of ' . $partCount . ' - all parts belong to order #' . $orderNumber . '.</div>'
         : '';
+
+    $reviewInvite = $partIndex === 0 ? $reviewInviteHtml : '';
 
     return "
     <div style='background:#f4ede1; padding:24px 12px; font-family: Georgia, \\'Times New Roman\\', serif;'>
@@ -302,6 +336,7 @@ function astro_order_items_email_html(array $order, array $items, array $attachm
           <div style='font-size:13px; color:#3d3222; line-height:1.8;'>{$docRows}</div>
         </div>
         {$partNote}
+        {$reviewInvite}
         <div style='background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:12px 14px; margin-bottom:18px; font-size:12.5px; color:#92400e; line-height:1.6;'>
           <strong>Delivery Notice:</strong> If this email lands in your <em>Spam / Junk folder</em>, please mark it <strong>'Not Spam'</strong> and add <strong>admin@astrosivam.com</strong> to your contacts so you don't miss future updates.
         </div>
@@ -420,6 +455,13 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
     $emailMessage = '';
     $sentParts = 0;
 
+    // "Rate your reports": paid orders only, and only on the email that
+    // completes the order (api/reviews.php + the helper above).
+    $sendingItemIds = array_map(function ($item) { return (int)($item['id'] ?? 0); }, $resolvedItems);
+    $reviewInviteHtml = astro_order_items_send_completes_order($pdo, $order, $sendingItemIds)
+        ? astro_review_invite_email_html($order, count($resolvedItems) > 1)
+        : '';
+
     foreach ($parts as $index => $partAttachments) {
         $partNames = [];
         foreach ($partAttachments as $attachment) {
@@ -432,7 +474,7 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
             $subject .= ' (Part ' . ($index + 1) . ' of ' . count($parts) . ')';
         }
 
-        $html = astro_order_items_email_html($order, $resolvedItems, $partNames, $index, count($parts));
+        $html = astro_order_items_email_html($order, $resolvedItems, $partNames, $index, count($parts), $reviewInviteHtml);
         $mailResult = AstroMailer::sendEmailWithAttachments(
             (string)$order['user_email'],
             (string)($order['user_name'] ?? 'User'),

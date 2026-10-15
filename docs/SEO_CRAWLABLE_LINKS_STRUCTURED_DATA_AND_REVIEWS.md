@@ -170,6 +170,79 @@ Every action is written to the audit log: `REVIEW_SUBMITTED`, `_UPDATED`,
 - CI runs that runtime half with `ASTRO_REQUIRE_PHP_WASM_TESTS=1`, so it
   cannot silently skip.
 
+## 4. Follow-ups (same day)
+
+### "Rate your report" in every paid delivery email
+
+Customers were never told they could review. Every delivery email of an order
+that will be reviewable once delivered now carries a **How was your report?**
+block with a **Rate your report** button
+(`astro_review_invite_email_html()` in `api/reviews.php`):
+
+- **Link.** `https://astrosivam.com/dashboard?review=<order number>`. It always
+  uses the canonical host, never the host of the admin request that sent the
+  email.
+- **Who gets it.** The same rule as review eligibility
+  (`astro_review_invite_applies()`), applied to the order as the delivery
+  leaves it (`COMPLETED`, payment confirmed). So it goes to every paid
+  customer, whatever they may think of the report. Free-beta, zero-amount,
+  cancelled, rejected and refunded orders get no invitation. The wording asks
+  for an *honest* review.
+- **Templates.**
+  - `api/admin/index.php`: single-order approve and resend.
+  - `api/admin/family_approval.php`: family bundles; first email only when
+    the delivery is split.
+  - `api/admin/order_items.php`: multi-person orders, **only on the email that
+    completes the order** (`astro_order_items_send_completes_order()`), never
+    on a partial delivery.
+  - `api/admin/approve_order.php`: the no-rewrite fallback endpoint.
+- **Dashboard.** `src/services/reviewInvite.ts` takes `?review=` off the
+  address bar and remembers it for the tab (sessionStorage). The invitation
+  therefore survives the sign-in detour (dashboard → login → dashboard). Once
+  `my-reviews` has loaded, the dashboard opens that order's review form. If
+  this account cannot review the order, an explanation is shown instead. A
+  signed-out visitor is told which order the sign-in is for.
+- **Bug fixed on the way.** The dashboard fetched reviews only on mount. On a
+  fresh page load the session check (`GET /api/auth/me`) had not resolved yet,
+  so "Rate & review" could be missing. It now refetches as soon as the
+  customer is known.
+
+### One WebPage JSON-LD per page, in the page tree
+
+`scripts/prerender.mjs` used to bake each route's `WebPage` JSON-LD as a
+`data-prerender-seo` head tag, which `main.tsx` deletes at boot. Google's
+rendered DOM never had it, and its `name` was raw title HTML (`Refund &amp;
+Cancellation Policy`).
+
+- `<SEO>` now renders it through `<JsonLd id="webpage">`
+  (`buildWebPageJsonLd()` in `src/services/structuredData.ts`), using the same
+  canonical, title and description as the head tags. Every indexable page
+  carries one in the prerendered HTML **and** in the live DOM, and it is
+  replaced on SPA navigation. `noindex` pages carry none.
+- `webPageStructuredDataProblems()` in the prerender **fails the build** if an
+  indexable document lacks exactly one, or if its `@id`/`url`, `name` or
+  `description` differ from the canonical, `<title>` or meta description. It
+  also fails if a `noindex` document carries one.
+
+**Guards.**
+
+- `tests/customer-reviews.test.ts`:
+  - invitation link parsing and storage, with a fake browser;
+  - every template wired to the one helper;
+  - under PHP-WASM: the eligibility matrix, escaping, the multi-person
+    "completes the order" rule, and the **real approve route** emailing the
+    invitation for a paid order and none for a free-beta one. The recording
+    mailer double now keeps the email HTML.
+- `tests/browser/review-invite.spec.ts` (new CI step in the Playwright job):
+  - a signed-in landing with a slow session check;
+  - the signed-out → log in → form flow;
+  - an order the account cannot review.
+- `tests/homepage-structured-data.test.ts`: `<SEO>` → guard round trip,
+  guard mutations, and every shipped document.
+- `tests/browser/homepage-navigation.spec.ts`: in a real browser, the WebPage
+  is in the live DOM, is swapped on SPA navigation (home → refund policy), and
+  disappears on `/login`.
+
 ## Deploying
 
 1. Upload the build as usual (`npm run build:zip`). `api/reviews.php` and the
@@ -179,15 +252,17 @@ Every action is written to the audit log: `REVIEW_SUBMITTED`, `_UPDATED`,
    and retries without foreign keys on hosts that refuse them.
 3. The sitemap's homepage `lastmod` moved to 2026-10-15. Re-submit
    `sitemap.xml` in Search Console if you like.
-4. Optional next step: add a "Rate your report" link to the delivery email that
-   points to `/dashboard`.
+4. Nothing to configure for the "Rate your report" invitation. Paid delivery
+   emails carry it once the updated `api/` files are uploaded:
+   - `api/reviews.php`;
+   - `api/admin/index.php`, `family_approval.php`, `order_items.php` and
+     `approve_order.php`.
 
 ## Notes
 
-- `scripts/prerender.mjs` still bakes a per-route `WebPage` JSON-LD as a
-  `data-prerender-seo` head tag, which `main.tsx` removes at boot. Crawlers
-  that don't run JavaScript see it; Google's rendered DOM does not. If that
-  matters, render it through the page tree the way FAQPage and Review now are.
+- The homepage carries both its `WebPage` (`@id` `https://astrosivam.com/`)
+  and the `FAQPage` (`@id` `…/#faq`). They are separate entities, which is
+  valid.
 - `tests/browser/admin-free-orders.spec.ts` (5 tests) and
   `repeat-family-checkout.spec.ts` (1 test) already fail on `main` before this
   change: they look for checkout copy that has since changed. They are not part

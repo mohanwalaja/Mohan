@@ -190,6 +190,22 @@ jobs:
             exit "$STATUS"
           fi
 
+      # The "Rate your report" link of every paid delivery email
+      # (/dashboard?review=<order number>): a fresh page load, often signed
+      # out — the invitation must survive sign-in and open that order's form.
+      - name: Review invitation link (customer dashboard)
+        run: |
+          set +e
+          npx playwright test tests/browser/review-invite.spec.ts 2>&1 | tee /tmp/playwright-review-invite.log
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            grep -nE "Error|expect|Timed out|Received|Expected|✘|failed" /tmp/playwright-review-invite.log \
+              | head -25 | while IFS= read -r line; do
+                  echo "::error title=Review invitation failure::${line}"
+                done
+            exit "$STATUS"
+          fi
+
       # White-screen gate for code splitting (audit S1): run the route smoke
       # against the REAL built output (vite preview serving dist/), the same
       # asset layout that ships to cPanel. Every route must render content,

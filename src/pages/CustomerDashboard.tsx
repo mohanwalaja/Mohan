@@ -37,6 +37,7 @@ import { RouteLink } from '../components/common/RouteLink';
 import { OrderReviewStrip } from '../components/reviews/OrderReviewStrip';
 import { ReviewFormModal } from '../components/reviews/ReviewFormModal';
 import { defaultReviewDisplayName } from '../services/reviews';
+import { captureReviewInvite, clearReviewInvite, resolveReviewInvite } from '../services/reviewInvite';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
   isValidBirthTime,
@@ -98,7 +99,11 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   const [myReviews, setMyReviews] = useState<CustomerReview[]>([]);
   const [reviewableOrders, setReviewableOrders] = useState<ReviewEligibleOrder[]>([]);
   const [reviewOrderId, setReviewOrderId] = useState<string | null>(null);
-  const [reviewNotice, setReviewNotice] = useState('');
+  const [reviewNotice, setReviewNotice] = useState<{ tone: 'success' | 'info'; text: string } | null>(null);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
+  // "Rate your report" link from a delivery email (/dashboard?review=<order
+  // number>), remembered across the sign-in detour — services/reviewInvite.ts.
+  const [reviewInvite, setReviewInvite] = useState<string | null>(null);
 
   const fetchMyReviews = async () => {
     try {
@@ -106,6 +111,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
       if (res.success) {
         setMyReviews(res.reviews);
         setReviewableOrders(res.eligibleOrders);
+        setReviewsLoaded(true);
       }
     } catch (err) {
       // Reviews are optional on this screen; the orders still render.
@@ -116,7 +122,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   const handleReviewSaved = (review: CustomerReview, message: string) => {
     setMyReviews(prev => [review, ...prev.filter(existing => existing.id !== review.id)]);
     setReviewOrderId(null);
-    setReviewNotice(message);
+    setReviewNotice({ tone: 'success', text: message });
   };
 
   const fetchOrders = async () => {
@@ -137,9 +143,36 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
     fetchOrders();
     if (user) {
       refreshProfile();
-      fetchMyReviews();
     }
+    setReviewInvite(captureReviewInvite());
   }, []);
+
+  // Reviews belong to the signed-in customer. A fresh page load — such as the
+  // "Rate your report" link in a delivery email — mounts the dashboard before
+  // the session check (GET /api/auth/me) has resolved, so this runs again as
+  // soon as the customer is known instead of only once on mount.
+  useEffect(() => {
+    if (user?.id) fetchMyReviews();
+  }, [user?.id]);
+
+  // Open the invited order's review form once the server has said which
+  // orders this account may review; explain when it is not one of them.
+  useEffect(() => {
+    if (!user || !reviewInvite || !reviewsLoaded) return;
+    const target = resolveReviewInvite(reviewInvite, reviewableOrders);
+    clearReviewInvite();
+    setReviewInvite(null);
+    setActiveTab('orders');
+    if (target) {
+      setReviewNotice(null);
+      setReviewOrderId(target.orderId);
+    } else {
+      setReviewNotice({
+        tone: 'info',
+        text: `Order #${reviewInvite} cannot be reviewed from this account. Reviews open for paid orders once the report has been delivered — if you ordered with a different account, sign in with that one.`
+      });
+    }
+  }, [user, reviewInvite, reviewsLoaded, reviewableOrders]);
 
   useEffect(() => {
     if (isEditingProfile) return;
@@ -315,6 +348,11 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
             Please log in with your email or Google account to view your past orders, delivery statuses, and access your saved birth chart.
           </p>
+          {reviewInvite && (
+            <p data-review-invite-pending className="text-sm text-amber-200 max-w-md mx-auto leading-relaxed rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+              Sign in with the account you ordered with to review order <strong>#{reviewInvite}</strong> — the review form opens as soon as you are signed in.
+            </p>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
           <RouteLink
@@ -478,10 +516,25 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           </div>
 
           {reviewNotice && (
-            <div role="status" className="bg-emerald-950/50 border border-emerald-700/70 text-emerald-200 rounded-2xl px-4 py-3 text-xs flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <span className="flex-1">{reviewNotice}</span>
-              <button type="button" onClick={() => setReviewNotice('')} className="text-emerald-300 hover:text-white" aria-label="Dismiss">
+            <div
+              role="status"
+              data-review-notice={reviewNotice.tone}
+              className={`rounded-2xl px-4 py-3 text-xs flex items-start gap-2.5 border ${
+                reviewNotice.tone === 'success'
+                  ? 'bg-emerald-950/50 border-emerald-700/70 text-emerald-200'
+                  : 'bg-amber-950/50 border-amber-700/70 text-amber-100'
+              }`}
+            >
+              {reviewNotice.tone === 'success'
+                ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                : <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />}
+              <span className="flex-1">{reviewNotice.text}</span>
+              <button
+                type="button"
+                onClick={() => setReviewNotice(null)}
+                className={reviewNotice.tone === 'success' ? 'text-emerald-300 hover:text-white' : 'text-amber-300 hover:text-white'}
+                aria-label="Dismiss"
+              >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -886,7 +939,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                       <OrderReviewStrip
                         eligibility={reviewEligibility}
                         reviews={myReviews.filter(review => review.orderId === order.id)}
-                        onOpen={() => { setReviewNotice(''); setReviewOrderId(order.id); }}
+                        onOpen={() => { setReviewNotice(null); setReviewOrderId(order.id); }}
                       />
                     )}
 

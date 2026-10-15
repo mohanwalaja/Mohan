@@ -167,6 +167,30 @@ test('every review links to the service page it is about, and the homepage ships
   expect(types).toContain('Organization');
 });
 
+test('each page carries its own WebPage JSON-LD in the live DOM, and it follows SPA navigation', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockApi(page);
+  // Rendered by <SEO> inside the page (not a baked head tag that main.tsx
+  // strips at boot), so Google's rendered DOM has it and SPA navigation
+  // swaps it. noindex pages carry none.
+  const webPages = () => page.locator('script[type="application/ld+json"][data-schema="webpage"]').evaluateAll(scripts =>
+    scripts.map(script => JSON.parse(script.textContent || '{}') as Record<string, unknown>));
+
+  await page.goto('/');
+  await expect.poll(webPages).toEqual([expect.objectContaining({ '@type': 'WebPage', '@id': 'https://astrosivam.com/' })]);
+
+  await page.locator('footer a[href="/refund-policy"]').click();
+  await expect(page).toHaveURL(/\/refund-policy$/);
+  await expect.poll(webPages).toEqual([expect.objectContaining({
+    '@id': 'https://astrosivam.com/refund-policy',
+    name: 'Refund & Cancellation Policy | ASTRO SIVAM'
+  })]);
+
+  await page.locator('header a[href="/login"]').first().click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect.poll(webPages).toEqual([]);
+});
+
 test('published customer reviews load first, in view, as verified purchases — markup included', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route('**/api/**', route => {

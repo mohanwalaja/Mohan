@@ -46,9 +46,10 @@ prerender splits those into `<head>` and keeps the rendered body inside
 previews (WhatsApp, Facebook, X) show the real title/description/image.
 
 The head tags come **from the pages' own `<SEO>` blocks**, so the static
-document and the live SPA can never disagree. `dist/<route>.html` also gets a
-`WebPage` JSON-LD entity; the site-wide Organization graph stays in every
-document.
+document and the live SPA can never disagree. Each indexable page also
+carries a `WebPage` JSON-LD entity, rendered by its `<SEO>` inside the page
+(see [SEO_CRAWLABLE_LINKS_STRUCTURED_DATA_AND_REVIEWS.md](SEO_CRAWLABLE_LINKS_STRUCTURED_DATA_AND_REVIEWS.md));
+the site-wide Organization graph stays in every document.
 
 ### 2. Self-referencing canonicals everywhere
 

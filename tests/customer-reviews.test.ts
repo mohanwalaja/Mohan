@@ -18,6 +18,10 @@
  *      refunded + own order), validation and sanitising, moderation, the
  *      public field set, refund-after-publish, edit-goes-back-to-moderation,
  *      the audit trail.
+ *   4. "Rate your report" (same three layers): every delivery email of a paid
+ *      order links to /dashboard?review=<order number>; free, unpaid, refunded
+ *      and partially delivered orders get no invitation; the dashboard keeps
+ *      the invitation across sign-in and opens that order's review form.
  *
  * Test data only: clearly fake identities; no real database or e-mail.
  *   npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54
@@ -38,7 +42,16 @@ import {
   textLength,
   validateReviewDraft
 } from '../src/services/reviews';
+import {
+  REVIEW_INVITE_PARAM,
+  REVIEW_INVITE_STORAGE_KEY,
+  captureReviewInvite,
+  clearReviewInvite,
+  normalizeInviteOrderNumber,
+  resolveReviewInvite
+} from '../src/services/reviewInvite';
 import type { DisplayReview, PublishedReview } from '../src/types';
+import { buildPreviewPdfBase64 } from './helpers/previewPdfFixtures';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');
@@ -153,6 +166,86 @@ await check('the default public name is first name + last initial; dates read na
   assert.equal(formatReviewDate('2026-10-14'), '14 October 2026');
 });
 
+/** A minimal browser for services/reviewInvite.ts: address bar, history and sessionStorage. */
+function fakeBrowser(href: string, { storageBlocked = false } = {}) {
+  const store = new Map<string, string>();
+  const replaced: string[] = [];
+  const location = new URL(href);
+  const storage = {
+    getItem: (key: string) => { if (storageBlocked) throw new Error('blocked'); return store.has(key) ? store.get(key)! : null; },
+    setItem: (key: string, value: string) => { if (storageBlocked) throw new Error('blocked'); store.set(key, String(value)); },
+    removeItem: (key: string) => { if (storageBlocked) throw new Error('blocked'); store.delete(key); }
+  };
+  const win = {
+    location: { get href() { return location.href; } },
+    history: {
+      state: { kept: true },
+      replaceState: (_state: unknown, _title: string, url: string) => {
+        replaced.push(url);
+        const next = new URL(url, location.href);
+        location.search = next.search;
+        location.hash = next.hash;
+      }
+    },
+    sessionStorage: storage
+  };
+  (globalThis as any).window = win;
+  return { store, replaced, done: () => { delete (globalThis as any).window; } };
+}
+
+await check('the "Rate your report" link carries only a well-formed order number', () => {
+  assert.equal(REVIEW_INVITE_PARAM, 'review');
+  assert.equal(normalizeInviteOrderNumber(' ORD-65A1B2 '), 'ORD-65A1B2');
+  assert.equal(normalizeInviteOrderNumber('ORD_TEST_1'), 'ORD_TEST_1');
+  for (const bad of ['', '   ', '-ORD', 'ORD 1', '<img src=x>', 'ORD-1"', 'x'.repeat(65), null, undefined, 42]) {
+    assert.equal(normalizeInviteOrderNumber(bad), null, `${String(bad)} must be ignored`);
+  }
+});
+
+await check('the dashboard keeps the invitation across sign-in and takes it off the address bar', () => {
+  const browser = fakeBrowser('https://astrosivam.com/dashboard?review=ORD-65A1B2&utm_source=email#orders');
+  try {
+    assert.equal(captureReviewInvite(), 'ORD-65A1B2');
+    assert.deepEqual(browser.replaced, ['/dashboard?utm_source=email#orders'], 'only ?review= is removed');
+    assert.equal(browser.store.get(REVIEW_INVITE_STORAGE_KEY), 'ORD-65A1B2');
+    // Dashboard -> login -> dashboard: the address bar no longer has it.
+    assert.equal(captureReviewInvite(), 'ORD-65A1B2', 'the remembered invitation survives the sign-in detour');
+    clearReviewInvite();
+    assert.equal(captureReviewInvite(), null, 'once handled, it never reopens');
+  } finally {
+    browser.done();
+  }
+
+  const hostile = fakeBrowser('https://astrosivam.com/dashboard?review=%3Cscript%3E');
+  try {
+    assert.equal(captureReviewInvite(), null, 'a malformed value is dropped');
+    assert.deepEqual(hostile.replaced, ['/dashboard']);
+    assert.equal(hostile.store.size, 0, 'and never stored');
+  } finally {
+    hostile.done();
+  }
+
+  const blocked = fakeBrowser('https://astrosivam.com/dashboard?review=ORD-77', { storageBlocked: true });
+  try {
+    assert.equal(captureReviewInvite(), 'ORD-77', 'blocked storage still opens the form for a signed-in visitor');
+    assert.doesNotThrow(() => clearReviewInvite());
+  } finally {
+    blocked.done();
+  }
+  assert.equal(captureReviewInvite(), null, 'no window (prerender) -> no invitation');
+});
+
+await check('the invitation opens only an order this account may review', () => {
+  const eligible = [
+    { orderId: 'ord_1', orderNumber: 'ORD-AAA111', services: ['BIRTH_JATHAGAM' as const] },
+    { orderId: 'ord_2', orderNumber: 'ORD-BBB222', services: ['BABY_NAMING' as const, 'MUHURTHAM' as const] }
+  ];
+  assert.equal(resolveReviewInvite('ORD-BBB222', eligible)?.orderId, 'ord_2');
+  assert.equal(resolveReviewInvite('ord-bbb222', eligible)?.orderId, 'ord_2', 'case does not matter');
+  assert.equal(resolveReviewInvite('ORD-CCC333', eligible), null, "someone else's or an ineligible order opens nothing");
+  assert.equal(resolveReviewInvite('ORD-AAA111', []), null);
+});
+
 // ---------------------------------------------------------------------------
 // 2. Wiring contracts
 // ---------------------------------------------------------------------------
@@ -243,6 +336,43 @@ await check('the dashboard offers reviews only for server-approved orders; admin
   assert.match(publicCall, /credentials: 'omit'/);
 });
 
+await check('every delivery email carries the invitation, built in one place (api/reviews.php)', () => {
+  const templates: Array<[string, number]> = [
+    ['api/admin/index.php', 2], // single order: approve + resend
+    ['api/admin/family_approval.php', 1],
+    ['api/admin/order_items.php', 1],
+    ['api/admin/approve_order.php', 1]
+  ];
+  for (const [file, calls] of templates) {
+    const source = read(file);
+    assert.match(source, /require_once __DIR__ \. '\/\.\.\/reviews\.php';/, `${file} must load api/reviews.php`);
+    assert.equal(source.split('astro_review_invite_email_html(').length - 1, calls, `${file} must build ${calls} invitation(s)`);
+    assert.ok(/\{\$reviewInvite(Html)?\}/.test(source), `${file} must place the invitation in the email body`);
+    assert.doesNotMatch(source, /dashboard\?review=/, `${file} must not hand-build the link`);
+  }
+  const items = read('api/admin/order_items.php');
+  assert.match(items, /astro_order_items_send_completes_order\(\$pdo, \$order, \$sendingItemIds\)\s*\?\s*astro_review_invite_email_html/,
+    'a multi-person order is invited only by the email that completes it');
+  assert.match(items, /\$reviewInvite = \$partIndex === 0 \? \$reviewInviteHtml : '';/, 'only the first part of a split delivery carries it');
+  // The link points at the canonical host and at the parameter the dashboard reads.
+  assert.match(reviewsPhp, /const ASTRO_REVIEW_PUBLIC_ORIGIN = 'https:\/\/astrosivam\.com';/);
+  assert.ok(reviewsPhp.includes(`'/dashboard?${REVIEW_INVITE_PARAM}=' . rawurlencode($orderNumber)`));
+  assert.ok(ROUTES.some((route) => route.path === '/dashboard'), '/dashboard must be a prerendered route');
+});
+
+await check('the dashboard opens the invited review once the session and the eligible orders are known', () => {
+  const dashboard = read('src/pages/CustomerDashboard.tsx');
+  assert.match(dashboard, /setReviewInvite\(captureReviewInvite\(\)\)/);
+  assert.match(dashboard, /useEffect\(\(\) => \{\s*if \(user\?\.id\) fetchMyReviews\(\);\s*\}, \[user\?\.id\]\);/,
+    'reviews must load when the session check resolves, not only on mount');
+  assert.match(dashboard, /if \(!user \|\| !reviewInvite \|\| !reviewsLoaded\) return;/);
+  assert.match(dashboard, /resolveReviewInvite\(reviewInvite, reviewableOrders\)/);
+  assert.match(dashboard, /clearReviewInvite\(\);/);
+  assert.match(dashboard, /data-review-invite-pending/, 'a signed-out visitor is told why to sign in');
+  assert.match(read('.github/workflows/build.yml'), /npx playwright test tests\/browser\/review-invite\.spec\.ts/,
+    'CI must run the invitation flow in a real browser (tests/browser/review-invite.spec.ts)');
+});
+
 await check('CI runs the real-route half with the runtime required, so a skip cannot pass', () => {
   const workflow = read('.github/workflows/build.yml');
   const start = workflow.indexOf('\n  tests:\n');
@@ -274,7 +404,7 @@ if (!runtimeInstalled) {
   process.exit(0);
 }
 
-const { createAdminApiBridge } = await import(new URL('../scripts/php-admin-api-bridge.mjs', import.meta.url).href);
+const { createAdminApiBridge, TEST_ORDERS } = await import(new URL('../scripts/php-admin-api-bridge.mjs', import.meta.url).href);
 const bridge = await createAdminApiBridge();
 const q = (value: string) => `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 
@@ -471,6 +601,115 @@ try {
     assert.equal(blocked.json.code, 'ORDER_REFUNDED');
   });
 
+  await check('PHP: the invitation goes to exactly the orders that will be reviewable once delivered', async () => {
+    const result = await bridge.runPhp(`
+require_once '/repo/api/reviews.php';
+$base = ['order_number' => 'ORD-INV001', 'service_mode' => 'PAID', 'amount' => 18, 'payment_confirmed' => 0,
+  'status' => 'PENDING_APPROVAL', 'refund_status' => 'NONE'];
+$cases = [
+  'paid, being approved' => $base,
+  'paid, resent after delivery' => array_merge($base, ['status' => 'COMPLETED', 'payment_confirmed' => 1]),
+  'paid, legacy generated' => array_merge($base, ['status' => 'GENERATED']),
+  'free beta' => array_merge($base, ['service_mode' => 'FREE_BETA', 'amount' => 0]),
+  'paid mode, zero amount' => array_merge($base, ['amount' => 0]),
+  'refunded' => array_merge($base, ['status' => 'REFUNDED']),
+  'refund settled, status kept' => array_merge($base, ['status' => 'COMPLETED', 'refund_status' => 'REFUNDED']),
+  'cancelled' => array_merge($base, ['status' => 'CANCELLED']),
+  'rejected' => array_merge($base, ['status' => 'REJECTED']),
+];
+$applies = [];
+foreach ($cases as $name => $order) {
+  $applies[$name] = astro_review_invite_applies($order);
+}
+echo json_encode([
+  'applies' => $applies,
+  'html' => astro_review_invite_email_html($base),
+  'plural' => astro_review_invite_email_html($base, true),
+  'free' => astro_review_invite_email_html($cases['free beta']),
+  'noNumber' => astro_review_invite_email_html(array_merge($base, ['order_number' => ' '])),
+  'escaped' => astro_review_invite_email_html(array_merge($base, ['order_number' => "ORD-1&2'\\"<x>"])),
+]);
+`);
+    assert.deepEqual(result.applies, {
+      'paid, being approved': true,
+      'paid, resent after delivery': true,
+      'paid, legacy generated': true,
+      'free beta': false,
+      'paid mode, zero amount': false,
+      refunded: false,
+      'refund settled, status kept': false,
+      cancelled: false,
+      rejected: false
+    });
+    assert.ok(result.html.includes("href='https://astrosivam.com/dashboard?review=ORD-INV001'"), result.html);
+    assert.match(result.html, /How was your report\?/);
+    assert.match(result.html, />Rate your report</);
+    assert.match(result.html, /tell us honestly/, 'the invitation asks for an honest review, not a good one');
+    assert.match(result.plural, /How were your reports\?/);
+    assert.match(result.plural, />Rate your reports</);
+    assert.equal(result.free, '');
+    assert.equal(result.noNumber, '');
+    assert.ok(result.escaped.includes("review=ORD-1%262%27%22%3Cx%3E'"), result.escaped);
+    assert.doesNotMatch(result.escaped, /<x>/);
+  });
+
+  await check('PHP: a multi-person order is invited only by the email that completes it', async () => {
+    const result = await bridge.runPhp(`
+require_once '/repo/api/admin/order_items.php';
+$pdo = getDbConnection();
+$pdo->exec("INSERT INTO orders (id, order_number, user_id, user_name, user_email, service_type, amount, currency, service_mode,
+  status, payment_confirmed, refund_status, input_payload, created_at) VALUES ('ord_inv_multi', 'ORD-INV-MULTI', 'usr_rev_a', 'Test',
+  'test@example.test', 'MULTI_PERSON', 40, 'USD', 'PAID', 'PROCESSING', 1, 'NONE', '{}', '2026-10-09 10:00:00')");
+$item = $pdo->prepare("INSERT INTO order_items (order_id, person_id, service_code, report_status) VALUES ('ord_inv_multi', ?, ?, 'PENDING')");
+$item->execute([1, 'BIRTH_JATHAGAM']);
+$first = (int) $pdo->lastInsertId();
+$item->execute([2, 'BABY_NAMING']);
+$second = (int) $pdo->lastInsertId();
+$order = $pdo->query("SELECT * FROM orders WHERE id = 'ord_inv_multi'")->fetch(PDO::FETCH_ASSOC);
+$out = [
+  'firstOfTwo' => astro_order_items_send_completes_order($pdo, $order, [$first]),
+  'bothAtOnce' => astro_order_items_send_completes_order($pdo, $order, [$first, $second]),
+];
+$pdo->exec("UPDATE order_items SET report_status = 'SENT' WHERE id = " . $first);
+$out['lastRemaining'] = astro_order_items_send_completes_order($pdo, $order, [$second]);
+$out['resendOfCompleted'] = astro_order_items_send_completes_order($pdo, array_merge($order, ['status' => 'COMPLETED']), [$first]);
+$out['noItems'] = astro_order_items_send_completes_order($pdo, array_merge($order, ['id' => 'ord_missing']), []);
+$out['inFirstPart'] = strpos(astro_order_items_email_html($order, [], ['a.pdf'], 0, 2, '<div>INVITE</div>'), '<div>INVITE</div>') !== false;
+$out['inSecondPart'] = strpos(astro_order_items_email_html($order, [], ['b.pdf'], 1, 2, '<div>INVITE</div>'), '<div>INVITE</div>') !== false;
+echo json_encode($out);
+`);
+    assert.deepEqual(result, {
+      firstOfTwo: false,
+      bothAtOnce: true,
+      lastRemaining: true,
+      resendOfCompleted: true,
+      noItems: false,
+      inFirstPart: true,
+      inSecondPart: false
+    });
+  });
+
+  await check('PHP: approving a paid order emails the invitation; a free-beta delivery carries none', async () => {
+    const docs = {
+      reportPdfBase64: buildPreviewPdfBase64({ pages: 1, scanBytesPerPage: 160 * 1024, seed: 811 }),
+      invoicePdfBase64: buildPreviewPdfBase64({ pages: 1, scanBytesPerPage: 160 * 1024, seed: 812 }),
+      language: 'en',
+      requirePreviewQuality: true
+    };
+    const single = TEST_ORDERS.single;
+    await bridge.runPhp(`getDbConnection()->exec("UPDATE orders SET service_mode = 'PAID', amount = 18, payment_status = 'CAPTURED', payment_confirmed = 1 WHERE id = ${q(single.id)}"); echo json_encode(['ok' => true]);`);
+    const paid = await bridge.request({ method: 'POST', url: `/api/admin/orders/${single.id}/approve`, json: docs });
+    assert.equal(paid.status, 200, paid.text);
+    const paidMail = bridge.outbox().at(-1);
+    assert.equal(paidMail.to, single.email);
+    assert.ok(paidMail.html.includes(`href='https://astrosivam.com/dashboard?review=${single.orderNumber}'`), 'the paid delivery invites a review');
+    assert.equal((await bridge.order(single.id)).status, 'COMPLETED', 'the order the link opens is reviewable');
+
+    const free = await bridge.request({ method: 'POST', url: `/api/admin/orders/${TEST_ORDERS.other.id}/approve`, json: docs });
+    assert.equal(free.status, 200, free.text);
+    assert.doesNotMatch(bridge.outbox().at(-1).html, /dashboard\?review=|Rate your report/, 'a free-beta delivery carries no invitation');
+  });
+
   await check('PHP: deletion, method guards, the legacy ?action= entry point and the audit trail', async () => {
     const deleted = await bridge.request({ method: 'DELETE', url: `/api/admin/reviews/${legacyReviewId}` });
     assert.equal(deleted.status, 200, deleted.text);
@@ -487,7 +726,11 @@ try {
     for (const action of ['REVIEW_SUBMITTED', 'REVIEW_UPDATED', 'REVIEW_APPROVED', 'REVIEW_REJECTED', 'REVIEW_DELETED']) {
       assert.ok(actions.has(action), `audit log is missing ${action}`);
     }
-    assert.equal(bridge.phpErrors(), '', 'the review routes must not log PHP errors');
+    // Same filter as tests/admin-report-delivery.test.ts: the approve route's
+    // astrology engine writes informational lines (ayanamsa used) to the log.
+    const phpProblems = bridge.phpErrors().split('\n').filter((line: string) => /PHP (Fatal|Warning|Notice|Deprecated|Parse)/.test(line));
+    assert.deepEqual(phpProblems, [], 'the review and delivery routes must not log PHP warnings, notices or fatals');
+    assert.doesNotMatch(bridge.phpErrors(), /reviews\.php|customer_reviews/, 'nothing from api/reviews.php or its table may reach the error log');
   });
 } finally {
   await bridge.close();

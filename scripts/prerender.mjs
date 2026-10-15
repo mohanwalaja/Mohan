@@ -540,6 +540,51 @@ export function homepageStructuredDataProblems(route, bodyHtml) {
   return problems;
 }
 
+/** Decodes the five entities React writes into text and attribute values. */
+function decodeReactEntities(value) {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+/**
+ * Every indexable document describes itself with exactly ONE WebPage JSON-LD,
+ * rendered by its <SEO> inside the page tree from the same canonical, title
+ * and meta description as its head tags; noindex documents carry none. (It
+ * used to be baked as a [data-prerender-seo] head tag, which main.tsx deletes
+ * at boot — so it never reached the DOM that Google renders.)
+ */
+export function webPageStructuredDataProblems(route, bodyHtml, headTags) {
+  const problems = [];
+  const pages = pageJsonLdBlocks(bodyHtml).filter((block) => block.schema === 'webpage');
+  if (route.noindex) {
+    if (pages.length > 0) problems.push('a noindex document must not carry WebPage JSON-LD (pass noindex to <SEO>)');
+    return problems;
+  }
+  if (pages.length !== 1) {
+    problems.push(`expected exactly one WebPage JSON-LD (rendered by <SEO>), found ${pages.length}`);
+    return problems;
+  }
+  const page = pages[0].data;
+  if (!page || page['@type'] !== 'WebPage') {
+    problems.push('the data-schema="webpage" block is not a WebPage');
+    return problems;
+  }
+  const canonical = route.path === '/' ? `${ORIGIN}/` : `${ORIGIN}${route.path}`;
+  const titleTag = headTags.find((t) => /^<title/i.test(t)) || '';
+  const title = decodeReactEntities(titleTag.replace(/^<title[^>]*>/i, '').replace(/<\/title>$/i, ''));
+  const descriptionTag = headTags.find((t) => /^<meta\s[^>]*name="description"/i.test(t)) || '';
+  const description = decodeReactEntities(attrValue(descriptionTag, 'content') || '');
+  if (page['@id'] !== canonical || page.url !== canonical) problems.push(`WebPage @id and url must be the canonical ${canonical}`);
+  if (page.name !== title) problems.push(`WebPage name ${JSON.stringify(page.name)} is not the <title> ${JSON.stringify(title)}`);
+  if (page.description !== description) problems.push('WebPage description is not the meta description');
+  if (page.isPartOf?.['@id'] !== `${ORIGIN}/#webapp`) problems.push(`WebPage must be isPartOf ${ORIGIN}/#webapp`);
+  return problems;
+}
+
 function visibleTextLength(html) {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -772,31 +817,10 @@ function assembleDocument(baseHtml, route, headTags, bodyHtml, manifest) {
     tags.push('<meta name="robots" content="noindex, nofollow" data-prerender-seo />');
   }
 
-  const title = tags.find((t) => /^<title/i.test(t));
-  const descriptionTag = tags.find((t) => /^<meta\s[^>]*name="description"/i.test(t));
-  const description = descriptionTag ? attrValue(descriptionTag, 'content') || '' : '';
-
-  // Per-route WebPage entity (indexable routes only). Marked like the other
-  // baked tags so the SPA boot removes it — a fresh document load is the only
-  // place where it is meaningful.
-  if (!route.noindex && title) {
-    const url = route.path === '/' ? `${ORIGIN}/` : `${ORIGIN}${route.path}`;
-    const name = title.replace(/^<title[^>]*>/i, '').replace(/<\/title>$/i, '');
-    const ld = {
-      '@context': 'https://schema.org',
-      '@type': 'WebPage',
-      '@id': url,
-      url,
-      name,
-      description,
-      isPartOf: { '@id': `${ORIGIN}/#webapp` },
-      inLanguage: 'en',
-    };
-    tags = [
-      ...tags,
-      `<script type="application/ld+json" data-prerender-seo>${JSON.stringify(ld)}</script>`,
-    ];
-  }
+  // The per-route WebPage JSON-LD is no longer baked here: <SEO> renders it
+  // inside the page tree (src/services/structuredData.ts buildWebPageJsonLd),
+  // so it survives main.tsx removing the [data-prerender-seo] head tags at
+  // boot. webPageStructuredDataProblems() below fails the build without it.
 
   const marked = tags.map((t) =>
     // Mark every baked head tag for removal when the SPA boots (see main.tsx).
@@ -898,11 +922,13 @@ async function main() {
       const bodyHtml = mapAssetUrls(rawBody, manifest);
       const mappedHead = mapAssetUrls(headTags.join('\n    '), manifest).split('\n    ');
 
-      // SEO audit 2026-10-15: crawlable internal links (finding 1) and the
-      // homepage-only FAQPage/Review JSON-LD matching visible text (finding 2).
+      // SEO audit 2026-10-15: crawlable internal links (finding 1), the
+      // homepage-only FAQPage/Review JSON-LD matching visible text (finding 2)
+      // and one WebPage per indexable document, rendered in the page tree.
       const seoProblems = [
         ...crawlableLinkProblems(bodyHtml),
         ...homepageStructuredDataProblems(route, bodyHtml),
+        ...webPageStructuredDataProblems(route, bodyHtml, mappedHead),
       ];
       if (seoProblems.length > 0) {
         throw new Error(`prerender: ${route.path} failed the crawlability/structured-data guard:\n  - ${seoProblems.slice(0, 12).join('\n  - ')}`);

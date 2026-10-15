@@ -15,6 +15,11 @@
  *   5. When dist/ exists: the shipped homepage passes the build guard
  *      (homepageStructuredDataProblems in scripts/prerender.mjs: markup ==
  *      visible text) and no other document carries FAQPage/Review.
+ *   6. Every indexable page (not only the homepage) carries ONE WebPage
+ *      JSON-LD rendered by its <SEO> inside the page tree, from the same
+ *      canonical/title/description as its head tags — no longer a baked
+ *      [data-prerender-seo] head tag that main.tsx deletes at boot.
+ *      noindex pages carry none (webPageStructuredDataProblems).
  *
  * Google currently limits FAQ rich results to a few authoritative sites and
  * shows no stars for an organisation's reviews of itself; the markup is kept
@@ -24,6 +29,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import React from 'react';
+import { renderToString } from 'react-dom/server';
+import { HelmetProvider } from 'react-helmet-async';
+import { SEO } from '../src/components/common/SEO';
 import { HOME_FAQ_ITEMS } from '../src/data/homeFaq';
 import { CURATED_TESTIMONIALS } from '../src/data/testimonials';
 import { mergeReviews, summarizeRatings } from '../src/services/reviews';
@@ -32,6 +41,7 @@ import {
   SERVICE_SCHEMA,
   buildFaqPageJsonLd,
   buildReviewsJsonLd,
+  buildWebPageJsonLd,
   serializeJsonLd
 } from '../src/services/structuredData';
 import type { DisplayReview } from '../src/types';
@@ -47,7 +57,7 @@ function check(name: string, fn: () => void) {
 }
 
 const prerender = await import(new URL('../scripts/prerender.mjs', import.meta.url).href);
-const ROUTES: Array<{ path: string; file: string }> = prerender.ROUTES;
+const ROUTES: Array<{ path: string; file: string; noindex?: boolean }> = prerender.ROUTES;
 
 /** The site-wide JSON-LD graph in the index.html template. */
 const templateGraph: Array<Record<string, any>> = (() => {
@@ -166,6 +176,63 @@ check('the page markup is not baked as a removable head tag', () => {
   assert.match(jsonLd, /serializeJsonLd\(data\)/);
 });
 
+/** Renders <SEO> the way the prerender does and splits off its head tags. */
+function renderSeo(props: Record<string, unknown>) {
+  const html = renderToString(React.createElement(HelmetProvider, null, React.createElement(SEO, props)));
+  const headTags = [...html.matchAll(/<title[^>]*>[\s\S]*?<\/title>|<meta\s[^>]*>|<link\s[^>]*>/gi)].map((m) => m[0]);
+  return { html, headTags };
+}
+
+check('every indexable page describes itself with one WebPage, from its own head tags', () => {
+  const props = {
+    title: 'Services & Prices | ASTRO SIVAM',
+    description: 'Birth Jathagam, "10 Poruthams" & more — Tamil, English, Hindi.',
+    canonical: 'https://astrosivam.com/services'
+  };
+  const { html, headTags } = renderSeo(props);
+  const blocks: Array<{ schema: string; data: any }> = prerender.pageJsonLdBlocks(html);
+  assert.deepEqual(blocks.map((block) => block.schema), ['webpage']);
+  assert.deepEqual(blocks[0].data, buildWebPageJsonLd({ url: props.canonical, name: props.title, description: props.description }));
+  assert.deepEqual(blocks[0].data, {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': 'https://astrosivam.com/services',
+    url: 'https://astrosivam.com/services',
+    name: 'Services & Prices | ASTRO SIVAM',
+    description: 'Birth Jathagam, "10 Poruthams" & more — Tamil, English, Hindi.',
+    isPartOf: { '@id': SCHEMA_IDS.webapp },
+    inLanguage: 'en'
+  }, 'name/description are the plain text, never HTML-escaped (the old baked tag leaked &amp;)');
+  assert.deepEqual(prerender.webPageStructuredDataProblems({ path: '/services' }, html, headTags), []);
+
+  const noindex = renderSeo({ ...props, canonical: 'https://astrosivam.com/dashboard', noindex: true });
+  assert.deepEqual(prerender.pageJsonLdBlocks(noindex.html), [], 'a noindex page describes nothing');
+  assert.deepEqual(prerender.webPageStructuredDataProblems({ path: '/dashboard', noindex: true }, noindex.html, noindex.headTags), []);
+});
+
+check('the WebPage guard fails the build on a missing, duplicated or drifted entity', () => {
+  const props = { title: 'About | ASTRO SIVAM', description: 'Who we are.', canonical: 'https://astrosivam.com/about' };
+  const { html, headTags } = renderSeo(props);
+  const guard = (route: Record<string, unknown>, body: string) => prerender.webPageStructuredDataProblems(route, body, headTags) as string[];
+  const without = html.replace(/<script type="application\/ld\+json" data-schema="webpage">[\s\S]*?<\/script>/, '');
+  assert.match(guard({ path: '/about' }, without).join(), /exactly one WebPage/);
+  assert.match(guard({ path: '/about' }, html + html).join(), /exactly one WebPage JSON-LD \(rendered by <SEO>\), found 2/);
+  assert.match(guard({ path: '/contact' }, html).join(), /canonical https:\/\/astrosivam\.com\/contact/);
+  const renamed = renderSeo({ ...props, title: 'Other' }).html;
+  assert.match(guard({ path: '/about' }, renamed).join(), /is not the <title>/);
+  assert.match(guard({ path: '/about', noindex: true }, html).join(), /noindex document must not carry WebPage/);
+});
+
+check('the WebPage is rendered by <SEO> in the page tree, no longer baked as a removable head tag', () => {
+  const seo = read('src/components/common/SEO.tsx');
+  assert.match(seo, /\{!noindex && \(\s*<JsonLd id="webpage" data=\{buildWebPageJsonLd\(\{ url: canonical, name: title, description \}\)\} \/>/);
+  const helmet = seo.slice(seo.indexOf('<Helmet>'), seo.indexOf('</Helmet>'));
+  assert.doesNotMatch(helmet, /JsonLd|ld\+json/, 'inside <Helmet> it would be hoisted to the head and deleted at boot');
+  const script = read('scripts/prerender.mjs');
+  assert.doesNotMatch(script, /'@type': 'WebPage'/, 'the prerender must not bake a second WebPage');
+  assert.match(script, /\.\.\.webPageStructuredDataProblems\(route, bodyHtml, mappedHead\)/, 'the build must run the WebPage guard');
+});
+
 const distDir = path.join(root, 'dist');
 if (!fs.existsSync(path.join(distDir, 'index.html'))) {
   console.log('  [SKIP] dist/ not built — run `npm run build` to check the shipped documents.');
@@ -176,13 +243,29 @@ if (!fs.existsSync(path.join(distDir, 'index.html'))) {
     const problems: string[] = prerender.homepageStructuredDataProblems({ path: '/' }, body);
     assert.deepEqual(problems, [], problems.join('; '));
     const blocks: Array<{ schema: string; data: any }> = prerender.pageJsonLdBlocks(body);
-    assert.deepEqual(blocks.map((block) => block.schema).sort(), ['faq', 'reviews']);
+    assert.deepEqual(blocks.map((block) => block.schema).sort(), ['faq', 'reviews', 'webpage']);
   });
 
   check('no other shipped document carries the homepage FAQPage / Review markup', () => {
     for (const route of ROUTES.filter((entry) => entry.path !== '/')) {
       const html = fs.readFileSync(path.join(distDir, 'pages', route.file), 'utf8');
       assert.doesNotMatch(html, /data-schema="(faq|reviews)"/, `${route.path} carries homepage-only JSON-LD`);
+    }
+  });
+
+  check('every shipped indexable document has one WebPage in its body; noindex documents and heads have none', () => {
+    for (const route of ROUTES) {
+      const html = fs.readFileSync(route.path === '/' ? path.join(distDir, 'index.html') : path.join(distDir, 'pages', route.file), 'utf8');
+      // Comments dropped first: the template's boot comment MENTIONS <title>.
+      const head = html.slice(0, html.indexOf('</head>')).replace(/<!--[\s\S]*?-->/g, '');
+      const body = html.slice(html.indexOf('<div id="root">'));
+      assert.doesNotMatch(head, /<script type="application\/ld\+json" data-prerender-seo/, `${route.path}: no baked WebPage in the head`);
+      // Baked tags read <title data-prerender-seo> / <meta data-prerender-seo name=…>; the guard accepts both.
+      const headTags = [...head.matchAll(/<title[^>]*>[\s\S]*?<\/title>|<meta\s[^>]*>|<link\s[^>]*>/gi)].map((m) => m[0]);
+      const problems: string[] = prerender.webPageStructuredDataProblems(route, body, headTags);
+      assert.deepEqual(problems, [], `${route.path}: ${problems.join('; ')}`);
+      const pages = prerender.pageJsonLdBlocks(body).filter((block: { schema: string }) => block.schema === 'webpage');
+      assert.equal(pages.length, route.noindex ? 0 : 1, route.path);
     }
   });
 }

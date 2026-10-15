@@ -9,6 +9,8 @@ require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../branding.php';
 require_once __DIR__ . '/../chat_alerts.php';
 require_once __DIR__ . '/../rate_limit.php';
+// Review moderation + the "Rate your report" block of the delivery emails.
+require_once __DIR__ . '/../reviews.php';
 require_once __DIR__ . '/family_approval.php';
 require_once __DIR__ . '/family_docs.php';
 // Document-sized JSON bodies for the delivery routes (see api/request_body.php).
@@ -520,6 +522,8 @@ if (preg_match('/admin\/orders\/([^\/]+)\/approve/', $path, $matches) && $method
     $serviceDisplayName = $serviceDisplayNames[$order['service_type']] ?? $order['service_type'];
     $orderDateDisplay = date('d M Y', strtotime($order['created_at'] ?? 'now'));
     $orderAmountDisplay = htmlspecialchars($order['currency'] ?? DEFAULT_CURRENCY) . ' $' . number_format(floatval($order['amount'] ?? 0), 2);
+    // "Rate your report" - paid orders only ('' otherwise), see api/reviews.php.
+    $reviewInviteHtml = astro_review_invite_email_html($order);
 
     // Email HTML content - maroon/gold temple branding to match the report & invoice PDFs
     $html = "
@@ -572,6 +576,8 @@ if (preg_match('/admin\/orders\/([^\/]+)\/approve/', $path, $matches) && $method
             <div>&#10003;&nbsp; <strong>ASTRO_SIVAM_Invoice_" . htmlspecialchars($order['order_number']) . ".pdf</strong> &mdash; Official Tax Invoice & Payment Receipt</div>
           </div>
         </div>
+
+        {$reviewInviteHtml}
 
         <!-- Spam Folder Notice -->
         <div style='background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:12px 14px; margin-bottom:18px; font-size:12.5px; color:#92400e; line-height:1.6;'>
@@ -714,6 +720,8 @@ if (preg_match('/admin\/orders\/([^\/]+)\/resend-email/', $path, $matches) && $m
     $serviceDisplayName = $serviceDisplayNames[$order['service_type']] ?? $order['service_type'];
     $orderDateDisplay = date('d M Y', strtotime($order['created_at'] ?? 'now'));
     $orderAmountDisplay = htmlspecialchars($order['currency'] ?? DEFAULT_CURRENCY) . ' $' . number_format(floatval($order['amount'] ?? 0), 2);
+    // "Rate your report" - paid orders only ('' otherwise), see api/reviews.php.
+    $reviewInviteHtml = astro_review_invite_email_html($order);
 
     $html = "
     <div style='background:#f4ede1; padding:24px 12px; font-family: Georgia, \'Times New Roman\', serif;'>
@@ -761,6 +769,8 @@ if (preg_match('/admin\/orders\/([^\/]+)\/resend-email/', $path, $matches) && $m
             <div>&#10003;&nbsp; <strong>ASTRO_SIVAM_Invoice_" . htmlspecialchars($order['order_number']) . ".pdf</strong> &mdash; Official Tax Invoice & Payment Receipt</div>
           </div>
         </div>
+
+        {$reviewInviteHtml}
 
         <div style='background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:12px 14px; margin-bottom:18px; font-size:12.5px; color:#92400e; line-height:1.6;'>
           <strong>Delivery Notice:</strong> If this email lands in your <em>Spam / Junk folder</em>, please mark it <strong>'Not Spam'</strong> and add <strong>admin@astrosivam.com</strong> to your contacts.

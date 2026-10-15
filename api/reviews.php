@@ -29,6 +29,16 @@
  *   POST   /api/admin/reviews/:id/reject       admin: hide (optional reason)
  *   DELETE /api/admin/reviews/:id              admin: delete
  *
+ * INVITATION ("Rate your report")
+ *   Every delivery email of an order that will be reviewable once it is
+ *   delivered carries astro_review_invite_email_html(): a link to
+ *   https://astrosivam.com/dashboard?review=<order number>, which opens the
+ *   review form for that order after sign-in (src/services/reviewInvite.ts).
+ *   The delivery templates are api/admin/index.php (approve + resend),
+ *   api/admin/family_approval.php, api/admin/order_items.php and
+ *   api/admin/approve_order.php. Every paid customer is invited, whatever
+ *   they might think of the report - never only the ones expected to be happy.
+ *
  * Table: customer_reviews - api/migrations/011_customer_reviews.sql and
  * api/schema.sql; astro_reviews_ensure_table() creates it at runtime on an
  * installation that has not been migrated (the convention of api/db.php).
@@ -54,6 +64,12 @@ const ASTRO_REVIEW_PUBLIC_LIMIT_MAX = 50;
 /** Per customer: generous for fixing a typo, useless for flooding the queue. */
 const ASTRO_REVIEW_SUBMIT_MAX_PER_WINDOW = 20;
 const ASTRO_REVIEW_SUBMIT_WINDOW_SECONDS = 3600;
+/**
+ * Origin of the links sent by email: always the canonical public site, never
+ * the host of the admin request that triggers a delivery (a staging host, a
+ * cPanel temporary URL or a bare IP would reach the customer otherwise).
+ */
+const ASTRO_REVIEW_PUBLIC_ORIGIN = 'https://astrosivam.com';
 
 /** Reviewable service codes -> the clean URL of the page the service is sold on. */
 function astro_review_service_routes(): array
@@ -234,6 +250,57 @@ function astro_review_order_eligibility(array $order): array
         return ['eligible' => false, 'code' => 'NOT_DELIVERED', 'message' => 'You can review this order once your report has been delivered.'];
     }
     return ['eligible' => true, 'code' => 'ELIGIBLE', 'message' => ''];
+}
+
+/**
+ * Will this order be reviewable once the delivery being sent succeeds? The
+ * same rule as astro_review_order_eligibility(), applied to the order as the
+ * delivery routes leave it: they refuse to email a paid order whose payment
+ * is unverified, and a successful delivery sets status = COMPLETED and
+ * payment_confirmed = 1 in the same request. Rejected, cancelled and refunded
+ * orders are never invited; free-beta and zero-amount orders never qualify.
+ */
+function astro_review_invite_applies(array $order): bool
+{
+    $status = strtoupper(trim((string) ($order['status'] ?? '')));
+    if (in_array($status, ['REJECTED', 'CANCELLED', 'REFUNDED'], true)) {
+        return false;
+    }
+    $delivered = $order;
+    $delivered['status'] = 'COMPLETED';
+    $delivered['payment_confirmed'] = 1;
+    return astro_review_order_eligibility($delivered)['eligible'];
+}
+
+/** The invitation link: the dashboard opens the review form for this order (after sign-in). */
+function astro_review_invite_url(string $orderNumber): string
+{
+    return ASTRO_REVIEW_PUBLIC_ORIGIN . '/dashboard?review=' . rawurlencode($orderNumber);
+}
+
+/**
+ * The "How was your report?" block of a delivery email, or '' when the order
+ * cannot be reviewed. Inline styles only (mail clients drop <style> blocks),
+ * in the maroon/gold palette of the delivery emails. $plural words it for a
+ * delivery carrying several reports (family bundle, multi-person order).
+ */
+function astro_review_invite_email_html(array $order, bool $plural = false): string
+{
+    $orderNumber = trim((string) ($order['order_number'] ?? ''));
+    if ($orderNumber === '' || !astro_review_invite_applies($order)) {
+        return '';
+    }
+    $url = htmlspecialchars(astro_review_invite_url($orderNumber), ENT_QUOTES, 'UTF-8');
+    $heading = $plural ? 'How were your reports?' : 'How was your report?';
+    $button = $plural ? 'Rate your reports' : 'Rate your report';
+    $object = $plural ? 'them' : 'it';
+    return "<div style='border:1px solid #e8d9b8; border-left:4px solid #c9962c; border-radius:6px; padding:14px 16px; margin-bottom:18px; background:#fffaf0;'>"
+        . "<div style='color:#7a1f1f; font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;'>{$heading}</div>"
+        . "<p style='color:#4b3d28; font-size:13px; line-height:1.7; margin:0 0 12px;'>Once you have read {$object}, please tell us honestly how we did. "
+        . "Your review helps other families choose, and it appears on our website as a <strong>verified purchase</strong> after a quick check.</p>"
+        . "<a href='{$url}' style='display:inline-block; background:#7a1f1f; color:#ffffff; text-decoration:none; font-weight:700; font-size:13px; padding:10px 18px; border-radius:6px;'>{$button}</a>"
+        . "<div style='color:#8a7a55; font-size:11.5px; line-height:1.6; margin-top:8px;'>Opens your ASTRO SIVAM dashboard &mdash; sign in with the account you ordered with.</div>"
+        . '</div>';
 }
 
 /** The reviewable services of an order: its service, or every service of a multi-person order. */

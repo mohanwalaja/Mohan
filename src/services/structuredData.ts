@@ -75,6 +75,26 @@ export function buildFaqPageJsonLd(items: readonly FaqItem[]): JsonLdObject {
   };
 }
 
+/**
+ * The WebPage entity of one indexable route: rendered by <SEO> from the same
+ * title, description and canonical as the page's head tags, inside the page
+ * tree — so it is in the prerendered HTML AND in the DOM Google renders
+ * (main.tsx deletes the baked [data-prerender-seo] head tags at boot), and it
+ * is replaced on SPA navigation with the rest of the page.
+ */
+export function buildWebPageJsonLd(page: { url: string; name: string; description: string }): JsonLdObject {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': page.url,
+    url: page.url,
+    name: page.name,
+    description: page.description,
+    isPartOf: { '@id': SCHEMA_IDS.webapp },
+    inLanguage: 'en',
+  };
+}
+
 const reviewNodeId = (id: string) => `${SITE_ORIGIN}/#review-${String(id).replace(/[^A-Za-z0-9_-]/g, '-')}`;
 
 /**

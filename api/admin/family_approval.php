@@ -32,6 +32,8 @@ require_once __DIR__ . '/../astrology/engine.php';
 require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../branding.php';
 require_once __DIR__ . '/../chat_alerts.php';
+// The "Rate your reports" block of the delivery email.
+require_once __DIR__ . '/../reviews.php';
 require_once __DIR__ . '/family_docs.php';
 
 if (!function_exists('astroApproveFamilyGroup')) {
@@ -324,6 +326,17 @@ if (!function_exists('astroApproveFamilyGroup')) {
         $orderDateDisplay = date('d M Y', strtotime($first['created_at'] ?? 'now'));
         $isResend = ($mode === 'resend');
 
+        // "Rate your reports": the first member order that is reviewable once
+        // delivered ('' for a free or unpaid bundle) - see api/reviews.php.
+        // Only the first email of a split delivery carries it.
+        $reviewInviteHtml = '';
+        foreach ($groupOrders as $inviteOrder) {
+            $reviewInviteHtml = astro_review_invite_email_html($inviteOrder, $memberCount > 1);
+            if ($reviewInviteHtml !== '') {
+                break;
+            }
+        }
+
         $intro = $isResend
             ? "Here is your requested copy of your family order's official ASTRO SIVAM documents &mdash; all {$memberCount} reports and your consolidated tax invoice are attached below."
             : "Your family order ({$memberCount} users) has been verified, calculated with precision Nirayana Vedic ephemeris, and approved by the ASTRO SIVAM administration. All {$memberCount} reports and your one consolidated tax invoice are attached to this delivery.";
@@ -377,6 +390,8 @@ if (!function_exists('astroApproveFamilyGroup')) {
             <div>&#10003;&nbsp; <strong>" . htmlspecialchars($invoiceFileName) . "</strong> &mdash; {$invoiceLabel}</div>
           </div>
         </div>
+
+        {$reviewInviteHtml}
 
         <div style='background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:12px 14px; margin-bottom:18px; font-size:12.5px; color:#92400e; line-height:1.6;'>
           <strong>Delivery Notice:</strong> Your family's documents are sent in one or more emails (a large bundle is split so no message exceeds the mail size limit) &mdash; each email is labelled with its part number. If any part lands in your <em>Spam / Junk folder</em>, please mark it <strong>'Not Spam'</strong> and add <strong>admin@astrosivam.com</strong> to your contacts.
