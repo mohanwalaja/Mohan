@@ -75,9 +75,10 @@ type SpeechEnvelope = {
   duration: number;
 };
 
-const TOTAL_VIDEO_DURATION = 108;
+const TOTAL_VIDEO_DURATION = 87.64;
 const WAVEFORM_BAR_COUNT = 28;
 const AUDIO_BASE = '/audio/step-';
+const AUDIO_VERSION = '20261015';
 const SCENE_BASE = '/video-scenes/';
 
 const STEPS: StepDetail[] = [
@@ -85,132 +86,133 @@ const STEPS: StepDetail[] = [
     id: 1,
     title: 'Sign in securely',
     shortTitle: '01 · Sign in',
-    startSec: 0,
-    endSec: 17,
     icon: <UserCheck aria-hidden="true" />,
     tagline: 'A private user account, ready in moments.',
     description: 'Sign in with Google or your email to open a secure, personal ASTRO SIVAM dashboard.',
     features: ['Google or email sign-in', 'Private user dashboard', 'A simple, guided start'],
-    narrationDuration: 12.17,
+    startSec: 0,
+    endSec: 16.6,
+    narrationDuration: 15.24,
     captions: [
-      { start: 0, end: 2.41, text: 'Step one: Login and access your account.' },
-      { start: 2.41, end: 5.21, text: 'Sign in easily using Google or your email.' },
-      { start: 5.21, end: 8.68, text: 'Your account gives you secure, private access' },
-      { start: 8.68, end: 12.17, text: 'to your personalized astrological dashboard.' },
+      { start: 0, end: 2.63, text: 'Vanakkam! Welcome to ASTRO SIVAM.' },
+      { start: 2.63, end: 5.5, text: 'Step one: Login and access your account.' },
+      { start: 5.5, end: 8.51, text: 'Sign in easily using Google or your email.' },
+      { start: 8.51, end: 11.73, text: 'Your account gives you secure, private access' },
+      { start: 11.73, end: 15.24, text: 'to your personalized astrological dashboard.' },
     ],
   },
   {
     id: 2,
     title: 'Choose a service',
     shortTitle: '02 · Service',
-    startSec: 17,
-    endSec: 37,
     icon: <Sparkles aria-hidden="true" />,
     tagline: 'Find the Vedic service that fits your occasion.',
     description: 'Explore Janma Kundali, marriage compatibility, baby naming, and Subha Muhurtham services.',
     features: ['Birth Jathagam & Kundali', '10-Porutham matching', 'Baby naming & Muhurtham'],
-    narrationDuration: 12.41,
+    startSec: 16.6,
+    endSec: 30.48,
+    narrationDuration: 12.44,
     captions: [
-      { start: 0, end: 2.43, text: 'Step two: Select your astrological service.' },
-      { start: 2.43, end: 4.73, text: 'Choose a Janma Kundali birth chart,' },
-      { start: 4.73, end: 6.9, text: 'marriage compatibility, auspicious baby naming,' },
-      { start: 6.9, end: 12.41, text: 'or Subha Muhurtham dates for eighteen sacred ceremonies.' },
+      { start: 0, end: 3.11, text: 'Step two: Select your astrological service.' },
+      { start: 3.11, end: 5.4, text: 'Choose a Janma Kundali birth chart,' },
+      { start: 5.4, end: 8.47, text: 'marriage compatibility, auspicious baby naming,' },
+      { start: 8.47, end: 12.44, text: 'or Subha Muhurtham dates for eighteen sacred ceremonies.' },
     ],
   },
   {
     id: 3,
     title: 'Share the details',
     shortTitle: '03 · Details',
-    startSec: 37,
-    endSec: 56,
     icon: <Calendar aria-hidden="true" />,
     tagline: 'Birth information or ceremony preferences, entered with care.',
     description: 'Provide the birth or event details needed for a careful reading; location search helps map coordinates.',
     features: ['Exact date and time', 'Ceremony and month preferences', 'Place search with coordinates'],
-    narrationDuration: 12.48,
+    startSec: 30.48,
+    endSec: 43.75,
+    narrationDuration: 11.84,
     captions: [
-      { start: 0, end: 2.77, text: 'Step three: Fill in user and event details.' },
-      { start: 2.77, end: 6.22, text: 'Enter birth data, or choose your ceremony' },
-      { start: 6.22, end: 9.06, text: 'and a starting month for Subha Muhurtham.' },
-      { start: 9.06, end: 12.48, text: 'Place search helps map precise planetary coordinates.' },
+      { start: 0, end: 2.98, text: 'Step three: Fill in user and event details.' },
+      { start: 2.98, end: 5.57, text: 'Enter birth data, or choose your ceremony' },
+      { start: 5.57, end: 8.16, text: 'and a starting month for Subha Muhurtham.' },
+      { start: 8.16, end: 11.84, text: 'Place search helps map precise planetary coordinates.' },
     ],
   },
   {
     id: 4,
     title: 'Complete payment',
     shortTitle: '04 · Payment',
-    startSec: 56,
-    endSec: 70,
     icon: <Receipt aria-hidden="true" />,
     tagline: 'Choose a convenient payment option for your region.',
     description: 'Review the available checkout options: Google Pay / UPI in India, and PayPal with VISA, Mastercard, American Express and Discover for international customers worldwide.',
     features: ['Google Pay / UPI · India', 'PayPal · Worldwide', 'VISA · Mastercard · Amex · Discover'],
-    narrationDuration: 11.59,
+    startSec: 43.75,
+    endSec: 55.95,
+    narrationDuration: 10.8,
     captions: [
-      { start: 0, end: 2.94, text: 'Step four: Make a secure payment.' },
-      { start: 2.94, end: 6.05, text: 'Use Google Pay or UPI for India,' },
-      { start: 6.05, end: 8.63, text: 'PayPal for international clients,' },
-      { start: 8.63, end: 11.59, text: 'accepting VISA, Mastercard, Amex, and Discover.' },
+      { start: 0, end: 2.56, text: 'Step four: Make a secure payment.' },
+      { start: 2.56, end: 4.81, text: 'Use Google Pay or UPI for India,' },
+      { start: 4.81, end: 7.13, text: 'PayPal for international clients,' },
+      { start: 7.13, end: 10.8, text: 'accepting VISA, Mastercard, Amex, and Discover.' },
     ],
   },
   {
     id: 5,
     title: 'The priest team prepares your report',
     shortTitle: '05 · Analysis',
-    startSec: 70,
-    endSec: 89,
     icon: <Compass aria-hidden="true" />,
     tagline: 'A considered review of charts, timing, and tradition.',
     description: 'Senior Sivachariyar scholars review the relevant chart, compatibility factors, or Panchanga windows for your service.',
     features: ['12-house Rāsi & D-9 preview', 'Dasha and Bhukti review', 'Panchanga & Tara Balam'],
-    narrationDuration: 14.57,
+    startSec: 55.95,
+    endSec: 71.19,
+    narrationDuration: 13.84,
     captions: [
-      { start: 0, end: 3.2, text: 'Step five: Priest team chart analysis.' },
-      { start: 3.2, end: 7.05, text: 'Our senior Sivachariyar Vedic scholars and astrologers' },
-      { start: 7.05, end: 10.65, text: 'carefully analyze your planetary chart and Dasha Bhukti,' },
-      { start: 10.65, end: 14.57, text: 'or six-month Panchanga Shuddhi Muhurtham windows.' },
+      { start: 0, end: 2.8, text: 'Step five: Priest team chart analysis.' },
+      { start: 2.8, end: 6.45, text: 'Our senior Sivachariyar Vedic scholars and astrologers' },
+      { start: 6.45, end: 10.22, text: 'carefully analyze your planetary chart and Dasha Bhukti,' },
+      { start: 10.22, end: 13.84, text: 'or six-month Panchanga Shuddhi Muhurtham windows.' },
     ],
   },
   {
     id: 6,
     title: 'Review, approve, and deliver',
     shortTitle: '06 · Delivery',
-    startSec: 89,
-    endSec: 108,
     icon: <Send aria-hidden="true" />,
     tagline: 'Your report and official tax invoice travel together.',
     description: 'After the administration reviews the order, the horoscope report and tax invoice are prepared and emailed directly to you.',
     features: ['Report PDF', 'Official tax invoice PDF', 'Email and client-portal delivery'],
-    narrationDuration: 14.57,
+    startSec: 71.19,
+    endSec: 87.64,
+    narrationDuration: 14.84,
     captions: [
-      { start: 0, end: 3.08, text: 'Step six: Admin approval and delivery.' },
-      { start: 3.08, end: 6.16, text: 'The administrator verifies and approves your order.' },
-      { start: 6.16, end: 10.32, text: 'Your Astrological Report PDF and Tax Invoice' },
-      { start: 10.32, end: 14.57, text: 'are prepared daily 9 to 11 AM India time and emailed after approval.' },
+      { start: 0, end: 2.97, text: 'Step six: Admin approval and delivery.' },
+      { start: 2.97, end: 6.56, text: 'The administrator verifies and approves your order.' },
+      { start: 6.56, end: 9.66, text: 'Your Astrological Report PDF and Tax Invoice' },
+      { start: 9.66, end: 14.84, text: 'are prepared daily 9 to 11 AM India time and emailed after approval.' },
     ],
   },
 ];
 
 // Every cut uses a supplied photographic plate; the inserts are intentional mid-step B-roll.
 const CINEMA_SHOTS: CinemaShot[] = [
-  { id: 'login-wide', start: 0, end: 9, image: `${SCENE_BASE}scene-1-login.jpg`, label: 'CAM 01 · USER PORTAL', camera: 1 },
-  { id: 'temple-login-insert', start: 9, end: 12, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · LAMP-LIT SANCTUM', broll: true, camera: 3 },
-  { id: 'login-close', start: 12, end: 17, image: `${SCENE_BASE}scene-1-login.jpg`, label: 'CAM 02 · ACCOUNT ACCESS', camera: 2 },
-  { id: 'services-wide', start: 17, end: 27, image: `${SCENE_BASE}scene-2-services.jpg`, label: 'CAM 01 · SERVICE SELECTION', camera: 2 },
-  { id: 'temple-service-insert', start: 27, end: 30, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · PRAYER & TRADITION', broll: true, camera: 1 },
-  { id: 'services-close', start: 30, end: 37, image: `${SCENE_BASE}scene-2-services.jpg`, label: 'CAM 02 · CHOOSE YOUR SERVICE', camera: 3 },
-  { id: 'details-wide', start: 37, end: 44, image: `${SCENE_BASE}scene-3-details.jpg`, label: 'CAM 01 · USER DETAILS', camera: 3 },
-  { id: 'rasi-details-insert', start: 44, end: 48, image: `${SCENE_BASE}broll-rasi-chart-hands.jpg`, label: 'B-ROLL · RĀSI CHART STUDY', broll: true, camera: 2 },
-  { id: 'details-close', start: 48, end: 56, image: `${SCENE_BASE}scene-3-details.jpg`, label: 'CAM 02 · PLACE & BIRTH DATA', camera: 1 },
-  { id: 'payment-wide', start: 56, end: 62, image: `${SCENE_BASE}scene-4-payment.jpg`, label: 'CAM 01 · SECURE CHECKOUT', camera: 2 },
-  { id: 'temple-payment-insert', start: 62, end: 66, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · A MOMENT OF STILLNESS', broll: true, camera: 3 },
-  { id: 'payment-close', start: 66, end: 70, image: `${SCENE_BASE}scene-4-payment.jpg`, label: 'CAM 02 · PAYMENT CONFIRMATION', camera: 1 },
-  { id: 'priest-wide', start: 70, end: 78, image: `${SCENE_BASE}scene-5-priest.jpg`, label: 'CAM 01 · SENIOR SCHOLAR REVIEW', camera: 1 },
-  { id: 'rasi-priest-insert', start: 78, end: 83, image: `${SCENE_BASE}broll-rasi-chart-hands.jpg`, label: 'B-ROLL · TWELVE-HOUSE READING', broll: true, camera: 3 },
-  { id: 'priest-close', start: 83, end: 89, image: `${SCENE_BASE}scene-5-priest.jpg`, label: 'CAM 02 · REPORT PREPARATION', camera: 2 },
-  { id: 'delivery-wide', start: 89, end: 98, image: `${SCENE_BASE}scene-6-delivery.jpg`, label: 'CAM 01 · QUALITY REVIEW', camera: 3 },
-  { id: 'temple-delivery-insert', start: 98, end: 102, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · PRAYERFUL CLOSE', broll: true, camera: 2 },
-  { id: 'delivery-close', start: 102, end: 108, image: `${SCENE_BASE}scene-6-delivery.jpg`, label: 'CAM 02 · REPORT + INVOICE', camera: 1 },
+  { id: 'login-wide', start: 0, end: 8.79, image: `${SCENE_BASE}scene-1-login.jpg`, label: 'CAM 01 · USER PORTAL', camera: 1 },
+  { id: 'temple-login-insert', start: 8.79, end: 11.72, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · LAMP-LIT SANCTUM', broll: true, camera: 3 },
+  { id: 'login-close', start: 11.72, end: 16.6, image: `${SCENE_BASE}scene-1-login.jpg`, label: 'CAM 02 · ACCOUNT ACCESS', camera: 2 },
+  { id: 'services-wide', start: 16.6, end: 23.54, image: `${SCENE_BASE}scene-2-services.jpg`, label: 'CAM 01 · SERVICE SELECTION', camera: 2 },
+  { id: 'temple-service-insert', start: 23.54, end: 25.62, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · PRAYER & TRADITION', broll: true, camera: 1 },
+  { id: 'services-close', start: 25.62, end: 30.48, image: `${SCENE_BASE}scene-2-services.jpg`, label: 'CAM 02 · CHOOSE YOUR SERVICE', camera: 3 },
+  { id: 'details-wide', start: 30.48, end: 35.37, image: `${SCENE_BASE}scene-3-details.jpg`, label: 'CAM 01 · USER DETAILS', camera: 3 },
+  { id: 'rasi-details-insert', start: 35.37, end: 38.16, image: `${SCENE_BASE}broll-rasi-chart-hands.jpg`, label: 'B-ROLL · RĀSI CHART STUDY', broll: true, camera: 2 },
+  { id: 'details-close', start: 38.16, end: 43.75, image: `${SCENE_BASE}scene-3-details.jpg`, label: 'CAM 02 · PLACE & BIRTH DATA', camera: 1 },
+  { id: 'payment-wide', start: 43.75, end: 48.98, image: `${SCENE_BASE}scene-4-payment.jpg`, label: 'CAM 01 · SECURE CHECKOUT', camera: 2 },
+  { id: 'temple-payment-insert', start: 48.98, end: 52.46, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · A MOMENT OF STILLNESS', broll: true, camera: 3 },
+  { id: 'payment-close', start: 52.46, end: 55.95, image: `${SCENE_BASE}scene-4-payment.jpg`, label: 'CAM 02 · PAYMENT CONFIRMATION', camera: 1 },
+  { id: 'priest-wide', start: 55.95, end: 62.37, image: `${SCENE_BASE}scene-5-priest.jpg`, label: 'CAM 01 · SENIOR SCHOLAR REVIEW', camera: 1 },
+  { id: 'rasi-priest-insert', start: 62.37, end: 66.38, image: `${SCENE_BASE}broll-rasi-chart-hands.jpg`, label: 'B-ROLL · TWELVE-HOUSE READING', broll: true, camera: 3 },
+  { id: 'priest-close', start: 66.38, end: 71.19, image: `${SCENE_BASE}scene-5-priest.jpg`, label: 'CAM 02 · REPORT PREPARATION', camera: 2 },
+  { id: 'delivery-wide', start: 71.19, end: 78.98, image: `${SCENE_BASE}scene-6-delivery.jpg`, label: 'CAM 01 · QUALITY REVIEW', camera: 3 },
+  { id: 'temple-delivery-insert', start: 78.98, end: 82.45, image: `${SCENE_BASE}broll-temple-sanctum.jpg`, label: 'B-ROLL · PRAYERFUL CLOSE', broll: true, camera: 2 },
+  { id: 'delivery-close', start: 82.45, end: 87.64, image: `${SCENE_BASE}scene-6-delivery.jpg`, label: 'CAM 02 · REPORT + INVOICE', camera: 1 },
 ];
 
 const SERVICE_CHOICES = [
@@ -269,21 +271,21 @@ const getNavamsaSign = (longitude: number) => {
 };
 
 const getCursorPosition = (stepIndex: number, localTime: number) => {
-  if (stepIndex === 0) return localTime < 4.5 ? { x: 70, y: 42 } : localTime < 10.8 ? { x: 46, y: 66 } : { x: 52, y: 88 };
+  if (stepIndex === 0) return localTime < 5.4 ? { x: 70, y: 42 } : localTime < 13 ? { x: 46, y: 66 } : { x: 52, y: 88 };
   if (stepIndex === 1) {
-    const service = localTime < 7.2 ? 0 : localTime < 8.8 ? 1 : localTime < 10.5 ? 2 : 3;
+    const service = localTime < 6.9 ? 0 : localTime < 8.4 ? 1 : localTime < 10 ? 2 : 3;
     return [{ x: 27, y: 57 }, { x: 73, y: 57 }, { x: 27, y: 83 }, { x: 73, y: 83 }][service];
   }
-  if (stepIndex === 2) return localTime < 5 ? { x: 57, y: 34 } : localTime < 9.5 ? { x: 57, y: 58 } : { x: 59, y: 82 };
-  if (stepIndex === 3) return localTime < 4.2 ? { x: 22, y: 66 } : localTime < 8.5 ? { x: 50, y: 66 } : { x: 78, y: 66 };
-  if (stepIndex === 4) return localTime < 8 ? { x: 76, y: 30 } : { x: 51, y: 83 };
-  return localTime < 7 ? { x: 30, y: 69 } : { x: 73, y: 69 };
+  if (stepIndex === 2) return localTime < 4.5 ? { x: 57, y: 34 } : localTime < 8.6 ? { x: 57, y: 58 } : { x: 59, y: 82 };
+  if (stepIndex === 3) return localTime < 3.7 ? { x: 22, y: 66 } : localTime < 7.5 ? { x: 50, y: 66 } : { x: 78, y: 66 };
+  if (stepIndex === 4) return localTime < 7.3 ? { x: 76, y: 30 } : { x: 51, y: 83 };
+  return localTime < 6.8 ? { x: 30, y: 69 } : { x: 73, y: 69 };
 };
 
-const clickMomentsByStep = [[4.6, 11.2], [6.3, 7.9, 9.4, 13.6], [4.7, 9.6, 12.2], [5.5, 8.2, 11.1], [7.6, 12.4], [6.8, 12.8, 16.4]];
+const clickMomentsByStep = [[5.5, 13.5], [6, 7.5, 9, 13], [4.2, 8.7, 11], [4.8, 7.2, 9.8], [6.9, 11.3], [6.6, 12.4, 15.9]];
 
 const SouthIndianChart: React.FC<{ localTime: number }> = ({ localTime }) => {
-  const navamsaView = localTime >= 9.3;
+  const navamsaView = localTime >= 8.5;
   const chartTitle = navamsaView ? 'D-9 Navamsha' : 'Rāsi · D-1';
   const lagnaSign = navamsaView ? getNavamsaSign(SAMPLE_LAGNA_LONGITUDE) : Math.floor(SAMPLE_LAGNA_LONGITUDE / 30);
   const scanHouse = (Math.floor(localTime * 0.72) % 12) + 1;
@@ -343,8 +345,8 @@ const SouthIndianChart: React.FC<{ localTime: number }> = ({ localTime }) => {
 
 const WalkthroughPanel: React.FC<{ stepIndex: number; localTime: number }> = ({ stepIndex, localTime }) => {
   const cursor = getCursorPosition(stepIndex, localTime);
-  const selectedServiceIndex = localTime < 7.2 ? 0 : localTime < 8.8 ? 1 : localTime < 10.5 ? 2 : 3;
-  const selectedPaymentIndex = localTime < 6.8 ? 0 : localTime < 9.7 ? 1 : 2;
+  const selectedServiceIndex = localTime < 6.9 ? 0 : localTime < 8.4 ? 1 : localTime < 10 ? 2 : 3;
+  const selectedPaymentIndex = localTime < 6 ? 0 : localTime < 8.5 ? 1 : 2;
   const isClicking = (clickMomentsByStep[stepIndex] ?? []).some((moment) => Math.abs(localTime - moment) < 0.2);
   const cursorStyle = { left: `${cursor.x}%`, top: `${cursor.y}%` };
 
@@ -367,11 +369,11 @@ const WalkthroughPanel: React.FC<{ stepIndex: number; localTime: number }> = ({ 
             <button className="hiw-demo-google" type="button" tabIndex={-1}><b>G</b> Continue with Google <span>↗</span></button>
             <div className="hiw-demo-divider"><span>or continue with email</span></div>
             <label className="hiw-demo-label">EMAIL ADDRESS</label>
-            <div className="hiw-demo-input"><Mail aria-hidden="true" /><span>{revealText('sivam.user@example.com', localTime, 3.1, 3.3)}</span><i /></div>
+            <div className="hiw-demo-input"><Mail aria-hidden="true" /><span>{revealText('sivam.user@example.com', localTime, 3.7, 4)}</span><i /></div>
             <label className="hiw-demo-label">PASSWORD</label>
             <div className="hiw-demo-input"><LockKeyhole aria-hidden="true" /><span className="hiw-password-dots">{'●'.repeat(Math.min(12, Math.max(0, Math.floor((localTime - 6.8) * 3))))}</span></div>
-            <button className={`hiw-demo-primary${localTime > 11 ? ' is-confirmed' : ''}`} type="button" tabIndex={-1}>
-              {localTime > 11 ? <><Check aria-hidden="true" /> Secure sign-in verified</> : <>Sign in securely <ArrowRight aria-hidden="true" /></>}
+            <button className={`hiw-demo-primary${localTime > 13.2 ? ' is-confirmed' : ''}`} type="button" tabIndex={-1}>
+              {localTime > 13.2 ? <><Check aria-hidden="true" /> Secure sign-in verified</> : <>Sign in securely <ArrowRight aria-hidden="true" /></>}
             </button>
             <div className="hiw-demo-footnote"><ShieldCheck aria-hidden="true" /> Your user details stay private.</div>
           </div>
@@ -401,13 +403,13 @@ const WalkthroughPanel: React.FC<{ stepIndex: number; localTime: number }> = ({ 
           <div className="hiw-details-screen">
             <div className="hiw-screen-heading"><div><span className="hiw-screen-eyebrow">JANMA KUNDALI · DETAILS</span><h3>Tell us about the birth</h3></div><span className="hiw-step-stamp">STEP 02 / 04</span></div>
             <div className="hiw-details-form">
-              <label className="hiw-demo-label">USER NAME<div className="hiw-demo-input"><span>{revealText('Arun Kumar', localTime, 1.1, 2.8)}</span><i /></div></label>
+              <label className="hiw-demo-label">USER NAME<div className="hiw-demo-input"><span>{revealText('Arun Kumar', localTime, 1, 2.5)}</span><i /></div></label>
               <div className="hiw-details-form__row">
-                <label className="hiw-demo-label">DATE OF BIRTH<div className="hiw-demo-input"><Calendar aria-hidden="true" /><span>{localTime > 4.5 ? '14 / 08 / 1992' : 'DD / MM / YYYY'}</span></div></label>
-                <label className="hiw-demo-label">BIRTH TIME<div className="hiw-demo-input"><Clock aria-hidden="true" /><span>{localTime > 6.3 ? '06:42 AM' : '--:-- --'}</span></div></label>
+                <label className="hiw-demo-label">DATE OF BIRTH<div className="hiw-demo-input"><Calendar aria-hidden="true" /><span>{localTime > 4.1 ? '14 / 08 / 1992' : 'DD / MM / YYYY'}</span></div></label>
+                <label className="hiw-demo-label">BIRTH TIME<div className="hiw-demo-input"><Clock aria-hidden="true" /><span>{localTime > 5.7 ? '06:42 AM' : '--:-- --'}</span></div></label>
               </div>
-              <label className="hiw-demo-label">BIRTH PLACE<div className={`hiw-demo-input hiw-place-input${localTime > 13.1 ? ' is-resolved' : ''}`}><MapPin aria-hidden="true" /><span>{revealText('Chennai, Tamil Nadu, India', localTime, 10.1, 3) || 'Search city or place'}</span><small>{localTime > 13.1 ? 'FOUND' : 'SEARCH'}</small></div></label>
-              <div className="hiw-coordinate-row"><span><i /> GOOGLE PLACES · {localTime > 13.1 ? 'FOUND' : 'SEARCHING'}</span><b>{localTime > 13.1 ? '13.0827° N · 80.2707° E' : 'Place coordinates pending'}</b><span>{localTime > 13.1 ? 'UTC +05:30' : 'TIMEZONE'}</span></div>
+              <label className="hiw-demo-label">BIRTH PLACE<div className={`hiw-demo-input hiw-place-input${localTime > 11.8 ? ' is-resolved' : ''}`}><MapPin aria-hidden="true" /><span>{revealText('Chennai, Tamil Nadu, India', localTime, 9.1, 2.7) || 'Search city or place'}</span><small>{localTime > 11.8 ? 'FOUND' : 'SEARCH'}</small></div></label>
+              <div className="hiw-coordinate-row"><span><i /> GOOGLE PLACES · {localTime > 11.8 ? 'FOUND' : 'SEARCHING'}</span><b>{localTime > 11.8 ? '13.0827° N · 80.2707° E' : 'Place coordinates pending'}</b><span>{localTime > 11.8 ? 'UTC +05:30' : 'TIMEZONE'}</span></div>
             </div>
             <div className="hiw-demo-footnote">Required details are checked before the chart is prepared.</div>
           </div>
@@ -448,9 +450,9 @@ const WalkthroughPanel: React.FC<{ stepIndex: number; localTime: number }> = ({ 
 
         {stepIndex === 5 && (
           <div className="hiw-delivery-screen">
-            <div className="hiw-screen-heading"><div><span className="hiw-screen-eyebrow">ORDER REVIEW · COMPLETE</span><h3>Two documents, together</h3></div><span className={`hiw-delivery-status${localTime > 13.4 ? ' is-sent' : ''}`}><i />{localTime > 13.4 ? 'SENT' : 'APPROVED'}</span></div>
-            <div className="hiw-approval-row"><span className="hiw-approval-row__seal"><Check aria-hidden="true" /></span><span><b>Admin quality review</b><small>{localTime > 5.8 ? 'Verified · ready for dispatch' : 'Checking report & invoice'}</small></span><span className="hiw-approved-stamp">APPROVED</span></div>
-            <div className={`hiw-document-pair${localTime > 13.4 ? ' is-delivered' : ''}`}>
+            <div className="hiw-screen-heading"><div><span className="hiw-screen-eyebrow">ORDER REVIEW · COMPLETE</span><h3>Two documents, together</h3></div><span className={`hiw-delivery-status${localTime > 13 ? ' is-sent' : ''}`}><i />{localTime > 13 ? 'SENT' : 'APPROVED'}</span></div>
+            <div className="hiw-approval-row"><span className="hiw-approval-row__seal"><Check aria-hidden="true" /></span><span><b>Admin quality review</b><small>{localTime > 5.6 ? 'Verified · ready for dispatch' : 'Checking report & invoice'}</small></span><span className="hiw-approved-stamp">APPROVED</span></div>
+            <div className={`hiw-document-pair${localTime > 13 ? ' is-delivered' : ''}`}>
               <div className="hiw-document-card hiw-document-card--report"><span className="hiw-document-card__icon"><FileText aria-hidden="true" /></span><span className="hiw-document-card__copy"><b>Astrological Report</b><small>Personalized report · PDF</small></span><span className="hiw-document-card__check"><Check aria-hidden="true" /></span></div>
               <div className="hiw-document-card hiw-document-card--invoice"><span className="hiw-document-card__icon"><Receipt aria-hidden="true" /></span><span className="hiw-document-card__copy"><b>Tax Invoice</b><small>Official receipt · PDF</small></span><span className="hiw-document-card__check"><Check aria-hidden="true" /></span></div>
             </div>
@@ -606,7 +608,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
 
     void Promise.all(STEPS.map(async (step, index) => {
       try {
-        const response = await fetch(`${AUDIO_BASE}${index + 1}.mp3`);
+        const response = await fetch(`${AUDIO_BASE}${index + 1}.mp3?v=${AUDIO_VERSION}`);
         if (!response.ok) return;
         const encodedAudio = await response.arrayBuffer();
         const decodedAudio = await context.decodeAudioData(encodedAudio.slice(0));
@@ -748,7 +750,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
     }
 
     const step = STEPS[activeStepIndex];
-    const clipUrl = `${AUDIO_BASE}${activeStepIndex + 1}.mp3`;
+    const clipUrl = `${AUDIO_BASE}${activeStepIndex + 1}.mp3?v=${AUDIO_VERSION}`;
     const seekOffset = Math.max(0, playheadRef.current - step.startSec);
     audio.muted = false;
     audio.playbackRate = playbackSpeed;
