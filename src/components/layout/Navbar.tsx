@@ -61,7 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0f172a]/75 backdrop-blur-md border-b border-white/10 text-white shadow-xl select-none transition-colors">
+    <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-amber-500/15 text-white shadow-2xl select-none transition-colors">
       {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between sm:h-20 md:h-22">

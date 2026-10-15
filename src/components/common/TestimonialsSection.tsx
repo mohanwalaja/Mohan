@@ -167,7 +167,7 @@ export const TestimonialsSection: React.FC = () => {
             <Sparkles className="h-4 w-4" />
             <span>Reviews</span>
           </div>
-          <h2 className="display-serif mt-3 text-3xl font-bold text-[#fffdfa] sm:text-4xl">
+          <h2 className="display-serif mt-3 text-3xl font-bold bg-gradient-to-r from-[#fffdfa] to-amber-200 bg-clip-text text-transparent sm:text-4xl">
             What readers say
           </h2>
           <p className="mt-3 text-[15px] leading-7 text-slate-300 sm:text-base">

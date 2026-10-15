@@ -68,7 +68,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
       </div>
 
       {/* Login Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 ring-1 ring-amber-500/10">
         
         {notice && !errorMessage && (
           <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs leading-relaxed">

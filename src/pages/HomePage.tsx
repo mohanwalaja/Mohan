@@ -151,7 +151,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             </div>
 
             <h1 className="display-serif mt-5 max-w-3xl text-4xl font-bold leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-[3.8rem]">
-              Understand your life through <span className="font-normal italic text-gold">Vedic astrology.</span>
+              Understand your life through <span className="font-normal italic bg-gradient-to-r from-amber-300 via-gold to-amber-500 bg-clip-text text-transparent">Vedic astrology.</span>
             </h1>
 
             <p className="mt-5 max-w-2xl text-[15px] leading-7 text-slate-200 sm:text-lg sm:leading-8">
@@ -299,7 +299,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           {FAQ_ITEMS.map((item, index) => (
             <details
               key={item.question}
-              className="group rounded-2xl border border-amber-500/20 bg-[#181230]/90 px-5 py-1 transition-colors open:border-amber-500/45 sm:px-6"
+              className="group rounded-2xl border border-amber-500/20 bg-[#181230]/90 px-5 py-1 transition-all duration-200 open:border-amber-500/45 open:shadow-lg open:shadow-amber-900/20 sm:px-6"
             >
               <summary className="flex min-h-16 cursor-pointer list-none items-center gap-3 py-4 text-left text-[15px] font-bold leading-6 text-ink marker:hidden sm:text-base [&::-webkit-details-marker]:hidden">
                 <HelpCircle className="h-5 w-5 shrink-0 text-amber-400" />

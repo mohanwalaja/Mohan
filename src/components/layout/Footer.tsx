@@ -24,7 +24,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   };
 
   return (
-    <footer className="relative z-20 bg-[#080a18] text-slate-300 select-none border-t border-amber-500/20">
+    <footer className="relative z-20 bg-gradient-to-b from-[#0a0d1f] to-[#050712] text-slate-300 select-none border-t border-amber-500/25">
       {/* Top Gold Accent Bar */}
       <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-amber-500/70 to-transparent" />
 

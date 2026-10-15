@@ -36,8 +36,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (view === 'forgot') {
     return (
-      <div role="dialog" aria-modal="true" aria-label="Forgot password" className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-label="Forgot password" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl ring-1 ring-amber-500/10">
           <ForgotPasswordForm
             initialEmail={email}
             onBackToSignIn={msg => {
@@ -98,8 +98,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Sign in to continue your order" className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-6 animate-in fade-in zoom-in-95">
+    <div role="dialog" aria-modal="true" aria-label="Sign in to continue your order" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl ring-1 ring-amber-500/10 space-y-6 animate-in fade-in zoom-in-95">
         
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
