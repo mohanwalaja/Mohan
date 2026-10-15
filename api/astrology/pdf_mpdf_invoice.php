@@ -240,6 +240,8 @@ CSS;
         // Official Tax Invoice is strictly in English for legal & tax accounting compliance
         $invHeader = 'OFFICIAL TAX INVOICE &amp; PAYMENT RECEIPT';
         $invTag = 'TAX INVOICE';
+        // Registered business identity (India, Udyam/MSME) - see api/branding.php.
+        $businessRegMeta = astro_business_registration_meta();
         
         $boxInvTitle = 'Invoice Details';
         $lblInvNum = 'Invoice Number:';
@@ -277,7 +279,7 @@ CSS;
         $balancePaid = "{$currencySymbol}0.00 (PAID)";
 
         $decTitle = 'Declaration';
-        $decText = 'This is a computer-generated tax invoice issued electronically and does not require a physical signature to be valid. It certifies that the amount stated above has been received in full by ASTRO SIVAM against the service described, and confirms delivery of the associated digital Vedic astrology report to the customer\'s registered email address.';
+        $decText = 'This is a computer-generated tax invoice issued electronically and does not require a physical signature to be valid. It certifies that the amount stated above has been received in full by ASTRO SIVAM against the service described, and confirms delivery of the associated digital Vedic astrology report to the customer\'s registered email address. ' . astro_business_registration_sentence_html();
 
         $signCust = 'Customer Acknowledgement';
         $signAuth = 'Authorized Signatory, ASTRO SIVAM';
@@ -303,7 +305,7 @@ CSS;
   <div class="brand-title">ASTRO SIVAM - OFFICIAL TAX INVOICE</div>
   <div class="brand-tagline">{$invHeader}</div>
   <div class="brand-contact">astrosivam.com &bull; admin@astrosivam.com</div>
-  <div class="invoice-meta"><span class="inv-chip">{$invTag}</span> &bull; <span class="inv-no">INV-{$orderNumber}</span> &bull; Business Reg. No: ASV-FJ-2026</div>
+  <div class="invoice-meta"><span class="inv-chip">{$invTag}</span> &bull; <span class="inv-no">INV-{$orderNumber}</span> &bull; {$businessRegMeta}</div>
 </div>
 <table class="modern-divider"><tr>
   <td style="width:17%;background:#edd1d9;"></td><td style="width:16%;background:#cf8e9f;"></td>
@@ -495,6 +497,8 @@ HTML;
         // Official Consolidated Tax Invoice is strictly in English for legal & tax accounting compliance
         $invHeader = 'OFFICIAL TAX INVOICE &amp; PAYMENT RECEIPT';
         $invTag = 'CONSOLIDATED FAMILY INVOICE';
+        // Registered business identity (India, Udyam/MSME) - see api/branding.php.
+        $businessRegMeta = astro_business_registration_meta();
 
         $boxInvTitle = 'Invoice Details';
         $lblInvNum = 'Invoice Number:';
@@ -533,7 +537,7 @@ HTML;
         $balancePaid = "{$currencySymbol}0.00 (PAID)";
 
         $decTitle = 'Declaration';
-        $decText = 'This is a computer-generated official consolidated tax invoice issued electronically and does not require a physical signature to be valid. It certifies that the total amount for all services listed above has been received in full by ASTRO SIVAM, and confirms delivery of each associated digital Vedic astrology report to the customer\'s registered email address.';
+        $decText = 'This is a computer-generated official consolidated tax invoice issued electronically and does not require a physical signature to be valid. It certifies that the total amount for all services listed above has been received in full by ASTRO SIVAM, and confirms delivery of each associated digital Vedic astrology report to the customer\'s registered email address. ' . astro_business_registration_sentence_html();
 
         $signCust = 'Customer Acknowledgement';
         $signAuth = 'Authorized Signatory, ASTRO SIVAM';
@@ -586,7 +590,7 @@ HTML;
   <div class="brand-title">ASTRO SIVAM - OFFICIAL TAX INVOICE</div>
   <div class="brand-tagline">{$invHeader}</div>
   <div class="brand-contact">astrosivam.com &bull; admin@astrosivam.com</div>
-  <div class="invoice-meta"><span class="inv-chip">{$invTag}</span> &bull; <span class="inv-no">INV-{$groupIdSafe}</span> &bull; Business Reg. No: ASV-FJ-2026</div>
+  <div class="invoice-meta"><span class="inv-chip">{$invTag}</span> &bull; <span class="inv-no">INV-{$groupIdSafe}</span> &bull; {$businessRegMeta}</div>
 </div>
 <table class="modern-divider"><tr>
   <td style="width:17%;background:#edd1d9;"></td><td style="width:16%;background:#cf8e9f;"></td>

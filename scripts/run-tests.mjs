@@ -26,6 +26,12 @@ const testFiles = [
   // and fails with file+line for anything outside the three approved
   // functional occurrences (IANA zone, dial code, birthplace data).
   'tests/retired-branding-guard.test.ts',
+  // The registered entity (India, Udyam/MSME) must stay the SAME on the tax
+  // invoice and on the website: both invoice renderers are EXECUTED here and
+  // matched against the shared constant, the PHP mirror is compared, and a
+  // repo scan proves no template retyped the number. The PHP-side equivalent
+  // (real mPDF HTML) runs in tests/invoice-business-registration.test.php.
+  'tests/business-registration.test.ts',
   // Executes the backup script against a stubbed mysqldump: proves the marker,
   // the retention rotation and the "a failed dump cannot look like a backup"
   // failure path, none of which a code-reading review would catch.

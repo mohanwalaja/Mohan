@@ -2,6 +2,10 @@ import { Order } from '../types';
 import { buildReportHeaderHtml, reportHeaderCss } from './reportHeader';
 import { REPORT_FONT_LINK_TAG } from './reportFonts';
 import { normalizeReportLanguage } from './reportLanguage';
+import {
+  BUSINESS_REGISTRATION_META,
+  businessRegistrationSentence
+} from '../data/businessInfo';
 
 function escapeHtml(str: string | undefined | null): string {
   if (!str) return '';
@@ -677,7 +681,7 @@ export function buildInvoiceHtml(order: Order): string {
   const balancePaid = `${currencySymbol}0.00 (PAID)`;
 
   const decTitle = 'Declaration';
-  const decText = 'This is a computer-generated tax invoice issued electronically. It certifies that the stated amount has been received in full by ASTRO SIVAM and the digital Vedic astrology report delivered directly to the customer\'s registered email.';
+  const decText = 'This is a computer-generated tax invoice issued electronically. It certifies that the stated amount has been received in full by ASTRO SIVAM and the digital Vedic astrology report delivered directly to the customer\'s registered email. ' + businessRegistrationSentence();
 
   const sealTitle = 'ASTRO SIVAM OFFICIAL DIGITAL SEAL';
   const sealSub = 'Authorized Vedic Astrology Ephemeris & Consulting Services';
@@ -701,7 +705,7 @@ ${invoiceStyles()}
     ${buildReportHeaderHtml({
       title: 'ASTRO SIVAM - OFFICIAL TAX INVOICE',
       subtitle: 'Official Receipt & Tax Invoice • VEDIC ASTROLOGY SERVICES',
-      meta: `${invTag} • INV-${order.orderNumber} • Business Reg. ASV-FJ-2026`
+      meta: `${invTag} • INV-${order.orderNumber} • ${BUSINESS_REGISTRATION_META}`
     })}
 
     <!-- Invoice Details & Client Information -->
@@ -838,7 +842,7 @@ ${invoiceStyles()}
     <div class="declaration-and-seal">
       <div class="declaration-box">
         <div class="terms-title" style="margin-bottom: 0.5mm;">${decTitle}</div>
-        <p>${decText}</p>
+        <p>${escapeHtml(decText)}</p>
       </div>
 
       <div class="seal-section">
@@ -1020,7 +1024,7 @@ ${invoiceStyles()}
     ${buildReportHeaderHtml({
       title: 'ASTRO SIVAM - OFFICIAL TAX INVOICE',
       subtitle: `${invHeader} • FAMILY PACKAGE`,
-      meta: `${invTag} • ${invoiceNumber} • Business Reg. ASV-FJ-2026`
+      meta: `${invTag} • ${invoiceNumber} • ${BUSINESS_REGISTRATION_META}`
     })}
 
     <!-- Invoice Details & Client Information -->
@@ -1142,7 +1146,9 @@ ${invoiceStyles()}
     <div class="declaration-and-seal">
       <div class="declaration-box">
         <div class="terms-title" style="margin-bottom: 0.5mm;">Family Package Declaration</div>
-        <p>This is a consolidated official tax invoice issued electronically for the ASTRO SIVAM family package (${memberCount} reports). It certifies that the total payment of ${currencySymbol}${totalAmountVal} was received in full and all member reports have been issued.</p>
+        <p>${escapeHtml(
+          `This is a consolidated official tax invoice issued electronically for the ASTRO SIVAM family package (${memberCount} reports). It certifies that the total payment of ${currencySymbol}${totalAmountVal} was received in full and all member reports have been issued. ${businessRegistrationSentence()}`
+        )}</p>
       </div>
 
       <div class="seal-section">

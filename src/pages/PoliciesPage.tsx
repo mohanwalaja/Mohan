@@ -1,6 +1,7 @@
 import React from 'react';
-import { ShieldCheck, FileText, CreditCard, RotateCcw } from 'lucide-react';
+import { ShieldCheck, FileText, CreditCard, RotateCcw, BadgeCheck } from 'lucide-react';
 import { SEO } from '../components/common/SEO';
+import { BUSINESS_INFO, BUSINESS_REGISTRATION_SHORT } from '../data/businessInfo';
 
 interface PoliciesProps {
   type: 'privacy' | 'terms' | 'payment' | 'refund';
@@ -262,11 +263,49 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
             </p>
 
             <p className="text-xs text-slate-500 pt-2">
-              This policy is governed by the laws applicable at the place where ASTRO SIVAM is registered and applies to all ASTRO SIVAM orders placed on astrosivam.com. For any clarification, write to <a href="mailto:admin@astrosivam.com" className="text-amber-700 dark:text-amber-400 font-semibold underline">admin@astrosivam.com</a>.
+              This policy is governed by the laws applicable at the place where ASTRO SIVAM is registered — {BUSINESS_INFO.registeredOffice}, {BUSINESS_INFO.country} ({BUSINESS_REGISTRATION_SHORT}) — and applies to all ASTRO SIVAM orders placed on astrosivam.com. For any clarification, write to <a href="mailto:admin@astrosivam.com" className="text-amber-700 dark:text-amber-400 font-semibold underline">admin@astrosivam.com</a>.
             </p>
           </div>
         )}
 
+      </div>
+
+      {/* ── Registered business disclosure ──
+          Rendered on all four policy pages from the single source of truth in
+          src/data/businessInfo.ts (mirrored by api/branding.php for the PHP
+          API and the mPDF invoices). */}
+      <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/60 dark:bg-emerald-950/20 p-5 space-y-2 text-xs text-slate-700 dark:text-slate-300">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+          <span>Registered Business Information</span>
+        </h3>
+        <p className="leading-relaxed">
+          {BUSINESS_INFO.legalName} is registered in {BUSINESS_INFO.country} as a{' '}
+          {BUSINESS_INFO.enterpriseType} under the {BUSINESS_INFO.registrationScheme} scheme of the{' '}
+          {BUSINESS_INFO.registrationAuthority}.
+        </p>
+        <ul className="space-y-1 pl-1">
+          <li>
+            <strong className="text-slate-900 dark:text-white">Udyam Registration No.:</strong>{' '}
+            <span className="font-mono tracking-tight">{BUSINESS_INFO.registrationNumber}</span>
+          </li>
+          <li>
+            <strong className="text-slate-900 dark:text-white">Registered office:</strong>{' '}
+            {BUSINESS_INFO.registeredOffice}
+          </li>
+          <li>
+            <strong className="text-slate-900 dark:text-white">Business support:</strong>{' '}
+            <a
+              href={`mailto:${BUSINESS_INFO.supportEmail}`}
+              className="text-emerald-700 dark:text-emerald-400 font-semibold underline"
+            >
+              {BUSINESS_INFO.supportEmail}
+            </a>
+          </li>
+        </ul>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+          The same registration number is printed on every ASTRO SIVAM tax invoice and payment receipt.
+        </p>
       </div>
 
     </div>
