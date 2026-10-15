@@ -191,3 +191,89 @@ if (!function_exists('astro_inline_logo_attachment')) {
         return $cached;
     }
 }
+
+/**
+ * ---------------------------------------------------------------------------
+ * REGISTERED BUSINESS IDENTITY (India — Udyam / MSME)
+ * ---------------------------------------------------------------------------
+ * WHY THIS LIVES HERE
+ * -------------------
+ * The enterprise is registered in India as a Micro, Small & Medium Enterprise
+ * (MSME) under the Udyam Registration scheme of the Ministry of Micro, Small &
+ * Medium Enterprises, Government of India. The registration number is printed on
+ * every tax invoice / payment receipt the customer keeps, so it is written ONCE
+ * — here — and read by every PHP renderer (the mPDF invoices in
+ * api/astrology/pdf_mpdf_invoice.php, and any future financial document).
+ *
+ * The frontend mirrors these helpers in src/data/businessInfo.ts because the
+ * invoice is rendered twice: once in the browser (jsPDF capture, admin portal
+ * email attachment) and once by the server (mPDF). The two values must match;
+ * neither template may retype the number.
+ *
+ * NOTE: the OFFICE ADDRESS is deliberately absent here. It is shown on the
+ * Contact page only (frontend), so nothing in the invoice ever prints a street
+ * address.
+ */
+
+if (!defined('ASTRO_BUSINESS_LEGAL_NAME')) {
+    define('ASTRO_BUSINESS_LEGAL_NAME', 'ASTRO SIVAM');
+}
+
+/** Udyam Registration Number issued by the Government of India. */
+if (!defined('ASTRO_BUSINESS_REG_NO')) {
+    define('ASTRO_BUSINESS_REG_NO', 'UDYAM-TN-35-0058124');
+}
+
+/** Label that always precedes the registration number. */
+if (!defined('ASTRO_BUSINESS_REG_LABEL')) {
+    define('ASTRO_BUSINESS_REG_LABEL', 'Udyam Reg. No.');
+}
+
+if (!defined('ASTRO_BUSINESS_REG_COUNTRY')) {
+    define('ASTRO_BUSINESS_REG_COUNTRY', 'India');
+}
+
+if (!defined('ASTRO_BUSINESS_REG_ENTERPRISE')) {
+    define('ASTRO_BUSINESS_REG_ENTERPRISE', 'Micro, Small & Medium Enterprise (MSME)');
+}
+
+if (!function_exists('astro_business_registration_short')) {
+    /** `Udyam Reg. No. UDYAM-TN-35-0058124` — the bare labelled number. */
+    function astro_business_registration_short(): string
+    {
+        return ASTRO_BUSINESS_REG_LABEL . ' ' . ASTRO_BUSINESS_REG_NO;
+    }
+}
+
+if (!function_exists('astro_business_registration_meta')) {
+    /**
+     * `Udyam Reg. No. UDYAM-TN-35-0058124 (MSME, India)` — the single-line form
+     * used in the invoice header metadata. The country matters because customers
+     * are served worldwide and the enterprise is registered in India.
+     */
+    function astro_business_registration_meta(): string
+    {
+        return astro_business_registration_short() . ' (MSME, ' . ASTRO_BUSINESS_REG_COUNTRY . ')';
+    }
+}
+
+if (!function_exists('astro_business_registration_sentence')) {
+    /**
+     * Invoice declaration sentence. States the registration only — no street
+     * address, which belongs on the Contact page.
+     */
+    function astro_business_registration_sentence(): string
+    {
+        return ASTRO_BUSINESS_LEGAL_NAME . ' is registered in ' . ASTRO_BUSINESS_REG_COUNTRY
+            . ' as a ' . ASTRO_BUSINESS_REG_ENTERPRISE . ' under Udyam Registration No. '
+            . ASTRO_BUSINESS_REG_NO . '.';
+    }
+}
+
+if (!function_exists('astro_business_registration_sentence_html')) {
+    /** The same sentence, escaped for direct use inside mPDF/HTML templates. */
+    function astro_business_registration_sentence_html(): string
+    {
+        return htmlspecialchars(astro_business_registration_sentence(), ENT_QUOTES, 'UTF-8');
+    }
+}

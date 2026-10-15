@@ -319,6 +319,15 @@ export default defineConfig(() => {
             // Forms use timezone lookup, reports use its formatting helpers.
             // Keep this shared utility out of the heavy report-builder chunks.
             if (/\/lib\/timezone\.tsx?$/.test(id)) return 'timezone';
+            // The registered-business identity (Udyam/MSME number + office
+            // address) is read by the Contact page AND by the deferred invoice
+            // builder, so Rollup hoisted it INTO the invoice builder's manual
+            // chunk - which made that chunk a static dependency of the entry and
+            // re-opened the PERF-1 finding (the homepage preloading the
+            // report-builder/PDF path). Pin it to the vendor chunk the entry
+            // already downloads; the deferred invoice chunk then merely imports
+            // what is already on the page.
+            if (/\/data\/businessInfo\.ts$/.test(id)) return 'vendor-core';
             // The live Muhurtham form needs the scanner, not the report HTML.
             // Explicit shared-engine boundaries stop report builders from
             // absorbing calculation/data modules used by the form as well.

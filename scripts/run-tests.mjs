@@ -26,6 +26,13 @@ const testFiles = [
   // and fails with file+line for anything outside the three approved
   // functional occurrences (IANA zone, dial code, birthplace data).
   'tests/retired-branding-guard.test.ts',
+  // The disclosure policy: the Udyam/MSME registration number (registered in
+  // India) is PRINTED ON THE INVOICE and shown on the Contact page, while the
+  // office address is CONTACT-PAGE-ONLY. Both invoice layouts are rendered here,
+  // the PHP mirror of the number is compared, and repo scans prove no template
+  // retypes the number or leaks the street address. The PHP runtime equivalent
+  // runs in tests/invoice-business-registration.test.php.
+  'tests/business-registration.test.ts',
   // Executes the backup script against a stubbed mysqldump: proves the marker,
   // the retention rotation and the "a failed dump cannot look like a backup"
   // failure path, none of which a code-reading review would catch.

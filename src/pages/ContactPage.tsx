@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Mail, MapPin, Send, CheckCircle2, MessageSquare, Clock, ShieldCheck, AlertCircle, Loader2, Facebook, ExternalLink } from 'lucide-react';
+import { Mail, MapPin, Send, CheckCircle2, MessageSquare, Clock, ShieldCheck, BadgeCheck, AlertCircle, Loader2, Facebook, ExternalLink } from 'lucide-react';
 import { api } from '../services/api';
 import { SEO } from '../components/common/SEO';
 import { PersonNameField } from '../components/common/PersonNameField';
 import { ServicePageHeader } from '../components/common/ServicePageHeader';
 import { normalizePersonName } from '../utils/birthDetails';
+import { BUSINESS_INFO, BUSINESS_REGISTRATION_SHORT } from '../data/businessInfo';
 
 export const ContactPage: React.FC = () => {
   const [name, setName] = useState('');
@@ -84,9 +85,19 @@ export const ContactPage: React.FC = () => {
               <div className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-bold text-white">Advisory Centre &amp; Ashram</div>
-                  <p className="text-slate-400 mt-0.5">Chennai, India • Serving Australia, NZ, USA, UK, Canada &amp; worldwide</p>
-                  <p className="text-[10px] text-amber-400 mt-0.5">🇮🇳 Traditional Vedic Astrological Council • Chennai, India</p>
+                  {/* Office address — rendered from src/data/businessInfo.ts so
+                      the postal lines are never retyped. */}
+                  <div className="font-bold text-white">Office Address</div>
+                  <address className="text-slate-400 mt-0.5 not-italic leading-relaxed">
+                    {BUSINESS_INFO.officeAddressLines.map((line) => (
+                      <span key={line} className="block">
+                        {line}
+                      </span>
+                    ))}
+                  </address>
+                  <p className="text-[10px] text-amber-400 mt-1">
+                    Serving Australia, NZ, USA, UK, Canada &amp; worldwide
+                  </p>
                 </div>
               </div>
 
@@ -95,6 +106,19 @@ export const ContactPage: React.FC = () => {
                 <div>
                   <div className="font-bold text-white">Email Address</div>
                   <p className="text-slate-400 mt-0.5">admin@astrosivam.com</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <BadgeCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-white">Business Registration</div>
+                  <p className="text-slate-400 mt-0.5 font-mono tracking-tight">
+                    {BUSINESS_REGISTRATION_SHORT}
+                  </p>
+                  <p className="text-[10px] text-emerald-400 mt-0.5">
+                    {BUSINESS_INFO.registrationStatus} • {BUSINESS_INFO.registrationScheme}, {BUSINESS_INFO.registrationAuthority}
+                  </p>
                 </div>
               </div>
 
