@@ -26,11 +26,12 @@ const testFiles = [
   // and fails with file+line for anything outside the three approved
   // functional occurrences (IANA zone, dial code, birthplace data).
   'tests/retired-branding-guard.test.ts',
-  // The registered entity (India, Udyam/MSME) must stay the SAME on the tax
-  // invoice and on the website: both invoice renderers are EXECUTED here and
-  // matched against the shared constant, the PHP mirror is compared, and a
-  // repo scan proves no template retyped the number. The PHP-side equivalent
-  // (real mPDF HTML) runs in tests/invoice-business-registration.test.php.
+  // The disclosure policy: the Udyam/MSME registration number (registered in
+  // India) is PRINTED ON THE INVOICE and shown on the Contact page, while the
+  // office address is CONTACT-PAGE-ONLY. Both invoice layouts are rendered here,
+  // the PHP mirror of the number is compared, and repo scans prove no template
+  // retypes the number or leaks the street address. The PHP runtime equivalent
+  // runs in tests/invoice-business-registration.test.php.
   'tests/business-registration.test.ts',
   // Executes the backup script against a stubbed mysqldump: proves the marker,
   // the retention rotation and the "a failed dump cannot look like a backup"

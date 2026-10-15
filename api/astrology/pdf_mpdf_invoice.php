@@ -240,9 +240,11 @@ CSS;
         // Official Tax Invoice is strictly in English for legal & tax accounting compliance
         $invHeader = 'OFFICIAL TAX INVOICE &amp; PAYMENT RECEIPT';
         $invTag = 'TAX INVOICE';
-        // Registered business identity (India, Udyam/MSME) - see api/branding.php.
+        // Registered business identity (India, Udyam/MSME). Prints the number
+        // only - the office address belongs on the Contact page, not here.
+        // See api/branding.php.
         $businessRegMeta = astro_business_registration_meta();
-        
+
         $boxInvTitle = 'Invoice Details';
         $lblInvNum = 'Invoice Number:';
         $lblOrdRef = 'Order Reference:';

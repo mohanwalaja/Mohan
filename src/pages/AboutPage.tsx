@@ -1,9 +1,8 @@
 import React from 'react';
-import { Sparkles, MapPin, ShieldCheck, BadgeCheck, HeartHandshake, Compass, Clock } from 'lucide-react';
+import { Sparkles, MapPin, ShieldCheck, HeartHandshake, Compass, Clock } from 'lucide-react';
 import { AstrologyTeamSection } from '../components/common/AstrologyTeamSection';
 import { SEO } from '../components/common/SEO';
 import fullLogoImg from '../assets/astrosivam_full_logo.png';
-import { BUSINESS_INFO, BUSINESS_REGISTRATION_SHORT } from '../data/businessInfo';
 
 interface AboutPageProps {
   onNavigate: (route: string) => void;
@@ -31,16 +30,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-bold uppercase tracking-wider">
           <Sparkles className="w-3.5 h-3.5" />
           <span>About ASTRO SIVAM</span>
-        </div>
-        {/* Registered business identity (India, Udyam/MSME) — see
-            src/data/businessInfo.ts. Shown here as well as in the footer so the
-            registered entity is disclosed on the site, not only on invoices. */}
-        <div className="inline-flex flex-wrap items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
-          <BadgeCheck className="w-3.5 h-3.5" />
-          <span>{BUSINESS_INFO.registrationStatus}</span>
-          <span className="text-emerald-700/80 dark:text-emerald-300/80 font-mono tracking-tight">
-            {BUSINESS_REGISTRATION_SHORT}
-          </span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
           Authentic Vedic Astrology from Chennai, India to Global Users
@@ -97,14 +86,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
         <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
           <MapPin className="w-4 h-4" />
           <span>Chennai, India • Serving Australia, NZ, USA, UK, Canada &amp; worldwide</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-300">
-          <BadgeCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          <span>
-            Registered in {BUSINESS_INFO.country} as a {BUSINESS_INFO.enterpriseType} •{' '}
-            <span className="font-mono tracking-tight text-slate-200">{BUSINESS_REGISTRATION_SHORT}</span> • Registered
-            office: {BUSINESS_INFO.registeredOffice}
-          </span>
         </div>
         <h2 className="text-xl sm:text-2xl font-bold">
           Empowering Life Decisions Through Timeless Vedic Wisdom

@@ -200,15 +200,19 @@ if (!function_exists('astro_inline_logo_attachment')) {
  * -------------------
  * The enterprise is registered in India as a Micro, Small & Medium Enterprise
  * (MSME) under the Udyam Registration scheme of the Ministry of Micro, Small &
- * Medium Enterprises, Government of India. That registration number is a legal
- * disclosure on every tax invoice / payment receipt the customer keeps, so it
- * is written ONCE — here — and read by every PHP renderer (the mPDF invoices in
+ * Medium Enterprises, Government of India. The registration number is printed on
+ * every tax invoice / payment receipt the customer keeps, so it is written ONCE
+ * — here — and read by every PHP renderer (the mPDF invoices in
  * api/astrology/pdf_mpdf_invoice.php, and any future financial document).
  *
- * The frontend mirrors this constant in src/data/businessInfo.ts because the
+ * The frontend mirrors these helpers in src/data/businessInfo.ts because the
  * invoice is rendered twice: once in the browser (jsPDF capture, admin portal
  * email attachment) and once by the server (mPDF). The two values must match;
  * neither template may retype the number.
+ *
+ * NOTE: the OFFICE ADDRESS is deliberately absent here. It is shown on the
+ * Contact page only (frontend), so nothing in the invoice ever prints a street
+ * address.
  */
 
 if (!defined('ASTRO_BUSINESS_LEGAL_NAME')) {
@@ -229,10 +233,6 @@ if (!defined('ASTRO_BUSINESS_REG_COUNTRY')) {
     define('ASTRO_BUSINESS_REG_COUNTRY', 'India');
 }
 
-if (!defined('ASTRO_BUSINESS_REG_OFFICE')) {
-    define('ASTRO_BUSINESS_REG_OFFICE', 'Chennai, Tamil Nadu, India');
-}
-
 if (!defined('ASTRO_BUSINESS_REG_ENTERPRISE')) {
     define('ASTRO_BUSINESS_REG_ENTERPRISE', 'Micro, Small & Medium Enterprise (MSME)');
 }
@@ -248,8 +248,8 @@ if (!function_exists('astro_business_registration_short')) {
 if (!function_exists('astro_business_registration_meta')) {
     /**
      * `Udyam Reg. No. UDYAM-TN-35-0058124 (MSME, India)` — the single-line form
-     * used in document metadata rows. The country matters because customers are
-     * served worldwide and the enterprise is registered in India.
+     * used in the invoice header metadata. The country matters because customers
+     * are served worldwide and the enterprise is registered in India.
      */
     function astro_business_registration_meta(): string
     {
@@ -259,15 +259,14 @@ if (!function_exists('astro_business_registration_meta')) {
 
 if (!function_exists('astro_business_registration_sentence')) {
     /**
-     * Full declaration sentence used inside invoice declarations, so the
-     * single-order invoice and the consolidated family invoice certify the same
-     * registered entity in the same words.
+     * Invoice declaration sentence. States the registration only — no street
+     * address, which belongs on the Contact page.
      */
     function astro_business_registration_sentence(): string
     {
         return ASTRO_BUSINESS_LEGAL_NAME . ' is registered in ' . ASTRO_BUSINESS_REG_COUNTRY
             . ' as a ' . ASTRO_BUSINESS_REG_ENTERPRISE . ' under Udyam Registration No. '
-            . ASTRO_BUSINESS_REG_NO . ', with its registered office at ' . ASTRO_BUSINESS_REG_OFFICE . '.';
+            . ASTRO_BUSINESS_REG_NO . '.';
     }
 }
 

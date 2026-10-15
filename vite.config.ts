@@ -319,16 +319,14 @@ export default defineConfig(() => {
             // Forms use timezone lookup, reports use its formatting helpers.
             // Keep this shared utility out of the heavy report-builder chunks.
             if (/\/lib\/timezone\.tsx?$/.test(id)) return 'timezone';
-            // The registered-business identity (name, registered office, Udyam
-            // registration number) is read by the always-loaded site chrome —
-            // the footer, About, Contact and the policy pages — AND by the
-            // deferred invoice builder. As an unassigned shared module Rollup
-            // hoisted it INTO the invoice builder's manual chunk, which turned
-            // that chunk into a static dependency of the entry: the homepage
-            // emitted a modulepreload for `invoiceHtmlBuilder` and pulled the
-            // report-builder/PDF path back into first paint (PERF-1). Pin it to
-            // the vendor chunk the entry already downloads, so the deferred
-            // invoice chunk merely imports what is already on the page.
+            // The registered-business identity (Udyam/MSME number + office
+            // address) is read by the Contact page AND by the deferred invoice
+            // builder, so Rollup hoisted it INTO the invoice builder's manual
+            // chunk - which made that chunk a static dependency of the entry and
+            // re-opened the PERF-1 finding (the homepage preloading the
+            // report-builder/PDF path). Pin it to the vendor chunk the entry
+            // already downloads; the deferred invoice chunk then merely imports
+            // what is already on the page.
             if (/\/data\/businessInfo\.ts$/.test(id)) return 'vendor-core';
             // The live Muhurtham form needs the scanner, not the report HTML.
             // Explicit shared-engine boundaries stop report builders from

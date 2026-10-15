@@ -4,7 +4,6 @@ import {
   MapPin,
   Mail,
   ShieldCheck,
-  BadgeCheck,
   ChevronRight,
   ArrowUp,
   Lock,
@@ -12,7 +11,6 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { BrandWordmark } from '../common/BrandLockup';
-import { BUSINESS_INFO, BUSINESS_REGISTRATION_SHORT } from '../../data/businessInfo';
 
 interface FooterProps {
   onNavigate: (route: string) => void;
@@ -61,26 +59,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 >
                   admin@astrosivam.com
                 </a>
-              </div>
-              {/* Registered business identity. The number is a legal disclosure:
-                  it is read from src/data/businessInfo.ts (mirrored in
-                  api/branding.php) so the site and every tax invoice always
-                  quote the same registered Indian entity. */}
-              <div className="flex items-start gap-2">
-                <BadgeCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <span className="text-slate-300">
-                  <span className="font-semibold text-emerald-300">
-                    {BUSINESS_INFO.registrationStatus}
-                  </span>
-                  {' • '}
-                  <span className="font-mono tracking-tight text-slate-200">
-                    {BUSINESS_REGISTRATION_SHORT}
-                  </span>
-                  <span className="block text-[10.5px] text-slate-500 mt-0.5">
-                    Registered office: {BUSINESS_INFO.registeredOffice} • Business support:{' '}
-                    {BUSINESS_INFO.supportEmail}
-                  </span>
-                </span>
               </div>
             </div>
 
