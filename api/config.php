@@ -160,8 +160,53 @@ define('ADMIN_EMAIL', 'admin@astrosivam.com');
 define('SUPPORT_EMAIL', 'admin@astrosivam.com');
 define('DEFAULT_CURRENCY', 'USD');
 // USD -> INR exchange rate used to auto-convert the USD base price for GPay/UPI.
-// 1 USD ≈ 84 INR (admin can override via per-service INR prices or indiaPriceINR).
+// 1 USD ≈ 84 INR. The admin never enters an INR price - it is always derived.
 define('USD_TO_INR_RATE', 84);
+
+/** Built-in US$ base prices (mirrors DEFAULT_SERVICE_PRICES in src/services/pricing.ts). */
+if (!function_exists('astro_default_usd_prices')) {
+    function astro_default_usd_prices(): array
+    {
+        return ['BIRTH_JATHAGAM' => 18, 'MARRIAGE_COMPATIBILITY' => 22, 'BABY_NAMING' => 15, 'MUHURTHAM' => 20];
+    }
+}
+
+/**
+ * USD is the ONLY price the admin sets; the India (INR) price is always the
+ * USD base x USD_TO_INR_RATE, rounded to whole rupees. Mirrors usdToInr() in
+ * src/services/pricing.ts so the checkout and the server agree to the rupee.
+ */
+if (!function_exists('astro_usd_to_inr')) {
+    function astro_usd_to_inr($usd): int
+    {
+        $n = is_numeric($usd) ? (float)$usd : 0.0;
+        return $n > 0 ? (int)round($n * USD_TO_INR_RATE) : 0;
+    }
+}
+
+/**
+ * Re-derive every service's INR price from its USD base. Any INR value stored
+ * by an older admin panel is discarded, so a stale "India price" can never
+ * disagree with the amount the checkout shows and charges.
+ */
+if (!function_exists('astro_normalize_service_pricing')) {
+    function astro_normalize_service_pricing($pricing): array
+    {
+        if (!is_array($pricing)) return [];
+        $defaults = astro_default_usd_prices();
+        foreach ($pricing as $service => $row) {
+            if (!is_array($row)) continue;
+            $usd = $row['usd'] ?? ($row['USD'] ?? ($defaults[$service] ?? null));
+            if (!is_numeric($usd)) continue;
+            $usd = round((float)$usd, 2);
+            unset($row['USD'], $row['INR']);
+            $row['usd'] = $usd;
+            $row['inr'] = astro_usd_to_inr($usd);
+            $pricing[$service] = $row;
+        }
+        return $pricing;
+    }
+}
 
 // 4b. Astrology engine options.
 //

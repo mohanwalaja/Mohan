@@ -78,8 +78,9 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
   const isAdmin = user?.role === 'admin';
   const orderWillBeFree = isAdmin || (isBeta && betaFreeChartAvailable);
 
-  const inrPrice = settings?.servicePricing?.BIRTH_JATHAGAM?.inr ?? settings?.indiaPriceINR ?? 499;
-  const usdPrice = settings?.servicePricing?.BIRTH_JATHAGAM?.usd ?? settings?.intlPriceUSD ?? 18;
+  const bjPrices = getServicePrices(settings, 'BIRTH_JATHAGAM');
+  const inrPrice = bjPrices.INR;
+  const usdPrice = bjPrices.USD;
 
   // The customer's payment choice — never a birth place — decides the currency.
   const chargeCurrency = getCurrencyForPaymentMethod(paymentMethod);

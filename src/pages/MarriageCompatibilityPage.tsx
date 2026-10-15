@@ -76,8 +76,9 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
   const isAdmin = user?.role === 'admin';
   const orderWillBeFree = isAdmin || (isBeta && betaFreeChartAvailable);
 
-  const inrPrice = settings?.servicePricing?.MARRIAGE_COMPATIBILITY?.inr ?? settings?.indiaPriceINR ?? 699;
-  const usdPrice = settings?.servicePricing?.MARRIAGE_COMPATIBILITY?.usd ?? settings?.intlPriceUSD ?? 22;
+  const mcPrices = getServicePrices(settings, 'MARRIAGE_COMPATIBILITY');
+  const inrPrice = mcPrices.INR;
+  const usdPrice = mcPrices.USD;
 
   // The customer's payment choice — never a birth place — decides the currency.
   const chargeCurrency = getCurrencyForPaymentMethod(paymentMethod);

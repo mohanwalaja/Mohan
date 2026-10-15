@@ -94,14 +94,11 @@ function astro_multi_person_unit_price($serviceCode, $pricing, $currency): float
 
     if (is_array($pricing) && isset($pricing[$serviceCode]) && is_array($pricing[$serviceCode])) {
         $row = $pricing[$serviceCode];
-        // For INR, allow explicit inr/INR override; otherwise convert from USD.
+        // INR is ALWAYS derived from the USD base price - a stored INR value
+        // is never trusted (the admin panel no longer sets one).
         if ($currency === 'INR') {
-            $override = $row['inr'] ?? ($row['INR'] ?? null);
-            if (!is_numeric($override)) {
-                $usd = (float)($row['usd'] ?? $row['USD'] ?? $catalog[$serviceCode]['USD'] ?? 0);
-                return round($usd * USD_TO_INR_RATE, 2);
-            }
-            return round((float)$override, 2);
+            $usd = $row['usd'] ?? ($row['USD'] ?? $catalog[$serviceCode]['USD'] ?? 0);
+            return (float)astro_usd_to_inr($usd);
         }
         $override = $row[strtolower($currency)] ?? ($row[$currency] ?? null);
         if (is_numeric($override)) {
@@ -111,8 +108,7 @@ function astro_multi_person_unit_price($serviceCode, $pricing, $currency): float
 
     // INR fallback: USD * USD_TO_INR_RATE.
     if ($currency === 'INR') {
-        $usdPrice = (float)($catalog[$serviceCode]['USD'] ?? 0);
-        return round($usdPrice * USD_TO_INR_RATE, 2);
+        return (float)astro_usd_to_inr($catalog[$serviceCode]['USD'] ?? 0);
     }
 
     // Defence in depth: an unrecognised currency must never resolve to a

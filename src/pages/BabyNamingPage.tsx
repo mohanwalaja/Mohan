@@ -75,8 +75,9 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
   const isAdmin = user?.role === 'admin';
   const orderWillBeFree = isAdmin || (isBeta && betaFreeChartAvailable);
 
-  const inrPrice = settings?.servicePricing?.BABY_NAMING?.inr ?? settings?.indiaPriceINR ?? 399;
-  const usdPrice = settings?.servicePricing?.BABY_NAMING?.usd ?? settings?.intlPriceUSD ?? 15;
+  const bnPrices = getServicePrices(settings, 'BABY_NAMING');
+  const inrPrice = bnPrices.INR;
+  const usdPrice = bnPrices.USD;
 
   // The customer's payment choice — never a birth place — decides the currency.
   const chargeCurrency = getCurrencyForPaymentMethod(paymentMethod);

@@ -15,6 +15,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { SEO } from '../components/common/SEO';
 import { RouteLink } from '../components/common/RouteLink';
+import { getServicePrices } from '../services/pricing';
 
 interface ServicesPageProps {
   onNavigate: (route: string) => void;
@@ -29,7 +30,9 @@ interface ServiceListing {
   theme: 'gold' | 'purple' | 'rose' | 'saffron';
   iconTone: string;
   iconStyle: string;
+  /** US$ base price (what the admin sets). */
   fee: string;
+  /** India price, auto-converted from the US$ base. */
   indiaFee: number;
   route: string;
   action: string;
@@ -39,17 +42,21 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
   const { settings } = useAuth();
   const isBeta = settings?.serviceMode === 'FREE_BETA';
 
-  const bjInr = settings?.servicePricing?.BIRTH_JATHAGAM?.inr ?? settings?.indiaPriceINR ?? 499;
-  const bjUsd = settings?.servicePricing?.BIRTH_JATHAGAM?.usd ?? settings?.intlPriceUSD ?? 18;
+  const bjPrices = getServicePrices(settings, 'BIRTH_JATHAGAM');
+  const bjInr = bjPrices.INR;
+  const bjUsd = bjPrices.USD;
 
-  const mcInr = settings?.servicePricing?.MARRIAGE_COMPATIBILITY?.inr ?? settings?.indiaPriceINR ?? 699;
-  const mcUsd = settings?.servicePricing?.MARRIAGE_COMPATIBILITY?.usd ?? settings?.intlPriceUSD ?? 22;
+  const mcPrices = getServicePrices(settings, 'MARRIAGE_COMPATIBILITY');
+  const mcInr = mcPrices.INR;
+  const mcUsd = mcPrices.USD;
 
-  const bnInr = settings?.servicePricing?.BABY_NAMING?.inr ?? settings?.indiaPriceINR ?? 399;
-  const bnUsd = settings?.servicePricing?.BABY_NAMING?.usd ?? settings?.intlPriceUSD ?? 15;
+  const bnPrices = getServicePrices(settings, 'BABY_NAMING');
+  const bnInr = bnPrices.INR;
+  const bnUsd = bnPrices.USD;
 
-  const mhInr = settings?.servicePricing?.MUHURTHAM?.inr ?? 599;
-  const mhUsd = settings?.servicePricing?.MUHURTHAM?.usd ?? 20;
+  const mhPrices = getServicePrices(settings, 'MUHURTHAM');
+  const mhInr = mhPrices.INR;
+  const mhUsd = mhPrices.USD;
 
   const services: ServiceListing[] = [
     {
@@ -210,10 +217,17 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Service fee</div>
-                          <div className={`mt-1 text-xl font-black ${iconTone}`}>
-                            {isBeta ? '1st FREE (Beta)' : fee}
+                          <div className={`mt-1 text-xl font-black ${iconTone}`} data-testid={`service-fee-usd-${route}`}>
+                            {fee} <span className="text-xs font-semibold text-slate-400">USD</span>
                           </div>
-                          <div className="mt-1 text-xs text-slate-300">India domestic: ₹{indiaFee} INR</div>
+                          <div className="mt-1 text-xs text-slate-300" data-testid={`service-fee-inr-${route}`}>
+                            India (GPay/UPI): ₹{indiaFee.toLocaleString('en-IN')} INR
+                          </div>
+                          {isBeta && (
+                            <div className="mt-1.5 inline-flex rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-300">
+                              1st report FREE (Beta)
+                            </div>
+                          )}
                         </div>
                         <div className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-300 sm:justify-end">
                           <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />

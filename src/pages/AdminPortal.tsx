@@ -82,7 +82,30 @@ import {
   prepareOrderItemsSendPayload
 } from '../services/orderItems';
 import { orderChartServiceType } from '../services/multiPersonOrder';
-import { DEFAULT_CURRENCY } from '../services/pricing';
+import { DEFAULT_CURRENCY, DEFAULT_SERVICE_PRICES, USD_TO_INR_RATE, usdToInr } from '../services/pricing';
+import type { ServiceType } from '../types';
+
+/** Services priced in the admin panel. USD is entered; INR is derived. */
+const ADMIN_PRICED_SERVICES: Array<{ key: ServiceType; label: string; pages: string; badge: string }> = [
+  { key: 'BIRTH_JATHAGAM', label: 'Birth Jathagam (Complete Life Horoscope)', pages: '3 Pages', badge: 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300' },
+  { key: 'MARRIAGE_COMPATIBILITY', label: 'Wedding Matching (10 Poruthams)', pages: '1 Page', badge: 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300' },
+  { key: 'BABY_NAMING', label: 'Baby Naming Syllables (Vedic Namakaran)', pages: '1 Page', badge: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300' },
+  { key: 'MUHURTHAM', label: 'Subha Muhurtham (6-Month Dates)', pages: '2 Pages', badge: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300' }
+];
+
+type AdminServicePricing = Record<ServiceType, { usd: number; inr: number }>;
+
+/** Build the admin pricing table from stored settings: USD kept, INR always re-derived. */
+function buildAdminServicePricing(stored?: Partial<Record<ServiceType, { usd?: number; USD?: number }>> | null): AdminServicePricing {
+  const table = {} as AdminServicePricing;
+  for (const { key } of ADMIN_PRICED_SERVICES) {
+    const raw = stored?.[key];
+    const usd = Number(raw?.usd ?? raw?.USD ?? DEFAULT_SERVICE_PRICES[key].USD);
+    const safeUsd = Number.isFinite(usd) && usd >= 0 ? usd : DEFAULT_SERVICE_PRICES[key].USD;
+    table[key] = { usd: safeUsd, inr: usdToInr(safeUsd) };
+  }
+  return table;
+}
 import { FinancialDashboard } from '../components/admin/FinancialDashboard';
 import { AdminAnalyticsDashboard } from '../components/admin/AdminAnalyticsDashboard';
 import { PaymentConfigPanel } from '../components/admin/PaymentConfigPanel';
@@ -242,29 +265,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
   const [serviceMode, setServiceMode] = useState<'FREE_BETA' | 'PAID'>(authSettings?.serviceMode || 'FREE_BETA');
 
   const [intlPrice, setIntlPrice] = useState(authSettings?.intlPriceUSD || 5);
-  const [indiaPrice, setIndiaPrice] = useState(authSettings?.indiaPriceINR || 499);
-  const [servicePricing, setServicePricing] = useState({
-    BIRTH_JATHAGAM: {
-
-      usd: authSettings?.servicePricing?.BIRTH_JATHAGAM?.usd ?? 18,
-      inr: authSettings?.servicePricing?.BIRTH_JATHAGAM?.inr ?? 499
-    },
-    MARRIAGE_COMPATIBILITY: {
-
-      usd: authSettings?.servicePricing?.MARRIAGE_COMPATIBILITY?.usd ?? 22,
-      inr: authSettings?.servicePricing?.MARRIAGE_COMPATIBILITY?.inr ?? 699
-    },
-    BABY_NAMING: {
-
-      usd: authSettings?.servicePricing?.BABY_NAMING?.usd ?? 15,
-      inr: authSettings?.servicePricing?.BABY_NAMING?.inr ?? 399
-    },
-    MUHURTHAM: {
-
-      usd: authSettings?.servicePricing?.MUHURTHAM?.usd ?? 20,
-      inr: authSettings?.servicePricing?.MUHURTHAM?.inr ?? 599
-    }
-  });
+  // India (INR) is never entered by the admin: it is always US$ × USD_TO_INR_RATE.
+  const [servicePricing, setServicePricing] = useState<AdminServicePricing>(() =>
+    buildAdminServicePricing((authSettings?.servicePricing ?? (authSettings as any)?.pricing) as any)
+  );
   const [autoEmail, setAutoEmail] = useState(authSettings?.autoEmailReports ?? true);
 
   // Modal inspection
@@ -321,33 +325,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         setServiceMode(settingsRes.settings.serviceMode);
 
         setIntlPrice(settingsRes.settings.intlPriceUSD);
-        if (settingsRes.settings.indiaPriceINR) {
-          setIndiaPrice(settingsRes.settings.indiaPriceINR);
-        }
-        if (settingsRes.settings.servicePricing) {
-          setServicePricing({
-            BIRTH_JATHAGAM: {
-
-              usd: settingsRes.settings.servicePricing.BIRTH_JATHAGAM?.usd ?? 18,
-              inr: settingsRes.settings.servicePricing.BIRTH_JATHAGAM?.inr ?? 499
-            },
-            MARRIAGE_COMPATIBILITY: {
-
-              usd: settingsRes.settings.servicePricing.MARRIAGE_COMPATIBILITY?.usd ?? 22,
-              inr: settingsRes.settings.servicePricing.MARRIAGE_COMPATIBILITY?.inr ?? 699
-            },
-            BABY_NAMING: {
-
-              usd: settingsRes.settings.servicePricing.BABY_NAMING?.usd ?? 15,
-              inr: settingsRes.settings.servicePricing.BABY_NAMING?.inr ?? 399
-            },
-            MUHURTHAM: {
-
-              usd: settingsRes.settings.servicePricing.MUHURTHAM?.usd ?? 20,
-              inr: settingsRes.settings.servicePricing.MUHURTHAM?.inr ?? 599
-            }
-          });
-        }
+        setServicePricing(buildAdminServicePricing((settingsRes.settings.servicePricing ?? (settingsRes.settings as any).pricing) as any));
         setAutoEmail(settingsRes.settings.autoEmailReports);
       }
       if (usersRes.success && usersRes.users) setUsersList(Array.isArray(usersRes.users) ? usersRes.users : []);
@@ -1109,8 +1087,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       const res = await api.updateAdminSettings({
         serviceMode,
         intlPriceUSD: Number(intlPrice),
-        indiaPriceINR: Number(indiaPrice),
-        servicePricing,
+        // INR is derived from USD — saved only so the server-side order check
+        // and every reader see the same auto-calculated number.
+        indiaPriceINR: usdToInr(Number(intlPrice) || 0),
+        servicePricing: buildAdminServicePricing(servicePricing),
         autoEmailReports: autoEmail
       });
       if (res.success) {
@@ -3664,217 +3644,113 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            {/* Base Pricing fields */}
+            {/* Base Pricing (USD is the only price the admin enters) */}
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
-                  Default Base Rates (by Country / Currency):
+                  Default Base Rate (US$):
                 </label>
                 <button
                   type="button"
                   onClick={() => {
+                    const usd = Number(intlPrice) || 0;
                     setServicePricing({
-                      BIRTH_JATHAGAM: { usd: Number(intlPrice), inr: Number(indiaPrice) },
-                      MARRIAGE_COMPATIBILITY: { usd: Number(intlPrice), inr: Number(indiaPrice) },
-                      BABY_NAMING: { usd: Number(intlPrice), inr: Number(indiaPrice) },
-                      MUHURTHAM: { usd: Number(intlPrice), inr: Number(indiaPrice) }
+                      BIRTH_JATHAGAM: { usd, inr: usdToInr(usd) },
+                      MARRIAGE_COMPATIBILITY: { usd, inr: usdToInr(usd) },
+                      BABY_NAMING: { usd, inr: usdToInr(usd) },
+                      MUHURTHAM: { usd, inr: usdToInr(usd) }
                     });
-                    setSuccessMessage('Base rates applied to all 4 astrological services! Click Save Settings below.');
+                    setSuccessMessage('Base rate applied to all 4 astrological services! Click Save Settings below.');
                     setTimeout(() => setSuccessMessage(''), 4000);
                   }}
                   className="text-xs px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-semibold cursor-pointer w-fit"
                 >
-                  ⚡ Apply Base Rates To All Services
+                  ⚡ Apply Base Rate To All Services
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    India Domestic (₹ INR):
+                    Base Price (US$):
                   </label>
                   <input
                     type="number"
                     min="0"
-                    value={indiaPrice}
-                    onChange={e => setIndiaPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                    step="0.01"
+                    value={intlPrice}
+                    onChange={e => setIntlPrice(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold"
                   />
-                  <span className="text-[10px] text-slate-400">Google Pay / UPI</span>
+                  <span className="text-[10px] text-slate-400">PayPal / Card (International)</span>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    International (US$):
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={intlPrice}
-                    onChange={e => setIntlPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                  />
-                  <span className="text-[10px] text-slate-400">PayPal International</span>
+                  <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    India Price (₹ INR) — auto-calculated:
+                  </span>
+                  <div
+                    data-testid="admin-base-inr"
+                    className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                  >
+                    ₹{usdToInr(Number(intlPrice) || 0).toLocaleString('en-IN')}
+                  </div>
+                  <span className="text-[10px] text-slate-400">US${Number(intlPrice) || 0} × {USD_TO_INR_RATE} • Google Pay / UPI</span>
                 </div>
               </div>
             </div>
 
-            {/* Individual Service Pricing Override Matrix */}
+            {/* Per-service pricing: admin sets USD only, INR is derived */}
             <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="text-xs font-bold text-slate-900 dark:text-white uppercase flex items-center gap-1.5">
-                    <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Per-Service Individual Pricing Setup</span>
-                  </label>
-                  <p className="text-[11px] text-slate-500">
-                    Fix the price for each astrological service separately across currencies: FJ$ (legacy), India (₹ INR), and International (US$).
-                  </p>
-                </div>
+              <div>
+                <label className="text-xs font-bold text-slate-900 dark:text-white uppercase flex items-center gap-1.5">
+                  <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Per-Service Pricing (US$ Base)</span>
+                </label>
+                <p className="text-[11px] text-slate-500">
+                  Enter the US$ base price for each service. The India (₹ INR) price is calculated automatically at 1 USD = ₹{USD_TO_INR_RATE} and is the exact amount charged via Google Pay / UPI.
+                </p>
               </div>
 
-              {/* Service 1: Birth Jathagam */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                  <span>1. Birth Jathagam (Complete Life Horoscope)</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">3 Pages</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.BIRTH_JATHAGAM?.inr ?? 499}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        BIRTH_JATHAGAM: { ...servicePricing.BIRTH_JATHAGAM, inr: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400"
-                    />
+              {ADMIN_PRICED_SERVICES.map(({ key, label, pages, badge }, index) => {
+                const usd = Number(servicePricing[key]?.usd ?? DEFAULT_SERVICE_PRICES[key].USD) || 0;
+                return (
+                  <div key={key} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                      <span>{index + 1}. {label}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${badge}`}>{pages}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor={`price-usd-${key}`} className="text-[10px] text-slate-500 block mb-0.5">Base Price (US$)</label>
+                        <input
+                          id={`price-usd-${key}`}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={usd}
+                          onChange={e => {
+                            const nextUsd = Number(e.target.value) || 0;
+                            setServicePricing(prev => ({
+                              ...prev,
+                              [key]: { usd: nextUsd, inr: usdToInr(nextUsd) }
+                            }));
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR) — auto</span>
+                        <div
+                          data-testid={`admin-inr-${key}`}
+                          className="w-full px-2.5 py-1.5 bg-slate-100 dark:bg-slate-900/60 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400"
+                        >
+                          ₹{usdToInr(usd).toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">International (US$)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.BIRTH_JATHAGAM?.usd ?? 18}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        BIRTH_JATHAGAM: { ...servicePricing.BIRTH_JATHAGAM, usd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Service 2: Marriage Compatibility */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                  <span>2. Wedding Matching (10 Poruthams)</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-bold">1 Page</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.MARRIAGE_COMPATIBILITY?.inr ?? 699}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        MARRIAGE_COMPATIBILITY: { ...servicePricing.MARRIAGE_COMPATIBILITY, inr: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">International (US$)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.MARRIAGE_COMPATIBILITY?.usd ?? 22}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        MARRIAGE_COMPATIBILITY: { ...servicePricing.MARRIAGE_COMPATIBILITY, usd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Service 3: Baby Naming */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                  <span>3. Baby Naming Syllables (Vedic Namakaran)</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">1 Page</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.BABY_NAMING?.inr ?? 399}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        BABY_NAMING: { ...servicePricing.BABY_NAMING, inr: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">International (US$)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.BABY_NAMING?.usd ?? 15}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        BABY_NAMING: { ...servicePricing.BABY_NAMING, usd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Service 4: Subha Muhurtham */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                  <span>4. Subha Muhurtham (6-Month Dates)</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">2 Pages</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">India (₹ INR)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.MUHURTHAM?.inr ?? 599}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        MUHURTHAM: { ...servicePricing.MUHURTHAM, inr: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-slate-500 block mb-0.5">International (US$)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={servicePricing.MUHURTHAM?.usd ?? 20}
-                      onChange={e => setServicePricing({
-                        ...servicePricing,
-                        MUHURTHAM: { ...servicePricing.MUHURTHAM, usd: Number(e.target.value) }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
 
             {/* Automated Email delivery toggle */}

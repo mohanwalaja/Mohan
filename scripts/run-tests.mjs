@@ -133,7 +133,10 @@ const testFiles = [
   // and the deferred features must stay reachable on demand. Runs both
   // source-level checks and (when dist/ exists) checks over the shipped bytes.
   'tests/initial-js-budget.test.ts',
-  'tests/lockfile-drift.test.ts'
+  'tests/lockfile-drift.test.ts',
+  // USD is the base price; INR is always auto-calculated (Services page,
+  // admin panel, checkout and the PHP order/payment checks).
+  'tests/usd-base-pricing.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 

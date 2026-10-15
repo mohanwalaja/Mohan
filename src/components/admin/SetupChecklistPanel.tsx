@@ -26,7 +26,7 @@ import {
   Settings
 } from 'lucide-react';
 import { AppSettings, TeamMember } from '../../types';
-import { USD_TO_INR_RATE } from '../../services/pricing';
+import { USD_TO_INR_RATE, usdToInr } from '../../services/pricing';
 import { aiAstrologer } from '../../services/aiAstrologerApi';
 
 interface SetupChecklistPanelProps {
@@ -82,7 +82,8 @@ export const SetupChecklistPanel: React.FC<SetupChecklistPanelProps> = ({
 
   // 3. Pricing Validations (USD is the base; INR is derived from it unless set)
   const intlPrice = Number(settings?.intlPriceUSD || 0);
-  const indiaPrice = Number(settings?.indiaPriceINR || 0);
+  // India price is always auto-calculated from the USD base.
+  const indiaPrice = usdToInr(intlPrice);
   const hasValidIntlPrice = intlPrice > 0;
   const hasValidIndiaPrice = indiaPrice > 0;
   const isServiceModeConfigured = Boolean(settings?.serviceMode);
@@ -267,7 +268,7 @@ export const SetupChecklistPanel: React.FC<SetupChecklistPanelProps> = ({
       tab: 'settings',
       details: [
         { label: 'USD Fee', valid: hasValidIntlPrice, value: `US$${intlPrice}.00` },
-        { label: 'India Tier (₹ INR)', valid: true, value: indiaPrice > 0 ? `₹${indiaPrice}.00` : `Auto ×${USD_TO_INR_RATE} from USD` },
+        { label: 'India Tier (₹ INR)', valid: true, value: `₹${indiaPrice}.00 (auto ×${USD_TO_INR_RATE} from USD)` },
         { label: 'Free Beta Rule', valid: true, value: settings?.serviceMode === 'FREE_BETA' ? 'Active (1st report free)' : 'Inactive' }
       ]
     },
@@ -392,7 +393,7 @@ export const SetupChecklistPanel: React.FC<SetupChecklistPanelProps> = ({
       `[PAYMENT] Probing PayPal / Cards Number (${settings?.vodafoneMPaisaNumber || 'Missing'})... ${hasMPaisaNumber ? 'VALIDATED' : 'NOT SET'}`,
       `[PAYMENT] Validating PayPal Gateway Client ID (${settings?.paypalMode || 'sandbox'})... ${hasPayPalClientId ? 'CONNECTED' : 'STANDBY'}`,
       `[PRICING] Auditing Global Diaspora Rate (US$${intlPrice})... ${hasValidIntlPrice ? 'PASSED' : 'FAILED'}`,
-      `[PRICING] Auditing India Domestic Rate (₹${indiaPrice > 0 ? indiaPrice : `auto ${USD_TO_INR_RATE}x USD`})... ${hasValidIndiaPrice || hasValidIntlPrice ? 'PASSED' : 'FAILED'}`,
+      `[PRICING] Auditing India Domestic Rate (₹${indiaPrice}, auto ${USD_TO_INR_RATE}x USD)... ${hasValidIndiaPrice || hasValidIntlPrice ? 'PASSED' : 'FAILED'}`,
       `[PRICING] Master Service Mode: ${settings?.serviceMode || 'FREE_BETA'}`,
       `[SCHOLARS] Verifying India Astrology Roster (${teamMembers.length} active members)... ${hasActiveTeam ? 'VERIFIED' : 'ACTION REQ'}`,
       `[CALCULATION] Testing Lahiri Ephemeris precision algorithms... PASSED (0.01s)`,

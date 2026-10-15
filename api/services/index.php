@@ -364,7 +364,7 @@ if (($method === 'GET' || $method === 'HEAD') && (
     if ($row) {
         $general = json_decode($row['general_settings'] ?? '{}', true) ?: [];
         $email = json_decode($row['email_settings'] ?? '{}', true) ?: [];
-        $pricing = json_decode($row['pricing'] ?? '{}', true) ?: [];
+        $pricing = astro_normalize_service_pricing(json_decode($row['pricing'] ?? '{}', true) ?: []);
         $paymentMethods = json_decode($row['payment_methods'] ?? '{}', true) ?: [];
 
         // Safe public email subset
@@ -404,6 +404,9 @@ if (($method === 'GET' || $method === 'HEAD') && (
         }
 
         if (!isset($settings['intlPriceUSD'])) $settings['intlPriceUSD'] = $general['intlPriceUSD'] ?? 5;
+        // USD is the base price; India (INR) is always auto-calculated from it.
+        $settings['servicePricing'] = astro_normalize_service_pricing($general['servicePricing'] ?? $pricing);
+        $settings['indiaPriceINR'] = astro_usd_to_inr($settings['intlPriceUSD']);
         if (!isset($settings['googleLoginEnabled'])) $settings['googleLoginEnabled'] = $general['googleLoginEnabled'] ?? true;
         if (!isset($settings['googleClientId'])) $settings['googleClientId'] = $general['googleClientId'] ?? '';
         if (!isset($settings['facebookLoginEnabled'])) $settings['facebookLoginEnabled'] = $general['facebookLoginEnabled'] ?? true;
@@ -655,7 +658,10 @@ if ((preg_match('#/services/payment/create-session/?$#', $path) || $action === '
     // Client amount is display-only: the gateway intent is re-validated at
     // order bind + webhook against server pricing. Reject implausible values
     // here so a tampered amount can never reach a provider order.
-    if ($amount > 1000) {
+    // The ceiling is US$1000; GPay/UPI sessions are in INR, so the same
+    // ceiling is converted (INR prices are USD x USD_TO_INR_RATE).
+    $maxSessionAmount = in_array($pm, ['GPAY', 'UPI'], true) ? 1000 * USD_TO_INR_RATE : 1000;
+    if ($amount > $maxSessionAmount) {
         jsonResponse(['success' => false, 'message' => 'Payment amount looks incorrect. Please refresh pricing and try again.'], 400);
     }
 
@@ -1169,7 +1175,7 @@ if ($method === 'POST' && (
         $requiresGroupPayment = false;
     }
 
-    $pricing = $sRow ? json_decode($sRow['pricing'] ?? '{}', true) : [];
+    $pricing = astro_normalize_service_pricing($sRow ? json_decode($sRow['pricing'] ?? '{}', true) : []);
     $priceMap = [
         'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : 18),
         'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : 22),
@@ -1351,7 +1357,7 @@ if ($method === 'POST' && (
         }
     }
 
-    $pricing = $sRow ? json_decode($sRow['pricing'] ?? '{}', true) : [];
+    $pricing = astro_normalize_service_pricing($sRow ? json_decode($sRow['pricing'] ?? '{}', true) : []);
     $priceMap = [
         'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : 18),
         'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : 22),
@@ -1668,7 +1674,7 @@ if ($method === 'POST' && (
     // intent below is verified against the server price: reading $pricing only
     // after that check silently compared every service against the 18-unit
     // fallback and rejected correctly-priced orders.
-    $pricing = $sRow ? json_decode($sRow['pricing'] ?? '{}', true) : [];
+    $pricing = astro_normalize_service_pricing($sRow ? json_decode($sRow['pricing'] ?? '{}', true) : []);
     $priceMap = [
         'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : 18),
         'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : 22),
