@@ -92,18 +92,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     exit;
 }
 
-// 3. MySQL Database Credentials (Configure for your BigRock cPanel MySQL Database)
+// 3. MySQL Database Credentials (BigRock cPanel MySQL Database)
 //
-// SECURITY: there are deliberately NO fallback credentials here. An earlier
-// revision shipped the production database name and user as code defaults,
-// which leaks infrastructure naming into every checkout, log bundle and AI
-// Studio copy. Set DB_NAME / DB_USER / DB_PASS in the server environment (or,
-// where the host provides no env vars, in the server-side config.php only).
-// getDbConnection() refuses to start when any of them is missing.
+// Database name and user are set below; server environment variables
+// (DB_NAME / DB_USER / DB_PASS) still override them when present.
+//
+// >>> CHANGE PASSWORD: replace CHANGE_PASSWORD below with the real MySQL
+// >>> password for astro287_Astro_admin ON THE SERVER ONLY (cPanel File
+// >>> Manager -> public_html/api/config.php). Never commit the real password.
+// >>> getDbConnection() refuses to connect while the placeholder is in place.
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('DB_NAME') ?: '');
-define('DB_USER', getenv('DB_USER') ?: '');
-define('DB_PASS', getenv('DB_PASS') ?: '');
+define('DB_NAME', getenv('DB_NAME') ?: 'astro287_Astro_db');
+define('DB_USER', getenv('DB_USER') ?: 'astro287_Astro_admin');
+define('DB_PASS', getenv('DB_PASS') ?: 'CHANGE_PASSWORD'); // <-- CHANGE PASSWORD
 define('DB_PORT', getenv('DB_PORT') ?: '3306');
 define('DB_CHARSET', 'utf8mb4');
 
@@ -160,8 +161,53 @@ define('ADMIN_EMAIL', 'admin@astrosivam.com');
 define('SUPPORT_EMAIL', 'admin@astrosivam.com');
 define('DEFAULT_CURRENCY', 'USD');
 // USD -> INR exchange rate used to auto-convert the USD base price for GPay/UPI.
-// 1 USD ≈ 84 INR (admin can override via per-service INR prices or indiaPriceINR).
+// 1 USD ≈ 84 INR. The admin never enters an INR price - it is always derived.
 define('USD_TO_INR_RATE', 84);
+
+/** Built-in US$ base prices (mirrors DEFAULT_SERVICE_PRICES in src/services/pricing.ts). */
+if (!function_exists('astro_default_usd_prices')) {
+    function astro_default_usd_prices(): array
+    {
+        return ['BIRTH_JATHAGAM' => 18, 'MARRIAGE_COMPATIBILITY' => 22, 'BABY_NAMING' => 15, 'MUHURTHAM' => 20];
+    }
+}
+
+/**
+ * USD is the ONLY price the admin sets; the India (INR) price is always the
+ * USD base x USD_TO_INR_RATE, rounded to whole rupees. Mirrors usdToInr() in
+ * src/services/pricing.ts so the checkout and the server agree to the rupee.
+ */
+if (!function_exists('astro_usd_to_inr')) {
+    function astro_usd_to_inr($usd): int
+    {
+        $n = is_numeric($usd) ? (float)$usd : 0.0;
+        return $n > 0 ? (int)round($n * USD_TO_INR_RATE) : 0;
+    }
+}
+
+/**
+ * Re-derive every service's INR price from its USD base. Any INR value stored
+ * by an older admin panel is discarded, so a stale "India price" can never
+ * disagree with the amount the checkout shows and charges.
+ */
+if (!function_exists('astro_normalize_service_pricing')) {
+    function astro_normalize_service_pricing($pricing): array
+    {
+        if (!is_array($pricing)) return [];
+        $defaults = astro_default_usd_prices();
+        foreach ($pricing as $service => $row) {
+            if (!is_array($row)) continue;
+            $usd = $row['usd'] ?? ($row['USD'] ?? ($defaults[$service] ?? null));
+            if (!is_numeric($usd)) continue;
+            $usd = round((float)$usd, 2);
+            unset($row['USD'], $row['INR']);
+            $row['usd'] = $usd;
+            $row['inr'] = astro_usd_to_inr($usd);
+            $pricing[$service] = $row;
+        }
+        return $pricing;
+    }
+}
 
 // 4b. Astrology engine options.
 //

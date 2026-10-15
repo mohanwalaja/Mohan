@@ -50,17 +50,26 @@ export const DEFAULT_PAYMENT_METHOD: PaymentMethod = 'PAYPAL';
 
 /**
  * USD -> INR conversion used when the admin has only set a USD price.
- * 1 USD ≈ 84 INR (approximate; admin can override via per-service INR prices or indiaPriceINR).
+ * 1 USD ≈ 84 INR. The admin never enters an INR price; it is always derived.
  */
 export const USD_TO_INR_RATE = 84;
 
+/**
+ * USD is the ONLY price the admin sets. The India (INR) price is always this
+ * conversion, rounded to whole rupees. Mirrored by astro_usd_to_inr() in PHP.
+ */
+export function usdToInr(usd: number): number {
+  const n = Number(usd);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * USD_TO_INR_RATE) : 0;
+}
+
 /** Fallback retail prices: USD is the base, INR is auto-converted from it. */
 export const DEFAULT_SERVICE_PRICES: Record<ServiceType, CurrencyPriceMap> = {
-  BIRTH_JATHAGAM: { INR: Math.round(18 * USD_TO_INR_RATE), USD: 18 },
-  MARRIAGE_COMPATIBILITY: { INR: Math.round(22 * USD_TO_INR_RATE), USD: 22 },
-  BABY_NAMING: { INR: Math.round(15 * USD_TO_INR_RATE), USD: 15 },
+  BIRTH_JATHAGAM: { INR: usdToInr(18), USD: 18 },
+  MARRIAGE_COMPATIBILITY: { INR: usdToInr(22), USD: 22 },
+  BABY_NAMING: { INR: usdToInr(15), USD: 15 },
   // Subha Muhurtham Finder — six-month auspicious date report for one ceremony.
-  MUHURTHAM: { INR: Math.round(20 * USD_TO_INR_RATE), USD: 20 }
+  MUHURTHAM: { INR: usdToInr(20), USD: 20 }
 };
 
 /**
@@ -162,12 +171,9 @@ export function getServicePrices(
     toNumber(overrides?.USD) ??
     toNumber(settings?.intlPriceUSD) ??
     fallbacks.USD;
-  // INR is derived from USD when not explicitly set (admin sets only USD base price).
-  const inr =
-    toNumber(overrides?.inr) ??
-    toNumber(overrides?.INR) ??
-    toNumber(settings?.indiaPriceINR) ??
-    Math.round(usd * USD_TO_INR_RATE);
+  // USD is the base price: India (INR) is ALWAYS auto-calculated from USD.
+  // Admin never sets an India price; any stored INR value is ignored.
+  const inr = usdToInr(usd);
 
   return { INR: inr, USD: usd };
 }
