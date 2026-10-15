@@ -156,7 +156,7 @@ The package contains only the compiled static website, PHP API, and deployment n
 ## ⚡ Step 5: Initialize the Database & Provision an Administrator
 
 
-1. Import `api/schema.sql` into the newly created MySQL database using phpMyAdmin. The schema creates tables and non-user settings only; it does **not** create a default admin or demo customer.
+1. Import `api/schema.sql` into the newly created MySQL database using phpMyAdmin. The schema creates tables and non-user settings only; it does **not** create a default admin or demo customer. On an **existing** database (created before 2026-10), also import every newer file in `api/migrations/` in numeric order — currently `012_social_identity_columns.sql` through `015_contact_email_columns.sql` — then revoke schema-change rights from the web user (`REVOKE ALTER ON <database>.* FROM '<webuser>'@'<host>'; FLUSH PRIVILEGES;`). The API verifies the migrated schema on each request and answers 503 with a log line naming the missing migration when one was skipped.
 2. Provision the first admin with the CLI-only script from a trusted cPanel Terminal/SSH session. Set `ASTROSIVAM_ADMIN_EMAIL`, `ASTROSIVAM_ADMIN_NAME`, and `ASTROSIVAM_ADMIN_PASSWORD` in the shell environment (use a unique password of at least 12 characters), along with the database and `APP_SECRET_KEY` environment settings, then run:
 
    ```sh
@@ -177,7 +177,7 @@ is only *active* when its variable is present.
 
 | Variable | Used for | Fallback when unset |
 | --- | --- | --- |
-| `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT` | MySQL connection | values hard-coded in `api/config.php` |
+| `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT` | MySQL connection | none — the API refuses to start (`DB_NAME`/`DB_USER`/`DB_PASS` have no code defaults) |
 | `APP_SECRET_KEY` | signing tokens/OTP hashes (min 32 chars) | a key auto-generated into `api/astrology/tmp/` |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Razorpay checkout (UPI / Google Pay) | Admin → Payment Settings |
 | `RAZORPAY_WEBHOOK_SECRET` | verifying `payment.captured` / `order.paid` webhooks | Admin → Payment Settings → Webhook Secret |

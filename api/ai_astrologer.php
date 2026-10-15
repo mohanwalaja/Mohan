@@ -321,12 +321,15 @@ function astro_ai_ensure_tables(PDO $pdo): void
         $pdo->exec($statement);
     }
 
-    // Self-healing for databases created before the family person picker:
-    // the migration above now includes person_id in its CREATE TABLE, but an
-    // already-created ai_chat_sessions table needs the column added here.
+    // Databases created before the family person picker predate the person_id
+    // column: migration 007 only covers fresh CREATEs, so the ALTER lives in
+    // api/migrations/014_ai_chat_person_id.sql. Web requests never ALTER
+    // TABLE (the web DB user is granted no ALTER privilege), so verify the
+    // column exists and fail loudly when the migration was skipped.
     $personColumn = $pdo->query("SHOW COLUMNS FROM `ai_chat_sessions` LIKE 'person_id'")->fetch();
     if (!$personColumn) {
-        $pdo->exec("ALTER TABLE `ai_chat_sessions` ADD COLUMN `person_id` INT NULL AFTER `service_type`");
+        error_log('ASTRO SIVAM: ai_chat_sessions.person_id is missing; run api/migrations/014_ai_chat_person_id.sql on this database.');
+        jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
     }
     $ready = true;
 }

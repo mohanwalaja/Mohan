@@ -10,6 +10,20 @@ function getDbConnection() {
         return $pdo;
     }
 
+    // config.php carries no fallback credentials: refuse to start (instead of
+    // connecting with an empty/placeholder identity) when the environment is
+    // incomplete. The caller-facing message stays generic; the log names the
+    // missing variable so the operator can fix the server configuration.
+    foreach (['DB_NAME' => DB_NAME, 'DB_USER' => DB_USER, 'DB_PASS' => DB_PASS] as $var => $value) {
+        if (!is_string($value) || trim($value) === '' || $value === 'PASTE_NEW_DB_PASSWORD_HERE') {
+            error_log("ASTRO SIVAM: database {$var} is not configured in the server environment; refusing to connect.");
+            jsonResponse([
+                'success' => false,
+                'message' => 'Database service temporarily unavailable. Please try again later.'
+            ], 500);
+        }
+    }
+
     $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
     $options = [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -34,9 +48,15 @@ function getDbConnection() {
 }
 
 /**
- * Adds the columns used by session revocation and password reset to `users`.
- * Idempotent: it runs once per process and only issues ALTER TABLE for columns
- * that are missing. See api/migrations/006_password_reset_and_token_revocation.sql.
+ * Verifies the columns used by session revocation and password reset exist on
+ * `users` — WITHOUT running DDL.
+ *
+ * Those columns live in api/migrations/006_password_reset_and_token_revocation.sql
+ * (and api/schema.sql for fresh installs). Web requests must never ALTER TABLE:
+ * the web DB user is granted no ALTER privilege, so an attempt would only fail —
+ * and a swallowed failure would surface later as a confusing "Unknown column"
+ * error. This check fails loudly at connect time instead. It runs once per
+ * process; the SHOW COLUMNS probe costs the same as the old self-migration.
  */
 function astro_ensure_auth_security_schema($pdo) {
     static $done = false;
@@ -44,21 +64,17 @@ function astro_ensure_auth_security_schema($pdo) {
         return;
     }
     $done = true;
-    $columns = [
-        'token_version' => "ALTER TABLE users ADD COLUMN token_version INT UNSIGNED NOT NULL DEFAULT 0",
-        'password_reset_hash' => "ALTER TABLE users ADD COLUMN password_reset_hash VARCHAR(255) NULL",
-        'password_reset_expires_at' => "ALTER TABLE users ADD COLUMN password_reset_expires_at DATETIME NULL",
-        'password_reset_attempts' => "ALTER TABLE users ADD COLUMN password_reset_attempts INT UNSIGNED NOT NULL DEFAULT 0",
-    ];
     try {
         $existing = $pdo->query("SHOW COLUMNS FROM `users`")->fetchAll(PDO::FETCH_COLUMN, 0);
-        foreach ($columns as $name => $sql) {
-            if (!in_array($name, $existing, true)) {
-                $pdo->exec($sql);
-            }
-        }
     } catch (Exception $e) {
         error_log('ASTRO SIVAM: auth security schema check failed - ' . $e->getMessage());
+        jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
+    }
+    foreach (['token_version', 'password_reset_hash', 'password_reset_expires_at', 'password_reset_attempts'] as $column) {
+        if (!in_array($column, $existing, true)) {
+            error_log("ASTRO SIVAM: users.{$column} is missing; run api/migrations/006_password_reset_and_token_revocation.sql on this database.");
+            jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
+        }
     }
 }
 
@@ -73,9 +89,12 @@ function astro_ensure_auth_security_schema($pdo) {
  * the refund state and let the customer's AI-chat entitlement stay alive.
  * Widening the enum is idempotent and safe: existing values keep their index.
  *
- * Idempotent: it runs once per process and only issues DDL that is missing.
- * Mirrors api/migrations/009_refund_workflow.sql, so an installation that has
- * not been migrated by hand still works.
+ * VERIFY-ONLY: it runs once per process and never issues DDL. The columns and
+ * the widened enum live in api/migrations/009_refund_workflow.sql (and
+ * api/schema.sql for fresh installs); web requests must never ALTER TABLE
+ * because the web DB user is granted no ALTER privilege. A database that has
+ * not been migrated fails loudly here (503 + a log line naming the migration)
+ * instead of breaking later mid-refund.
  */
 function astro_ensure_refund_schema($pdo) {
     static $done = false;
@@ -85,41 +104,35 @@ function astro_ensure_refund_schema($pdo) {
     $done = true;
 
     $columns = array(
-        'refund_percent' => "ALTER TABLE orders ADD COLUMN refund_percent DECIMAL(5,2) NULL AFTER refund_reason",
-        'refund_amount' => "ALTER TABLE orders ADD COLUMN refund_amount DECIMAL(10,2) NULL AFTER refund_percent",
-        'refund_currency' => "ALTER TABLE orders ADD COLUMN refund_currency VARCHAR(8) NULL AFTER refund_amount",
-        'refund_processed_at' => "ALTER TABLE orders ADD COLUMN refund_processed_at DATETIME NULL AFTER refund_currency",
-        'refund_deadline' => "ALTER TABLE orders ADD COLUMN refund_deadline DATETIME NULL AFTER refund_processed_at",
-        'refund_admin_notes' => "ALTER TABLE orders ADD COLUMN refund_admin_notes TEXT NULL AFTER refund_deadline",
-        'refund_method' => "ALTER TABLE orders ADD COLUMN refund_method VARCHAR(32) NULL AFTER refund_admin_notes",
-        'refund_reference' => "ALTER TABLE orders ADD COLUMN refund_reference VARCHAR(191) NULL AFTER refund_method",
+        'refund_percent', 'refund_amount', 'refund_currency', 'refund_processed_at',
+        'refund_deadline', 'refund_admin_notes', 'refund_method', 'refund_reference',
     );
 
     try {
         $rows = $pdo->query("SHOW COLUMNS FROM `orders`")->fetchAll(PDO::FETCH_ASSOC);
-        $existing = array();
-        $statusType = '';
-        foreach ($rows as $row) {
-            $existing[] = $row['Field'];
-            if ($row['Field'] === 'status') {
-                $statusType = (string) $row['Type'];
-            }
-        }
-
-        foreach ($columns as $name => $sql) {
-            if (!in_array($name, $existing, true)) {
-                $pdo->exec($sql);
-            }
-        }
-
-        if ($statusType !== '' && stripos($statusType, "'REFUNDED'") === false) {
-            $pdo->exec("ALTER TABLE `orders` MODIFY COLUMN `status` ENUM("
-                . "'PENDING','PENDING_APPROVAL','PENDING_PAYMENT_VERIFICATION','PROCESSING',"
-                . "'COMPLETED','GENERATED','REJECTED','CANCELLED','REFUNDED'"
-                . ") NOT NULL DEFAULT 'PENDING'");
-        }
     } catch (Exception $e) {
         error_log('ASTRO SIVAM: refund schema check failed - ' . $e->getMessage());
+        jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
+    }
+    $existing = array();
+    $statusType = '';
+    foreach ($rows as $row) {
+        $existing[] = $row['Field'];
+        if ($row['Field'] === 'status') {
+            $statusType = (string) $row['Type'];
+        }
+    }
+
+    foreach ($columns as $name) {
+        if (!in_array($name, $existing, true)) {
+            error_log("ASTRO SIVAM: orders.{$name} is missing; run api/migrations/009_refund_workflow.sql on this database.");
+            jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
+        }
+    }
+
+    if ($statusType !== '' && stripos($statusType, "'REFUNDED'") === false) {
+        error_log('ASTRO SIVAM: orders.status enum lacks REFUNDED; run api/migrations/009_refund_workflow.sql on this database.');
+        jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
     }
 }
 
@@ -132,6 +145,12 @@ function getMysqliConnection() {
         return $mysqli;
     }
 
+    if (!is_string(DB_NAME) || trim(DB_NAME) === ''
+        || !is_string(DB_USER) || trim(DB_USER) === ''
+        || !is_string(DB_PASS) || trim(DB_PASS) === '' || DB_PASS === 'PASTE_NEW_DB_PASSWORD_HERE') {
+        error_log('ASTRO SIVAM: database credentials are not configured in the server environment; mysqli connection refused.');
+        return null;
+    }
     $mysqli = @new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int)DB_PORT);
     if ($mysqli->connect_errno) {
         return null;
@@ -146,7 +165,7 @@ function getMysqliConnection() {
 function logAudit($pdo, $userId, $userName, $userRole, $action, $details = '') {
     try {
         $stmt = $pdo->prepare("INSERT INTO audit_logs (id, user_id, user_name, user_role, action, details, ip_address, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
-        $id = uniqid('aud_', true);
+        $id = astro_random_id('aud_', 16);
         // The spoof-resistant resolver, so an audit entry names the real client
         // instead of the CDN/proxy hop. It only trusts forwarding headers from a
         // peer we actually run behind (see api/client_ip.php).

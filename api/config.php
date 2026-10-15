@@ -93,12 +93,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
 }
 
 // 3. MySQL Database Credentials (Configure for your BigRock cPanel MySQL Database)
+//
+// SECURITY: there are deliberately NO fallback credentials here. An earlier
+// revision shipped the production database name and user as code defaults,
+// which leaks infrastructure naming into every checkout, log bundle and AI
+// Studio copy. Set DB_NAME / DB_USER / DB_PASS in the server environment (or,
+// where the host provides no env vars, in the server-side config.php only).
+// getDbConnection() refuses to start when any of them is missing.
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('DB_NAME') ?: 'astro287_Astro_db');
-define('DB_USER', getenv('DB_USER') ?: 'astro287_Astro_admin');
-// SECURITY: the real password exists ONLY in the config.php on the cPanel
-// server. Keep the placeholder in any source-control / AI Studio copy.
-define('DB_PASS', getenv('DB_PASS') ?: 'PASTE_NEW_DB_PASSWORD_HERE');
+define('DB_NAME', getenv('DB_NAME') ?: '');
+define('DB_USER', getenv('DB_USER') ?: '');
+define('DB_PASS', getenv('DB_PASS') ?: '');
 define('DB_PORT', getenv('DB_PORT') ?: '3306');
 define('DB_CHARSET', 'utf8mb4');
 
@@ -262,6 +267,25 @@ function astro_normalize_report_language($value) {
     if (!is_string($value)) return 'en';
     $language = strtolower(trim($value));
     return in_array($language, ['en', 'ta', 'hi'], true) ? $language : 'en';
+}
+
+/**
+ * Unpredictable identifier factory (CSPRNG-backed).
+ *
+ * uniqid() is time-based and enumerable: user, order, group and message ids
+ * derived from it can be guessed and scraped. Every new identifier must come
+ * from here instead. random_bytes() throws when the system CSPRNG is broken —
+ * that surfaces as a 500, which is correct: issuing a predictable id would be
+ * worse than refusing the request.
+ */
+function astro_random_id($prefix, $bytes = 16) {
+    return (string)$prefix . bin2hex(random_bytes(max(1, (int)$bytes)));
+}
+
+/** $charCount random lowercase hex characters (e.g. the public order-number suffix). */
+function astro_random_hex($charCount) {
+    $charCount = max(1, (int)$charCount);
+    return substr(bin2hex(random_bytes((int)ceil($charCount / 2))), 0, $charCount);
 }
 
 // 7. Authentication Helper (PHP Session or signed bearer token in headers only)

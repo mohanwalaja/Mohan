@@ -48,12 +48,17 @@ function check(name: string, fn: () => void) {
 
 check('the session schema remembers which member the chat answers about', () => {
   assert.match(migration, /`person_id` INT NULL/);
-  // Databases created before the picker get the column from the runtime guard.
-  const ensure = sliceText(
+  // Databases created before the picker get the column from migration 014 —
+  // never from runtime DDL. The bootstrap only verifies and fails loudly.
+  const personMigration = read('api/migrations/014_ai_chat_person_id.sql');
+  assert.match(personMigration, /ADD COLUMN `person_id` INT NULL/);
+  const ensure = code(sliceText(
     endpoint, 'function astro_ai_ensure_tables', 'function astro_ai_new_session_id', 'schema bootstrap'
-  );
+  ));
   assert.match(ensure, /SHOW COLUMNS FROM `ai_chat_sessions` LIKE 'person_id'/);
-  assert.match(ensure, /ALTER TABLE `ai_chat_sessions` ADD COLUMN `person_id` INT NULL/);
+  assert.match(ensure, /014_ai_chat_person_id\.sql/);
+  assert.match(ensure, /, 503\)/);
+  assert.doesNotMatch(ensure, /ALTER TABLE/);
 });
 
 check('opening a session lists every family member and selects the first', () => {

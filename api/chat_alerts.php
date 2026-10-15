@@ -212,6 +212,84 @@ class AstroChatAlerts
     // HTTP transport
     // ------------------------------------------------------------------
 
+    /**
+     * SSRF guard for admin-configured gateway webhook URLs.
+     *
+     * A chat-gateway URL is only fetched when ALL of these hold:
+     *   1. the scheme is exactly https (no http, no protocol-relative URLs);
+     *   2. no userinfo is embedded (user:pass@host can obscure the real host);
+     *   3. the host is neither "localhost" nor a literal private/reserved IP;
+     *   4. every DNS A/AAAA address the hostname resolves to is public —
+     *      unresolvable names fail closed.
+     *
+     * This stops a webhook pointing at 127.0.0.1, 10/8, 169.254.169.254 (cloud
+     * metadata), or any other internal address from ever receiving the order
+     * payload. The official Meta/Viber endpoints are hardcoded https URLs and
+     * are unaffected.
+     */
+    public static function isValidWebhookUrl($url): bool
+    {
+        $url = trim((string)$url);
+        if ($url === '') {
+            return false;
+        }
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return false;
+        }
+        if (strtolower((string)($parts['scheme'] ?? '')) !== 'https') {
+            return false;
+        }
+        if (isset($parts['user']) || isset($parts['pass'])) {
+            return false;
+        }
+        $host = (string)($parts['host'] ?? '');
+        if ($host === '' || strtolower($host) === 'localhost') {
+            return false;
+        }
+        // Literal IP: must be globally routable (rejects private, loopback,
+        // link-local, reserved and multicast ranges for both families).
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+        }
+
+        $ips = [];
+        $v4 = @gethostbynamel($host);
+        if (is_array($v4)) {
+            $ips = array_merge($ips, $v4);
+        }
+        if (function_exists('dns_get_record')) {
+            $aaaa = @dns_get_record($host, DNS_AAAA);
+            if (is_array($aaaa)) {
+                foreach ($aaaa as $rec) {
+                    if (!empty($rec['ipv6'])) {
+                        $ips[] = $rec['ipv6'];
+                    }
+                }
+            }
+            if (empty($ips)) {
+                $arecs = @dns_get_record($host, DNS_A);
+                if (is_array($arecs)) {
+                    foreach ($arecs as $rec) {
+                        if (!empty($rec['ip'])) {
+                            $ips[] = $rec['ip'];
+                        }
+                    }
+                }
+            }
+        }
+        // Unresolvable hostname: fail closed rather than fetching blind.
+        if (empty($ips)) {
+            return false;
+        }
+        foreach ($ips as $ip) {
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static function httpPostJson(string $url, array $payload, array $headers = []): array
     {
         $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
@@ -226,7 +304,13 @@ class AstroChatAlerts
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_CONNECTTIMEOUT => 8,
                 CURLOPT_TIMEOUT => 15,
-                CURLOPT_SSL_VERIFYPEER => true
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+                // A validated webhook must not be able to bounce the order
+                // payload elsewhere via a 30x to an internal address.
+                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_MAXREDIRS => 0,
+                CURLOPT_PROTOCOLS => CURLPROTO_HTTPS
             ]);
             $body = curl_exec($ch);
             $errno = curl_errno($ch);
@@ -241,13 +325,20 @@ class AstroChatAlerts
         }
 
         // Minimal stream fallback when cURL is unavailable on the host.
+        // Mirrors the cURL options above: no redirects (SSRF), full TLS checks.
         $ctx = stream_context_create([
             'http' => [
                 'method' => 'POST',
                 'header' => implode("\r\n", $headers),
                 'content' => $json,
                 'timeout' => 15,
-                'ignore_errors' => true
+                'ignore_errors' => true,
+                'follow_location' => 0,
+                'max_redirects' => 0
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true
             ]
         ]);
         $body = @file_get_contents($url, false, $ctx);
@@ -280,6 +371,9 @@ class AstroChatAlerts
             $url = trim((string)($wa['webhookUrl'] ?? ''));
             if ($url === '') {
                 return ['success' => false, 'channel' => 'whatsapp', 'message' => 'WhatsApp webhook URL is not configured'];
+            }
+            if (!self::isValidWebhookUrl($url)) {
+                return ['success' => false, 'channel' => 'whatsapp', 'message' => 'WhatsApp webhook URL is invalid or not allowed: an https URL with a public host is required'];
             }
             $res = self::httpPostJson($url, [
                 'channel' => 'whatsapp',
@@ -360,6 +454,9 @@ class AstroChatAlerts
             $url = trim((string)($vb['webhookUrl'] ?? ''));
             if ($url === '') {
                 return ['success' => false, 'channel' => 'viber', 'message' => 'Viber webhook URL is not configured'];
+            }
+            if (!self::isValidWebhookUrl($url)) {
+                return ['success' => false, 'channel' => 'viber', 'message' => 'Viber webhook URL is invalid or not allowed: an https URL with a public host is required'];
             }
             $res = self::httpPostJson($url, [
                 'channel' => 'viber',

@@ -72,6 +72,17 @@ function sendPasswordResetEmail($pdo, $toEmail, $toName, $code) {
 /** Generic reply for forgot-password. Never reveals whether an account exists. */
 const ASTRO_FORGOT_PASSWORD_MESSAGE = 'If an account exists for that email, a password reset code has been sent. The code expires in 15 minutes.';
 
+/**
+ * Identical register reply for new, still-pending and already-registered
+ * addresses. A fresh address receives an OTP email while an existing account
+ * receives sign-in instructions instead — but both callers see this same
+ * message, so the response never reveals whether an email is registered.
+ */
+function astro_register_generic_message($email) {
+    $safeEmail = (string)$email;
+    return "Check {$safeEmail} for next steps: a new address receives a 6-digit verification code to enter here, and an existing account receives sign-in instructions instead.";
+}
+
 /** Fetches saved SMTP/email settings for use with AstroMailer. */
 function getEmailSettingsForAuth($pdo) {
     try {
@@ -117,16 +128,68 @@ function sendRegistrationOtpEmail($pdo, $toEmail, $toName, $otp) {
     );
 }
 
-/** Adds immutable provider subjects so social sign-in never links by email alone. */
+/**
+ * Tells the owner — and only the owner, by email — that a registration was
+ * attempted on their existing account. The HTTP response stays generic (see
+ * astro_register_generic_message), so this email is the sole signal and it
+ * goes to the address itself, never to the requester.
+ */
+function sendAccountExistsEmail($pdo, $toEmail, $toName) {
+    $logoTag = function_exists('astro_email_logo_tag') ? astro_email_logo_tag(52) : '';
+    $safeToName = htmlspecialchars((string)$toName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $html = "<div style='font-family:Arial,sans-serif; max-width:520px; margin:0 auto;'>
+      <div style='background:#7a1f1f; color:#fff; text-align:center; padding:20px;'>
+        {$logoTag}
+        <div style='font-size:18px; font-weight:bold;'>ASTRO SIVAM</div>
+        <div style='font-size:12px; margin-top:4px;'>You Already Have an Account</div>
+      </div>
+      <div style='background:#fdf6e7; padding:24px; text-align:center;'>
+        <p style='color:#333; font-size:13px;'>Namaste {$safeToName},</p>
+        <p style='color:#333; font-size:13px;'>Someone — possibly you — just tried to create a new ASTRO SIVAM account with this email address, but an account already exists for it. No new account was created and no verification code was sent.</p>
+        <p style='color:#333; font-size:13px;'>If this was you, please sign in with your existing password, or use 'Forgot password' on the login page to reset it. If this was not you, you can safely ignore this email; your account is unchanged.</p>
+      </div>
+      <div style='background:#faf3e3; border-top:1px solid #e8d9b8; padding:14px; text-align:center;'>
+        <div style='color:#7a1f1f; font-weight:700; font-size:12px;'>ASTRO SIVAM Team</div>
+        <div style='color:#a67c1f; font-size:10.5px; margin-top:2px;'>astrosivam.com &bull; admin@astrosivam.com</div>
+      </div>
+    </div>";
+
+    $emailSettings = getEmailSettingsForAuth($pdo);
+    return AstroMailer::sendEmailWithAttachments(
+        $toEmail,
+        $toName,
+        'ASTRO SIVAM: Sign-in instructions for your existing account',
+        $html,
+        [],
+        $emailSettings
+    );
+}
+
+/**
+ * Verifies the immutable provider-subject columns exist — WITHOUT running DDL.
+ *
+ * Social sign-in keys accounts by (auth_provider, provider_subject) so it
+ * never links by email alone. Those columns live in
+ * api/migrations/012_social_identity_columns.sql (and api/schema.sql for fresh
+ * installs). Web requests must never ALTER TABLE: the web DB user is granted
+ * no ALTER privilege, so any attempt would fail — and a swallowed failure
+ * would only surface later as a confusing "Unknown column" error. This check
+ * fails loudly at the point of use instead.
+ */
 function astro_ensure_social_identity_columns($pdo) {
     static $ready = false;
     if ($ready) return;
-    foreach ([
-        "ALTER TABLE users ADD COLUMN auth_provider VARCHAR(32) NOT NULL DEFAULT 'local' AFTER role",
-        "ALTER TABLE users ADD COLUMN provider_subject VARCHAR(191) NULL AFTER auth_provider",
-        "ALTER TABLE users ADD UNIQUE KEY uq_users_provider_subject (auth_provider, provider_subject)"
-    ] as $migration) {
-        try { $pdo->exec($migration); } catch (Exception $e) {}
+    try {
+        $existing = $pdo->query("SHOW COLUMNS FROM `users`")->fetchAll(PDO::FETCH_COLUMN, 0);
+    } catch (Exception $e) {
+        error_log('ASTRO SIVAM: social identity schema check failed - ' . $e->getMessage());
+        jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
+    }
+    foreach (['auth_provider', 'provider_subject'] as $column) {
+        if (!in_array($column, $existing, true)) {
+            error_log("ASTRO SIVAM: users.{$column} is missing; run api/migrations/012_social_identity_columns.sql on this database.");
+            jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
+        }
     }
     $ready = true;
 }
@@ -366,7 +429,7 @@ if ($isFacebookRoute) {
         }
 
         if (!$user) {
-            $id = 'usr_' . uniqid('', true);
+            $id = astro_random_id('usr_', 16);
             $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
             $ins = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, auth_provider, provider_subject, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'customer', 'facebook', ?, 1, '', NOW(), NOW())");
             $ins->execute([$id, $name, $email, $hash, $fbId]);
@@ -498,7 +561,7 @@ if ($isGoogleRoute) {
         }
 
         if (!$user) {
-            $id = 'usr_' . uniqid('', true);
+            $id = astro_random_id('usr_', 16);
             $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
             $ins = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, auth_provider, provider_subject, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'customer', 'google', ?, 1, '', NOW(), NOW())");
             $ins->execute([$id, $name, $email, $hash, $googleId]);
@@ -609,11 +672,31 @@ if ($isRegisterRoute) {
 
     try {
         // Check existing
-        $stmt = $pdo->prepare("SELECT id, email_verified FROM users WHERE email = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, name, role, email_verified FROM users WHERE email = ? LIMIT 1");
         $stmt->execute([$email]);
         $existing = $stmt->fetch();
         if ($existing && (int)($existing['email_verified'] ?? 1) === 1) {
-            jsonResponse(['success' => false, 'message' => 'An account with this email already exists. Please log in.'], 409);
+            // ACCOUNT-ENUMERATION GUARD: answer exactly like a fresh sign-up
+            // (same status, same shape, same message) so the response never
+            // reveals whether the address is registered. The owner is told by
+            // email instead; mail failures are logged, never surfaced.
+            try {
+                $ownerName = trim((string)($existing['name'] ?? ''));
+                $existsMail = sendAccountExistsEmail($pdo, $email, $ownerName !== '' ? $ownerName : $email);
+                if (empty($existsMail['success'])) {
+                    error_log('ASTRO SIVAM: account-exists notice could not be sent for a registration attempt on an existing address.');
+                }
+                logAudit($pdo, $existing['id'], $existing['name'] ?? '', $existing['role'] ?? 'customer', 'USER_REGISTER_DUPLICATE', "Registration attempted on existing verified address: {$email}");
+            } catch (Throwable $e) {
+                error_log('ASTRO SIVAM: account-exists notice failed - ' . $e->getMessage());
+            }
+            jsonResponse([
+                'success' => true,
+                'status' => 'otp_required',
+                'requiresOtp' => true,
+                'email' => $email,
+                'message' => astro_register_generic_message($email)
+            ], 201);
         }
 
         $otp = generateOtp();
@@ -628,7 +711,7 @@ if ($isRegisterRoute) {
             $upd = $pdo->prepare("UPDATE users SET name = ?, mobile = ?, password_hash = ?, country = ?, otp_hash = ?, otp_expires_at = ? WHERE id = ?");
             $upd->execute([$name, $mobile, $hash, $country, $otpHash, $otpExpiresAt, $id]);
         } else {
-            $id = 'usr_' . uniqid('', true);
+            $id = astro_random_id('usr_', 16);
             $hash = password_hash($password, PASSWORD_BCRYPT);
 
             $ins = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, email_verified, otp_hash, otp_expires_at, country, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'customer', 0, ?, ?, ?, NOW(), NOW())");
@@ -650,7 +733,7 @@ if ($isRegisterRoute) {
                     (float) $birthProfile['timezoneOffsetHours'], $birthProfile['gender'] ?? 'M', $id
                 ]);
             } else {
-                $bpId = 'bp_' . uniqid('', true);
+                $bpId = astro_random_id('bp_', 16);
                 $bpIns = $pdo->prepare("INSERT INTO birth_profiles (id, user_id, name, dob, tob, birth_place, country, latitude, longitude, timezone_offset_hours, gender, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
                 $bpIns->execute([
                     $bpId, $id, $birthProfile['name'] ?? $name, $birthProfile['dob'], $birthProfile['tob'],
@@ -671,7 +754,7 @@ if ($isRegisterRoute) {
             'requiresOtp' => true,
             'email' => $email,
             'message' => $mailResult['success']
-                ? "We've sent a 6-digit verification code to {$email}. Enter it to activate your account."
+                ? astro_register_generic_message($email)
                 : "Your account was created, but the verification email could not be sent. Please use 'Resend Code' or contact support."
         ], 201);
     } catch (PDOException $e) {

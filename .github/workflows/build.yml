@@ -1,5 +1,11 @@
 name: Build, Security Gate & Package Production dist.zip
 
+# Supply-chain pins: every third-party action in this file is pinned to a full
+# commit SHA (the tag is kept as a trailing comment for readability). Tags are
+# moving refs — a compromised or re-pushed tag could otherwise ship arbitrary
+# code into CI. Refresh a pin with:
+#   curl -s https://api.github.com/repos/<owner>/<repo>/commits/<tag>
+
 # WHY THIS WORKFLOW HAS A PULL-REQUEST TRIGGER
 #   Pushing to main used to be the first time anything was verified: the only
 #   checks were "does dist.zip build" and the separate PHP suite. A dependency
@@ -26,18 +32,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           # The PHP-CS-Fixer step diffs against the PR base branch.
           fetch-depth: 0
 
       - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
       - name: Setup PHP 8.1 + Composer
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: '8.1'
           extensions: gd, mbstring, intl
@@ -112,10 +118,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
@@ -161,10 +167,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
@@ -316,7 +322,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: playwright-smoke-report
           path: |
@@ -335,20 +341,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Node.js 20 (frontend build tools only)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
       - name: Setup Python 3
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.x'
 
       - name: Setup PHP 8.1 + Composer
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: '8.1'
           tools: composer
@@ -405,6 +411,11 @@ jobs:
               'api/knowledge/ai-astrologer/rules/guided-questions.json',
               # The webhook idempotency migration must ship with the API.
               'api/migrations/008_payment_idempotency.sql',
+              # The no-runtime-DDL migrations (social columns + web-request DDL).
+              'api/migrations/012_social_identity_columns.sql',
+              'api/migrations/013_web_request_ddl_consolidation.sql',
+              'api/migrations/014_ai_chat_person_id.sql',
+              'api/migrations/015_contact_email_columns.sql',
               # Ops surface: the admin health endpoint and the backup/rotation
               # scripts. A release without them cannot be monitored.
               'api/admin/health.php',
@@ -423,7 +434,7 @@ jobs:
           PY
 
       - name: Upload dist.zip as build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: astrosivam-dist
           path: dist.zip
@@ -431,7 +442,7 @@ jobs:
           overwrite: true
 
       - name: Publish / Update Latest Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         continue-on-error: true
         env:
