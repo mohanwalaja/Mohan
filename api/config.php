@@ -92,18 +92,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     exit;
 }
 
-// 3. MySQL Database Credentials (Configure for your BigRock cPanel MySQL Database)
+// 3. MySQL Database Credentials (BigRock cPanel MySQL Database)
 //
-// SECURITY: there are deliberately NO fallback credentials here. An earlier
-// revision shipped the production database name and user as code defaults,
-// which leaks infrastructure naming into every checkout, log bundle and AI
-// Studio copy. Set DB_NAME / DB_USER / DB_PASS in the server environment (or,
-// where the host provides no env vars, in the server-side config.php only).
-// getDbConnection() refuses to start when any of them is missing.
+// Database name and user are set below; server environment variables
+// (DB_NAME / DB_USER / DB_PASS) still override them when present.
+//
+// >>> CHANGE PASSWORD: replace CHANGE_PASSWORD below with the real MySQL
+// >>> password for astro287_Astro_admin ON THE SERVER ONLY (cPanel File
+// >>> Manager -> public_html/api/config.php). Never commit the real password.
+// >>> getDbConnection() refuses to connect while the placeholder is in place.
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('DB_NAME') ?: '');
-define('DB_USER', getenv('DB_USER') ?: '');
-define('DB_PASS', getenv('DB_PASS') ?: '');
+define('DB_NAME', getenv('DB_NAME') ?: 'astro287_Astro_db');
+define('DB_USER', getenv('DB_USER') ?: 'astro287_Astro_admin');
+define('DB_PASS', getenv('DB_PASS') ?: 'CHANGE_PASSWORD'); // <-- CHANGE PASSWORD
 define('DB_PORT', getenv('DB_PORT') ?: '3306');
 define('DB_CHARSET', 'utf8mb4');
 

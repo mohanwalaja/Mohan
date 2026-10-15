@@ -10,13 +10,13 @@ function getDbConnection() {
         return $pdo;
     }
 
-    // config.php carries no fallback credentials: refuse to start (instead of
-    // connecting with an empty/placeholder identity) when the environment is
-    // incomplete. The caller-facing message stays generic; the log names the
+    // Refuse to start (instead of connecting with an empty/placeholder
+    // identity) while the password is still the CHANGE_PASSWORD placeholder
+    // from config.php or any credential is missing. The caller-facing message stays generic; the log names the
     // missing variable so the operator can fix the server configuration.
     foreach (['DB_NAME' => DB_NAME, 'DB_USER' => DB_USER, 'DB_PASS' => DB_PASS] as $var => $value) {
-        if (!is_string($value) || trim($value) === '' || $value === 'PASTE_NEW_DB_PASSWORD_HERE') {
-            error_log("ASTRO SIVAM: database {$var} is not configured in the server environment; refusing to connect.");
+        if (!is_string($value) || trim($value) === '' || in_array($value, ['PASTE_NEW_DB_PASSWORD_HERE', 'CHANGE_PASSWORD'], true)) {
+            error_log("ASTRO SIVAM: database {$var} is not configured (missing or still the CHANGE_PASSWORD placeholder in api/config.php); refusing to connect.");
             jsonResponse([
                 'success' => false,
                 'message' => 'Database service temporarily unavailable. Please try again later.'
@@ -147,7 +147,7 @@ function getMysqliConnection() {
 
     if (!is_string(DB_NAME) || trim(DB_NAME) === ''
         || !is_string(DB_USER) || trim(DB_USER) === ''
-        || !is_string(DB_PASS) || trim(DB_PASS) === '' || DB_PASS === 'PASTE_NEW_DB_PASSWORD_HERE') {
+        || !is_string(DB_PASS) || trim(DB_PASS) === '' || in_array(DB_PASS, ['PASTE_NEW_DB_PASSWORD_HERE', 'CHANGE_PASSWORD'], true)) {
         error_log('ASTRO SIVAM: database credentials are not configured in the server environment; mysqli connection refused.');
         return null;
     }
