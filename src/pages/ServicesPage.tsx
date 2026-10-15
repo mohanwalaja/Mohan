@@ -132,8 +132,8 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
   return (
     <div className="py-9 sm:py-12">
       <SEO
-        title="Vedic Astrology Services - Jathagam, Marriage Matching, Baby Naming & Subha Muhurtham | ASTRO SIVAM"
-        description="Explore authentic Vedic astrology services by ASTRO SIVAM. Get comprehensive Birth Jathagam, 10-Poruthams Marriage Matching, Sacred Baby Naming, and a 6-Month Subha Muhurtham Auspicious Date Calendar with instant digital delivery."
+        title="ASTRO SIVAM - Vedic Astrology Services"
+        description="Explore Birth Jathagam, 10-Poruthams marriage matching, baby naming, and Subha Muhurtham date reports with ASTRO SIVAM. Order your Vedic astrology report."
         canonical="https://astrosivam.com/services"
       />
 

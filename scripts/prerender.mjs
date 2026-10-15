@@ -616,10 +616,8 @@ function assembleDocument(baseHtml, route, headTags, bodyHtml, manifest) {
   html = html.replace(/^[ \t]*<link rel="canonical"[^>]*>[ \t]*\r?\n/gim, '');
   html = html.replace(/^[ \t]*<meta property="og:[^>]*>[ \t]*\r?\n/gim, '');
   html = html.replace(/^[ \t]*<meta name="twitter:[^>]*>[ \t]*\r?\n/gim, '');
-  if (route.path !== '/') {
-    // Site-wide keywords only make sense on the homepage document.
-    html = html.replace(/^[ \t]*<meta name="keywords"[^>]*>[ \t]*\r?\n/gim, '');
-  }
+  // Strip obsolete template keywords on every route, including the homepage.
+  html = html.replace(/^[ \t]*<meta name="keywords"[^>]*>[ \t]*\r?\n/gim, '');
 
   // Enforce the robots policy from the route table even if a page's <SEO>
   // forgot its noindex flag.

@@ -240,6 +240,56 @@ check('main.tsx removes the baked [data-prerender-seo] head tags when the SPA bo
   assert.match(main, /remove\(\)/, 'stale baked tags would survive SPA navigation without the cleanup');
 });
 
+// Follow-up audit (2026-10-15): obsolete keywords, explicit X cards, and
+// snippet budgets. Check sources even before a build, then the actual bytes.
+function metaContent(html: string, attribute: 'name' | 'property', key: string): string {
+  const tags = (html.match(/<meta\s[^>]*>/gi) ?? []).filter((tag) =>
+    tag.includes(`${attribute}="${key}"`),
+  );
+  assert.equal(tags.length, 1, `expected exactly one ${key} meta`);
+  const content = tags[0].match(/\bcontent="([^"]*)"/);
+  assert.ok(content, `${key} must have content`);
+  return content[1];
+}
+
+function checkSocialMetadata(head: string, title: string) {
+  assert.doesNotMatch(head, /<meta\s[^>]*name="(?:keywords|twitter:site)"/i);
+  assert.equal(metaContent(head, 'name', 'twitter:card'), 'summary_large_image');
+  assert.equal(metaContent(head, 'name', 'twitter:title'), title);
+  assert.equal(metaContent(head, 'property', 'og:title'), title);
+  const description = metaContent(head, 'name', 'description');
+  assert.ok(description.length > 0);
+  assert.equal(metaContent(head, 'name', 'twitter:description'), description);
+  assert.equal(metaContent(head, 'property', 'og:description'), description);
+  const image = metaContent(head, 'property', 'og:image');
+  assert.match(image, /^https:\/\//);
+  assert.equal(metaContent(head, 'name', 'twitter:image'), image);
+}
+
+check('template and shared SEO omit keywords and unverified X handle, retaining all four card tags', () => {
+  const template = read('index.html');
+  const title = template.match(/<title>([^<]+)<\/title>/)?.[1];
+  assert.ok(title);
+  checkSocialMetadata(template, title);
+  const seo = read('src/components/common/SEO.tsx');
+  assert.doesNotMatch(seo, /keywords|twitter:site/);
+  for (const key of ['card', 'title', 'description', 'image']) {
+    assert.ok(seo.includes(`name="twitter:${key}"`), `shared SEO missing twitter:${key}`);
+  }
+});
+
+check('home and services sources fit snippet budgets, with brand-first titles', () => {
+  for (const page of ['HomePage', 'ServicesPage']) {
+    const source = read(`src/pages/${page}.tsx`);
+    const seo = source.match(/<SEO\s[\s\S]*?\/>/)?.[0] ?? '';
+    const title = seo.match(/\btitle="([^"]+)"/)?.[1] ?? '';
+    const description = seo.match(/\bdescription="([^"]+)"/)?.[1] ?? '';
+    assert.match(title, /^ASTRO SIVAM - /);
+    assert.ok(title.length <= 60, `${page} title is ${title.length} chars`);
+    assert.ok(description.length > 0 && description.length <= 160, `${page} description is ${description.length} chars`);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Built-output guarantees (run when dist/ exists — after `npm run build`).
 // ---------------------------------------------------------------------------
@@ -282,12 +332,22 @@ check('every route shipped its document in the approved location with unique tit
     // SVG chart fragments legitimately contain their own <title> children —
     // mask them before counting document-level head tags (prerender.mjs does
     // the same when it splits head from body).
-    const unmasked = html.replace(/<svg[\s\S]*?<\/svg>/gi, (m) => m.replace(/<title[\s\S]*?<\/title>/gi, ''));
+    // Comments discuss <title>/<meta> too; they are not document tags.
+    const unmasked = html.replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<svg[\s\S]*?<\/svg>/gi, (m) => m.replace(/<title[\s\S]*?<\/title>/gi, ''));
 
     const titleMatches = unmasked.match(/<title[^>]*>([\s\S]*?)<\/title>/gi) ?? [];
     assert.equal(titleMatches.length, 1, `dist/${relativeFile} must contain exactly one <title>, found ${titleMatches.length}`);
     const titleText = titleMatches[0].replace(/^<title[^>]*>/i, '').replace(/<\/title>$/i, '');
     assert.ok(titleText.length > 10, `dist/${relativeFile} title is too short: ${JSON.stringify(titleText)}`);
+    const head = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? '';
+    checkSocialMetadata(head, titleText);
+    if (route.path === '/' || route.path === '/services') {
+      assert.match(titleText, /^ASTRO SIVAM - /);
+      assert.ok(titleText.length <= 60, `${route.path} title exceeds 60 chars`);
+      assert.ok(metaContent(head, 'name', 'description').length <= 160, `${route.path} description exceeds 160 chars`);
+    }
+
     assert.ok(!titles.has(titleText), `duplicate title ${JSON.stringify(titleText)} on ${titles.get(titleText)} and ${route.file}`);
     titles.set(titleText, route.file);
 
