@@ -24,6 +24,12 @@
  * Google currently limits FAQ rich results to a few authoritative sites and
  * shows no stars for an organisation's reviews of itself; the markup is kept
  * valid and truthful rather than tuned for rich results.
+ *
+ * Extended by the index-coverage audit (2026-10-16): the four service pages
+ * ship their OWN service-specific FAQPage (src/data/serviceFaqs.ts, rendered
+ * by components/common/ServiceFaqSection) and every indexable page ships a
+ * BreadcrumbList (buildBreadcrumbJsonLd) — both guarded at build time by
+ * homepageStructuredDataProblems / breadcrumbProblems in scripts/prerender.mjs.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -39,6 +45,7 @@ import { mergeReviews, summarizeRatings } from '../src/services/reviews';
 import {
   SCHEMA_IDS,
   SERVICE_SCHEMA,
+  buildBreadcrumbJsonLd,
   buildFaqPageJsonLd,
   buildReviewsJsonLd,
   buildWebPageJsonLd,
@@ -95,6 +102,85 @@ check('the homepage renders the FAQ and its JSON-LD from one array (no second co
   const section = read('src/components/common/TestimonialsSection.tsx');
   assert.match(section, /buildReviewsJsonLd\(reviews, summary\)/, 'review markup must be built from the reviews on screen');
   assert.match(section, /<JsonLd data=\{structuredData\} id="reviews" \/>/);
+});
+
+check('the four service pages render their own FAQ + breadcrumb from the shared arrays', () => {
+  const servicePages: Array<{ file: string; items: string; route: string; faqUrl: string }> = [
+    { file: 'src/pages/MarriageCompatibilityPage.tsx', items: 'MARRIAGE_COMPATIBILITY_FAQ_ITEMS', route: 'marriage-compatibility', faqUrl: 'https://astrosivam.com/marriage-compatibility' },
+    { file: 'src/pages/BabyNamingPage.tsx', items: 'BABY_NAMING_FAQ_ITEMS', route: 'baby-naming', faqUrl: 'https://astrosivam.com/baby-naming' },
+    { file: 'src/pages/BirthJathagamPage.tsx', items: 'BIRTH_JATHAGAM_FAQ_ITEMS', route: 'birth-jathagam', faqUrl: 'https://astrosivam.com/birth-jathagam' },
+    { file: 'src/pages/MuhurthamPage.tsx', items: 'MUHURTHAM_FAQ_ITEMS', route: 'muhurtham', faqUrl: 'https://astrosivam.com/muhurtham' }
+  ];
+  for (const page of servicePages) {
+    const src = read(page.file);
+    assert.match(src, new RegExp(`import \\{ ${page.items} \\} from '\\.\\.\\/data\\/serviceFaqs';`), `${page.file} must import its FAQ items from the shared data file`);
+    assert.match(src, new RegExp(`items=\\{${page.items}\\}`), `${page.file} must render its FAQ items`);
+    assert.match(src, new RegExp(`canonicalUrl="${page.faqUrl}"`), `${page.file} must name its canonical in the FAQ section`);
+    assert.match(src, /<JsonLd\s+id="breadcrumb"/, `${page.file} must render its BreadcrumbList`);
+  }
+});
+
+check('buildFaqPageJsonLd names the page it describes (homepage keeps its historical @id)', () => {
+  const home = buildFaqPageJsonLd(HOME_FAQ_ITEMS);
+  assert.equal(home['@id'], SCHEMA_IDS.faq);
+  assert.equal(home.url, 'https://astrosivam.com/');
+  const service = buildFaqPageJsonLd(HOME_FAQ_ITEMS, 'https://astrosivam.com/muhurtham');
+  assert.equal(service['@id'], 'https://astrosivam.com/muhurtham#faq');
+  assert.equal(service.url, 'https://astrosivam.com/muhurtham');
+});
+
+check('buildBreadcrumbJsonLd emits a BreadcrumbList with sequential positions', () => {
+  const data = buildBreadcrumbJsonLd([
+    { name: 'Home', url: 'https://astrosivam.com/' },
+    { name: 'Services', url: 'https://astrosivam.com/services' },
+    { name: 'Subha Muhurtham', url: 'https://astrosivam.com/muhurtham' }
+  ]) as { '@type': string; itemListElement: Array<Record<string, unknown>> };
+  assert.equal(data['@type'], 'BreadcrumbList');
+  assert.deepEqual(data.itemListElement.map((entry) => entry.position), [1, 2, 3]);
+  assert.equal(data.itemListElement[2].item, 'https://astrosivam.com/muhurtham');
+});
+
+check('the FAQ guard fails the build on a wrong canonical, an invisible answer or a missing page FAQ', () => {
+  const items = HOME_FAQ_ITEMS.slice(0, 3);
+  const visible = items.map((item) => `<details><summary>${item.question}</summary><p>${item.answer}</p></details>`).join('');
+  const faqBlock = (url: string, extra = '') => `<script type="application/ld+json" data-schema="faq">${serializeJsonLd({
+    '@context': 'https://schema.org', '@type': 'FAQPage', '@id': `${url}#faq`, url,
+    inLanguage: 'en', isPartOf: { '@id': SCHEMA_IDS.webapp },
+    mainEntity: items.map((item) => ({ '@type': 'Question', name: item.question, acceptedAnswer: { '@type': 'Answer', text: item.answer } }))
+  })}${extra}</script>`;
+
+  const route = { path: '/muhurtham' };
+  // A service page with no FAQ at all.
+  assert.match(prerender.homepageStructuredDataProblems(route, visible).join(), /missing its FAQPage/);
+  // A FAQ that names the wrong page.
+  const wrongUrl = visible + faqBlock('https://astrosivam.com/baby-naming');
+  assert.match(prerender.homepageStructuredDataProblems(route, wrongUrl).join(), /must be the page's canonical https:\/\/astrosivam\.com\/muhurtham/);
+  // A correct FAQ whose answer is not visible on the page.
+  const hiddenAnswer = faqBlock('https://astrosivam.com/muhurtham');
+  assert.match(prerender.homepageStructuredDataProblems(route, hiddenAnswer).join(), /FAQ answer not visible/);
+  // A page that is not an FAQ route must not carry any FAQPage.
+  assert.match(prerender.homepageStructuredDataProblems({ path: '/about' }, visible + faqBlock('https://astrosivam.com/about')).join(), /belongs to the homepage or a service page only/);
+  // The homepage keeps its stricter rule (5+ questions).
+  assert.match(prerender.homepageStructuredDataProblems({ path: '/' }, visible + faqBlock('https://astrosivam.com/')).join(), /5\+ questions/);
+});
+
+check('the breadcrumb guard fails the build on a missing, duplicated or mis-aimed list', () => {
+  const crumb = (last: string) => `<script type="application/ld+json" data-schema="breadcrumb">${serializeJsonLd({
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://astrosivam.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Services', item: 'https://astrosivam.com/services' },
+      { '@type': 'ListItem', position: 3, name: 'Page', item: last }
+    ]
+  })}</script>`;
+
+  const route = { path: '/contact' };
+  assert.match(prerender.breadcrumbProblems(route, '<div></div>').join(), /expected exactly one BreadcrumbList/);
+  assert.match(prerender.breadcrumbProblems(route, crumb('https://astrosivam.com/terms')).join(), /must be the canonical https:\/\/astrosivam\.com\/contact/);
+  assert.match(prerender.breadcrumbProblems(route, crumb('https://astrosivam.com/contact') + crumb('https://astrosivam.com/contact')).join(), /expected exactly one BreadcrumbList/);
+  assert.match(prerender.breadcrumbProblems({ path: '/' }, crumb('https://astrosivam.com/')).join(), /breadcrumb root/);
+  assert.match(prerender.breadcrumbProblems({ path: '/login', noindex: true }, crumb('https://astrosivam.com/login')).join(), /noindex document must not carry BreadcrumbList/);
+  assert.deepEqual(prerender.breadcrumbProblems(route, crumb('https://astrosivam.com/contact')), []);
 });
 
 check('each review carries author, date, body, rating and the service it reviews (with its page)', () => {
@@ -246,10 +332,30 @@ if (!fs.existsSync(path.join(distDir, 'index.html'))) {
     assert.deepEqual(blocks.map((block) => block.schema).sort(), ['faq', 'reviews', 'webpage']);
   });
 
-  check('no other shipped document carries the homepage FAQPage / Review markup', () => {
-    for (const route of ROUTES.filter((entry) => entry.path !== '/')) {
-      const html = fs.readFileSync(path.join(distDir, 'pages', route.file), 'utf8');
-      assert.doesNotMatch(html, /data-schema="(faq|reviews)"/, `${route.path} carries homepage-only JSON-LD`);
+  check('only the FAQ routes ship a FAQPage; Review markup stays homepage-only; service FAQs name their own page', () => {
+    const faqRoutes = new Set(prerender.FAQ_ROUTES);
+    for (const route of ROUTES) {
+      const html = fs.readFileSync(route.path === '/' ? path.join(distDir, 'index.html') : path.join(distDir, 'pages', route.file), 'utf8');
+      const body = html.slice(html.indexOf('<div id="root">'));
+      const blocks = prerender.pageJsonLdBlocks(body);
+      const faqBlocks = blocks.filter((block) => block.schema === 'faq');
+      const reviewBlocks = blocks.filter((block) => block.schema === 'reviews');
+      assert.equal(reviewBlocks.length, route.path === '/' ? 1 : 0, `${route.path}: Review markup is homepage-only`);
+      assert.equal(faqBlocks.length, faqRoutes.has(route.path) ? 1 : 0, `${route.path}: expected ${faqRoutes.has(route.path) ? 'one' : 'no'} FAQPage`);
+      if (faqBlocks.length === 1 && route.path !== '/') {
+        const canonical = `https://astrosivam.com${route.path}`;
+        assert.equal(faqBlocks[0].data.url, canonical, `${route.path}: FAQPage must name its own page`);
+        assert.equal(faqBlocks[0].data['@id'], `${canonical}#faq`);
+      }
+      assert.deepEqual(prerender.homepageStructuredDataProblems(route, body), [], `${route.path}: ${prerender.homepageStructuredDataProblems(route, body).join('; ')}`);
+    }
+  });
+
+  check('every shipped indexable page carries one BreadcrumbList; noindex pages and the homepage carry none', () => {
+    for (const route of ROUTES) {
+      const html = fs.readFileSync(route.path === '/' ? path.join(distDir, 'index.html') : path.join(distDir, 'pages', route.file), 'utf8');
+      const body = html.slice(html.indexOf('<div id="root">'));
+      assert.deepEqual(prerender.breadcrumbProblems(route, body), [], `${route.path}: ${prerender.breadcrumbProblems(route, body).join('; ')}`);
     }
   });
 

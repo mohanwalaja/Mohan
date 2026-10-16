@@ -2,6 +2,8 @@ import React from 'react';
 import { Sparkles, MapPin, ShieldCheck, HeartHandshake, Compass, Clock } from 'lucide-react';
 import { AstrologyTeamSection } from '../components/common/AstrologyTeamSection';
 import { SEO } from '../components/common/SEO';
+import { JsonLd } from '../components/common/JsonLd';
+import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import fullLogoImg from '../assets/astrosivam_full_logo.png';
 
 interface AboutPageProps {
@@ -16,7 +18,15 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
         description="Learn about ASTRO SIVAM's mission to deliver uncompromisingly authentic Vedic astrology calculations, high-precision algorithms, and spiritual wisdom worldwide."
         canonical="https://astrosivam.com/about"
       />
-      
+      {/* Breadcrumb for crawlers (index-coverage audit 2026-10-16): Home → this page. */}
+      <JsonLd
+        id="breadcrumb"
+        data={buildBreadcrumbJsonLd([
+          { name: 'Home', url: 'https://astrosivam.com/' },
+          { name: 'About Us', url: 'https://astrosivam.com/about' }
+        ])}
+      />
+
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <div className="w-full max-w-md mx-auto p-3 flex items-center justify-center">

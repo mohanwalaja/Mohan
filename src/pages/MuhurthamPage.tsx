@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, Check, CheckCircle2, Eye, FileText, Mail, MapPin, ShieldCheck, Users, ShoppingCart, ShoppingBag } from 'lucide-react';
 import { SEO } from '../components/common/SEO';
+import { JsonLd } from '../components/common/JsonLd';
+import { ServiceFaqSection } from '../components/common/ServiceFaqSection';
+import { RelatedReports } from '../components/common/RelatedReports';
+import { MUHURTHAM_FAQ_ITEMS } from '../data/serviceFaqs';
+import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { PersonNameField } from '../components/common/PersonNameField';
 import { ServicePageHeader } from '../components/common/ServicePageHeader';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
@@ -566,9 +571,18 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
   return (
     <div className="service-page">
       <SEO
-        title="Subha Muhurtham Report | ASTRO SIVAM"
-        description="Request your personalized Subha Muhurtham dates. Complete one form, make payment, and receive the approved PDF report by email."
+        title="Subha Muhurtham (Auspicious Dates) Report Online | ASTRO SIVAM"
+        description="Select auspicious ceremony dates: a six-month Subha Muhurtham report for 18 Vedic ceremonies — Wedding, Griha Pravesam, Business Start and more — with Nalla Neram windows, in English, Tamil or Hindi."
         canonical="https://astrosivam.com/muhurtham"
+      />
+      {/* Breadcrumb for crawlers (index-coverage audit 2026-10-16): Home → Services → this page. */}
+      <JsonLd
+        id="breadcrumb"
+        data={buildBreadcrumbJsonLd([
+          { name: 'Home', url: 'https://astrosivam.com/' },
+          { name: 'Services', url: 'https://astrosivam.com/services' },
+          { name: 'Subha Muhurtham (Auspicious Dates)', url: 'https://astrosivam.com/muhurtham' }
+        ])}
       />
       <ServicePageHeader
         icon={CalendarDays}
@@ -929,6 +943,24 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
           </section>
         </div>
       </div>
+
+      {/* Cross-links to the other reports — keyword-anchored internal links (index-coverage audit 2026-10-16). */}
+      <RelatedReports
+        onNavigate={onNavigate}
+        links={[
+          { route: 'marriage-compatibility', label: '10 Porutham marriage compatibility' },
+          { route: 'birth-jathagam', label: 'Birth Jathagam (Janma Kundali)' },
+          { route: 'baby-naming', label: 'Baby naming by nakshatra (Namakaran)' }
+        ]}
+      />
+
+      {/* Service FAQ — visible answers + this page's FAQPage JSON-LD (index-coverage audit 2026-10-16). */}
+      <ServiceFaqSection
+        items={MUHURTHAM_FAQ_ITEMS}
+        canonicalUrl="https://astrosivam.com/muhurtham"
+        heading="Subha Muhurtham — questions, answered"
+        intro="Which ceremonies are covered, how the six-month date matrix is built, and delivery."
+      />
 
       <AuthModal
         isOpen={showAuthModal}

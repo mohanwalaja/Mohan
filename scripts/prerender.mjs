@@ -104,7 +104,7 @@ export const ROUTES = [
     routeKey: 'birth-jathagam',
     module: '/src/pages/BirthJathagamPage.tsx',
     component: 'BirthJathagamPage',
-    lastmod: '2026-10-14',
+    lastmod: '2026-10-16',
     changefreq: 'weekly',
     priority: '0.9',
   },
@@ -114,7 +114,7 @@ export const ROUTES = [
     routeKey: 'marriage-compatibility',
     module: '/src/pages/MarriageCompatibilityPage.tsx',
     component: 'MarriageCompatibilityPage',
-    lastmod: '2026-10-14',
+    lastmod: '2026-10-16',
     changefreq: 'weekly',
     priority: '0.9',
   },
@@ -124,7 +124,7 @@ export const ROUTES = [
     routeKey: 'baby-naming',
     module: '/src/pages/BabyNamingPage.tsx',
     component: 'BabyNamingPage',
-    lastmod: '2026-10-14',
+    lastmod: '2026-10-16',
     changefreq: 'weekly',
     priority: '0.9',
   },
@@ -134,7 +134,7 @@ export const ROUTES = [
     routeKey: 'muhurtham',
     module: '/src/pages/MuhurthamPage.tsx',
     component: 'MuhurthamPage',
-    lastmod: '2026-10-14',
+    lastmod: '2026-10-16',
     changefreq: 'weekly',
     priority: '0.9',
   },
@@ -493,9 +493,19 @@ export function pageJsonLdBlocks(bodyHtml) {
 }
 
 /**
- * Finding 2: the homepage ships FAQPage + Review/AggregateRating JSON-LD that
- * describes ONLY what the page displays; no other document carries them (the
- * FAQ and the reviews are homepage content).
+ * The routes that ship their own FAQ section: the homepage (its order/
+ * delivery FAQ) and the four service pages, whose FAQ answers the money
+ * queries ("10 porutham online", "baby naming by nakshatra", …). Every other
+ * route must carry no FAQPage at all.
+ */
+export const FAQ_ROUTES = ['/', '/marriage-compatibility', '/baby-naming', '/birth-jathagam', '/muhurtham'];
+
+/**
+ * Finding 2 (extended by the index-coverage audit 2026-10-16): every FAQ page
+ * ships a FAQPage that describes ONLY what that page displays — the homepage's
+ * five order FAQs plus each service page's own service-specific FAQ (rendered
+ * by components/common/ServiceFaqSection from src/data/serviceFaqs.ts). The
+ * Review/AggregateRating markup stays homepage-only.
  */
 export function homepageStructuredDataProblems(route, bodyHtml) {
   const problems = [];
@@ -506,20 +516,32 @@ export function homepageStructuredDataProblems(route, bodyHtml) {
   }
   const faq = blocks.find((b) => b.schema === 'faq')?.data;
   const reviews = blocks.find((b) => b.schema === 'reviews')?.data;
-  if (route.path !== '/') {
-    if (faq || reviews) problems.push('FAQPage / Review JSON-LD belongs to the homepage only');
+  const isHome = route.path === '/';
+  const isFaqRoute = FAQ_ROUTES.includes(route.path);
+  if (!isFaqRoute) {
+    if (faq) problems.push(`FAQPage JSON-LD belongs to the homepage or a service page only`);
+    if (reviews) problems.push('Review JSON-LD belongs to the homepage only');
     return problems;
   }
   const text = readableText(bodyHtml);
-  if (!faq || faq['@type'] !== 'FAQPage' || !Array.isArray(faq.mainEntity) || faq.mainEntity.length < 5) {
-    problems.push('the homepage is missing its FAQPage JSON-LD (5+ questions)');
+  const minQuestions = isHome ? 5 : 3;
+  if (!faq || faq['@type'] !== 'FAQPage' || !Array.isArray(faq.mainEntity) || faq.mainEntity.length < minQuestions) {
+    problems.push(isHome
+      ? 'the homepage is missing its FAQPage JSON-LD (5+ questions)'
+      : `${route.path} is missing its FAQPage JSON-LD (${minQuestions}+ questions)`);
   } else {
+    const canonical = route.path === '/' ? `${ORIGIN}/` : `${ORIGIN}${route.path}`;
+    if (faq.url !== canonical) problems.push(`FAQPage url must be the page's canonical ${canonical}, got ${faq.url}`);
+    if (faq['@id'] !== `${canonical}#faq`) problems.push(`FAQPage @id must be ${canonical}#faq, got ${faq['@id']}`);
     for (const q of faq.mainEntity) {
       if (q['@type'] !== 'Question' || q.acceptedAnswer?.['@type'] !== 'Answer') problems.push('FAQPage entries must be Question + acceptedAnswer');
       if (!text.includes(q.name)) problems.push(`FAQ question not visible on the page: ${q.name}`);
       if (!text.includes(q.acceptedAnswer?.text ?? '\u0000')) problems.push(`FAQ answer not visible on the page: ${q.name}`);
     }
   }
+  // Review / AggregateRating markup stays homepage-only (the reviews section
+  // is homepage content); service pages render no review markup at all.
+  if (!isHome) return problems;
   const graph = Array.isArray(reviews?.['@graph']) ? reviews['@graph'] : [];
   const reviewNodes = graph.filter((n) => n['@type'] === 'Review');
   const rating = graph.find((n) => n.aggregateRating)?.aggregateRating;
@@ -536,6 +558,47 @@ export function homepageStructuredDataProblems(route, bodyHtml) {
     problems.push('the homepage AggregateRating is missing or inconsistent with its reviews');
   } else if (!text.includes(`${Number(rating.ratingValue).toFixed(1)} out of 5`)) {
     problems.push('the AggregateRating value is not visible on the page');
+  }
+  return problems;
+}
+
+/**
+ * Every indexable page (except the homepage, which is the breadcrumb root)
+ * describes its place in the site with exactly one BreadcrumbList rendered in
+ * the page tree: Home → … → this page, the last item naming the page's
+ * canonical. This gives Google an explicit site structure instead of relying
+ * only on the header/footer link graph (index-coverage audit 2026-10-16).
+ */
+export function breadcrumbProblems(route, bodyHtml) {
+  const problems = [];
+  const blocks = pageJsonLdBlocks(bodyHtml).filter((block) => block.schema === 'breadcrumb');
+  if (route.noindex) {
+    if (blocks.length > 0) problems.push('a noindex document must not carry BreadcrumbList JSON-LD');
+    return problems;
+  }
+  if (route.path === '/') {
+    if (blocks.length > 0) problems.push('the homepage is the breadcrumb root and carries no BreadcrumbList');
+    return problems;
+  }
+  if (blocks.length !== 1) {
+    problems.push(`expected exactly one BreadcrumbList (rendered by the page), found ${blocks.length}`);
+    return problems;
+  }
+  const data = blocks[0].data;
+  if (!data || data['@type'] !== 'BreadcrumbList' || !Array.isArray(data.itemListElement) || data.itemListElement.length < 2) {
+    problems.push('the BreadcrumbList must have an @type and at least the homepage + this page');
+    return problems;
+  }
+  const items = data.itemListElement;
+  if (!items[0].name || items[0].item !== `${ORIGIN}/`) {
+    problems.push(`the first breadcrumb must be the homepage (${ORIGIN}/)`);
+  }
+  const canonical = `${ORIGIN}${route.path}`;
+  const last = items[items.length - 1];
+  if (!last.name) problems.push('the last breadcrumb must be named after the page');
+  if (last.item !== canonical) problems.push(`the last breadcrumb must be the canonical ${canonical}, got ${last.item}`);
+  for (let i = 0; i < items.length; i += 1) {
+    if (items[i].position !== i + 1) problems.push(`breadcrumb positions must run 1..${items.length} in order`);
   }
   return problems;
 }
@@ -923,11 +986,13 @@ async function main() {
       const mappedHead = mapAssetUrls(headTags.join('\n    '), manifest).split('\n    ');
 
       // SEO audit 2026-10-15: crawlable internal links (finding 1), the
-      // homepage-only FAQPage/Review JSON-LD matching visible text (finding 2)
-      // and one WebPage per indexable document, rendered in the page tree.
+      // FAQPage/Review JSON-LD matching visible text (finding 2, extended to
+      // the service-page FAQs by the index-coverage audit 2026-10-16), one
+      // WebPage per indexable document, and the BreadcrumbList structure.
       const seoProblems = [
         ...crawlableLinkProblems(bodyHtml),
         ...homepageStructuredDataProblems(route, bodyHtml),
+        ...breadcrumbProblems(route, bodyHtml),
         ...webPageStructuredDataProblems(route, bodyHtml, mappedHead),
       ];
       if (seoProblems.length > 0) {

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Mail, MapPin, Send, CheckCircle2, MessageSquare, ShieldCheck, BadgeCheck, AlertCircle, Loader2, Facebook, ExternalLink } from 'lucide-react';
 import { api } from '../services/api';
 import { SEO } from '../components/common/SEO';
+import { JsonLd } from '../components/common/JsonLd';
+import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { PersonNameField } from '../components/common/PersonNameField';
 import { ServicePageHeader } from '../components/common/ServicePageHeader';
 import { normalizePersonName } from '../utils/birthDetails';
@@ -63,7 +65,15 @@ export const ContactPage: React.FC = () => {
         description="Get in touch with ASTRO SIVAM for astrology consultations, order inquiries, and technical support. We are available 7 days a week."
         canonical="https://astrosivam.com/contact"
       />
-      
+      {/* Breadcrumb for crawlers (index-coverage audit 2026-10-16): Home → this page. */}
+      <JsonLd
+        id="breadcrumb"
+        data={buildBreadcrumbJsonLd([
+          { name: 'Home', url: 'https://astrosivam.com/' },
+          { name: 'Contact', url: 'https://astrosivam.com/contact' }
+        ])}
+      />
+
       <ServicePageHeader
         icon={MessageSquare}
         eyebrow="Direct Astrological Inquiry · Support"

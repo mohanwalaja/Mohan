@@ -58,19 +58,51 @@ export const SERVICE_SCHEMA: Readonly<Record<ReviewServiceCode, { id: string; na
 
 type JsonLdObject = Record<string, unknown>;
 
-/** FAQPage for the homepage's visible FAQ list — one Question per item, in display order. */
-export function buildFaqPageJsonLd(items: readonly FaqItem[]): JsonLdObject {
+/**
+ * FAQPage for one page's visible FAQ list — one Question per item, in display
+ * order. `url` names the page the FAQ is displayed on and therefore the
+ * entity's @id (`<page>#faq`); the homepage keeps its historical @id
+ * https://astrosivam.com/#faq as the default. The prerender guard
+ * (scripts/prerender.mjs faqStructuredDataProblems) fails the build unless
+ * every question and answer is visible in that page's HTML.
+ */
+export function buildFaqPageJsonLd(items: readonly FaqItem[], url: string = `${SITE_ORIGIN}/`): JsonLdObject {
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    '@id': SCHEMA_IDS.faq,
-    url: `${SITE_ORIGIN}/`,
+    '@id': `${url}#faq`,
+    url,
     inLanguage: 'en',
     isPartOf: { '@id': SCHEMA_IDS.webapp },
     mainEntity: items.map((item) => ({
       '@type': 'Question',
       name: item.question,
       acceptedAnswer: { '@type': 'Answer', text: item.answer },
+    })),
+  };
+}
+
+export interface BreadcrumbEntry {
+  name: string;
+  url: string;
+}
+
+/**
+ * BreadcrumbList for one indexable page, rendered inside the page tree by the
+ * page itself (index-coverage audit 2026-10-16). Items run from the homepage
+ * to the page itself; the prerender guard (breadcrumbProblems) fails the build
+ * unless the first item is the homepage and the last item's URL is the page's
+ * canonical. The homepage is the breadcrumb root and renders none.
+ */
+export function buildBreadcrumbJsonLd(items: readonly BreadcrumbEntry[]): JsonLdObject {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
     })),
   };
 }

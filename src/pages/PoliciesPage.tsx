@@ -2,6 +2,8 @@ import React from 'react';
 import { ShieldCheck, FileText, CreditCard, RotateCcw } from 'lucide-react';
 import { SEO } from '../components/common/SEO';
 import { RouteLink } from '../components/common/RouteLink';
+import { JsonLd } from '../components/common/JsonLd';
+import { buildBreadcrumbJsonLd } from '../services/structuredData';
 
 interface PoliciesProps {
   type: 'privacy' | 'terms' | 'payment' | 'refund';
@@ -41,7 +43,15 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
         description={meta.description}
         canonical={meta.canonical}
       />
-      
+      {/* Breadcrumb for crawlers (index-coverage audit 2026-10-16): Home → this page. */}
+      <JsonLd
+        id="breadcrumb"
+        data={buildBreadcrumbJsonLd([
+          { name: 'Home', url: 'https://astrosivam.com/' },
+          { name: meta.title.replace(/ \| ASTRO SIVAM$/, ''), url: meta.canonical }
+        ])}
+      />
+
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
         <RouteLink

@@ -44,6 +44,11 @@ import { MAX_FAMILY_ORDER_ITEMS, hasFamilyOrderCapacity } from '../services/fami
 import { AppLanguage } from '../types';
 import { SEO } from '../components/common/SEO';
 import { RouteLink } from '../components/common/RouteLink';
+import { JsonLd } from '../components/common/JsonLd';
+import { ServiceFaqSection } from '../components/common/ServiceFaqSection';
+import { RelatedReports } from '../components/common/RelatedReports';
+import { BABY_NAMING_FAQ_ITEMS } from '../data/serviceFaqs';
+import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
   isValidBirthTime,
@@ -264,10 +269,19 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
     <div className="service-page">
       <SEO
         title="Sacred Baby Naming (Namakaran / Peyar Sooduthal) by Nakshatra | ASTRO SIVAM"
-        description="Find auspicious newborn baby naming syllables and astrological coordinates based on Janma Nakshatra Pada with ASTRO SIVAM."
+        description="Baby naming by nakshatra (Namakaran / Peyar Sooduthal): Janma Nakshatra pada syllables, curated names and an official naming certificate PDF in English, Tamil or Hindi."
         canonical="https://astrosivam.com/baby-naming"
       />
-      
+      {/* Breadcrumb for crawlers (index-coverage audit 2026-10-16): Home → Services → this page. */}
+      <JsonLd
+        id="breadcrumb"
+        data={buildBreadcrumbJsonLd([
+          { name: 'Home', url: 'https://astrosivam.com/' },
+          { name: 'Services', url: 'https://astrosivam.com/services' },
+          { name: 'Baby Naming by Nakshatra (Namakaran)', url: 'https://astrosivam.com/baby-naming' }
+        ])}
+      />
+
       <ServicePageHeader
         icon={Baby}
         eyebrow="Vedic Namakaran · Sacred Baby Naming"
@@ -617,6 +631,24 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
         </div>
 
       </div>
+
+      {/* Cross-links to the other reports — keyword-anchored internal links (index-coverage audit 2026-10-16). */}
+      <RelatedReports
+        onNavigate={onNavigate}
+        links={[
+          { route: 'birth-jathagam', label: 'Birth Jathagam (Janma Kundali) for the baby' },
+          { route: 'muhurtham', label: 'Subha Muhurtham for the Namakaranam ceremony' },
+          { route: 'marriage-compatibility', label: '10 Porutham marriage compatibility' }
+        ]}
+      />
+
+      {/* Service FAQ — visible answers + this page's FAQPage JSON-LD (index-coverage audit 2026-10-16). */}
+      <ServiceFaqSection
+        items={BABY_NAMING_FAQ_ITEMS}
+        canonicalUrl="https://astrosivam.com/baby-naming"
+        heading="Baby naming by nakshatra — questions, answered"
+        intro="How the janma nakshatra fixes the naming syllables, what the report contains, and delivery."
+      />
 
       {/* Instant User Auth Modal */}
       <AuthModal
