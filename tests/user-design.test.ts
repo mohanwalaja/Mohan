@@ -17,3 +17,7 @@ for (const name of ['paypal', 'google_pay', 'visa', 'master', 'american_express'
   assert.ok(existsSync(`public/assets/payments/${name}.svg`));
 }
 console.log('User design contracts passed: two choices, server persistence, admin exclusion, no local preview override, and local payment artwork.');
+
+assert.doesNotMatch(read('src/components/layout/Footer.tsx'), /payment-text-badges/);
+assert.match(css, /\.payment-brand-logos \{ display:flex;/);
+assert.doesNotMatch(css, /\[data-user-design\] \.payment-brand-logos/);

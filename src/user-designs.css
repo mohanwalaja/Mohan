@@ -90,12 +90,10 @@
 [data-user-design] .hiw-player p { color:#c5b9aa; }
 
 /* Brand artwork stays unfiltered, on neutral backgrounds for legibility. */
-.payment-brand-logos { display:none; }
-[data-user-design] .payment-text-badges { display:none; }
-[data-user-design] .payment-brand-logos { display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px; }
-[data-user-design] .payment-brand-logos__item { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3px 5px; min-height:34px; background:#fff; border:1px solid var(--line); border-radius:8px; }
-[data-user-design] .payment-brand-logos img { display:block; width:44px; height:28px; object-fit:contain; }
-[data-user-design] .payment-brand-logos small { color:var(--muted); font-size:8px; line-height:11px; }
+.payment-brand-logos { display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px; }
+.payment-brand-logos__item { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3px 5px; min-height:34px; background:#fff; border:1px solid var(--line,#e2e8f0); border-radius:8px; }
+.payment-brand-logos img { display:block; width:44px; height:28px; object-fit:contain; }
+.payment-brand-logos small { color:#6e6052; font-size:8px; line-height:11px; }
 
 /* Remove the accidental white block behind the introduction. `header` also
    matches this page's semantic intro header, not just the site navbar. */
