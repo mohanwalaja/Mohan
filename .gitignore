@@ -12,6 +12,11 @@ muhurtham_preview_p2_month.png
 .env*
 !.env.example
 dist/
+# The daylight (light UI) preview builds into its own folder — it is a separate
+# front-end preview, never part of the deployed dist.zip.
+light/dist/
+light/node_modules/
+
 # Scratch build outputs (e.g. `vite build --outDir dist-scratch`): Tailwind v4's
 # automatic content scanner and tests/retired-branding-guard read every
 # non-ignored directory, so a stray build tree silently changes the generated

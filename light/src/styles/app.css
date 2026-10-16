@@ -1,0 +1,586 @@
+/* ============================================================================
+   ASTRO SIVAM — "Daylight" light UI design system
+   ----------------------------------------------------------------------------
+   A brand-new visual language: paper-ivory surfaces, hairline gold rules,
+   soft sunrise glows and a serif display face — light-only, deliberately the
+   opposite of the cosmic dark theme that is still live today.
+
+   Everything is a token. Three light palettes ship (Sunrise Ivory, Monsoon
+   Mist, Lotus Blush) and the visitor can switch between them live from the
+   palette dock; because every class below reads the tokens, a palette swap
+   repaints the whole UI without a single conditional in the components.
+   ========================================================================= */
+@import 'tailwindcss';
+@source '../';
+
+/* Fraunces — self-hosted variable display face (SIL OFL 1.1, licence shipped
+   beside the files). Latin + Latin-ext, upright + italic, weight axis only. */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/fraunces-latin-wght-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Fraunces';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/fraunces-latin-wght-italic.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/fraunces-latin-ext-wght-normal.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Fraunces';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/fraunces-latin-ext-wght-italic.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Plus Jakarta Sans — the body face. Already self-hosted by the repository
+   (/assets/fonts/*), served here from the same public/ folder. */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/assets/fonts/plus-jakarta-sans-latin-wght-normal-153fc85b.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/assets/fonts/plus-jakarta-sans-latin-ext-wght-normal-38e3b8fd.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ---------------------------------------------------------------- palettes */
+:root,
+[data-palette='sunrise'] {
+  --c-page: #fffbf3;
+  --c-page-soft: #fdf5e7;
+  --c-page-deep: #f9edd9;
+  --c-surface: #ffffff;
+  --c-surface-2: #fffdf8;
+  --c-ink: #1e2438;
+  --c-ink-soft: #4a5169;
+  --c-muted: #6b7288;
+  --c-faint: #949aad;
+  --c-line: #ece3d2;
+  --c-line-strong: #ddd0b6;
+  --c-brand: #d99a2b;
+  --c-brand-deep: #9a6a15;
+  --c-brand-ink: #7a5310;
+  --c-brand-soft: #fdf1d8;
+  --c-brand-tint: #fbe7bd;
+  --c-accent: #0e7c7b;
+  --c-accent-soft: #e2f2f1;
+  --c-rose: #9e2b4a;
+  --c-rose-soft: #fbe9ee;
+  --c-leaf: #2f7d4f;
+  --c-leaf-soft: #e8f5ec;
+  --c-glow-a: rgba(217, 154, 43, 0.22);
+  --c-glow-b: rgba(14, 124, 123, 0.14);
+  --c-glow-c: rgba(158, 43, 74, 0.1);
+  --shadow-card: 0 1px 2px rgba(30, 36, 56, 0.04), 0 10px 30px -18px rgba(30, 36, 56, 0.22);
+  --shadow-lift: 0 2px 4px rgba(30, 36, 56, 0.05), 0 26px 50px -26px rgba(30, 36, 56, 0.28);
+  --shadow-pop: 0 18px 50px -20px rgba(30, 36, 56, 0.32);
+}
+
+[data-palette='mist'] {
+  --c-page: #f6fafb;
+  --c-page-soft: #ecf5f7;
+  --c-page-deep: #e1eff3;
+  --c-surface: #ffffff;
+  --c-surface-2: #fbfdfe;
+  --c-ink: #12252c;
+  --c-ink-soft: #3d545d;
+  --c-muted: #5b7280;
+  --c-faint: #8fa2ac;
+  --c-line: #dde9ed;
+  --c-line-strong: #c6dbe2;
+  --c-brand: #0e7490;
+  --c-brand-deep: #0b5a70;
+  --c-brand-ink: #08495b;
+  --c-brand-soft: #e2f1f6;
+  --c-brand-tint: #c9e6ef;
+  --c-accent: #c2831b;
+  --c-accent-soft: #fbf1de;
+  --c-rose: #b03060;
+  --c-rose-soft: #fbe9ef;
+  --c-leaf: #217a58;
+  --c-leaf-soft: #e6f4ee;
+  --c-glow-a: rgba(14, 116, 144, 0.2);
+  --c-glow-b: rgba(194, 131, 27, 0.16);
+  --c-glow-c: rgba(176, 48, 96, 0.1);
+}
+
+[data-palette='lotus'] {
+  --c-page: #fff7fa;
+  --c-page-soft: #fdeef4;
+  --c-page-deep: #fbe3ec;
+  --c-surface: #ffffff;
+  --c-surface-2: #fffcfe;
+  --c-ink: #2a1721;
+  --c-ink-soft: #573d49;
+  --c-muted: #74596a;
+  --c-faint: #a08b98;
+  --c-line: #f1dce5;
+  --c-line-strong: #e6c6d4;
+  --c-brand: #c2185b;
+  --c-brand-deep: #9c1249;
+  --c-brand-ink: #7c0e3a;
+  --c-brand-soft: #fce7f0;
+  --c-brand-tint: #f8cfe0;
+  --c-accent: #6d4ac4;
+  --c-accent-soft: #efeafb;
+  --c-rose: #b03060;
+  --c-rose-soft: #fbe9ef;
+  --c-leaf: #2f7d4f;
+  --c-leaf-soft: #e8f5ec;
+  --c-glow-a: rgba(194, 24, 91, 0.16);
+  --c-glow-b: rgba(109, 74, 196, 0.14);
+  --c-glow-c: rgba(217, 154, 43, 0.14);
+}
+
+/* Tailwind utilities that follow the runtime palette. `inline` is what makes
+   bg-surface / text-ink / border-line resolve the CSS variable at use time
+   instead of freezing a copy of today's value. */
+@theme inline {
+  --color-page: var(--c-page);
+  --color-page-soft: var(--c-page-soft);
+  --color-page-deep: var(--c-page-deep);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-ink: var(--c-ink);
+  --color-ink-soft: var(--c-ink-soft);
+  --color-muted: var(--c-muted);
+  --color-faint: var(--c-faint);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-brand: var(--c-brand);
+  --color-brand-deep: var(--c-brand-deep);
+  --color-brand-ink: var(--c-brand-ink);
+  --color-brand-soft: var(--c-brand-soft);
+  --color-brand-tint: var(--c-brand-tint);
+  --color-accent: var(--c-accent);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-rose: var(--c-rose);
+  --color-rose-soft: var(--c-rose-soft);
+  --color-leaf: var(--c-leaf);
+  --color-leaf-soft: var(--c-leaf-soft);
+
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Shadow and radius tokens are plain CSS variables (declared with the
+     palettes), deliberately NOT re-declared here: a `--shadow-card:
+     var(--shadow-card)` mapping would be a self-reference. */
+  --radius-card: 1.375rem;
+}
+
+/* ------------------------------------------------------------------- base */
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--c-page);
+    color: var(--c-ink);
+    font-family: var(--font-sans);
+    overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--c-ink);
+    letter-spacing: -0.015em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-brand);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  ::selection {
+    background: var(--c-brand-tint);
+    color: var(--c-ink);
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--c-ink) !important;
+    -webkit-box-shadow: 0 0 0 1000px var(--c-surface-2) inset !important;
+    caret-color: var(--c-ink) !important;
+  }
+
+  input[type='date'],
+  input[type='time'],
+  input[type='month'] {
+    color-scheme: light;
+  }
+}
+
+/* -------------------------------------------------------------- components */
+@layer components {
+  .c-shell {
+    width: 100%;
+    max-width: 78rem;
+    margin-inline: auto;
+    padding-inline: 1.15rem;
+  }
+  @media (min-width: 640px) {
+    .c-shell {
+      padding-inline: 1.75rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .c-shell {
+      padding-inline: 2.5rem;
+    }
+  }
+
+  .c-display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variation-settings: 'SOFT' 0, 'WONK' 0;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .c-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--c-brand-ink);
+  }
+
+  .c-card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .c-card-flat {
+    background: var(--c-surface);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-card);
+  }
+
+  .c-card-tint {
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius-card);
+  }
+
+  .c-lift {
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease,
+      border-color 0.28s ease;
+  }
+  .c-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift);
+    border-color: var(--c-line-strong);
+  }
+
+  .c-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1.15rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease,
+      border-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .c-btn:active {
+    transform: scale(0.975);
+  }
+  .c-btn[disabled],
+  .c-btn[aria-disabled='true'] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .c-btn-primary {
+    background: linear-gradient(180deg, color-mix(in oklab, var(--c-brand) 88%, white), var(--c-brand));
+    color: #fff;
+    box-shadow: 0 10px 24px -12px color-mix(in oklab, var(--c-brand) 75%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .c-btn-primary:hover {
+    filter: saturate(1.06) brightness(1.03);
+    box-shadow: 0 16px 34px -14px color-mix(in oklab, var(--c-brand) 80%, transparent);
+  }
+
+  .c-btn-outline {
+    background: var(--c-surface);
+    border-color: var(--c-line-strong);
+    color: var(--c-ink);
+  }
+  .c-btn-outline:hover {
+    border-color: var(--c-brand);
+    color: var(--c-brand-ink);
+    background: var(--c-brand-soft);
+  }
+
+  .c-btn-soft {
+    background: var(--c-brand-soft);
+    border-color: color-mix(in oklab, var(--c-brand) 25%, transparent);
+    color: var(--c-brand-ink);
+  }
+  .c-btn-soft:hover {
+    background: var(--c-brand-tint);
+  }
+
+  .c-btn-ghost {
+    background: transparent;
+    color: var(--c-ink-soft);
+  }
+  .c-btn-ghost:hover {
+    background: var(--c-page-soft);
+    color: var(--c-ink);
+  }
+
+  .c-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--c-line);
+    background: var(--c-surface);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--c-ink-soft);
+  }
+
+  .c-pill-brand {
+    border-color: color-mix(in oklab, var(--c-brand) 30%, transparent);
+    background: var(--c-brand-soft);
+    color: var(--c-brand-ink);
+  }
+  .c-pill-accent {
+    border-color: color-mix(in oklab, var(--c-accent) 28%, transparent);
+    background: var(--c-accent-soft);
+    color: var(--c-accent);
+  }
+  .c-pill-leaf {
+    border-color: color-mix(in oklab, var(--c-leaf) 28%, transparent);
+    background: var(--c-leaf-soft);
+    color: var(--c-leaf);
+  }
+  .c-pill-rose {
+    border-color: color-mix(in oklab, var(--c-rose) 28%, transparent);
+    background: var(--c-rose-soft);
+    color: var(--c-rose);
+  }
+
+  .c-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--c-ink-soft);
+    margin-bottom: 0.35rem;
+  }
+
+  .c-input {
+    width: 100%;
+    min-height: 2.85rem;
+    padding: 0.6rem 0.85rem;
+    background: var(--c-surface);
+    border: 1px solid var(--c-line-strong);
+    border-radius: 0.9rem;
+    color: var(--c-ink);
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+  .c-input::placeholder {
+    color: var(--c-faint);
+  }
+  .c-input:hover {
+    border-color: color-mix(in oklab, var(--c-brand) 45%, var(--c-line-strong));
+  }
+  .c-input:focus {
+    outline: none;
+    border-color: var(--c-brand);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--c-brand) 16%, transparent);
+  }
+
+  .c-rule {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--c-brand) 45%, transparent),
+      transparent
+    );
+  }
+
+  .c-tab {
+    padding: 0.5rem 0.95rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--c-muted);
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .c-tab:hover {
+    color: var(--c-ink);
+    background: var(--c-page-soft);
+  }
+  .c-tab[data-active='true'] {
+    background: var(--c-surface);
+    border-color: var(--c-line-strong);
+    color: var(--c-ink);
+    box-shadow: var(--shadow-card);
+  }
+
+  .c-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-line-strong) transparent;
+  }
+  .c-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .c-scroll::-webkit-scrollbar-thumb {
+    background: var(--c-line-strong);
+    border-radius: 999px;
+  }
+
+  /* Kolam-inspired dot lattice — a South Indian floor-pattern memory, drawn
+     only where it never competes with text. */
+  .c-pattern {
+    background-image: radial-gradient(
+      color-mix(in oklab, var(--c-brand) 26%, transparent) 1px,
+      transparent 1.2px
+    );
+    background-size: 18px 18px;
+    background-position: 0 0;
+  }
+
+  .c-glow {
+    background: radial-gradient(120% 80% at 12% 0%, var(--c-glow-a), transparent 60%),
+      radial-gradient(90% 70% at 88% 8%, var(--c-glow-b), transparent 62%),
+      radial-gradient(120% 90% at 50% 110%, var(--c-glow-c), transparent 60%);
+  }
+
+  .c-hairline-grid {
+    background-image: linear-gradient(to right, var(--c-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--c-line) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .c-rise {
+    animation: c-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes c-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .c-blink {
+    animation: c-blink 1.3s ease-in-out infinite;
+  }
+  @keyframes c-blink {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .c-spin {
+    animation: c-spin 0.9s linear infinite;
+  }
+  @keyframes c-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .c-rise,
+  .c-blink,
+  .c-spin {
+    animation: none !important;
+  }
+  .c-lift:hover {
+    transform: none;
+  }
+}

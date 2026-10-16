@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" data-palette="sunrise">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#fffbf3" />
+    <title>ASTRO SIVAM — Vedic Astrology reports, prepared by our priest team</title>
+    <meta
+      name="description"
+      content="ASTRO SIVAM prepares Birth Jathagam, 10-Porutham Marriage Compatibility, Vedic Baby Naming and Subha Muhurtham reports with Chitra Paksha Lahiri precision — delivered as a PDF in English, Tamil or Hindi."
+    />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <!--
+      Boot-critical paint: the light surfaces are painted before the bundle
+      evaluates, so a slow first load never flashes white-then-cream.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #fffbf3;
+        color: #1e2438;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      #root {
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="max-width: 46rem; margin: 4rem auto; padding: 0 1.5rem">
+        <h1 style="font-size: 1.5rem">ASTRO SIVAM</h1>
+        <p>
+          This preview needs JavaScript. The production site at
+          <a href="https://astrosivam.com">astrosivam.com</a> is unchanged and fully available.
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

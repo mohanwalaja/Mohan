@@ -16,12 +16,30 @@ Vedic astrology platform at [astrosivam.com](https://astrosivam.com): Birth Jath
 ```
 api/          PHP API: auth, payments/webhooks, admin, reports (mPDF), astrology engine
 src/          React SPA: pages, components, astrology libs, report builders
+light/        "Daylight" light UI — a separate, preview light-first front-end (see below)
 knowledge/    AI astrologer knowledge base (mirrored in api/knowledge/)
 data/         Naming glossary / name-bank source data
 tests/        Node + PHP + Playwright suites (see below)
 scripts/      Test runner, parity harness, dist.zip packer, backup/ops scripts
 docs/         Runbooks, audits and fix records (see "Documentation" below)
 ```
+
+## Daylight light UI (preview)
+
+`light/` is a second, self-contained front-end: a light-only interface (paper
+surfaces, gold hairlines, three switchable daytime palettes and a Free Preview
+Lab that runs the real astrology engine in the browser). It is a **preview** —
+the app in `src/` is unchanged and still what the site serves.
+
+```bash
+npm run dev:light      # this light UI on :5200
+npm run build:light    # static build into light/dist/ (never part of dist.zip)
+npm run lint:light     # type-check it on its own
+```
+
+It imports the production engine, pricing rules and business data through the
+`@shared` alias, so a preview can never disagree with a delivered report. See
+[light/README.md](light/README.md).
 
 ## Quick start
 
