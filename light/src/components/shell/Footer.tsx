@@ -52,7 +52,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <button
               type="button"
               onClick={() => onNavigate('home')}
-              className="inline-flex items-center gap-3"
+              className="group inline-flex items-center gap-3"
               aria-label={`${BRAND.name} home`}
             >
               <BrandWordmark emblemAlt="" />

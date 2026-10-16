@@ -4,48 +4,47 @@ import fullLogoImg from '@shared/assets/astrosivam_full_logo.png';
 import { BRAND } from '../../appConfig';
 
 /**
- * The ASTRO SIVAM brand lock-up — the same emblem, the same name, the same
- * slogan the live navbar and footer print (BRAND_NAME / BRAND_SLOGAN are read
- * from the live BrandLockup module so the words can never drift).
+ * The ASTRO SIVAM lock-up — one line of type, copied from the live component.
  *
- * Only the *surface* changed for the light UI: on paper the wordmark is set in
- * ink and the slogan in gold, instead of the gold-gradient treatment the dark
- * theme uses. The assets are the brand's own files, untouched.
+ * Structure, type, weights, tracking and sizes are the live BrandWordmark's,
+ * class for class: emblem at the left, then the name over the slogan to its
+ * right, in the site's own serif (`Playfair Display`, the face `.display-serif`
+ * uses), font-black, uppercase, tracking-wider for the name and a small
+ * letterspaced 0.2em line for the slogan. The name and slogan strings are read
+ * from the live BrandLockup module, so the words can never drift.
+ *
+ * The only difference is the paint, because the surface is paper instead of
+ * near-black: the gold gradient is stepped down to the brand's deeper golds so
+ * it stays legible on cream (the live stops, #ffe58f → #f59e0b, are tuned for a
+ * dark background), and the logo's drop shadow becomes a soft light lift. The
+ * emblem is the brand's own PNG, unframed, exactly as the live navbar shows it.
  */
-export const BrandWordmark: React.FC<{
-  /** '' when the surrounding control already announces the name. */
+const EMBLEM_CLASS =
+  'h-11 w-11 object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_2px_8px_rgba(217,154,43,0.35)] sm:h-12 sm:w-12';
+const NAME_CLASS =
+  'c-display bg-gradient-to-r from-[#c98f1e] via-[#b8801c] to-[#8a5a10] bg-clip-text text-transparent ' +
+  'text-xl font-black uppercase leading-tight tracking-wider sm:text-2xl';
+const SLOGAN_CLASS =
+  'mt-0.5 block text-[9px] font-bold uppercase leading-none tracking-[0.2em] text-brand-ink sm:text-[10px]';
+
+interface BrandWordmarkProps {
+  /** Sizing/effects for the emblem image. Defaults to the live navbar/footer size. */
+  emblemClassName?: string;
+  /** Alt text — pass '' when the surrounding control already announces the name. */
   emblemAlt?: string;
-  className?: string;
-  size?: 'sm' | 'lg';
-}> = ({ emblemAlt = `${BRAND.name} Emblem`, className = '', size = 'sm' }) => (
+}
+
+export const BrandWordmark: React.FC<BrandWordmarkProps> = ({
+  emblemClassName = EMBLEM_CLASS,
+  emblemAlt = `${BRAND.name} Emblem`
+}) => (
   <>
-    <span
-      className={`relative flex shrink-0 items-center justify-center rounded-full border border-brand/35 bg-white ${
-        size === 'lg' ? 'h-14 w-14 sm:h-16 sm:w-16' : 'h-10 w-10 sm:h-11 sm:w-11'
-      } ${className}`}
-    >
-      <img
-        src={emblemImg}
-        alt={emblemAlt}
-        referrerPolicy="no-referrer"
-        className="h-full w-full rounded-full object-cover p-[3px]"
-      />
+    <span className="relative flex shrink-0 items-center justify-center">
+      <img src={emblemImg} alt={emblemAlt} referrerPolicy="no-referrer" className={emblemClassName} />
     </span>
-    <span className="flex min-w-0 flex-col justify-center">
-      <span
-        className={`c-display block truncate font-black uppercase leading-tight tracking-[0.06em] text-ink ${
-          size === 'lg' ? 'text-xl sm:text-2xl' : 'text-[1.02rem] sm:text-[1.15rem]'
-        }`}
-      >
-        {BRAND.name}
-      </span>
-      <span
-        className={`mt-0.5 block truncate font-bold uppercase leading-none text-brand-ink ${
-          size === 'lg' ? 'text-[0.64rem] tracking-[0.2em]' : 'text-[0.56rem] tracking-[0.16em]'
-        }`}
-      >
-        {BRAND.slogan}
-      </span>
+    <span className="flex flex-col justify-center">
+      <span className={NAME_CLASS}>{BRAND.name}</span>
+      <span className={SLOGAN_CLASS}>{BRAND.slogan}</span>
     </span>
   </>
 );
@@ -56,6 +55,6 @@ export const BrandFullLogo: React.FC<{ className?: string }> = ({ className = ''
     src={fullLogoImg}
     alt={`${BRAND.name} Official Logo`}
     referrerPolicy="no-referrer"
-    className={`h-auto w-full max-h-32 object-contain ${className}`}
+    className={`h-auto max-h-32 w-full object-contain ${className}`}
   />
 );

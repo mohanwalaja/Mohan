@@ -15,7 +15,7 @@ npm run lint:light     # type-check this app only
 
 | Area | Light UI |
 | --- | --- |
-| **Brand** | The site's own lock-up: the `astrosivam_logo.png` emblem, **ASTRO SIVAM**, *INDIAN VEDIC ASTROLOGY* — read from the live `BrandLockup` module so the words can never drift. |
+| **Brand** | The site's own lock-up, class for class: the `astrosivam_logo.png` emblem (unframed, `object-contain`, hover lift), then **ASTRO SIVAM** in the display serif at black weight with wide tracking over the small letterspaced **INDIAN VEDIC ASTROLOGY** line — the name and slogan read from the live `BrandLockup` module so the words can never drift. The gold gradient is the only adjustment, stepped to the brand's deeper golds so it stays legible on paper. |
 | **Navigation** | The live navbar and footer link for link: Home, the four service pages, Astrology Team, How It Works, About Us, Contact, Customer Dashboard, Log In / Sign Up, the payment badges, the four policy pages and the back-to-top control. |
 | **Routes** | The live slugs: `#/home`, `#/services`, `#/birth-jathagam`, `#/marriage-compatibility`, `#/baby-naming`, `#/muhurtham`, `#/how-it-works`, `#/team`, `#/about`, `#/contact`, `#/policy-privacy`, `#/policy-terms`, `#/policy-payment`, `#/policy-refund`. |
 | **Wording** | Not one sentence is new. Every string is read from `appConfig.ts` / `servicePanels.ts`, which mirror the live pages, the shared data modules and the live pricing. |
@@ -26,7 +26,7 @@ npm run lint:light     # type-check this app only
 | Area | Light UI |
 | --- | --- |
 | **Colour** | Light-only: paper-ivory surfaces, hairline gold rules, soft sunrise glows — the **Sunrise Ivory** palette (#fffbf3 paper, #d99a2b temple gold, #0e7c7b teal), the opposite of the cosmic dark theme that is still live. |
-| **Type** | A new display face, **Fraunces** (variable, self-hosted, SIL OFL 1.1), paired with the existing Plus Jakarta Sans body face. |
+| **Type** | The site's own two faces, unchanged: **Playfair Display** headings (the live `.display-serif`) and **Plus Jakarta Sans** body text — both self-hosted from the repository's `public/assets/fonts`. The lock-up, eyebrows and headings carry the same weights, tracking and sizes the live site uses. |
 | **Interaction** | Hash routing so the preview works from any static host, sub-folder or proxy without server rules, and self-dismissing notices instead of a palette dock. |
 
 ## Why it can never contradict the live site
@@ -75,8 +75,9 @@ light/
   `.gitignore` and a README section were added).
 - `light/dist/` is a separate build output and is never part of the deployed
   `dist.zip`.
-- Fonts are self-hosted with their licences beside them
-  (`light/src/assets/fonts/`); no Google Fonts request is made.
+- Fonts are the repository's own self-hosted faces in `public/assets/fonts`
+  (Playfair Display + Plus Jakarta Sans, licences beside them); no Google Fonts
+  request is made and both front-ends load the same files.
 - Sign-in, orders, sample-PDF downloads and messages are handled by the live site
   at astrosivam.com; the preview links to it and says so plainly instead of
   pretending.

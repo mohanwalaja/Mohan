@@ -48,19 +48,24 @@ export const TeamPage: React.FC<{ onNavigate: (key: PageKey) => void }> = ({ onN
         {TEAM_MEMBERS.map((member) => {
           const years = member.experienceYears ?? member.yearsOfExperience ?? 15;
           return (
-            <article key={member.id} className="c-card flex flex-col p-6">
+            <article key={member.id} className="c-card group flex flex-col p-6">
+              {/* The live team card's emblem tile: a rounded frame holding the
+                  brand mark itself (object-contain), with the experience badge
+                  overlapping the bottom-right corner. Only the tint changed. */}
               <div className="flex items-start gap-4">
-                <span className="relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full border border-brand/35 bg-white p-0.5">
-                  <img
-                    src={member.photoUrl || emblemImg}
-                    alt={`${member.nameEn} — ${BRAND.name}`}
-                    referrerPolicy="no-referrer"
-                    className="h-full w-full rounded-full object-cover"
-                  />
-                </span>
-                <span className="rounded-full border border-brand/30 bg-brand-soft px-2.5 py-1 text-[0.68rem] font-bold text-brand-ink">
-                  {years}+ YRS
-                </span>
+                <div className="relative shrink-0">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-brand/40 bg-gradient-to-br from-brand-soft via-white to-page-deep p-2 shadow-[var(--shadow-card)] transition-transform group-hover:scale-105">
+                    <img
+                      src={emblemImg}
+                      alt={`${BRAND.name} Emblem`}
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                  <span className="absolute -bottom-1 -right-1 rounded-full border border-brand/40 bg-surface px-1.5 py-0.5 text-[9px] font-black text-brand-ink shadow-[var(--shadow-card)]">
+                    {years}+ YRS
+                  </span>
+                </div>
               </div>
 
               <h2 className="c-display mt-4 text-[1.15rem] font-bold leading-snug text-ink">{member.nameEn}</h2>

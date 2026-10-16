@@ -12,44 +12,47 @@
 @import 'tailwindcss';
 @source '../';
 
-/* Fraunces — self-hosted variable display face (SIL OFL 1.1, licence shipped
-   beside the files). Latin + Latin-ext, upright + italic, weight axis only. */
+/* Playfair Display — the SAME self-hosted variable serif the live site sets its
+   headings in (`.display-serif`, src/index.css). These are the repository's own
+   hashed assets under public/assets/fonts, reached through this app's publicDir,
+   so both front-ends render the identical face from the identical files (SIL OFL
+   1.1, licence kept beside them in public/assets/fonts/). */
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Playfair Display';
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 400 900;
   font-display: swap;
-  src: url('../assets/fonts/fraunces-latin-wght-normal.woff2') format('woff2');
+  src: url('/assets/fonts/playfair-display-latin-wght-normal-e0c764a8.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
     U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Playfair Display';
   font-style: italic;
-  font-weight: 100 900;
+  font-weight: 400 900;
   font-display: swap;
-  src: url('../assets/fonts/fraunces-latin-wght-italic.woff2') format('woff2');
+  src: url('/assets/fonts/playfair-display-latin-wght-italic-54af24bd.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
     U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Playfair Display';
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 400 900;
   font-display: swap;
-  src: url('../assets/fonts/fraunces-latin-ext-wght-normal.woff2') format('woff2');
+  src: url('/assets/fonts/playfair-display-latin-ext-wght-normal-42898ad4.woff2') format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
     U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
     U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Playfair Display';
   font-style: italic;
-  font-weight: 100 900;
+  font-weight: 400 900;
   font-display: swap;
-  src: url('../assets/fonts/fraunces-latin-ext-wght-italic.woff2') format('woff2');
+  src: url('/assets/fonts/playfair-display-latin-ext-wght-italic-b9dff4ae.woff2') format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
     U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
     U+2113, U+2C60-2C7F, U+A720-A7FF;
@@ -139,7 +142,7 @@
   --color-leaf: var(--c-leaf);
   --color-leaf-soft: var(--c-leaf-soft);
 
-  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   /* Shadow and radius tokens are plain CSS variables (declared with the
@@ -229,20 +232,24 @@
     }
   }
 
+  /* The live `.display-serif` pairing, tracking included, so a heading here and
+     a heading on astrosivam.com are typographically the same line of type. */
   .c-display {
     font-family: var(--font-display);
     font-weight: 600;
-    font-variation-settings: 'SOFT' 0, 'WONK' 0;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.035em;
     text-wrap: balance;
   }
 
+  /* The live `.eyebrow` metrics, one for one: 0.72rem, weight 800, 0.18em
+     tracking, uppercase, and the same short rule before the words (drawn here
+     with a span so it can be centred on the centred headings). */
   .c-eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.7rem;
-    font-weight: 700;
+    gap: 9px;
+    font-size: 0.72rem;
+    font-weight: 800;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--c-brand-ink);

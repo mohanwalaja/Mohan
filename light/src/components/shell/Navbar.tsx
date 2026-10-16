@@ -44,11 +44,14 @@ export const Navbar: React.FC<NavbarProps> = ({ current, onNavigate }) => {
         scrolled ? 'border-line bg-page/95 backdrop-blur' : 'border-transparent bg-page'
       }`}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[4.5rem] sm:px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-20 sm:px-6 md:h-22">
+        {/* Same lock-up, same spacing and the same title the live navbar sets on
+            the brand link: "ASTRO SIVAM - Indian Vedic Astrology". */}
         <button
           type="button"
           onClick={() => go('home')}
-          className="flex min-w-0 items-center gap-2.5 rounded-2xl py-1 pr-2 text-left"
+          className="group flex min-w-0 shrink-0 items-center gap-2 py-1 text-left sm:gap-3.5"
+          title={`${BRAND.name} - Indian Vedic Astrology`}
           aria-label={`${BRAND.name} home`}
         >
           <BrandWordmark emblemAlt="" />
