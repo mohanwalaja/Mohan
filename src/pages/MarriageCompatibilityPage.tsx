@@ -40,6 +40,11 @@ import {
 import { MAX_FAMILY_ORDER_ITEMS, hasFamilyOrderCapacity } from '../services/familyOrderLimits';
 import { AppLanguage } from '../types';
 import { SEO } from '../components/common/SEO';
+import { JsonLd } from '../components/common/JsonLd';
+import { ServiceFaqSection } from '../components/common/ServiceFaqSection';
+import { RelatedReports } from '../components/common/RelatedReports';
+import { MARRIAGE_COMPATIBILITY_FAQ_ITEMS } from '../data/serviceFaqs';
+import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { RouteLink } from '../components/common/RouteLink';
 import { SampleReportButton } from '../components/common/SampleReportButton';
 import { resolveLocationTimezone } from '../lib/timezone';
@@ -360,11 +365,20 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
   return (
     <div className="service-page">
       <SEO
-        title="10-Poruthams Thirumana Porutham (Marriage Matching) | ASTRO SIVAM"
-        description="Check classical 10-Porutham marriage compatibility online with Kuja Dosha, Papa Samyam balance, and authentic priest recommendations at ASTRO SIVAM."
+        title="10 Porutham Online: Marriage Compatibility (Kundali Matching) | ASTRO SIVAM"
+        description="Check Thirumana Porutham (10 Porutham) marriage compatibility online — all 10 poruthams, Kuja Dosha analysis, dosha balance and a certified priest verdict in English, Tamil or Hindi."
         canonical="https://astrosivam.com/marriage-compatibility"
       />
-      
+      {/* Breadcrumb for crawlers (index-coverage audit 2026-10-16): Home → Services → this page. */}
+      <JsonLd
+        id="breadcrumb"
+        data={buildBreadcrumbJsonLd([
+          { name: 'Home', url: 'https://astrosivam.com/' },
+          { name: 'Services', url: 'https://astrosivam.com/services' },
+          { name: '10 Porutham Marriage Compatibility', url: 'https://astrosivam.com/marriage-compatibility' }
+        ])}
+      />
+
       <ServicePageHeader
         icon={Heart}
         eyebrow="10 Poruthams · Kuja Dosha · Vedic Matrimonial Compatibility"
@@ -779,6 +793,24 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
         </div>
 
       </div>
+
+      {/* Cross-links to the other reports — keyword-anchored internal links (index-coverage audit 2026-10-16). */}
+      <RelatedReports
+        onNavigate={onNavigate}
+        links={[
+          { route: 'birth-jathagam', label: 'Birth Jathagam (Janma Kundali) for each partner' },
+          { route: 'muhurtham', label: 'Subha Muhurtham for the wedding date' },
+          { route: 'baby-naming', label: 'Baby naming by nakshatra (Namakaran)' }
+        ]}
+      />
+
+      {/* Service FAQ — visible answers + this page's FAQPage JSON-LD (index-coverage audit 2026-10-16). */}
+      <ServiceFaqSection
+        items={MARRIAGE_COMPATIBILITY_FAQ_ITEMS}
+        canonicalUrl="https://astrosivam.com/marriage-compatibility"
+        heading="10 Porutham marriage matching — questions, answered"
+        intro="What the 10 Poruthams check, what you need, and how the compatibility report reaches you."
+      />
 
       {/* Instant User Auth Modal */}
       <AuthModal

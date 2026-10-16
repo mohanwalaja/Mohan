@@ -4,6 +4,8 @@ import { AstrologyTeamSection } from '../components/common/AstrologyTeamSection'
 import { useLanguage } from '../context/LanguageContext';
 import { SEO } from '../components/common/SEO';
 import { RouteLink } from '../components/common/RouteLink';
+import { JsonLd } from '../components/common/JsonLd';
+import { buildBreadcrumbJsonLd } from '../services/structuredData';
 
 interface AstrologyTeamPageProps {
   onNavigate: (route: string) => void;
@@ -19,7 +21,15 @@ export const AstrologyTeamPage: React.FC<AstrologyTeamPageProps> = ({ onNavigate
         description="Meet the expert Vedic scholars, Sanskrit pandits, and computational astrologers behind ASTRO SIVAM's precise calculations."
         canonical="https://astrosivam.com/team"
       />
-      
+      {/* Breadcrumb for crawlers (index-coverage audit 2026-10-16): Home → this page. */}
+      <JsonLd
+        id="breadcrumb"
+        data={buildBreadcrumbJsonLd([
+          { name: 'Home', url: 'https://astrosivam.com/' },
+          { name: 'Our Vedic Scholars & Astrologers', url: 'https://astrosivam.com/team' }
+        ])}
+      />
+
       {/* Top Banner */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-8 sm:p-12 text-white shadow-2xl">
         <div className="max-w-3xl space-y-4">

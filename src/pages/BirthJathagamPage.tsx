@@ -44,6 +44,11 @@ import { MAX_FAMILY_ORDER_ITEMS, hasFamilyOrderCapacity } from '../services/fami
 import { AppLanguage } from '../types';
 import { SEO } from '../components/common/SEO';
 import { RouteLink } from '../components/common/RouteLink';
+import { JsonLd } from '../components/common/JsonLd';
+import { ServiceFaqSection } from '../components/common/ServiceFaqSection';
+import { RelatedReports } from '../components/common/RelatedReports';
+import { BIRTH_JATHAGAM_FAQ_ITEMS } from '../data/serviceFaqs';
+import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
   isValidBirthTime,
@@ -289,10 +294,19 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
     <div className="service-page">
       <SEO
         title="Birth Jathagam (Janma Kundali) Online Report | ASTRO SIVAM"
-        description="Calculate accurate Birth Jathagam online with 12 Bhavas, Rasi & Navamsa charts, Vimshottari Mahadasa predictions, Kuja dosha analysis in Tamil, English & Hindi."
+        description="Calculate your Birth Jathagam (Janma Kundali) online: 12 Bhavas, Rasi & Navamsa charts, Vimshottari Mahadasha, Sade Sati & Dosha analysis and 8 life aspects, in Tamil, English & Hindi."
         canonical="https://astrosivam.com/birth-jathagam"
       />
-      
+      {/* Breadcrumb for crawlers (index-coverage audit 2026-10-16): Home → Services → this page. */}
+      <JsonLd
+        id="breadcrumb"
+        data={buildBreadcrumbJsonLd([
+          { name: 'Home', url: 'https://astrosivam.com/' },
+          { name: 'Services', url: 'https://astrosivam.com/services' },
+          { name: 'Birth Jathagam (Janma Kundali)', url: 'https://astrosivam.com/birth-jathagam' }
+        ])}
+      />
+
       <ServicePageHeader
         icon={Compass}
         eyebrow="Vedic Horoscope Computation · Thirukanitha Sidereal Jyotish"
@@ -699,6 +713,24 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
         </div>
 
       </div>
+
+      {/* Cross-links to the other reports — keyword-anchored internal links (index-coverage audit 2026-10-16). */}
+      <RelatedReports
+        onNavigate={onNavigate}
+        links={[
+          { route: 'marriage-compatibility', label: '10 Porutham marriage compatibility (Kundali matching)' },
+          { route: 'muhurtham', label: 'Subha Muhurtham auspicious dates' },
+          { route: 'baby-naming', label: 'Baby naming by nakshatra (Namakaran)' }
+        ]}
+      />
+
+      {/* Service FAQ — visible answers + this page's FAQPage JSON-LD (index-coverage audit 2026-10-16). */}
+      <ServiceFaqSection
+        items={BIRTH_JATHAGAM_FAQ_ITEMS}
+        canonicalUrl="https://astrosivam.com/birth-jathagam"
+        heading="Birth Jathagam (Janma Kundali) — questions, answered"
+        intro="What the report contains, how the calculation is done, and how it reaches you."
+      />
 
       {/* Instant User Auth Modal */}
       <AuthModal

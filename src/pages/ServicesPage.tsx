@@ -15,6 +15,8 @@ import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { SEO } from '../components/common/SEO';
 import { RouteLink } from '../components/common/RouteLink';
+import { JsonLd } from '../components/common/JsonLd';
+import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { getServicePrices } from '../services/pricing';
 
 interface ServicesPageProps {
@@ -143,6 +145,14 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
         title="ASTRO SIVAM - Vedic Astrology Services"
         description="Explore Birth Jathagam, 10-Poruthams marriage matching, baby naming, and Subha Muhurtham date reports with ASTRO SIVAM. Order your Vedic astrology report."
         canonical="https://astrosivam.com/services"
+      />
+      {/* Breadcrumb for crawlers (index-coverage audit 2026-10-16): Home → this page. */}
+      <JsonLd
+        id="breadcrumb"
+        data={buildBreadcrumbJsonLd([
+          { name: 'Home', url: 'https://astrosivam.com/' },
+          { name: 'Vedic Astrology Services', url: 'https://astrosivam.com/services' }
+        ])}
       />
 
       <div className="site-container space-y-8 sm:space-y-10">

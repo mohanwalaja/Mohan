@@ -32,6 +32,8 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { SEO } from '../components/common/SEO';
+import { JsonLd } from '../components/common/JsonLd';
+import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { RouteLink } from '../components/common/RouteLink';
 import './HowItWorksPage.css';
 
@@ -927,6 +929,14 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
         title="How It Works - Authentic Vedic Astrology Calculation Process | ASTRO SIVAM"
         description="See how ASTRO SIVAM guides users through service selection, secure checkout, traditional chart review, and report delivery."
         canonical="https://astrosivam.com/how-it-works"
+      />
+      {/* Breadcrumb for crawlers (index-coverage audit 2026-10-16): Home → this page. */}
+      <JsonLd
+        id="breadcrumb"
+        data={buildBreadcrumbJsonLd([
+          { name: 'Home', url: 'https://astrosivam.com/' },
+          { name: 'How It Works', url: 'https://astrosivam.com/how-it-works' }
+        ])}
       />
       <div className="hiw-container">
         <header className="hiw-hero">
