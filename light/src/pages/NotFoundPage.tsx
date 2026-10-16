@@ -1,54 +1,42 @@
 import React from 'react';
-import { Compass, Home, Sparkles } from 'lucide-react';
-import { ALL_ROUTES } from '../appConfig';
+import { Compass, ArrowRight } from 'lucide-react';
+import { NAV_LINKS, type PageKey } from '../appConfig';
 
-export const NotFoundPage: React.FC<{ route: string; onNavigate: (route: string) => void }> = ({
+/** Not found — same links as the site's navbar, so a stray URL is never a dead end. */
+export const NotFoundPage: React.FC<{ route: string; onNavigate: (key: PageKey) => void }> = ({
   route,
   onNavigate
 }) => (
-  <div className="pb-6">
-    <section className="relative">
-      <div className="c-glow pointer-events-none absolute inset-x-0 top-0 h-80" aria-hidden="true" />
-      <div className="c-shell relative pt-16 text-center">
-        <span className="mx-auto grid h-16 w-16 place-items-center rounded-3xl border border-line bg-surface text-brand">
-          <Compass className="h-8 w-8" />
-        </span>
-        <h1 className="c-display mt-6 text-[2rem] leading-tight text-ink sm:text-[2.5rem]">
-          That page is not in this preview
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-[0.95rem] leading-7 text-muted">
-          <code className="rounded-md bg-page-soft px-1.5 py-0.5 text-[0.85rem] text-ink-soft">
-            #/{route}
-          </code>{' '}
-          does not match any page of the daylight interface. Pick a destination below — or open the Free
-          Preview Lab and do something more interesting.
-        </p>
-
-        <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <button type="button" onClick={() => onNavigate('home')} className="c-btn c-btn-primary">
-            <Home className="h-4 w-4" />
-            Back to the home page
+  <div className="c-shell py-16">
+    <div className="c-card mx-auto max-w-2xl space-y-5 p-8 text-center">
+      <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-brand/30 bg-brand-soft text-brand-ink">
+        <Compass className="h-6 w-6" aria-hidden />
+      </span>
+      <h1 className="c-display text-[1.8rem] font-bold text-ink">Page not found</h1>
+      <p className="text-[0.9rem] leading-7 text-ink-soft">
+        No page is published at <span className="font-mono text-ink">#{route}</span> in this preview. Choose one of
+        the pages below.
+      </p>
+      <div className="flex flex-wrap justify-center gap-2">
+        {NAV_LINKS.map((link) => (
+          <button
+            key={link.key}
+            type="button"
+            onClick={() => onNavigate(link.key)}
+            className="rounded-full border border-line bg-surface-2 px-3.5 py-2 text-[0.8rem] font-semibold text-ink-soft transition hover:border-brand/45 hover:text-brand-ink"
+          >
+            {link.label}
           </button>
-          <button type="button" onClick={() => onNavigate('studio')} className="c-btn c-btn-outline">
-            <Sparkles className="h-4 w-4" />
-            Open the Preview Lab
-          </button>
-        </div>
-
-        <ul className="mx-auto mt-10 flex max-w-2xl flex-wrap justify-center gap-2.5">
-          {ALL_ROUTES.map((entry) => (
-            <li key={entry.key}>
-              <button
-                type="button"
-                onClick={() => onNavigate(entry.key)}
-                className="c-pill !px-3.5 !py-2 !text-[0.78rem] transition-colors hover:border-brand hover:text-brand-ink"
-              >
-                {entry.label}
-              </button>
-            </li>
-          ))}
-        </ul>
+        ))}
+        <button
+          type="button"
+          onClick={() => onNavigate('services')}
+          className="c-btn c-btn-primary"
+        >
+          <span>Services</span>
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </button>
       </div>
-    </section>
+    </div>
   </div>
 );

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CatalogEntry } from '../../appConfig';
+import type { HomeService } from '../../appConfig';
 
 /**
  * Report glyphs.
@@ -10,7 +10,7 @@ import type { CatalogEntry } from '../../appConfig';
  * UI leans on, so they carry the palette accent instead of a fixed colour.
  */
 export const Glyph: React.FC<{
-  glyph: CatalogEntry['glyph'];
+  glyph: HomeService['glyph'];
   className?: string;
 }> = ({ glyph, className = 'h-7 w-7' }) => {
   const common = {
@@ -67,7 +67,7 @@ export const Glyph: React.FC<{
   );
 };
 
-export const glyphToneClass = (accent: CatalogEntry['accent']) => {
+export const glyphToneClass = (accent: HomeService['accent']) => {
   switch (accent) {
     case 'accent':
       return 'text-accent bg-accent-soft border-accent/25';

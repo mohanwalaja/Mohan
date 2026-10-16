@@ -1,5 +1,5 @@
 /**
- * ASTRO SIVAM — "Daylight" light UI (preview build)
+ * ASTRO SIVAM — light UI (preview build)
  * =================================================
  *
  * This is a SECOND, standalone front-end that lives beside the existing

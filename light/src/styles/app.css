@@ -1,14 +1,13 @@
 /* ============================================================================
-   ASTRO SIVAM — "Daylight" light UI design system
+   ASTRO SIVAM — light UI design system
    ----------------------------------------------------------------------------
    A brand-new visual language: paper-ivory surfaces, hairline gold rules,
    soft sunrise glows and a serif display face — light-only, deliberately the
    opposite of the cosmic dark theme that is still live today.
 
-   Everything is a token. Three light palettes ship (Sunrise Ivory, Monsoon
-   Mist, Lotus Blush) and the visitor can switch between them live from the
-   palette dock; because every class below reads the tokens, a palette swap
-   repaints the whole UI without a single conditional in the components.
+   Everything is a token, declared once on :root — the brand's temple gold on
+   warm paper. The interface is a re-skin of the existing ASTRO SIVAM site, so
+   there is one light palette, not a theme switcher.
    ========================================================================= */
 @import 'tailwindcss';
 @source '../';
@@ -79,9 +78,10 @@
     U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* ---------------------------------------------------------------- palettes */
-:root,
-[data-palette='sunrise'] {
+/* ---------------------------------------------------------------- palette */
+/* One palette only: the brand's own temple gold on warm paper. The light UI is
+   a re-skin of ASTRO SIVAM, so there is no theme switcher and no second mood. */
+:root {
   --c-page: #fffbf3;
   --c-page-soft: #fdf5e7;
   --c-page-deep: #f9edd9;
@@ -112,65 +112,9 @@
   --shadow-pop: 0 18px 50px -20px rgba(30, 36, 56, 0.32);
 }
 
-[data-palette='mist'] {
-  --c-page: #f6fafb;
-  --c-page-soft: #ecf5f7;
-  --c-page-deep: #e1eff3;
-  --c-surface: #ffffff;
-  --c-surface-2: #fbfdfe;
-  --c-ink: #12252c;
-  --c-ink-soft: #3d545d;
-  --c-muted: #5b7280;
-  --c-faint: #8fa2ac;
-  --c-line: #dde9ed;
-  --c-line-strong: #c6dbe2;
-  --c-brand: #0e7490;
-  --c-brand-deep: #0b5a70;
-  --c-brand-ink: #08495b;
-  --c-brand-soft: #e2f1f6;
-  --c-brand-tint: #c9e6ef;
-  --c-accent: #c2831b;
-  --c-accent-soft: #fbf1de;
-  --c-rose: #b03060;
-  --c-rose-soft: #fbe9ef;
-  --c-leaf: #217a58;
-  --c-leaf-soft: #e6f4ee;
-  --c-glow-a: rgba(14, 116, 144, 0.2);
-  --c-glow-b: rgba(194, 131, 27, 0.16);
-  --c-glow-c: rgba(176, 48, 96, 0.1);
-}
-
-[data-palette='lotus'] {
-  --c-page: #fff7fa;
-  --c-page-soft: #fdeef4;
-  --c-page-deep: #fbe3ec;
-  --c-surface: #ffffff;
-  --c-surface-2: #fffcfe;
-  --c-ink: #2a1721;
-  --c-ink-soft: #573d49;
-  --c-muted: #74596a;
-  --c-faint: #a08b98;
-  --c-line: #f1dce5;
-  --c-line-strong: #e6c6d4;
-  --c-brand: #c2185b;
-  --c-brand-deep: #9c1249;
-  --c-brand-ink: #7c0e3a;
-  --c-brand-soft: #fce7f0;
-  --c-brand-tint: #f8cfe0;
-  --c-accent: #6d4ac4;
-  --c-accent-soft: #efeafb;
-  --c-rose: #b03060;
-  --c-rose-soft: #fbe9ef;
-  --c-leaf: #2f7d4f;
-  --c-leaf-soft: #e8f5ec;
-  --c-glow-a: rgba(194, 24, 91, 0.16);
-  --c-glow-b: rgba(109, 74, 196, 0.14);
-  --c-glow-c: rgba(217, 154, 43, 0.14);
-}
-
-/* Tailwind utilities that follow the runtime palette. `inline` is what makes
+/* Tailwind utilities bound to the palette tokens. `inline` is what makes
    bg-surface / text-ink / border-line resolve the CSS variable at use time
-   instead of freezing a copy of today's value. */
+   instead of freezing a copy of its value. */
 @theme inline {
   --color-page: var(--c-page);
   --color-page-soft: var(--c-page-soft);

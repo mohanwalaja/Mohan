@@ -1,5 +1,5 @@
 /**
- * ASTRO SIVAM — Daylight UI: Free Preview Lab engine.
+ * ASTRO SIVAM — light UI: report-preview engine.
  *
  * The laboratory runs the SAME verified astrology modules the paid reports use
  * (@shared/lib/astrology/*, @shared/lib/muhurtham/scanner) directly in the
@@ -9,8 +9,8 @@
  * whole point — a preview that disagreed with the delivered PDF would be worse
  * than no preview at all.
  *
- * All of it is client-side, so the lab works with no account, no order and no
- * network round-trip.
+ * All of it is client-side, so the preview works with no account, no order and
+ * no network round-trip.
  */
 import {
   calculatePrecisionHoroscope,
@@ -35,7 +35,7 @@ export interface PreviewPlace {
   longitude: number;
 }
 
-/** The four cities offered by the lab, with verified coordinates. */
+/** The places the preview offers, with verified coordinates. */
 export const PREVIEW_PLACES: PreviewPlace[] = [
   { placeName: 'Chennai', country: 'India', latitude: 13.0827, longitude: 80.2707 },
   { placeName: 'Madurai', country: 'India', latitude: 9.9252, longitude: 78.1198 },
@@ -51,7 +51,7 @@ export const PREVIEW_PLACES: PreviewPlace[] = [
 
 /**
  * Today's offset in the zone that owns these coordinates — the same resolver
- * the order form uses, so the lab and a real order agree about the clock.
+ * the order form uses, so the preview and a real order agree about the clock.
  */
 export function offsetForPlace(place: PreviewPlace): number {
   const zoneId = getTimeZoneIdForCoordinates(place.latitude, place.longitude);

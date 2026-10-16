@@ -1,104 +1,71 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 /**
- * Palette + toast state for the Daylight UI.
+ * Light UI shell state — notices only.
  *
- * The palette is the one piece of visitor preference this design persists: the
- * three light palettes are all legitimate brand surfaces, so remembering the
- * choice costs nothing and spares a returning visitor a re-pick.
+ * The light UI is a re-skin of the existing site: it has no theme switcher and
+ * no second palette, so the only thing this provider owns is the small
+ * self-dismissing notices the interactive panels use.
  */
-export type PaletteId = 'sunrise' | 'mist' | 'lotus';
-
-export interface PaletteOption {
-  id: PaletteId;
-  name: string;
-  tagline: string;
-  swatch: [string, string, string];
-  glyph: string;
-}
-
-export const PALETTES: PaletteOption[] = [
-  {
-    id: 'sunrise',
-    name: 'Sunrise Ivory',
-    tagline: 'Warm paper, temple gold',
-    swatch: ['#fffbf3', '#d99a2b', '#0e7c7b'],
-    glyph: '☀'
-  },
-  {
-    id: 'mist',
-    name: 'Monsoon Mist',
-    tagline: 'Cool teal on rain light',
-    swatch: ['#f6fafb', '#0e7490', '#c2831b'],
-    glyph: '☂'
-  },
-  {
-    id: 'lotus',
-    name: 'Lotus Blush',
-    tagline: 'Soft pink, deep lotus',
-    swatch: ['#fff7fa', '#c2185b', '#6d4ac4'],
-    glyph: '❋'
-  }
-];
-
-const STORAGE_KEY = 'astrosivam_daylight_palette';
-
-interface Toast {
+interface Notice {
   id: number;
   text: string;
   tone: 'info' | 'good';
 }
 
 interface LightUiContextValue {
-  palette: PaletteId;
-  setPalette: (id: PaletteId) => void;
-  toasts: Toast[];
+  notices: Notice[];
   notify: (text: string, tone?: 'info' | 'good') => void;
 }
 
 const LightUiContext = createContext<LightUiContextValue>({
-  palette: 'sunrise',
-  setPalette: () => {},
-  toasts: [],
+  notices: [],
   notify: () => {},
 });
 
 export const LightUiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [palette, setPaletteState] = useState<PaletteId>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY) as PaletteId | null;
-      if (stored && PALETTES.some((entry) => entry.id === stored)) return stored;
-    } catch {
-      /* storage unavailable — the default palette is fine */
-    }
-    return 'sunrise';
-  });
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [notices, setNotices] = useState<Notice[]>([]);
 
+  // The light surfaces are the document's own background: paint it once here so
+  // the page colour is right before any component mounts.
   useEffect(() => {
-    document.documentElement.setAttribute('data-palette', palette);
-    document.documentElement.setAttribute('lang', document.documentElement.getAttribute('lang') || 'en');
-    try {
-      localStorage.setItem(STORAGE_KEY, palette);
-    } catch {
-      /* ignore */
-    }
-  }, [palette]);
+    document.documentElement.style.setProperty('background-color', 'var(--c-page)');
+  }, []);
 
   const notify = useCallback((text: string, tone: 'info' | 'good' = 'info') => {
     const id = Date.now() + Math.random();
-    setToasts((current) => [...current.slice(-2), { id, text, tone }]);
+    setNotices((current) => [...current.slice(-2), { id, text, tone }]);
     window.setTimeout(() => {
-      setToasts((current) => current.filter((toast) => toast.id !== id));
+      setNotices((current) => current.filter((notice) => notice.id !== id));
     }, 4200);
   }, []);
 
-  const value = useMemo(
-    () => ({ palette, setPalette: setPaletteState, toasts, notify }),
-    [palette, toasts, notify],
-  );
+  const value = useMemo(() => ({ notices, notify }), [notices, notify]);
 
   return <LightUiContext.Provider value={value}>{children}</LightUiContext.Provider>;
 };
 
 export const useLightUi = () => useContext(LightUiContext);
+
+/** Small self-dismissing notices, top-centre. */
+export const Notices: React.FC = () => {
+  const { notices } = useLightUi();
+  if (!notices.length) return null;
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-4 z-[70] flex flex-col items-center gap-2 px-4">
+      {notices.map((notice) => (
+        <div
+          key={notice.id}
+          role="status"
+          className={`c-rise max-w-md rounded-2xl border px-4 py-2.5 text-[0.82rem] font-semibold shadow-[var(--shadow-pop)] ${
+            notice.tone === 'good'
+              ? 'border-leaf/30 bg-leaf-soft text-leaf'
+              : 'border-line bg-surface text-ink'
+          }`}
+        >
+          {notice.text}
+        </div>
+      ))}
+    </div>
+  );
+};
