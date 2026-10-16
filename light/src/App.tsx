@@ -1,6 +1,6 @@
 import React from 'react';
 import { LightUiProvider, Notices } from './lightContext';
-import { useHashRoute } from './router';
+import { useLightRoute } from './router';
 import { Navbar } from './components/shell/Navbar';
 import { Footer } from './components/shell/Footer';
 import { PAGE_TITLES, type PageKey } from './appConfig';
@@ -69,10 +69,12 @@ function RouteView({ route, onNavigate }: { route: string; onNavigate: (key: Pag
  * paper and temple gold instead of the dark theme the main application keeps.
  */
 export default function App() {
-  const [route, navigate] = useHashRoute();
+  const [route, navigate] = useLightRoute();
 
-  // The live pages set their own <SEO> title; the preview is hash-routed, so the
-  // document title is applied here from the same strings.
+  // The live pages set their own <SEO> title; the light pages carry the same
+  // strings, so the document title is applied here from the shared table (the
+  // prerendered light documents ship a real <title> too — see
+  // scripts/prerender-light.mjs).
   React.useEffect(() => {
     document.title = isPageKey(route) ? PAGE_TITLES[route] : 'Page not found | ASTRO SIVAM';
   }, [route]);

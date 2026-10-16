@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, MapPin, MessageSquare, Send, ShieldCheck, Star } from 'lucide-react';
 import { BUSINESS, BRAND, CONTACT_PAGE_COPY, LIVE_SITE, type PageKey } from '../appConfig';
+import { isDocumentMode } from '../documentMode';
 import { PageBreadcrumb } from '../components/common/PageBreadcrumb';
 import { ServicePageHeader } from '../components/common/ServicePageHeader';
 import { useLightUi } from '../lightContext';
@@ -12,12 +13,67 @@ import { BUSINESS_REGISTRATION_SHORT, BUSINESS_REGISTRATION_META } from '@shared
  * registration line, the same Administrator Inbox card and the same form with
  * its own labels, placeholders and "Message Received" confirmation.
  *
- * The preview has no backend, so pressing send keeps the message on the page and
+ * The deployed light design posts to the same public endpoint the classic page
+ * posts to (`POST api/services/contact` → the administrator inbox), so a
+ * visitor on the light design can actually reach the office. The standalone
+ * preview has no backend at all, so there it keeps the message on the page and
  * says so plainly instead of pretending it was delivered.
  */
 export const ContactPage: React.FC<{ onNavigate: (key: PageKey) => void }> = ({ onNavigate }) => {
   const { notify } = useLightUi();
   const [values, setValues] = useState({ name: '', email: '', subject: '', message: '' });
+  const [sending, setSending] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  /**
+   * The live site's own validation wording (src/pages/ContactPage.tsx) and its
+   * own endpoint, so the two designs cannot disagree about either.
+   */
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!isDocumentMode()) {
+      notify(`This preview does not send messages — the form posts to the administrator inbox at ${BRAND.website}.`);
+      return;
+    }
+
+    const name = values.name.trim();
+    const message = values.message.trim();
+    if (!name) {
+      setFormError('Please enter your full name.');
+      return;
+    }
+    if (!message) {
+      setFormError('Please enter a message.');
+      return;
+    }
+
+    setSending(true);
+    setFormError('');
+    try {
+      const response = await fetch('api/services/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email: values.email.trim().toLowerCase(),
+          subject: values.subject.trim(),
+          message,
+        }),
+      });
+      const result = await response.json().catch(() => null);
+      if (result?.success) {
+        notify(result.message || 'Your message was saved to our admin inbox.', 'good');
+        setValues({ name: '', email: '', subject: '', message: '' });
+      } else {
+        setFormError(result?.message || 'Failed to dispatch message. Please try again.');
+      }
+    } catch {
+      setFormError('An error occurred while sending your message.');
+    } finally {
+      setSending(false);
+    }
+  };
 
   const update = (field: keyof typeof values) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setValues((current) => ({ ...current, [field]: event.target.value }));
@@ -46,15 +102,7 @@ export const ContactPage: React.FC<{ onNavigate: (key: PageKey) => void }> = ({ 
             </span>
           </div>
 
-          <form
-            className="space-y-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              notify(
-                `This preview does not send messages — the form posts to the administrator inbox at ${BRAND.website}.`
-              );
-            }}
-          >
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className={label} htmlFor="contact-name">
@@ -110,9 +158,15 @@ export const ContactPage: React.FC<{ onNavigate: (key: PageKey) => void }> = ({ 
               />
             </div>
 
-            <button type="submit" className="c-btn c-btn-primary w-full justify-center">
+            {formError && (
+              <p role="alert" className="rounded-xl border border-rose/30 bg-rose-soft px-3.5 py-2.5 text-[0.8rem] font-semibold text-rose">
+                {formError}
+              </p>
+            )}
+
+            <button type="submit" disabled={sending} className="c-btn c-btn-primary w-full justify-center disabled:opacity-70">
               <Send className="h-4 w-4" aria-hidden />
-              <span>{CONTACT_PAGE_COPY.submit}</span>
+              <span>{sending ? 'Sending…' : CONTACT_PAGE_COPY.submit}</span>
             </button>
             <p className="text-center text-[0.72rem] text-faint">
               Messages are saved to the administrator inbox at {BRAND.website}. You can also email{' '}

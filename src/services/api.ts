@@ -1,4 +1,4 @@
-import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus } from '../types';
+import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus, DesignSwitchState } from '../types';
 
 export function getApiBase(): string {
   // Always default to relative '/api' in browser contexts.
@@ -1663,7 +1663,19 @@ export const api = {
     return safeJson(res);
   },
 
-  async updateAdminSettings(settings: Partial<SystemSettings>): Promise<{ success: boolean; message: string; settings: SystemSettings }> {
+  /**
+   * Save admin settings. `designSwitch` is present on every response
+   * (Admin → Site Design): it reports whether the api/.design-light activation
+   * marker public/.htaccess tests could actually be written on this host, so
+   * the panel can say out loud when a host refuses the write instead of
+   * pretending the design change reached visitors.
+   */
+  async updateAdminSettings(settings: Partial<SystemSettings>): Promise<{
+    success: boolean;
+    message: string;
+    settings: SystemSettings;
+    designSwitch?: DesignSwitchState;
+  }> {
     const res = await fetch(`${API_BASE}/admin/settings`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },

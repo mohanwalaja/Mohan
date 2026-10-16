@@ -761,10 +761,41 @@ export interface AdminAnalyticsData {
     revenueUSD: number;
   }>;
 }
-export type ThemeTemplateId = 'classic-primary';
+/**
+ * The ids the persisted `activeThemeTemplate` setting may hold — the TWO
+ * shipped designs the operator picks between in the admin portal
+ * (Admin → Site Design):
+ *
+ *   'classic-primary'  the original dark/indigo site (repo root: src/)
+ *   'sunrise-ivory'    the light Sunrise Ivory design (its own bundle: light/)
+ *
+ * The light design ships as its OWN document set (scripts/prerender-light.mjs +
+ * public/.htaccess), so it is not a runtime paint template inside this bundle.
+ * See PaintThemeTemplateId. Keep both ids in step with
+ * SHIPPED_THEME_TEMPLATES in src/services/designSwitch.ts and with the
+ * whitelist in api/admin/index.php.
+ */
+export type ThemeTemplateId = 'classic-primary' | 'sunrise-ivory';
+
+/** Paint templates THIS bundle (the classic design) can apply at runtime. */
+export type PaintThemeTemplateId = 'classic-primary';
+
+/**
+ * What the admin settings PUT reports back about the site-design switch: the
+ * stored design id plus whether the activation marker that public/.htaccess
+ * tests (api/.design-light) could be written on this host. The marker is the
+ * actual switch, so a false `markerWritten` means visitors are still served the
+ * other design until the folder permissions allow the write.
+ */
+export interface DesignSwitchState {
+  design: ThemeTemplateId;
+  markerPath: string;
+  markerWritten: boolean;
+  message: string;
+}
 
 export interface ThemeTemplateConfig {
-  id: ThemeTemplateId;
+  id: PaintThemeTemplateId;
   modelNumber: number;
   modelName: string;
   name: string;

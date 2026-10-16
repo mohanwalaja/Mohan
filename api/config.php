@@ -209,6 +209,113 @@ if (!function_exists('astro_normalize_service_pricing')) {
     }
 }
 
+// 4a. Site design switch (Admin → Site Design).
+//
+// ASTRO SIVAM ships exactly TWO designs:
+//
+//   'classic-primary'  the original dark/indigo site (repo root: src/)
+//   'sunrise-ivory'    the light Sunrise Ivory design (its own bundle: light/)
+//
+// The operator's choice is persisted as `activeThemeTemplate` inside
+// system_settings.general_settings and published by the public settings
+// endpoint (api/services/index.php), while the *serving* decision is carried by
+// an activation marker file inside this api/ folder: public/.htaccess serves the
+// light prerendered documents (pages/<route>-light.html) only while
+// api/.design-light exists. Static rewriting keeps PHP out of every page view;
+// the marker is written once per admin click by api/admin/index.php.
+//
+// Keep ASTRO_SHIPPED_THEME_TEMPLATES, the marker path and the default in step
+// with SHIPPED_THEME_TEMPLATES / DESIGN_ACTIVATION_MARKER / DEFAULT_THEME_TEMPLATE
+// in src/services/designSwitch.ts (tests/site-design-switch.test.ts pins them).
+if (!defined('ASTRO_SHIPPED_THEME_TEMPLATES')) {
+    define('ASTRO_SHIPPED_THEME_TEMPLATES', ['classic-primary', 'sunrise-ivory']);
+}
+if (!defined('ASTRO_DEFAULT_THEME_TEMPLATE')) {
+    define('ASTRO_DEFAULT_THEME_TEMPLATE', 'classic-primary');
+}
+if (!defined('ASTRO_LIGHT_THEME_TEMPLATE')) {
+    define('ASTRO_LIGHT_THEME_TEMPLATE', 'sunrise-ivory');
+}
+
+/** Any stored/passed design id that is not one of the two shipped designs is the default. */
+if (!function_exists('astro_normalize_theme_template')) {
+    function astro_normalize_theme_template($value): string
+    {
+        $candidate = is_string($value) ? trim($value) : '';
+        return in_array($candidate, ASTRO_SHIPPED_THEME_TEMPLATES, true)
+            ? $candidate
+            : ASTRO_DEFAULT_THEME_TEMPLATE;
+    }
+}
+
+/**
+ * Where the light design's activation marker lives: inside api/, i.e. the
+ * deploy root's api folder — the folder public/.htaccess guards with
+ * `RewriteCond %{DOCUMENT_ROOT}/api/.design-light -f`. The file holds the
+ * design id and the time it was written (diagnostics only; its EXISTENCE is
+ * what mod_rewrite tests).
+ */
+if (!function_exists('astro_design_marker_path')) {
+    function astro_design_marker_path(): string
+    {
+        return __DIR__ . '/.design-light';
+    }
+}
+
+/**
+ * Write or delete the marker so the served design matches the stored setting.
+ * Returns a status array for the admin response: a host whose webroot is not
+ * writable reports markerWritten=false instead of silently pretending the
+ * switch took effect.
+ */
+if (!function_exists('astro_sync_design_marker')) {
+    function astro_sync_design_marker($themeTemplate): array
+    {
+        $design = astro_normalize_theme_template($themeTemplate);
+        $path = astro_design_marker_path();
+        $markerPath = 'api/' . basename($path);
+
+        if ($design !== ASTRO_LIGHT_THEME_TEMPLATE) {
+            if (file_exists($path)) {
+                $removed = @unlink($path);
+                return [
+                    'design' => $design,
+                    'markerPath' => $markerPath,
+                    'markerWritten' => $removed === false ? false : true,
+                    'message' => $removed === false
+                        ? 'The design is saved, but the activation marker could not be removed, so visitors may still receive the light design until it is deleted by hand.'
+                        : 'The classic design is active for visitors.',
+                ];
+            }
+            return [
+                'design' => $design,
+                'markerPath' => $markerPath,
+                'markerWritten' => true,
+                'message' => 'The classic design is active for visitors.',
+            ];
+        }
+
+        $written = @file_put_contents(
+            $path,
+            json_encode([
+                'design' => $design,
+                'writtenAt' => gmdate('c'),
+            ], JSON_UNESCAPED_UNICODE) . "\n",
+            LOCK_EX
+        );
+        $ok = $written !== false;
+        @chmod($path, 0644);
+        return [
+            'design' => $design,
+            'markerPath' => $markerPath,
+            'markerWritten' => $ok,
+            'message' => $ok
+                ? 'The light design is active for visitors.'
+                : 'The design is saved, but this host could not write ' . $markerPath . ' (folder permissions), so visitors are still served the classic design.',
+        ];
+    }
+}
+
 // 4b. Astrology engine options.
 //
 // ASTRO_RAHU_NODE_TYPE selects how Rahu (and therefore Ketu, always exactly

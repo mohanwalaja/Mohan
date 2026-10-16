@@ -1,9 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ThemeTemplateId, ThemeTemplateConfig } from '../types';
+import { PaintThemeTemplateId, ThemeTemplateConfig } from '../types';
 import { useAuth } from './AuthContext';
 import { api } from '../services/api';
 
-export const THEME_TEMPLATES: Record<ThemeTemplateId, ThemeTemplateConfig> = {
+/**
+ * The paint templates THIS bundle can apply at runtime.
+ *
+ * Only the classic (dark/indigo) design lives here: the light Sunrise Ivory
+ * design is a separate bundle with its own stylesheet and its own prerendered
+ * documents, selected by the operator in Admin → Site Design and served by
+ * public/.htaccess (see src/services/designSwitch.ts). Switching to it is a
+ * document load, not a class toggle — which is why it is intentionally absent
+ * from this registry and from ThemeContext's state.
+ */
+export const THEME_TEMPLATES: Record<PaintThemeTemplateId, ThemeTemplateConfig> = {
   'classic-primary': {
     id: 'classic-primary',
     modelNumber: 0,
@@ -55,14 +65,14 @@ export const THEME_TEMPLATES: Record<ThemeTemplateId, ThemeTemplateConfig> = {
 };
 
 interface ThemeContextType {
-  activeThemeId: ThemeTemplateId;
-  previewThemeId: ThemeTemplateId | null;
+  activeThemeId: PaintThemeTemplateId;
+  previewThemeId: PaintThemeTemplateId | null;
   activeTheme: ThemeTemplateConfig;
   currentTheme: ThemeTemplateConfig;
   allThemes: ThemeTemplateConfig[];
   isLivePreviewing: boolean;
-  setPreviewTheme: (id: ThemeTemplateId | null) => void;
-  applyThemeGlobally: (id: ThemeTemplateId) => Promise<boolean>;
+  setPreviewTheme: (id: PaintThemeTemplateId | null) => void;
+  applyThemeGlobally: (id: PaintThemeTemplateId) => Promise<boolean>;
   resetPreview: () => void;
 }
 
@@ -83,28 +93,35 @@ const THEME_STORAGE_KEY = 'astrosivam_active_theme_template';
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { settings, refreshSettings } = useAuth();
 
-  const getInitialTheme = (): ThemeTemplateId => {
+  /**
+   * The stored setting may name either shipped design; only a design THIS
+   * bundle can paint is applied here. 'sunrise-ivory' intentionally resolves to
+   * the classic paint because the light design ships as its own document set
+   * (see the THEME_TEMPLATES note above and src/services/designSwitch.ts).
+   */
+  const paintTemplateOf = (value?: string | null): PaintThemeTemplateId | null =>
+    value && THEME_TEMPLATES[value as PaintThemeTemplateId] ? (value as PaintThemeTemplateId) : null;
+
+  const getInitialTheme = (): PaintThemeTemplateId => {
     try {
-      const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemeTemplateId;
-      if (stored && THEME_TEMPLATES[stored]) {
-        return stored;
-      }
-      if (settings?.activeThemeTemplate && THEME_TEMPLATES[settings.activeThemeTemplate]) {
-        return settings.activeThemeTemplate;
-      }
+      const stored = paintTemplateOf(localStorage.getItem(THEME_STORAGE_KEY));
+      if (stored) return stored;
+      const fromSettings = paintTemplateOf(settings?.activeThemeTemplate);
+      if (fromSettings) return fromSettings;
     } catch (e) {}
     return 'classic-primary';
   };
 
-  const [activeThemeId, setActiveThemeId] = useState<ThemeTemplateId>(getInitialTheme());
-  const [previewThemeId, setPreviewThemeId] = useState<ThemeTemplateId | null>(null);
+  const [activeThemeId, setActiveThemeId] = useState<PaintThemeTemplateId>(getInitialTheme());
+  const [previewThemeId, setPreviewThemeId] = useState<PaintThemeTemplateId | null>(null);
 
   // Sync if settings load from backend
   useEffect(() => {
-    if (settings?.activeThemeTemplate && THEME_TEMPLATES[settings.activeThemeTemplate]) {
-      setActiveThemeId(settings.activeThemeTemplate);
+    const fromSettings = paintTemplateOf(settings?.activeThemeTemplate);
+    if (fromSettings) {
+      setActiveThemeId(fromSettings);
       try {
-        localStorage.setItem(THEME_STORAGE_KEY, settings.activeThemeTemplate);
+        localStorage.setItem(THEME_STORAGE_KEY, fromSettings);
       } catch (e) {}
     }
   }, [settings?.activeThemeTemplate]);
@@ -136,7 +153,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [effectiveThemeId, currentTheme]);
 
-  const setPreviewTheme = (id: ThemeTemplateId | null) => {
+  const setPreviewTheme = (id: PaintThemeTemplateId | null) => {
     setPreviewThemeId(id);
   };
 
@@ -144,7 +161,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPreviewThemeId(null);
   };
 
-  const applyThemeGlobally = async (id: ThemeTemplateId): Promise<boolean> => {
+  const applyThemeGlobally = async (id: PaintThemeTemplateId): Promise<boolean> => {
     if (!THEME_TEMPLATES[id]) return false;
     try {
       setActiveThemeId(id);

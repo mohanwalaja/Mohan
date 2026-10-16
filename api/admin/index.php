@@ -1425,7 +1425,10 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
             if (!isset($settings['facebookLoginEnabled'])) $settings['facebookLoginEnabled'] = $general['facebookLoginEnabled'] ?? true;
             if (!isset($settings['facebookAppId'])) $settings['facebookAppId'] = $general['facebookAppId'] ?? '';
             if (!isset($settings['facebookAppSecret'])) $settings['facebookAppSecret'] = $general['facebookAppSecret'] ?? '';
-            if (!isset($settings['activeThemeTemplate'])) $settings['activeThemeTemplate'] = $general['activeThemeTemplate'] ?? 'classic-primary';
+            // Site design: only the two shipped designs are ever reported, so a
+            // hand-edited/stale value can never put the panel or a visitor on a
+            // design that does not exist.
+            $settings['activeThemeTemplate'] = astro_normalize_theme_template($settings['activeThemeTemplate'] ?? $general['activeThemeTemplate'] ?? null);
             if (!isset($settings['vodafoneMPaisaNumber'])) $settings['vodafoneMPaisaNumber'] = $general['vodafoneMPaisaNumber'] ?? '+679 999 1234';
             if (!isset($settings['vodafoneMPaisaPaymentMode'])) $settings['vodafoneMPaisaPaymentMode'] = $general['vodafoneMPaisaPaymentMode'] ?? 'offline';
             if (!isset($settings['indiaGpayPaymentMode'])) $settings['indiaGpayPaymentMode'] = $general['indiaGpayPaymentMode'] ?? 'online';
@@ -1448,7 +1451,7 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
                 'facebookLoginEnabled' => true,
                 'facebookAppId' => '',
                 'facebookAppSecret' => '',
-                'activeThemeTemplate' => 'classic-primary',
+                'activeThemeTemplate' => ASTRO_DEFAULT_THEME_TEMPLATE,
                 'vodafoneMPaisaNumber' => '+679 999 1234',
                 'vodafoneMPaisaPaymentMode' => 'offline',
                 'indiaGpayPaymentMode' => 'online',
@@ -1517,6 +1520,21 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
             $body['indiaPriceINR'] = astro_usd_to_inr($body['intlPriceUSD'] ?? ($existingGeneral['intlPriceUSD'] ?? 0));
         }
 
+        // Site design (Admin → Site Design): the setting is a closed set of the
+        // two shipped designs. An unknown id is rejected outright rather than
+        // stored and silently ignored at serve time.
+        if (array_key_exists('activeThemeTemplate', $body)) {
+            $requestedDesign = is_string($body['activeThemeTemplate']) ? trim($body['activeThemeTemplate']) : '';
+            if (!in_array($requestedDesign, ASTRO_SHIPPED_THEME_TEMPLATES, true)) {
+                jsonResponse([
+                    'success' => false,
+                    'message' => 'Unknown design "' . $requestedDesign . '". Nothing was saved — the two shipped designs are '
+                        . implode(' and ', ASTRO_SHIPPED_THEME_TEMPLATES) . '.',
+                ], 400);
+            }
+            $body['activeThemeTemplate'] = $requestedDesign;
+        }
+
         // Deep merge body into general settings
         $mergedGeneral = array_merge($existingGeneral, $body);
         // Remove any legacy model credentials the local-only chat no longer uses.
@@ -1564,8 +1582,16 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
 
         logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'SETTINGS_UPDATED', 'Updated system settings & integrations');
 
+        // Site design: the stored choice decides WHICH prerendered document set
+        // public/.htaccess serves, and .htaccess cannot read the database — it
+        // tests api/.design-light. That marker is the switch, so it is synced
+        // here, immediately after the setting is saved, and its state is
+        // reported back so the panel can warn when the host refuses the write.
+        $designSwitch = astro_sync_design_marker($mergedGeneral['activeThemeTemplate'] ?? null);
+
         // Return updated settings
         $finalSettings = array_merge($mergedGeneral, [
+            'activeThemeTemplate' => $designSwitch['design'],
             'serviceMode' => $serviceMode,
             'freeBetaActive' => (bool)$freeBetaActive,
             'currency' => $currency,
@@ -1574,7 +1600,20 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
             'emailSettings' => $emailSettings
         ]);
 
-        jsonResponse(['success' => true, 'message' => 'Settings saved successfully', 'settings' => astroRedactAdminSettings($finalSettings)]);
+        // The generic message stays exactly what every other panel expects; the
+        // design note is appended only when this request actually carried the
+        // design setting (Admin → Site Design).
+        $settingsMessage = 'Settings saved successfully';
+        if (array_key_exists('activeThemeTemplate', $body)) {
+            $settingsMessage .= ' ' . $designSwitch['message'];
+        }
+
+        jsonResponse([
+            'success' => true,
+            'message' => $settingsMessage,
+            'settings' => astroRedactAdminSettings($finalSettings),
+            'designSwitch' => $designSwitch,
+        ]);
     }
 }
 

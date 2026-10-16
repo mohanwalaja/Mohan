@@ -32,6 +32,12 @@ public_html_combined.zip
 # PHP runtime signing key (never commit)
 api/astrology/tmp/app_secret_key.txt
 
+# Site-design activation marker (Admin → Site Design). api/admin/index.php
+# writes this file when the operator selects the light design; public/.htaccess
+# serves the light prerendered documents while it exists. Runtime state of a
+# live host, never part of a deploy.
+api/.design-light
+
 # Backup generations written by scripts/backup/astro_site_backup.sh (customer
 # data + support documents). These live on the host only, under the directory
 # api/.htaccess already denies over HTTP.

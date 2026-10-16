@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Menu, X, ExternalLink } from 'lucide-react';
-import { ACCOUNT_LINKS, BRAND, LIVE_SITE, MOBILE_EXTRA_LINK, NAV_LINKS, type PageKey } from '../../appConfig';
+import { accountHref, ACCOUNT_LINKS, BRAND, LIVE_SITE, MOBILE_EXTRA_LINK, NAV_LINKS, isPreviewBuild, type PageKey } from '../../appConfig';
 import { BrandWordmark } from './BrandMark';
+import { RouteLink } from '../ui/RouteLink';
 import { useLightUi } from '../../lightContext';
 
 interface NavbarProps {
@@ -27,10 +28,11 @@ export const Navbar: React.FC<NavbarProps> = ({ current, onNavigate }) => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const go = (key: PageKey) => {
+  // Every internal link is a real <a href> (see RouteLink); this only closes
+  // the menus the click came out of, so the page below is visible immediately.
+  const closeMenus = () => {
     setOpen(false);
     setServicesOpen(false);
-    onNavigate(key);
   };
 
   const linkClass = (key: PageKey) =>
@@ -47,53 +49,57 @@ export const Navbar: React.FC<NavbarProps> = ({ current, onNavigate }) => {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-20 sm:px-6 md:h-22">
         {/* Same lock-up, same spacing and the same title the live navbar sets on
             the brand link: "ASTRO SIVAM - Indian Vedic Astrology". */}
-        <button
-          type="button"
-          onClick={() => go('home')}
+        <RouteLink
+          route="home"
+          onNavigate={onNavigate}
+          onBeforeNavigate={closeMenus}
           className="group flex min-w-0 shrink-0 items-center gap-2 py-1 text-left sm:gap-3.5"
           title={`${BRAND.name} - Indian Vedic Astrology`}
-          aria-label={`${BRAND.name} home`}
+          ariaLabel={`${BRAND.name} home`}
         >
           <BrandWordmark emblemAlt="" />
-        </button>
+        </RouteLink>
 
         <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Primary">
-          <button type="button" onClick={() => go('home')} className={linkClass('home')}>
+          <RouteLink route="home" onNavigate={onNavigate} onBeforeNavigate={closeMenus} className={linkClass('home')}>
             Home
-          </button>
+          </RouteLink>
 
           <div
             className="relative"
             onMouseEnter={() => setServicesOpen(true)}
             onMouseLeave={() => setServicesOpen(false)}
           >
-            <button
-              type="button"
-              onClick={() => go('services')}
+            <RouteLink
+              route="services"
+              onNavigate={onNavigate}
+              onBeforeNavigate={closeMenus}
               className={linkClass('services')}
-              aria-expanded={servicesOpen}
+              ariaExpanded={servicesOpen}
             >
               Services
-            </button>
+            </RouteLink>
             {servicesOpen && (
               <div className="c-rise absolute left-0 top-full w-72 pt-2">
                 <div className="overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-[var(--shadow-pop)]">
-                  <button
-                    type="button"
-                    onClick={() => go('services')}
+                  <RouteLink
+                    route="services"
+                    onNavigate={onNavigate}
+                    onBeforeNavigate={closeMenus}
                     className="block w-full rounded-xl px-3 py-2 text-left text-[0.82rem] font-bold text-brand-ink hover:bg-brand-soft"
                   >
                     All Services
-                  </button>
+                  </RouteLink>
                   {NAV_LINKS.filter((link) => link.key !== 'home' && link.key !== 'team').map((link) => (
-                    <button
+                    <RouteLink
                       key={link.key}
-                      type="button"
-                      onClick={() => go(link.key)}
+                      route={link.key}
+                      onNavigate={onNavigate}
+                      onBeforeNavigate={closeMenus}
                       className="block w-full rounded-xl px-3 py-2 text-left text-[0.82rem] font-semibold text-ink-soft hover:bg-page-soft hover:text-ink"
                     >
                       {link.label}
-                    </button>
+                    </RouteLink>
                   ))}
                 </div>
               </div>
@@ -101,26 +107,36 @@ export const Navbar: React.FC<NavbarProps> = ({ current, onNavigate }) => {
           </div>
 
           {NAV_LINKS.filter((link) => link.key !== 'home').map((link) => (
-            <button key={link.key} type="button" onClick={() => go(link.key)} className={linkClass(link.key)}>
+            <RouteLink
+              key={link.key}
+              route={link.key}
+              onNavigate={onNavigate}
+              onBeforeNavigate={closeMenus}
+              className={linkClass(link.key)}
+            >
               {link.label}
-            </button>
+            </RouteLink>
           ))}
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
           <a
-            href={ACCOUNT_LINKS.login.href}
-            rel="noopener"
-            onClick={() => notify('Log in opens the account area on the live site.')}
+            href={accountHref('login')}
+            rel={isPreviewBuild() ? 'noopener' : undefined}
+            onClick={() =>
+              isPreviewBuild() && notify('Log in opens the account area on the live site.')
+            }
             className="inline-flex items-center gap-1.5 rounded-full border border-line-strong px-3.5 py-2 text-[0.82rem] font-bold text-ink-soft transition hover:border-brand/50 hover:text-ink"
           >
             {ACCOUNT_LINKS.login.label}
             <ExternalLink size={12} aria-hidden />
           </a>
           <a
-            href={ACCOUNT_LINKS.register.href}
-            rel="noopener"
-            onClick={() => notify('Sign up opens the account area on the live site.')}
+            href={accountHref('register')}
+            rel={isPreviewBuild() ? 'noopener' : undefined}
+            onClick={() =>
+              isPreviewBuild() && notify('Sign up opens the account area on the live site.')
+            }
             className="rounded-full bg-brand px-4 py-2 text-[0.82rem] font-bold text-white shadow-[var(--shadow-card)] transition hover:bg-brand-deep"
           >
             {ACCOUNT_LINKS.register.label}
@@ -141,43 +157,57 @@ export const Navbar: React.FC<NavbarProps> = ({ current, onNavigate }) => {
       {open && (
         <div className="c-rise border-t border-line bg-page px-4 pb-5 pt-3 lg:hidden">
           <div className="flex flex-col gap-1">
-            <button type="button" onClick={() => go('home')} className={linkClass('home')}>
+            <RouteLink route="home" onNavigate={onNavigate} onBeforeNavigate={closeMenus} className={linkClass('home')}>
               Home
-            </button>
-            <button type="button" onClick={() => go('services')} className={linkClass('services')}>
+            </RouteLink>
+            <RouteLink
+              route="services"
+              onNavigate={onNavigate}
+              onBeforeNavigate={closeMenus}
+              className={linkClass('services')}
+            >
               Services
-            </button>
+            </RouteLink>
             {NAV_LINKS.filter((link) => link.key !== 'home').map((link) => (
-              <button key={link.key} type="button" onClick={() => go(link.key)} className={linkClass(link.key)}>
+              <RouteLink
+                key={link.key}
+                route={link.key}
+                onNavigate={onNavigate}
+                onBeforeNavigate={closeMenus}
+                className={linkClass(link.key)}
+              >
                 {link.label}
-              </button>
+              </RouteLink>
             ))}
-            <button
-              type="button"
-              onClick={() => go(MOBILE_EXTRA_LINK.key)}
+            <RouteLink
+              route={MOBILE_EXTRA_LINK.key}
+              onNavigate={onNavigate}
+              onBeforeNavigate={closeMenus}
               className={linkClass(MOBILE_EXTRA_LINK.key)}
             >
               {MOBILE_EXTRA_LINK.label}
-            </button>
+            </RouteLink>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <a
-              href={ACCOUNT_LINKS.login.href}
+              href={accountHref('login')}
               className="rounded-full border border-line-strong px-3 py-2 text-center text-[0.82rem] font-bold text-ink-soft"
             >
               {ACCOUNT_LINKS.login.label}
             </a>
             <a
-              href={ACCOUNT_LINKS.register.href}
+              href={accountHref('register')}
               className="rounded-full bg-brand px-3 py-2 text-center text-[0.82rem] font-bold text-white"
             >
               {ACCOUNT_LINKS.register.label}
             </a>
           </div>
-          <p className="mt-3 text-[0.68rem] leading-relaxed text-muted">
-            This is the layout preview of the light interface. Sign-in opens the secure account area at{' '}
-            <span className="font-semibold text-ink-soft">{LIVE_SITE.replace('https://', '')}</span>.
-          </p>
+          {isPreviewBuild() && (
+            <p className="mt-3 text-[0.68rem] leading-relaxed text-muted">
+              This is the layout preview of the light interface. Sign-in opens the secure account area at{' '}
+              <span className="font-semibold text-ink-soft">{LIVE_SITE.replace('https://', '')}</span>.
+            </p>
+          )}
         </div>
       )}
     </header>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, MapPin, Mail, ShieldCheck, ChevronRight, ArrowUp, Lock, Facebook } from 'lucide-react';
 import { BrandWordmark } from './BrandMark';
+import { RouteLink } from '../ui/RouteLink';
 import { BUSINESS, BRAND, LIVE_SITE, type PageKey } from '../../appConfig';
 
 interface FooterProps {
@@ -26,9 +27,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     label,
     emphasis = false
   }) => (
-    <button
-      type="button"
-      onClick={() => onNavigate(target)}
+    <RouteLink
+      route={target}
+      onNavigate={onNavigate}
       className={`group flex items-center gap-1.5 text-left text-[0.78rem] transition ${
         emphasis ? 'font-semibold text-brand-ink hover:text-brand-deep' : 'text-ink-soft hover:text-brand-ink'
       }`}
@@ -39,7 +40,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         aria-hidden
       />
       <span>{label}</span>
-    </button>
+    </RouteLink>
   );
 
   return (
@@ -49,14 +50,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-12 lg:gap-10">
           <div className="space-y-3.5 lg:col-span-4">
-            <button
-              type="button"
-              onClick={() => onNavigate('home')}
+            <RouteLink
+              route="home"
+              onNavigate={onNavigate}
               className="group inline-flex items-center gap-3"
-              aria-label={`${BRAND.name} home`}
+              ariaLabel={`${BRAND.name} home`}
             >
               <BrandWordmark emblemAlt="" />
-            </button>
+            </RouteLink>
 
             <p className="pr-2 text-[0.78rem] leading-relaxed text-ink-soft">
               Authentic Vedic horoscope calculations, 10-Poruthams marriage compatibility, auspicious
@@ -91,13 +92,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <Facebook size={13} aria-hidden />
                 <span>Facebook</span>
               </a>
-              <button
-                type="button"
-                onClick={() => onNavigate('contact')}
+              <RouteLink
+                route="contact"
+                onNavigate={onNavigate}
                 className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-1 text-[0.75rem] font-semibold text-ink-soft transition hover:border-brand/40 hover:text-brand-ink"
               >
                 <span>Contact Us</span>
-              </button>
+              </RouteLink>
             </div>
           </div>
 
@@ -208,9 +209,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             ).map(([key, label], index) => (
               <React.Fragment key={key}>
                 {index > 0 && <span className="text-line-strong">•</span>}
-                <button type="button" onClick={() => onNavigate(key)} className="transition hover:text-brand-ink">
+                <RouteLink
+                  route={key}
+                  onNavigate={onNavigate}
+                  className="transition hover:text-brand-ink"
+                >
                   {label}
-                </button>
+                </RouteLink>
               </React.Fragment>
             ))}
           </div>

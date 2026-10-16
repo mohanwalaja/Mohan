@@ -26,6 +26,7 @@ import {
   MUHURTHAM_FAQ_ITEMS
 } from '@shared/data/serviceFaqs';
 import type { ServiceType } from '@shared/types';
+import { isDocumentMode } from './documentMode';
 
 export const BRAND = {
   name: BRAND_NAME,
@@ -43,6 +44,22 @@ export const ACCOUNT_LINKS = {
   login: { label: 'Log In', href: `${LIVE_SITE}/login` },
   register: { label: 'Sign Up', href: `${LIVE_SITE}/register` }
 };
+
+/**
+ * The account links inside the LIGHT design.
+ *
+ * On the deployed site the account surfaces are the classic design's own pages
+ * (they are signed-in tools — see LIGHT_DESIGN_EXCLUDED_ROUTES in
+ * src/services/designSwitch.ts), so the links are same-origin `/login` and
+ * `/register`. In the standalone preview there is no backend at all, so they
+ * point at the live site instead — and the preview says so on screen.
+ */
+export function accountHref(kind: 'login' | 'register'): string {
+  return isDocumentMode() ? `/${kind}` : ACCOUNT_LINKS[kind].href;
+}
+
+/** True only in the deployed documents: the preview must not pretend otherwise. */
+export const isPreviewBuild = (): boolean => !isDocumentMode();
 
 export type PageKey =
   | 'home'

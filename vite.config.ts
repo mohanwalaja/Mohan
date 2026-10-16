@@ -6,6 +6,80 @@ import { defineConfig, type Plugin } from 'vite';
 import { compressBuildOutput } from './vite-plugin-compress';
 
 /**
+ * Serve the operator's selected design during `vite preview`, mirroring
+ * public/.htaccess rule (f2): while the activation marker api/.design-light
+ * exists, a clean URL resolves to the LIGHT prerendered document
+ * (dist/pages/<route>-light.html from scripts/prerender-light.mjs) instead of
+ * the classic one — the same URLs, the same negotiation, the same bytes Apache
+ * would serve.
+ *
+ * WHY: the switch is a server-side rewrite, so a preview that always served the
+ * classic documents could not exercise it at all (and would leave "two designs,
+ * one admin setting" untestable outside cPanel). A real host writes the marker
+ * from the admin panel; a local preview has no PHP, so the marker is read from
+ * the built dist/api/ when present and from the repository's api/ folder
+ * otherwise — that second path is how a developer demos the switch locally
+ * (`touch api/.design-light`).
+ *
+ * The route list mirrors the light rule in public/.htaccess; the four
+ * account/operator routes (login, register, dashboard, admin) deliberately have
+ * no light document.
+ */
+const LIGHT_DESIGN_ROUTES = [
+  'services',
+  'birth-jathagam',
+  'marriage-compatibility',
+  'baby-naming',
+  'muhurtham',
+  'how-it-works',
+  'about',
+  'team',
+  'contact',
+  'privacy-policy',
+  'terms',
+  'payment-policy',
+  'refund-policy',
+];
+
+function previewServeSiteDesign(): Plugin {
+  return {
+    name: 'astro-preview-site-design',
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => {
+        try {
+          if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+          const outDir = path.resolve(server.config.root, server.config.build.outDir);
+          const marker = [
+            path.join(outDir, 'api', '.design-light'),
+            path.join(server.config.root, 'api', '.design-light'),
+          ].find((candidate) => fs.existsSync(candidate));
+          if (!marker) return next();
+
+          const rawUrl = req.url || '';
+          const urlPath = decodeURIComponent(rawUrl.split('?')[0]);
+          if (urlPath.startsWith('/assets/') || urlPath.startsWith('/pages/') || urlPath.startsWith('/api/')) {
+            return next();
+          }
+
+          const trimmed = urlPath.replace(/^\/+|\/+$/g, '').toLowerCase();
+          if (trimmed !== '' && !LIGHT_DESIGN_ROUTES.includes(trimmed)) return next();
+          const name = trimmed === '' ? 'index' : trimmed;
+          const candidate = path.join(outDir, 'pages', `${name}-light.html`);
+          if (!candidate.startsWith(outDir + path.sep) || !fs.existsSync(candidate)) return next();
+
+          const queryIndex = rawUrl.indexOf('?');
+          const query = queryIndex === -1 ? '' : rawUrl.slice(queryIndex);
+          req.url = `/pages/${name}-light.html${query}`;
+          next();
+        } catch {
+          next();
+        }
+      });
+    },
+  };
+}
+
+/**
  * Serve the pre-compressed .br/.gz siblings during `vite preview`, replicating
  * public/.htaccess's Accept-Encoding negotiation.
  *
@@ -28,6 +102,7 @@ import { compressBuildOutput } from './vite-plugin-compress';
  * serves the prerendered document — exactly the blind spot that hid the SEO
  * audit findings (every URL returning the identical empty shell).
  */
+
 function previewServePrerendered(): Plugin {
   return {
     name: 'astro-preview-prerendered',
@@ -349,7 +424,10 @@ export default defineConfig(() => {
         },
       },
     },
-    plugins: [react(), tailwindcss(), apiDevMiddleware(), previewServePrerendered(), previewServePrecompressed(), compressBuildOutput()],
+    // previewServeSiteDesign() runs before previewServePrerendered(): the
+    // design marker decides which document set a clean URL resolves to (the
+    // same order public/.htaccess uses).
+    plugins: [react(), tailwindcss(), apiDevMiddleware(), previewServeSiteDesign(), previewServePrerendered(), previewServePrecompressed(), compressBuildOutput()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

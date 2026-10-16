@@ -149,6 +149,31 @@
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
+  # (f2) SITE DESIGN SWITCH (Admin → Site Design; two shipped designs).
+  #
+  # The operator picks between the classic (dark) design and the light Sunrise
+  # Ivory design. Both are served at the SAME canonical URLs — the URLs, the
+  # sitemap and every canonical link are identical under either design — and the
+  # choice is carried by the activation marker api/.design-light that
+  # api/admin/index.php writes or deletes when activeThemeTemplate changes.
+  #
+  # While that marker exists, a clean URL resolves to the light prerendered
+  # document (scripts/prerender-light.mjs writes pages/<route>-light.html and
+  # pages/index-light.html) instead of the classic one; without it, the classic
+  # rules below run untouched, byte-for-byte, exactly as they always have.
+  # mod_rewrite cannot read the database, which is the whole point: this keeps
+  # PHP out of every page view.
+  #
+  # The four account/operator routes (login, register, dashboard, admin) are
+  # deliberately NOT listed: they keep the classic interface under both
+  # designs, and they have no light document.
+  RewriteCond %{DOCUMENT_ROOT}/api/.design-light -f
+  RewriteCond %{DOCUMENT_ROOT}/pages/index-light.html -f
+  RewriteRule ^/?$ /pages/index-light.html [L]
+  RewriteCond %{DOCUMENT_ROOT}/api/.design-light -f
+  RewriteCond %{DOCUMENT_ROOT}/pages/$1-light.html -f
+  RewriteRule ^(services|birth-jathagam|marriage-compatibility|baby-naming|muhurtham|how-it-works|about|team|contact|privacy-policy|terms|payment-policy|refund-policy)/?$ /pages/$1-light.html [L]
+
   # (g) PRERENDERED ROUTE DOCUMENTS (SEO audit fix 2026-10-14, findings 1+2):
   # scripts/prerender.mjs writes pages/<route>.html per public route — each
   # with its own <title>, meta description, self-referencing canonical and

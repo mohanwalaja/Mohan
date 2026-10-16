@@ -128,6 +128,13 @@ const testFiles = [
   'tests/boot-splash-contract.test.ts',
   // Lazy route modules must keep exporting the component names App.tsx maps.
   'tests/route-chunk-exports.test.ts',
+  // The TWO shipped designs (classic dark / Sunrise Ivory light), chosen from
+  // the admin panel: one closed set of design ids across TypeScript and PHP, the
+  // api/.design-light activation marker that public/.htaccess alone may key on,
+  // the build order, and — when dist/ exists — that every light document passes
+  // the same crawlability/SEO guards the classic documents do. The light
+  // bundle's boot gate is EXECUTED, not read.
+  'tests/site-design-switch.test.ts',
   // The initial-JS budget (audit PERF-1): the homepage must not download the
   // PDF renderer or Leaflet — not on first paint, not on an idle callback —
   // and the deferred features must stay reachable on demand. Runs both

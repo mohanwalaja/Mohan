@@ -411,7 +411,12 @@ if (($method === 'GET' || $method === 'HEAD') && (
         if (!isset($settings['googleClientId'])) $settings['googleClientId'] = $general['googleClientId'] ?? '';
         if (!isset($settings['facebookLoginEnabled'])) $settings['facebookLoginEnabled'] = $general['facebookLoginEnabled'] ?? true;
         if (!isset($settings['facebookAppId'])) $settings['facebookAppId'] = $general['facebookAppId'] ?? '';
-        if (!isset($settings['activeThemeTemplate'])) $settings['activeThemeTemplate'] = $general['activeThemeTemplate'] ?? 'classic-primary';
+        // Site design: only the two shipped designs are ever published (see
+        // ASTRO_SHIPPED_THEME_TEMPLATES in api/config.php). The light design's
+        // documents are served by public/.htaccess while api/.design-light
+        // exists; this payload is how the light bundle itself can tell that the
+        // operator has switched back to the classic design.
+        $settings['activeThemeTemplate'] = astro_normalize_theme_template($settings['activeThemeTemplate'] ?? $general['activeThemeTemplate'] ?? null);
         if (!isset($settings['vodafoneMPaisaNumber'])) $settings['vodafoneMPaisaNumber'] = $general['vodafoneMPaisaNumber'] ?? '+679 999 1234';
         if (!isset($settings['vodafoneMPaisaPaymentMode'])) $settings['vodafoneMPaisaPaymentMode'] = $general['vodafoneMPaisaPaymentMode'] ?? 'offline';
         if (!isset($settings['indiaGpayPaymentMode'])) $settings['indiaGpayPaymentMode'] = $general['indiaGpayPaymentMode'] ?? 'online';
@@ -471,7 +476,7 @@ if (($method === 'GET' || $method === 'HEAD') && (
             'googleClientId' => '',
             'facebookLoginEnabled' => true,
             'facebookAppId' => '',
-            'activeThemeTemplate' => 'classic-primary',
+            'activeThemeTemplate' => ASTRO_DEFAULT_THEME_TEMPLATE,
             'vodafoneMPaisaNumber' => '+679 999 1234',
             'vodafoneMPaisaPaymentMode' => 'offline',
             'indiaGpayPaymentMode' => 'online',

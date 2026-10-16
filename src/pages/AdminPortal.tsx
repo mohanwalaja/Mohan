@@ -118,6 +118,10 @@ import { SetupChecklistPanel } from '../components/admin/SetupChecklistPanel';
 import { GoogleSetupPanel } from '../components/admin/GoogleSetupPanel';
 import { SecurityBannedIpPanel } from '../components/admin/SecurityBannedIpPanel';
 import { CustomerReviewsPanel } from '../components/admin/CustomerReviewsPanel';
+// Admin → Site Design: the operator's control for the two shipped designs
+// (classic dark / Sunrise Ivory light). Served by public/.htaccess through the
+// api/.design-light activation marker this panel's save writes.
+import { DesignPanel } from '../components/admin/DesignPanel';
 import { SEO } from '../components/common/SEO';
 
 interface AdminPortalProps {
@@ -182,7 +186,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     setExpandedGroupIds(prev => ({ ...prev, [groupId]: !prev[groupId] }));
 
   const [activeSection, setActiveSection] = useState<
-    'orders' | 'analytics' | 'financial' | 'payments' | 'emails' | 'alerts' | 'aiastrologer' | 'database' | 'health' | 'checklist' | 'messages' | 'reviews' | 'team' | 'settings' | 'users' | 'logs' | 'google' | 'security' | 'errors' | 'escalations'
+    'orders' | 'analytics' | 'financial' | 'payments' | 'emails' | 'alerts' | 'aiastrologer' | 'database' | 'health' | 'checklist' | 'messages' | 'reviews' | 'team' | 'settings' | 'design' | 'users' | 'logs' | 'google' | 'security' | 'errors' | 'escalations'
   >('orders');
 
   // Astrologer escalation queue: complaints forwarded from the source-based chat and
@@ -1951,6 +1955,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
           <span>Service Mode & Pricing</span>
         </button>
 
+        <button
+          id="tab-site-design"
+          onClick={() => setActiveSection('design')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            activeSection === 'design'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+          }`}
+        >
+          <Palette className="w-3.5 h-3.5 text-amber-400" />
+          <span>Site Design</span>
+        </button>
+
 
         <button
           id="tab-google-setup"
@@ -3411,6 +3428,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       {/* SECTION: FINANCIAL DASHBOARD */}
       {activeSection === 'financial' && (
         <FinancialDashboard onRefreshOrders={fetchAdminData} />
+      )}
+
+      {/* SECTION: SITE DESIGN (the two shipped designs) */}
+      {activeSection === 'design' && (
+        <DesignPanel
+          settings={settings}
+          onUpdateSettings={handleUpdateSettingsGeneric}
+          onSaved={async () => {
+            await refreshSettings();
+          }}
+        />
       )}
 
       {/* SECTION: PAYMENT GATEWAY CONFIGURATION */}
