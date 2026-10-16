@@ -31,7 +31,7 @@ export const AstrologyTeamPage: React.FC<AstrologyTeamPageProps> = ({ onNavigate
       />
 
       {/* Top Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-8 sm:p-12 text-white shadow-2xl">
+      <div className="team-introduction relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-8 sm:p-12 text-white shadow-2xl">
         <div className="max-w-3xl space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />

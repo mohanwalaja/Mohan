@@ -1486,6 +1486,9 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
         jsonResponse(['success' => true, 'settings' => astroRedactAdminSettings($settings)]);
     } elseif ($method === 'PUT') {
         $body = astroOmitBlankAdminSecrets(getJsonBody());
+        if (isset($body['userDesign']) && !in_array($body['userDesign'], ['original', 'ivory'], true)) {
+            jsonResponse(['success' => false, 'message' => 'Invalid user website design.'], 400);
+        }
         // Automated M-PAiSA checkout/capture is not implemented in this API.
         if (($body['vodafoneMPaisaPaymentMode'] ?? null) === 'online') $body['vodafoneMPaisaPaymentMode'] = 'offline';
 

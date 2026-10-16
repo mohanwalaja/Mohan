@@ -217,7 +217,20 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               Secure & verified global payment channels:
             </p>
 
-            <div className="flex flex-wrap gap-1.5">
+            <div className="payment-brand-logos" aria-label="Accepted payment methods">
+              {[
+                ['paypal', 'PayPal'], ['visa', 'Visa'], ['master', 'Mastercard'],
+                ['american_express', 'American Express'], ['google_pay', 'Google Pay (UPI · India)'],
+                ['discover', 'Discover'],
+              ].map(([file, label]) => (
+                <span className="payment-brand-logos__item" key={file} title={label}>
+                  <img src={`/assets/payments/${file}.svg`} alt={label} width="64" height="40" loading="lazy" />
+                  {file === 'google_pay' && <small>UPI · India</small>}
+                </span>
+              ))}
+            </div>
+
+            <div className="payment-text-badges flex flex-wrap gap-1.5">
               <span className="px-2.5 py-1 rounded-md bg-blue-950/40 border border-blue-800/60 text-blue-300 text-[10.5px] font-bold inline-flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                 PayPal

@@ -1,0 +1,144 @@
+/* Additive, browser-local user previews. No selectors apply to admin routes,
+   the original design, or exported report documents. */
+[data-user-design] { --paper:#fffaf2; --surface:#ffffff; --tint:#f7ecdc; --heading:#34271d; --muted:#6e6052; --accent:#9c4c1d; --line:#e7d7c3; --radius:14px; background:var(--paper)!important; color:var(--heading)!important; color-scheme:light; }
+[data-user-design] > .fixed { opacity:.08; }
+[data-user-design] :is(header,footer) { background:var(--surface)!important; color:var(--heading)!important; border-color:var(--line)!important; box-shadow:0 4px 24px #24203006; }
+[data-user-design] :is(h1,h2,h3,h4,h5,h6) { color:var(--heading)!important; }
+[data-user-design] :is(p,li) { color:var(--muted); }
+[data-user-design] :is(.hero-backdrop,.service-page-hero) { background:radial-gradient(ellipse at 90% 20%,var(--tint),transparent 65%),var(--paper)!important; border-color:var(--line)!important; color:var(--heading)!important; }
+[data-user-design] .hero-backdrop::before { opacity:.18; background-image:radial-gradient(var(--accent) .6px,transparent .6px); }
+[data-user-design] .hero-backdrop::after { border-color:var(--line); box-shadow:0 0 0 42px color-mix(in srgb,var(--tint) 50%,transparent),0 0 0 84px color-mix(in srgb,var(--tint) 25%,transparent); }
+[data-user-design] :is(.service-card,.team-card,.testimonial-card,.pillar-card,.celestial-card) { background:var(--surface)!important; border:1px solid var(--line)!important; border-radius:var(--radius); color:var(--heading); box-shadow:0 8px 32px #29203806; }
+[data-user-design] :is(.service-card,.team-card,.testimonial-card,.pillar-card):hover { border-color:var(--accent)!important; box-shadow:0 16px 40px #29203810; }
+[data-user-design] :is(.service-icon,.eyebrow,.text-gold,.text-gold-soft) { color:var(--accent)!important; }
+[data-user-design] .service-icon { background:var(--tint); border-color:var(--line); }
+[data-user-design] :is(.button-primary,button[type="submit"]) { background:var(--accent)!important; color:white!important; border-color:var(--accent)!important; box-shadow:0 6px 16px #29203812; }
+[data-user-design] :is(.dark-quiet,.button-quiet) { color:var(--accent); background:var(--surface); border-color:var(--line); }
+[data-user-design] :is(input,select,textarea) { color-scheme:light; color:var(--heading); }
+[data-user-design] :is(input,textarea):not([type="checkbox"]):not([type="radio"]) { background:var(--surface)!important; border-color:var(--line)!important; }
+[data-user-design] :is(input,textarea,select):-webkit-autofill { -webkit-text-fill-color:var(--heading)!important; -webkit-box-shadow:0 0 0 1000px var(--surface) inset!important; caret-color:var(--heading)!important; }
+[data-user-design] [class*="border-"] { border-color:var(--line); }
+[data-user-design] [class*="shadow-"] { --tw-shadow-color:#29203812; }
+[data-user-design] [class*="bg-clip-text"] { background-image:none!important; color:var(--accent)!important; filter:none; }
+/* Three distinct visual directions, without replacing content or behaviour. */
+[data-user-design="ivory"] .service-card { border-top:3px solid var(--accent)!important; }
+
+[data-user-design] :is([class*="bg-[#"],[class*="bg-slate-"],[class*="bg-black"],[class*="bg-white/"],[class*="bg-gray-"],[class*="bg-indigo-950"],[class*="bg-purple-950"]) { background:var(--surface)!important; }
+[data-user-design] :is([class*="text-white"],[class*="text-ink"],[class*="text-[#fff"],[class*="text-slate-1"],[class*="text-slate-2"]) { color:var(--heading)!important; }
+[data-user-design] :is([class*="text-slate-3"],[class*="text-slate-4"],[class*="text-slate-5"],[class*="text-gray-"]) { color:var(--muted)!important; }
+[data-user-design] [class*="text-amber-"] { color:var(--accent)!important; }
+[data-user-design] [class*="text-purple-"] { color:#7950a0!important; }
+[data-user-design] [class*="text-rose-"] { color:#a43c62!important; }
+[data-user-design] [class*="text-emerald-"] { color:#23725c!important; }
+[data-user-design] [class*="text-blue-"] { color:#34649a!important; }
+[data-user-design] [class*="text-indigo-"] { color:#5e55a0!important; }
+[data-user-design] [class*="text-red-"] { color:#b83b42!important; }
+[data-user-design] [class*="text-green-"] { color:#28704a!important; }
+[data-user-design] [class*="text-cyan-"] { color:#256d80!important; }
+[data-user-design] .button-primary, [data-user-design] button[type="submit"] { color:white!important; background:var(--accent)!important; }
+
+/* Semantic surfaces have their own cosmic styles (not Tailwind utilities).
+   Override these explicitly so light text tokens never land on dark cards. */
+[data-user-design] .service-form-card {
+  background:var(--surface)!important;
+  color:var(--heading);
+  border-color:var(--line);
+  box-shadow:0 12px 36px #34271d0c;
+  backdrop-filter:none;
+}
+[data-user-design] .service-form-section {
+  background:var(--paper)!important;
+  border-color:var(--line)!important;
+  color:var(--heading);
+}
+[data-user-design] :is(.service-form-card,.service-form-section) { color-scheme:light; }
+[data-user-design] :is(.service-form-card,.service-form-section) label { color:var(--muted); }
+[data-user-design] :is(.service-form-card,.service-form-section) :is(input,select,textarea) { color:var(--heading); caret-color:var(--heading); }
+[data-user-design] :is(.service-form-card,.service-form-section) input::placeholder { color:var(--muted); opacity:1; }
+[data-user-design] .service-form-card .grid .bg-slate-100\/90,
+[data-user-design] .service-form-section .grid .bg-slate-100\/90 {
+  background:var(--tint)!important;
+  border-color:var(--line)!important;
+  color:var(--heading);
+}
+[data-user-design] :is(.service-page-hero__eyebrow,.service-page-hero__icon) { color:var(--accent); }
+[data-user-design] .service-page-hero__description { color:var(--muted); }
+
+/* How it works: light reading surfaces, with the cinema itself kept dark. */
+[data-user-design] .hiw-page { color:var(--heading); }
+[data-user-design] :is(.hiw-hero > p,.hiw-section-heading > p,.hiw-trust-band p,.hiw-final-cta p) { color:var(--muted)!important; }
+[data-user-design] :is(.hiw-hero__eyebrow,.hiw-section-heading__eyebrow,.hiw-hero__facts,.hiw-trust-band__copy > span,.hiw-final-cta > div:nth-child(2) > span) { color:var(--accent); }
+[data-user-design] :is(.hiw-step-card,.hiw-trust-band,.hiw-final-cta) {
+  background:var(--surface)!important;
+  border-color:var(--line);
+  color:var(--heading);
+  box-shadow:0 8px 28px #34271d09;
+}
+[data-user-design] .hiw-step-card:is(:hover,.is-current) { background:var(--paper)!important; border-color:var(--accent); box-shadow:0 8px 28px #34271d10; }
+[data-user-design] .hiw-step-card__title { color:var(--heading); }
+[data-user-design] :is(.hiw-step-card__description,.hiw-step-card__time,.hiw-step-card__features > span) { color:var(--muted); }
+[data-user-design] .hiw-step-card__features { border-color:var(--line); }
+[data-user-design] :is(.hiw-step-card__tagline,.hiw-step-card__open,.hiw-step-card__features svg) { color:var(--accent); }
+[data-user-design] :is(.hiw-step-card__icon,.hiw-trust-band__icon,.hiw-final-cta__ornament) { background:var(--tint); color:var(--accent); border-color:var(--line); }
+[data-user-design] .hiw-trust-band > a,
+[data-user-design] .hiw-final-cta__actions a { background:var(--tint); color:var(--accent); border-color:var(--line); }
+[data-user-design] .hiw-final-cta__actions a:first-child,
+[data-user-design] .hiw-trust-band > a:hover,
+[data-user-design] .hiw-final-cta__actions a:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+/* The film's dark photographic overlays require their original light ink. */
+[data-user-design] .hiw-player :is(h1,h2,h3,h4,h5,h6) { color:#fff7e9!important; }
+[data-user-design] .hiw-player p { color:#c5b9aa; }
+
+/* Brand artwork stays unfiltered, on neutral backgrounds for legibility. */
+.payment-brand-logos { display:none; }
+[data-user-design] .payment-text-badges { display:none; }
+[data-user-design] .payment-brand-logos { display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px; }
+[data-user-design] .payment-brand-logos__item { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3px 5px; min-height:34px; background:#fff; border:1px solid var(--line); border-radius:8px; }
+[data-user-design] .payment-brand-logos img { display:block; width:44px; height:28px; object-fit:contain; }
+[data-user-design] .payment-brand-logos small { color:var(--muted); font-size:8px; line-height:11px; }
+
+/* Remove the accidental white block behind the introduction. `header` also
+   matches this page's semantic intro header, not just the site navbar. */
+[data-user-design] header.hiw-hero { background:transparent!important; box-shadow:none; }
+[data-user-design] .hiw-hero > p { color:var(--muted)!important; }
+[data-user-design] .hiw-final-cta__actions a:last-child { color:var(--accent); background:var(--tint); border-color:var(--line); }
+[data-user-design] .hiw-final-cta__actions a:last-child:hover { color:#fff; background:var(--accent); }
+
+/* Dark-only pink/amber shades were leaking into light controls. */
+[data-user-design] [class*="text-pink-"] { color:#9c365f!important; }
+[data-user-design] :is([class*="bg-amber-950"],[class*="bg-amber-900"],[class*="bg-pink-950"],[class*="bg-pink-900"]) { background:var(--tint)!important; }
+[data-user-design] .service-form-card button[class*="border-pink-500"][class*="ring-2"] { background:#fce7ef!important; color:#8b2c50!important; border-color:#af456d!important; }
+[data-user-design] .service-form-card button[class*="border-pink-500"][class*="ring-2"] span { color:inherit!important; }
+[data-user-design] :is(input,select,textarea,button,a):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+
+/* Team introduction and the shared ethics panel are bespoke dark surfaces;
+   pair their light-preview ink with explicitly light backgrounds. */
+[data-user-design] :is(.team-introduction,.assurance-box,.assurance-box-dark) {
+  background:linear-gradient(120deg,var(--surface),var(--paper))!important;
+  color:var(--heading);
+  border-color:var(--line);
+  box-shadow:0 8px 28px #34271d09;
+}
+[data-user-design] :is(.assurance-box,.assurance-box-dark)::after {
+  border-color:var(--line);
+  box-shadow:0 0 0 18px color-mix(in srgb,var(--tint) 50%,transparent);
+  opacity:.5;
+}
+[data-user-design] [class*="text-sky-"] { color:#24677d!important; }
+[data-user-design] .team-card [class*="rounded-full"][class*="text-"] { opacity:1; }
+/* Status chips also need light fills rather than dark translucent green. */
+[data-user-design] :is([class*="bg-emerald-950"],[class*="bg-green-950"],[class*="bg-emerald-900"]) { background:#e5f4ec!important; }
+
+/* Customer sign-in: keep the emblem itself, without a decorative frame. */
+[data-user-design] .customer-login-brand > div:first-child {
+  border:0!important;
+  border-radius:0;
+  background:transparent!important;
+  padding:0;
+  box-shadow:none;
+  overflow:visible;
+}
+[data-user-design] .customer-login-brand > div:first-child img {
+  border-radius:0;
+  object-fit:contain;
+}
