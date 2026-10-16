@@ -54,7 +54,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
       
       {/* Brand Header — emblem with the name and the slogan under it */}
       <div className="text-center space-y-3">
-        <BrandLockup />
+        <BrandLockup className="customer-login-brand" />
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white">
             Customer Sign In

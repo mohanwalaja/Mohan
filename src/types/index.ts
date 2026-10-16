@@ -329,6 +329,8 @@ export interface SystemSettings {
   googleClientId?: string;
   // Web Design Theme Template (South Indian Styles)
   activeThemeTemplate?: ThemeTemplateId;
+  /** Public/customer UI only. Admin always keeps the original dark design. */
+  userDesign?: 'original' | 'ivory';
   // General & Email
   supportEmail: string;
   supportPhone: string;

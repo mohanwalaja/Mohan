@@ -3,6 +3,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
+import './user-designs.css';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { HomePage } from './pages/HomePage';
@@ -313,7 +314,9 @@ function AppContent() {
   };
 
   const [currentRoute, setCurrentRoute] = useState<string>(getInitialRoute());
-  const { user, birthProfile } = useAuth();
+  const isAdminRoute = currentRoute === 'admin' || currentRoute === 'admin-portal';
+  const { user, birthProfile, settings } = useAuth();
+  const design = settings?.userDesign === 'ivory' ? 'ivory' : 'original';
 
   // Handle browser back/forward buttons and programmatic app:navigate events
   useEffect(() => {
@@ -424,7 +427,7 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0b0718] dark:bg-[#0b0718] text-[#fffdfa] font-sans antialiased selection:bg-amber-500 selection:text-slate-950 relative">
+    <div data-user-design={!isAdminRoute && design !== 'original' ? design : undefined} className="min-h-screen flex flex-col bg-[#0b0718] dark:bg-[#0b0718] text-[#fffdfa] font-sans antialiased selection:bg-amber-500 selection:text-slate-950 relative">
       {/* Cosmic Constellations Background Canvas */}
       <CosmicBackground />
 

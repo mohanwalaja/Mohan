@@ -217,31 +217,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               Secure & verified global payment channels:
             </p>
 
-            <div className="flex flex-wrap gap-1.5">
-              <span className="px-2.5 py-1 rounded-md bg-blue-950/40 border border-blue-800/60 text-blue-300 text-[10.5px] font-bold inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                PayPal
-              </span>
-              <span className="px-2.5 py-1 rounded-md bg-indigo-950/40 border border-indigo-800/60 text-indigo-300 text-[10.5px] font-bold inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                VISA
-              </span>
-              <span className="px-2.5 py-1 rounded-md bg-orange-950/40 border border-orange-800/60 text-orange-300 text-[10.5px] font-bold inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                Mastercard
-              </span>
-              <span className="px-2.5 py-1 rounded-md bg-sky-950/40 border border-sky-800/60 text-sky-300 text-[10.5px] font-bold inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-                Amex
-              </span>
-              <span className="px-2.5 py-1 rounded-md bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-[10.5px] font-bold inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Google Pay (UPI · India)
-              </span>
-              <span className="px-2.5 py-1 rounded-md bg-purple-950/40 border border-purple-800/60 text-purple-300 text-[10.5px] font-bold inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                Discover
-              </span>
+            <div className="payment-brand-logos" aria-label="Accepted payment methods">
+              {[
+                ['paypal', 'PayPal'], ['visa', 'Visa'], ['master', 'Mastercard'],
+                ['american_express', 'American Express'], ['google_pay', 'Google Pay (UPI · India)'],
+                ['discover', 'Discover'],
+              ].map(([file, label]) => (
+                <span className="payment-brand-logos__item" key={file} title={label}>
+                  <img src={`/assets/payments/${file}.svg`} alt={label} width="44" height="28" loading="lazy" />
+                  {file === 'google_pay' && <small>UPI · India</small>}
+                </span>
+              ))}
             </div>
 
             <div className="flex items-center gap-1.5 text-[10.5px] text-slate-400 pt-1">
