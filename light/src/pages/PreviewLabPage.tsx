@@ -30,7 +30,6 @@ import {
   panchangamFor,
   poruthamFor,
   scanWithLookahead,
-  shiftMonthKey,
   type BabyNamingResult,
   type HoroscopeResult,
   type MuhurthamEventKey,
