@@ -121,11 +121,12 @@ await check('the splash costs no extra request and no inline script (the CSP for
 await check('prerendered customer content stays covered and its loading surface is light', () => {
   const css = bootStyle(indexHtml);
   assert.doesNotMatch(css, /html\[data-prerendered\]\s+#boot-splash\s*\{\s*display:\s*none/);
-  assert.match(css, /Public prerenders start on a neutral Ivory surface/);
+  assert.match(css, /Public prerenders start on the default Ivory surface/);
   assert.match(css, /html\[data-prerendered\]\s+#boot-splash\s*\{[^}]*#fffaf2/);
   assert.match(css, /html\[data-prerendered\]\s+#boot-splash \.boot-word\s*\{\s*color:\s*#6f391f/);
   const app = read('src/App.tsx');
-  assert.match(app, /if \(isAdminRoute \|\| settingsResolved\) dismissBootSplash\(\)/);
+  assert.match(app, /useState<ColorMode>\(getSavedColorMode\)/);
+  assert.match(app, /data-user-design=\{!isAdminRoute && colorMode === 'light' \? 'ivory' : undefined\}/);
   assert.match(read('src/context/AuthContext.tsx'), /SETTINGS_CACHE_KEY/);
 });
 
@@ -194,7 +195,7 @@ await check('the route-ready marker dismisses the splash inside the Suspense bou
   const app = read('src/App.tsx');
   assert.match(
     app,
-    /<Suspense fallback=\{<RouteFallback \/>\}>[\s\S]*?<RouteLoadedMarker isAdminRoute=\{isAdminRoute\} \/>[\s\S]*?<\/Suspense>/,
+    /<Suspense fallback=\{<RouteFallback \/>\}>[\s\S]*?<RouteLoadedMarker \/>[\s\S]*?<\/Suspense>/,
     'RouteLoadedMarker must stay INSIDE the Suspense boundary: dismissing the splash before a lazy route chunk resolves would reveal the spinner instead of the page',
   );
   assert.match(

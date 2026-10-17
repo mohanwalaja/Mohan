@@ -16,6 +16,7 @@ import {
 } from './services/routeChunks';
 import { dismissBootSplash, getPrerenderedPage, clearPrerenderedPage } from './services/bootSplash';
 import { routeHref } from './services/routePaths';
+import { getSavedColorMode, saveColorMode, type ColorMode } from './services/colorMode';
 
 // Routes are code-split (audit S1, widened by audit PERF-1): the admin portal,
 // the customer dashboard and the four report pages pull in the PDF/HTML report
@@ -221,18 +222,15 @@ function RouteFallback() {
  *      the Suspense boundary first renders its fallback, a failing chunk could
  *      reload the page in an endless loop.
  *   2. Release the initial static-page fallback and dismiss the boot splash.
- *      Customer prerenders stay covered until their saved design resolves;
- *      the admin path remains immediate and dark.
+ *      The visitor's light/dark choice is already available synchronously from
+ *      local storage, so no settings API request needs to hold up first paint.
  */
-function RouteLoadedMarker({ isAdminRoute }: { isAdminRoute: boolean }) {
-  const { settingsResolved } = useAuth();
+function RouteLoadedMarker() {
   useEffect(() => {
     clearChunkRecoveryFlag();
     clearPrerenderedPage();
-    // Admin must retain its existing immediate, dark startup. Customer pages
-    // stay behind the boot splash until the saved public design has resolved.
-    if (isAdminRoute || settingsResolved) dismissBootSplash();
-  }, [isAdminRoute, settingsResolved]);
+    dismissBootSplash();
+  }, []);
   return null;
 }
 
@@ -318,10 +316,26 @@ function AppContent() {
 
   const [currentRoute, setCurrentRoute] = useState<string>(getInitialRoute());
   const isAdminRoute = currentRoute === 'admin' || currentRoute === 'admin-portal';
-  const { user, birthProfile, settings } = useAuth();
-  const savedDesign = settings?.userDesign === 'ivory' ? 'ivory' : 'original';
-  const [previewDesign, setPreviewDesign] = useState<'original' | 'ivory' | null>(null);
-  const design = previewDesign ?? savedDesign;
+  const { user, birthProfile } = useAuth();
+  // Public pages start in Ivory (light) unless this visitor chose dark. Admin
+  // pages keep their original dark appearance regardless of that choice.
+  const [colorMode, setColorMode] = useState<ColorMode>(getSavedColorMode);
+  const toggleColorMode = () => {
+    const nextMode = colorMode === 'light' ? 'dark' : 'light';
+    setColorMode(nextMode);
+    saveColorMode(nextMode);
+  };
+
+  // Keep the browser canvas, native UI and address-bar color in step with the
+  // public choice. The .dark class stays for the existing Tailwind utilities;
+  // Ivory's scoped styles supply the light surfaces inside the app.
+  useEffect(() => {
+    const light = !isAdminRoute && colorMode === 'light';
+    document.documentElement.style.colorScheme = light ? 'light' : 'dark';
+    document.documentElement.style.backgroundColor = light ? '#fffaf2' : '#0b0718';
+    document.body.style.backgroundColor = light ? '#fffaf2' : '#0b0718';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#fffaf2' : '#0b0813');
+  }, [colorMode, isAdminRoute]);
 
   // Handle browser back/forward buttons and programmatic app:navigate events
   useEffect(() => {
@@ -432,21 +446,21 @@ function AppContent() {
   };
 
   return (
-    <div data-user-design={!isAdminRoute && design !== 'original' ? design : undefined} className="min-h-screen flex flex-col bg-[#0b0718] dark:bg-[#0b0718] text-[#fffdfa] font-sans antialiased selection:bg-amber-500 selection:text-slate-950 relative">
+    <div data-user-design={!isAdminRoute && colorMode === 'light' ? 'ivory' : undefined} className="min-h-screen flex flex-col bg-[#0b0718] dark:bg-[#0b0718] text-[#fffdfa] font-sans antialiased selection:bg-amber-500 selection:text-slate-950 relative">
       {/* Cosmic Constellations Background Canvas */}
       <CosmicBackground />
 
       <Navbar
         currentRoute={currentRoute}
         onNavigate={handleNavigate}
-        designPreview={design}
-        showDesignPreview={!isAdminRoute}
-        onToggleDesignPreview={() => setPreviewDesign((current) => (current ?? savedDesign) === 'ivory' ? 'original' : 'ivory')}
+        colorMode={colorMode}
+        showColorModeToggle={!isAdminRoute}
+        onToggleColorMode={toggleColorMode}
       />
       <main className="flex-grow relative z-10">
         <Suspense fallback={<RouteFallback />}>
           {renderRoute()}
-          <RouteLoadedMarker isAdminRoute={isAdminRoute} />
+          <RouteLoadedMarker />
         </Suspense>
       </main>
       <Footer onNavigate={handleNavigate} />

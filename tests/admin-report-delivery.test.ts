@@ -27,9 +27,9 @@
  *
  * Mocks and test data only: no real e-mail, no real database, no production order.
  *   npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54   # enables parts 2-4
- * CI's Node test suite job installs exactly that after `npm test` and runs this
- * file again with ASTRO_REQUIRE_PHP_WASM_TESTS=1, which turns a missing runtime
- * into a failure instead of a skip (asserted by a static check below).
+ * The PHP-WASM half remains available for local checks. GitHub Actions now
+ * runs only the native PHP suite, so the optional Node runtime is not installed
+ * by CI.
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -51,7 +51,7 @@ const SCREENSHOT_MESSAGE =
   'Preview-quality report and invoice PDF did not reach the server. No email was sent; render and upload both documents before approving.';
 /**
  * The pinned, test-only PHP-WASM runtime (~480 MB: it bundles every PHP version,
- * so it is not a devDependency). CI runs exactly this command - asserted below.
+ * so it is not a devDependency). Install it locally to exercise the optional half.
  */
 const PHP_WASM_INSTALL = 'npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54';
 
@@ -205,28 +205,6 @@ await check("approval only attaches a staged report recorded for the same order 
   assert.ok(!/count\(\$stagedReports\)\s*===\s*1/.test(resolver.slice(0, 3000)));
   assert.ok(familyDocsPhp.includes('function astroFamilyDocsResolveTarget('));
   assert.ok(indexPhp.includes("astroStageFamilyDoc($pdo, $admin, $target['scope'], $body, $target['orders'])"));
-});
-
-await check('CI runs the real-route half of this file with the runtime required, so a skip cannot pass', () => {
-  const workflow = read('.github/workflows/build.yml');
-  const start = workflow.indexOf('\n  tests:\n');
-  assert.ok(start >= 0, 'build.yml has no tests job');
-  const rest = workflow.slice(start + 1);
-  const nextJob = rest.slice(1).search(/\n  [a-z][a-z0-9-]*:\n/);
-  const testsJob = nextJob < 0 ? rest : rest.slice(0, nextJob + 1);
-  const install = testsJob.indexOf(`run: ${PHP_WASM_INSTALL}\n`);
-  assert.ok(install >= 0, `the Node test suite job must run exactly: ${PHP_WASM_INSTALL}`);
-  const flag = testsJob.indexOf("ASTRO_REQUIRE_PHP_WASM_TESTS: '1'", install);
-  assert.ok(flag > install, "a step after the runtime install must set ASTRO_REQUIRE_PHP_WASM_TESTS: '1'");
-  const stepStart = testsJob.lastIndexOf('\n      - ', flag);
-  const stepEnd = testsJob.indexOf('\n      - ', flag);
-  const step = testsJob.slice(stepStart, stepEnd < 0 ? undefined : stepEnd);
-  assert.match(
-    step,
-    /^\s+run: (npm test|npx tsx tests\/admin-report-delivery\.test\.ts)\s*$/m,
-    'the step with the flag must run this file (directly or through npm test)'
-  );
-  assert.ok(!/continue-on-error/.test(testsJob), 'the Node test suite job must stay a blocking gate');
 });
 
 const runtimeInstalled = fs.existsSync(path.join(root, 'node_modules', '@php-wasm', 'node'));

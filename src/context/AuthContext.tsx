@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   birthProfile: CustomerBirthProfile | null;
   settings: SystemSettings | null;
-  /** True once saved public settings have loaded or the bounded fallback has fired. */
+  /** True once public settings have loaded or the bounded fallback has fired. */
   settingsResolved: boolean;
   isLoading: boolean;
   isAdmin: boolean;
@@ -109,8 +109,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [settingsResolved, setSettingsResolved] = useState(false);
 
-  // Never let an unavailable settings API hold the customer UI behind the boot
-  // splash indefinitely. The cached design remains the fallback if this fires.
+  // Never let an unavailable settings API hold settings-dependent UI indefinitely.
+  // Display mode is a separate browser preference and does not wait for the API.
   useEffect(() => {
     const fallback = window.setTimeout(() => setSettingsResolved(true), 4500);
     return () => window.clearTimeout(fallback);
@@ -120,8 +120,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const hasSession = Boolean(getAuthToken() || userRef.current);
     let publicSettingsLoaded = false;
     try {
-      // Load the redacted public settings first: userDesign controls first paint,
-      // and it must not queue behind a slower authenticated/admin request.
+      // Load redacted public settings before the authenticated/admin payload;
+      // customer settings must not queue behind a slower admin request.
       const res = await api.getSettings();
       if (res.success && res.settings) {
         setSettings(prev => ({ ...prev, ...res.settings }));
@@ -134,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (publicSettingsLoaded) setSettingsResolved(true);
 
       // Admin payloads contain SMTP/payment/social secrets. Keep them memory-only;
-      // never cache them alongside the public customer design preference.
+      // never cache them alongside the redacted public settings.
       if (hasSession) {
         try {
           const adminRes = await api.getAdminSettings();
@@ -164,8 +164,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const initAuth = async () => {
     setIsLoading(true);
-    // Resolve the public customer design in parallel with auth/session lookup;
-    // a slow /me request must not expose a prerendered page in the wrong theme.
+    // Fetch public settings in parallel with auth/session lookup. The visitor's
+    // display mode is resolved independently from local storage at first render.
     const settingsRequest = refreshSettings();
     // H3: the session lives in an httpOnly cookie, not in localStorage, so a
     // reload must ask the server who it is instead of inspecting stored
@@ -284,8 +284,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearAuthToken();
     applyUser(null);
     setBirthProfile(null);
-    // Drop admin-only secrets immediately, but keep the public design choice in
-    // memory so signing out cannot flash the customer site back to Original Dark.
+    // Drop admin-only secrets immediately. The visitor's display mode lives in
+    // its own browser preference and cannot change on sign-out.
     try {
       localStorage.removeItem(SETTINGS_CACHE_KEY);
     } catch (e) {}

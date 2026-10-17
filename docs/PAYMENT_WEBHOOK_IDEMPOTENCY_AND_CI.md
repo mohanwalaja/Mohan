@@ -1,5 +1,9 @@
 # Payment webhook idempotency, structured retry & the CI security gate
 
+> **Historical CI record:** The `build.yml` security/build/browser workflow described
+> below was retired on 17 October 2026. GitHub Actions now runs only the PHP
+> suite in `tests.yml`; build and non-PHP checks are local commands.
+
 **Date:** 12 October 2026
 **Scope:** P0 hardening + observability. `api/payments.php`, `api/payment_webhook.php`,
 `api/services/index.php`, `api/admin/index.php`, `api/schema.sql`,

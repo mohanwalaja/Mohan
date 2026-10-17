@@ -99,10 +99,9 @@ confirm the PHP engine still agrees.
 | `src/lib/astrology/nutationSeries.ts` | Generated IAU 1980 table; rebuild with `node scripts/build-nutation-series.mjs` when `api/astrology/ephemeris_tables.php` changes |
 
 The `.github/workflows/tests.yml` workflow runs only the PHP test suite and PHP
-syntax checks. TypeScript/Node parity commands remain available for local
-development, but are intentionally not part of the GitHub test workflow. The
-separate `build.yml` workflow uses Node.js only to compile the static frontend;
-no workflow launches or deploys a Node application server.
+syntax checks. TypeScript/Node parity commands and frontend builds remain
+available locally, but are intentionally not part of GitHub Actions. No GitHub
+workflow builds or deploys the frontend.
 
 ---
 

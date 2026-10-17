@@ -798,10 +798,17 @@ function buildPageTree(mods, route, React) {
   return React.createElement(
     'div',
     {
+      'data-user-design': 'ivory', // Public pages ship in the light default, even without JavaScript.
       className:
         'min-h-screen flex flex-col bg-[#0b0718] dark:bg-[#0b0718] text-[#fffdfa] font-sans antialiased selection:bg-amber-500 selection:text-slate-950 relative',
     },
-    React.createElement(Navbar, { currentRoute: route.routeKey, onNavigate }),
+    React.createElement(Navbar, {
+      currentRoute: route.routeKey,
+      onNavigate,
+      colorMode: 'light',
+      showColorModeToggle: true,
+      onToggleColorMode: () => {}, // The client attaches the real handler when it mounts.
+    }),
     React.createElement('main', { className: 'flex-grow relative z-10' }, pageEl),
     React.createElement(Footer, { onNavigate }),
   );

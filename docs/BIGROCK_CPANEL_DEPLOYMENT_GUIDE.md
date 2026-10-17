@@ -1,6 +1,6 @@
 # ASTRO SIVAM - Complete cPanel File Manager & Database Master Installation Guide
 
-This step-by-step guide walks you through setting up **ASTRO SIVAM** on **BigRock cPanel** hosting using **cPanel File Manager** and **cPanel MySQL Database Wizard**. The hosted application uses Apache/PHP and MySQL only: **BigRock does not need Node.js or a Node server**. Node.js is used by GitHub Actions/developers only to compile the frontend before deployment.
+This step-by-step guide walks you through setting up **ASTRO SIVAM** on **BigRock cPanel** hosting using **cPanel File Manager** and **cPanel MySQL Database Wizard**. The hosted application uses Apache/PHP and MySQL only: **BigRock does not need Node.js or a Node server**. Node.js is used on a developer machine to compile the frontend before deployment.
 
 ---
 
@@ -33,24 +33,16 @@ In your previous export, the old version of `/api/astrology/engine.php` was stil
 
 ## 📦 Step 1: Preparing Your Download Package
 
-You can get your production `dist.zip` package (which bundles both the frontend `dist/` and the updated PHP backend `api/` together) using either GitHub or the Admin Portal:
+Build the production `dist.zip` package locally. It bundles the compiled frontend and the updated PHP backend `api/` together. GitHub Actions runs only the PHP test suite; it no longer creates a release archive or an automatic GitHub Release.
 
-### Option A: Download from GitHub (Automated After Every Push)
-Every time changes are pushed to your GitHub repository, GitHub Actions automatically builds the code and packages `dist.zip` containing the updated frontend and backend `api/`:
+On a development machine with Node.js installed, from the repository root:
 
-1. **Via GitHub Actions Artifacts**:
-   - Go to your GitHub repository -> click the **Actions** tab at the top.
-   - Click the latest workflow run: **Build & Package Production dist.zip**.
-   - Scroll to **Artifacts** at the bottom -> click **dist-production-zip** (or **dist-folder**).
-2. **Via GitHub Releases**:
-   - In your GitHub repo, click **Releases** on the right sidebar.
-   - Under **ASTRO SIVAM Production Build (Latest)**, click **dist.zip** to download instantly.
-3. **Via GitHub Repository Files**:
-   - In your repository file list, click on `dist.zip` -> click **Download**.
+```bash
+npm ci
+npm run build:zip
+```
 
-### Option B: Download Directly from ASTRO SIVAM Admin Portal
-- Log into the ASTRO SIVAM Admin Portal -> click **Database & Backups** tab.
-- Click the golden **"Download dist.zip Now"** button (or click **Download dist.zip** in the top navigation bar).
+Upload the resulting `dist.zip` from the repository root to cPanel. The archive is ignored by Git and must be rebuilt for each release.
 
 ---
 
@@ -400,15 +392,13 @@ are one-time host settings (the last one lives in the Cloudflare dashboard). Ful
    work through `scripts/backup/RESTORE_VERIFICATION.md` into a sandbox database
    (never over production) and record the result.
 
-4. **Uptime + certificate monitoring.** GitHub → Settings → Secrets and
-   variables → Actions → **Variables** → add `PRODUCTION_URL`
-   (`https://astrosivam.com`). `.github/workflows/monitoring.yml` then checks
-   weekly: homepage 200, TLS expiry at ≤21 days (before the Let's Encrypt
-   window closes), that Cloudflare is actually in front (`cf-ray` present) with
-   HSTS intact, that `/api/*` is **not** being edge-cached, and that the deployed
-   `dist.zip` actually contains the payment-hardening migration. Without the
-   variable the workflow fails loudly with "Monitoring is unarmed". Optionally
-   add UptimeRobot/Uptime-Kuma on top and set `UPTIME_ROBOT_HEARTBEAT_URL`.
+4. **Uptime + certificate monitoring.** The GitHub monitoring workflow has
+   been removed to keep Actions PHP-only. Configure an external monitor such as
+   UptimeRobot or Uptime-Kuma for the homepage and TLS expiry, and manually
+   verify that Cloudflare is in front (`cf-ray` present), HSTS is intact, and
+   `/api/*` is **not** edge-cached. See
+   [HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md](HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md)
+   for the operational checks.
 
 5. **CDN in front (Cloudflare, dashboard settings).** Put the domain behind
    Cloudflare — DNS record **Proxied** (orange cloud), SSL/TLS **Full (strict)**,
