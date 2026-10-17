@@ -118,7 +118,29 @@ function apiDevMiddleware(): Plugin {
     name: 'api-dev-middleware',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        const url = req.url || '';
+        const rawUrl = req.url || '';
+        const url = rawUrl.split('?')[0];
+
+        // Serve dist.zip directly for browser download
+        if (url === '/dist.zip' || url === '/download/dist.zip') {
+          const zipPath = path.resolve(__dirname, 'dist.zip');
+          if (fs.existsSync(zipPath)) {
+            const stat = fs.statSync(zipPath);
+            res.writeHead(200, {
+              'Content-Type': 'application/zip',
+              'Content-Length': stat.size,
+              'Content-Disposition': 'attachment; filename="dist.zip"',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            });
+            fs.createReadStream(zipPath).pipe(res);
+            return;
+          } else {
+            res.statusCode = 404;
+            res.setHeader('Content-Type', 'text/plain');
+            res.end('dist.zip not found. Run npm run build:zip first.');
+            return;
+          }
+        }
 
         // Handle calculate-preview in dev
         if (

@@ -15,9 +15,7 @@ import {
   Layers,
   ShoppingBag,
   Calendar,
-  CircleHelp,
-  Sun,
-  Moon
+  CircleHelp
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { resolveDisplayName } from '../../utils/displayName';
@@ -30,9 +28,9 @@ import type { ColorMode } from '../../services/colorMode';
 interface NavbarProps {
   currentRoute: string;
   onNavigate: (route: string) => void;
-  colorMode: ColorMode;
-  showColorModeToggle: boolean;
-  onToggleColorMode: () => void;
+  colorMode?: ColorMode;
+  showColorModeToggle?: boolean;
+  onToggleColorMode?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -95,20 +93,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action Cluster: User & Auth Buttons & Family Tray */}
           <div className="flex items-center gap-2 sm:gap-3">
-
-            {/* Icon-only customer preference; the switch is on in dark mode. */}
-            {showColorModeToggle && (
-              <button
-                type="button"
-                role="switch"
-                aria-checked={colorMode === 'dark'}
-                aria-label="Dark mode"
-                onClick={onToggleColorMode}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/10 text-amber-300 transition-colors hover:bg-amber-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
-              >
-                {colorMode === 'light' ? <Moon aria-hidden="true" className="h-5 w-5" /> : <Sun aria-hidden="true" className="h-5 w-5" />}
-              </button>
-            )}
 
             {/* Orders Cart Button */}
             {cartItems.length > 0 && (

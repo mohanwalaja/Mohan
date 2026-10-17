@@ -4001,6 +4001,7 @@ class AstroEngine {
             return $cache;
         }
         $paths = [
+            __DIR__ . '/rules.json',
             __DIR__ . '/../../src/lib/muhurtham/rules.json',
             __DIR__ . '/../../public_html/src/lib/muhurtham/rules.json'
         ];

@@ -163,7 +163,7 @@
   # document fall back to root index.html. This list mirrors the path->route
   # map in src/App.tsx. Anything else falls through to ErrorDocument 404.
   RewriteRule ^/?$ /index.html [L]
-  RewriteRule ^(services|birth-jathagam|marriage-compatibility|baby-naming|muhurtham|how-it-works|about|team|contact|login|register|dashboard|admin|privacy-policy|terms|payment-policy|refund-policy)/?$ /index.html [L]
+  RewriteRule ^(services|birth-jathagam|marriage-compatibility|baby-naming|muhurtham|how-it-works|about|team|contact|login|register|dashboard|admin|privacy-policy|terms|payment-policy|refund-policy|design-preview)/?$ /index.html [L]
   RewriteRule ^pricing$ /index.html [L]
 </IfModule>
 
