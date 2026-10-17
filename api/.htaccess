@@ -89,7 +89,7 @@ RewriteRule .* - [E=HTTP_X_AUTH_TOKEN:%{HTTP:X-Auth-Token}]
 # config.php now echoes only the site's own origins (with credentials enabled),
 # so the wildcard header here would conflict/override that protection.
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Authorization, X-Auth-Token, X-Requested-With"
 </IfModule>
 

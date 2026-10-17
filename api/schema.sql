@@ -265,6 +265,7 @@ CREATE TABLE IF NOT EXISTS `contact_messages` (
   `subject` VARCHAR(191) NOT NULL,
   `message` TEXT NOT NULL,
   `status` ENUM('UNREAD', 'READ', 'REPLIED') NOT NULL DEFAULT 'UNREAD',
+  `admin_notes` TEXT NULL,
   `email_status` VARCHAR(16) NOT NULL DEFAULT 'PENDING',
   `email_recipient` VARCHAR(191) NULL,
   `email_dispatched_at` DATETIME NULL,

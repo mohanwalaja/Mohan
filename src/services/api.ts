@@ -1,4 +1,4 @@
-import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus } from '../types';
+import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus } from '../types';
 
 export function getApiBase(): string {
   // Always default to relative '/api' in browser contexts.
@@ -344,13 +344,6 @@ async function fetchSettingsWithTimeout(url: string, init?: RequestInit): Promis
 }
 
 export const api = {
-  async getAdminClientErrors(): Promise<{ success: boolean; errors: Array<{ id: string; message: string; endpoint: string; status?: number; createdAt: string; resolvedAt?: string }>; openCount: number }> {
-    const res = await apiFetch(`${getApiBase()}/admin/client-errors`); return safeJson(res);
-  },
-  async resolveAdminClientError(id: string): Promise<{ success: boolean }> {
-    const res = await apiFetch(`${getApiBase()}/admin/client-errors/${encodeURIComponent(id)}/resolve`, { method: 'POST' }); return safeJson(res);
-  },
-
   // Public settings
   async getSettings(): Promise<{ success: boolean; settings: SystemSettings }> {
     const apiBase = getApiBase();
@@ -953,11 +946,6 @@ export const api = {
     return safeJson(res);
   },
 
-  async getOrder(id: string): Promise<{ success: boolean; order?: Order; message?: string }> {
-    const res = await apiFetch(`${API_BASE}/services/orders/${id}`);
-    return safeJson(res);
-  },
-
   async requestCustomerEmailResend(
     id: string,
     targetEmail?: string,
@@ -1487,27 +1475,11 @@ export const api = {
     return safeJson(res);
   },
 
-  async getAdminAnalytics(params?: { timeframe?: string }): Promise<{ success: boolean; data: AdminAnalyticsData; message?: string }> {
-    const query = new URLSearchParams(params as any).toString();
-    const res = await fetch(`${API_BASE}/admin/analytics?${query}`, {
-      headers: { ...getAuthHeader() }
-    });
-    return safeJson(res);
-  },
-
-  async exportDatabase(collection?: string): Promise<{ success: boolean; data: any }> {
-    const query = collection ? `?collection=${collection}` : '';
+  async exportDatabase(collection?: string): Promise<{ success: boolean; data: any; message?: string }> {
+    const query = collection ? `?collection=${encodeURIComponent(collection)}` : '';
     const res = await fetch(`${API_BASE}/admin/database/export${query}`, {
-      headers: { ...getAuthHeader() }
-    });
-    return safeJson(res);
-  },
-
-  async importDatabase(data: any, options?: { mode?: 'merge' | 'replace'; collection?: string }): Promise<{ success: boolean; message: string; stats?: any }> {
-    const res = await fetch(`${API_BASE}/admin/database/import`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ data, ...options })
+      headers: { ...getAuthHeader() },
+      cache: 'no-store'
     });
     return safeJson(res);
   },

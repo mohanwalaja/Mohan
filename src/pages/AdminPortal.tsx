@@ -107,7 +107,6 @@ function buildAdminServicePricing(stored?: Partial<Record<ServiceType, { usd?: n
   return table;
 }
 import { FinancialDashboard } from '../components/admin/FinancialDashboard';
-import { AdminAnalyticsDashboard } from '../components/admin/AdminAnalyticsDashboard';
 import { PaymentConfigPanel } from '../components/admin/PaymentConfigPanel';
 import { EmailConfigPanel } from '../components/admin/EmailConfigPanel';
 import { ChatAlertConfigPanel } from '../components/admin/ChatAlertConfigPanel';
@@ -168,7 +167,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
   const [messagesList, setMessagesList] = useState<ContactMessage[]>([]);
   const [bannedIps, setBannedIps] = useState<BannedIpEntry[]>([]);
   const [copiedIp, setCopiedIp] = useState<string | null>(null);
-  const [clientErrors, setClientErrors] = useState<any[]>([]);
 
   const handleCopyIp = (ip: string) => {
     if (!ip) return;
@@ -182,7 +180,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     setExpandedGroupIds(prev => ({ ...prev, [groupId]: !prev[groupId] }));
 
   const [activeSection, setActiveSection] = useState<
-    'orders' | 'analytics' | 'financial' | 'payments' | 'emails' | 'alerts' | 'aiastrologer' | 'database' | 'health' | 'checklist' | 'messages' | 'reviews' | 'team' | 'settings' | 'users' | 'logs' | 'google' | 'security' | 'errors' | 'escalations'
+    'orders' | 'analytics' | 'financial' | 'payments' | 'emails' | 'alerts' | 'aiastrologer' | 'database' | 'health' | 'checklist' | 'messages' | 'reviews' | 'team' | 'settings' | 'users' | 'logs' | 'google' | 'security' | 'escalations'
   >('orders');
 
   // Astrologer escalation queue: complaints forwarded from the source-based chat and
@@ -1828,7 +1826,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
-          <span>Analytics Dashboard</span>
+          <span>Analytics (not available yet)</span>
         </button>
 
         <button
@@ -1900,7 +1898,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
           }`}
         >
           <Database className="w-3.5 h-3.5 text-purple-400" />
-          <span>Database & Backup</span>
+          <span>Database Export (read-only)</span>
         </button>
 
         <button
@@ -2041,10 +2039,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         >
           <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
           <span>Security & Banned IPs ({bannedIps.length})</span>
-        </button>
-        <button onClick={() => { setActiveSection('errors'); api.getAdminClientErrors().then(r => r.success && setClientErrors(r.errors || [])).catch(() => {}); }}
-          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${activeSection === 'errors' ? 'bg-red-600 text-white' : 'bg-white dark:bg-slate-900 border border-red-200 text-red-700'}`}>
-          <ShieldAlert className="w-3.5 h-3.5" /><span>Request Errors</span>
         </button>
       </div>
 
@@ -3390,22 +3384,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* SECTION: ANALYTICS DASHBOARD */}
-      {activeSection === 'errors' && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold">Request error alerts</h2><p className="text-sm text-slate-500">Failed and unanswered API requests reported by visitors. Alerts remain open until you resolve them.</p></div>
-            <button onClick={() => api.getAdminClientErrors().then(r => r.success && setClientErrors(r.errors || []))} className="px-3 py-2 rounded-lg border flex items-center gap-2"><RefreshCw className="w-4 h-4"/>Refresh</button></div>
-          {clientErrors.length === 0 ? <div className="rounded-xl border p-8 text-center text-slate-500">No request errors have been reported.</div> : <div className="space-y-3">{clientErrors.map((e: any) => <article key={e.id} className={`rounded-xl border p-4 ${e.resolvedAt ? 'opacity-60 bg-slate-50' : 'border-red-200 bg-red-50/50'}`}>
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-semibold">{e.resolvedAt ? 'Resolved' : 'Open'}{e.status ? ` · HTTP ${e.status}` : ''}</div><p className="mt-1 text-sm">{e.message}</p><code className="text-xs text-slate-500 break-all">{e.endpoint}</code><div className="mt-1 text-xs text-slate-500">Reported {new Date(e.createdAt).toLocaleString()}</div></div>
-            {!e.resolvedAt && <button onClick={async () => { await api.resolveAdminClientError(e.id); const r = await api.getAdminClientErrors(); if (r.success) setClientErrors(r.errors || []); }} className="px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm flex items-center gap-2"><Check className="w-4 h-4"/>Mark resolved</button>}</div></article>)}</div>}
-        </section>
-      )}
-
+      {/* Analytics is intentionally unavailable until its server-side metrics are verified. */}
       {activeSection === 'analytics' && (
-        <AdminAnalyticsDashboard
-          onRefreshOrders={fetchAdminData}
-          onNavigateTab={tab => setActiveSection(tab as any)}
-        />
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+          <h2 className="text-lg font-bold">Analytics dashboard — not available yet</h2>
+          <p className="mt-2 max-w-3xl text-sm text-amber-900/80 dark:text-amber-200/80">
+            This dashboard is hidden until its metrics can be calculated from verified order, user and email records. No estimates or sample values are shown.
+          </p>
+        </section>
       )}
 
       {/* SECTION: FINANCIAL DASHBOARD */}
@@ -3441,9 +3427,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       {activeSection === 'aiastrologer' && <AiAstrologerConfigPanel />}
 
       {/* SECTION: DATABASE BACKUP & RESTORE */}
-      {activeSection === 'database' && (
-        <DatabaseBackupPanel onDataImported={fetchAdminData} />
-      )}
+      {activeSection === 'database' && <DatabaseBackupPanel />}
 
       {/* SECTION: SYSTEM HEALTH (live ops report from /api/admin/health.php) */}
       {activeSection === 'health' && <SystemHealthPanel />}

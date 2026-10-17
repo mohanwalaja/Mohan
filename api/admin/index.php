@@ -151,6 +151,33 @@ function astroAdminRequireColumns($pdo, $table, $columns, $migrationFile) {
     }
 }
 
+/** Translate the stored contact inbox status into the SPA's public status enum. */
+function astroAdminContactMessageStatus($status) {
+    $status = strtoupper(trim((string)$status));
+    if ($status === 'READ' || $status === 'REVIEWED') return 'REVIEWED';
+    if ($status === 'REPLIED' || $status === 'RESPONDED') return 'RESPONDED';
+    return 'NEW';
+}
+
+/** One mapper shared by both historical and current admin inbox routes. */
+function astroAdminMapContactMessage($row) {
+    $mapped = [
+        'id' => (string)($row['id'] ?? ''),
+        'name' => (string)($row['name'] ?? ''),
+        'email' => (string)($row['email'] ?? ''),
+        'subject' => (string)($row['subject'] ?? ''),
+        'message' => (string)($row['message'] ?? ''),
+        'status' => astroAdminContactMessageStatus($row['status'] ?? ''),
+        'autoEmailDispatched' => strtoupper(trim((string)($row['email_status'] ?? ''))) === 'SENT',
+        'dispatchedTo' => (string)($row['email_recipient'] ?? ''),
+        'emailDispatchedAt' => $row['email_dispatched_at'] ?? null,
+        'createdAt' => (string)($row['created_at'] ?? ''),
+        'adminNotes' => (string)($row['admin_notes'] ?? '')
+    ];
+    if (isset($row['ip_address'])) $mapped['ip'] = (string)$row['ip_address'];
+    return $mapped;
+}
+
 // 1. GET /api/admin/orders
 if (strpos($path, 'admin/orders') !== false && $method === 'GET' && !preg_match('/admin\/orders\/[^\/]+/', $path)) {
     // The family-bundle columns live in api/migrations/013 (fresh installs: api/schema.sql).
@@ -1763,6 +1790,62 @@ if ((strpos($path, 'admin/testing/payment') !== false || strpos($path, 'admin/se
     jsonResponse(['success' => $success, 'message' => $message, 'testedAt' => date('c')]);
 }
 
+// Admin portal KPI totals. Aggregate in SQL instead of loading every order/user.
+if (preg_match('#(?:^|/)admin/statistics/?$#', $path) && $method === 'GET') {
+    $orderTotals = $pdo->query("SELECT
+            COUNT(*) AS total_orders,
+            COALESCE(SUM(status IN ('PENDING', 'PENDING_APPROVAL')), 0) AS pending_orders,
+            COALESCE(SUM(status IN ('GENERATED', 'COMPLETED')), 0) AS completed_orders,
+            COALESCE(SUM(status = 'REJECTED'), 0) AS rejected_orders
+        FROM orders")->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    $statistics = [
+        'totalOrders' => (int)($orderTotals['total_orders'] ?? 0),
+        'pendingOrders' => (int)($orderTotals['pending_orders'] ?? 0),
+        'pendingApproval' => (int)($orderTotals['pending_orders'] ?? 0),
+        'completedOrders' => (int)($orderTotals['completed_orders'] ?? 0),
+        'rejectedOrders' => (int)($orderTotals['rejected_orders'] ?? 0),
+        'serviceCounts' => [],
+        'languageCounts' => [],
+        'countryCounts' => [],
+        'totalUsers' => (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn()
+    ];
+
+    foreach ($pdo->query("SELECT service_type, COUNT(*) AS item_count FROM orders GROUP BY service_type")->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $statistics['serviceCounts'][(string)$row['service_type']] = (int)$row['item_count'];
+    }
+    foreach ($pdo->query("SELECT language, COUNT(*) AS item_count FROM orders GROUP BY language")->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $statistics['languageCounts'][(string)$row['language']] = (int)$row['item_count'];
+    }
+    foreach ($pdo->query("SELECT country, COUNT(*) AS item_count FROM orders GROUP BY country")->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $statistics['countryCounts'][(string)($row['country'] ?? '')] = (int)$row['item_count'];
+    }
+
+    // Match the financial report's recorded-payment eligibility rules. Values
+    // remain in their stored currency; USD is never converted into INR here.
+    $revenueRows = $pdo->query("SELECT currency, COALESCE(SUM(amount), 0) AS total_amount
+        FROM orders
+        WHERE status NOT IN ('REJECTED', 'CANCELLED')
+          AND (payment_confirmed = 1
+               OR UPPER(COALESCE(NULLIF(payment_status, ''), 'PENDING_ADMIN')) = 'NOT_REQUIRED')
+          AND (payment_status IS NULL OR payment_status IN ('CAPTURED', 'NOT_REQUIRED', 'CONSUMED', 'VERIFIED_MANUAL'))
+        GROUP BY currency")->fetchAll(PDO::FETCH_ASSOC);
+    $statistics['totalRevenueUSD'] = 0.0;
+    $statistics['totalRevenueINR'] = 0.0;
+    foreach ($revenueRows as $row) {
+        $currency = strtoupper((string)($row['currency'] ?? ''));
+        if ($currency === 'USD') $statistics['totalRevenueUSD'] = (float)$row['total_amount'];
+        if ($currency === 'INR') $statistics['totalRevenueINR'] = (float)$row['total_amount'];
+    }
+
+    $settingsRow = $pdo->query("SELECT service_mode FROM system_settings ORDER BY id ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    if ($settingsRow && in_array($settingsRow['service_mode'], ['FREE_BETA', 'PAID'], true)) {
+        $statistics['currentServiceMode'] = $settingsRow['service_mode'];
+    }
+
+    jsonResponse(['success' => true, 'statistics' => $statistics]);
+}
+
 // 6. GET /api/admin/audit-logs
 if (strpos($path, 'admin/audit-logs') !== false && $method === 'GET') {
     $page = max(1, (int)($_GET['page'] ?? 1));
@@ -1788,11 +1871,92 @@ if (strpos($path, 'admin/audit-logs') !== false && $method === 'GET') {
     ]);
 }
 
-// 7. GET /api/admin/contact-messages
-if (strpos($path, 'admin/contact-messages') !== false && $method === 'GET') {
-    $stmt = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC");
-    $rows = $stmt->fetchAll();
-    jsonResponse(['success' => true, 'messages' => $rows]);
+// 7. Admin contact inbox. Keep /contact-messages as a compatibility alias.
+if (preg_match('#(?:^|/)admin/(?:contact-messages|messages)/?$#', $path) && $method === 'GET') {
+    astroAdminRequireColumns($pdo, 'contact_messages', ['admin_notes'], 'api/migrations/016_admin_contact_notes.sql');
+    $stmt = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC, id ASC");
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $messages = array_map('astroAdminMapContactMessage', $rows);
+    jsonResponse(['success' => true, 'count' => count($messages), 'messages' => $messages]);
+}
+
+// PATCH /api/admin/messages/:id — only the inbox status and persisted notes
+// are editable. Status is mapped back to the contact_messages ENUM allowlist.
+if (preg_match('#(?:^|/)admin/messages/([^/]+)/?$#', $path, $messageMatch)) {
+    $messageId = rawurldecode((string)$messageMatch[1]);
+    if ($messageId === '' || strlen($messageId) > 64) {
+        jsonResponse(['success' => false, 'message' => 'Invalid contact message id.'], 400);
+    }
+
+    if ($method === 'PATCH') {
+        astroAdminRequireColumns($pdo, 'contact_messages', ['admin_notes'], 'api/migrations/016_admin_contact_notes.sql');
+        $body = getJsonBody();
+        $sets = [];
+        $params = [];
+        $auditParts = [];
+
+        if (array_key_exists('status', $body)) {
+            if (!is_string($body['status'])) {
+                jsonResponse(['success' => false, 'message' => 'status must be NEW, REVIEWED or RESPONDED.'], 400);
+            }
+            $status = strtoupper(trim($body['status']));
+            $statusMap = ['NEW' => 'UNREAD', 'REVIEWED' => 'READ', 'RESPONDED' => 'REPLIED'];
+            if (!isset($statusMap[$status])) {
+                jsonResponse(['success' => false, 'message' => 'status must be NEW, REVIEWED or RESPONDED.'], 400);
+            }
+            $sets[] = 'status = ?';
+            $params[] = $statusMap[$status];
+            $auditParts[] = 'status ' . $status;
+        }
+
+        if (array_key_exists('adminNotes', $body)) {
+            if (!is_string($body['adminNotes'])) {
+                jsonResponse(['success' => false, 'message' => 'adminNotes must be a string.'], 400);
+            }
+            $notes = $body['adminNotes'];
+            if (function_exists('mb_strlen')) {
+                $noteLength = mb_strlen($notes, 'UTF-8');
+            } else {
+                $noteLength = preg_match_all('/./us', $notes, $noteCharacters);
+                if ($noteLength === false) {
+                    jsonResponse(['success' => false, 'message' => 'adminNotes must be valid UTF-8 text.'], 400);
+                }
+            }
+            if ($noteLength > 2000 || strlen($notes) > 8000) {
+                jsonResponse(['success' => false, 'message' => 'adminNotes must be 2000 characters or fewer.'], 400);
+            }
+            $sets[] = 'admin_notes = ?';
+            $params[] = $notes;
+            $auditParts[] = 'admin notes updated';
+        }
+
+        if (!$sets) {
+            jsonResponse(['success' => false, 'message' => 'Provide a status or adminNotes update.'], 400);
+        }
+        $exists = $pdo->prepare('SELECT id FROM contact_messages WHERE id = ? LIMIT 1');
+        $exists->execute([$messageId]);
+        if (!$exists->fetchColumn()) {
+            jsonResponse(['success' => false, 'message' => 'Contact message not found.'], 404);
+        }
+
+        $params[] = $messageId;
+        $update = $pdo->prepare('UPDATE contact_messages SET ' . implode(', ', $sets) . ' WHERE id = ?');
+        $update->execute($params);
+        logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'CONTACT_MESSAGE_UPDATED',
+            'Updated contact message ' . $messageId . ': ' . implode(', ', $auditParts) . '.');
+        jsonResponse(['success' => true, 'message' => 'Contact message updated.']);
+    }
+
+    if ($method === 'DELETE') {
+        $delete = $pdo->prepare('DELETE FROM contact_messages WHERE id = ?');
+        $delete->execute([$messageId]);
+        if ($delete->rowCount() === 0) {
+            jsonResponse(['success' => false, 'message' => 'Contact message not found.'], 404);
+        }
+        logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'CONTACT_MESSAGE_DELETED',
+            'Deleted contact message ' . $messageId . '.');
+        jsonResponse(['success' => true, 'message' => 'Contact message deleted.']);
+    }
 }
 
 // 7b. GET /api/admin/reports/financial
@@ -2072,11 +2236,38 @@ if (strpos($path, 'admin/team') !== false) {
     }
 }
 
-// 9. GET /api/admin/users
-if (strpos($path, 'admin/users') !== false && $method === 'GET') {
-    $stmt = $pdo->query("SELECT id, name, email, mobile, role, country, created_at, last_login FROM users ORDER BY created_at DESC");
-    $rows = $stmt->fetchAll();
-    jsonResponse(['success' => true, 'users' => $rows]);
+// 9. GET /api/admin/users and /api/admin/customers (SPA-compatible alias).
+if (preg_match('#(?:^|/)admin/(?:users|customers)/?$#', $path) && $method === 'GET') {
+    // Resolve each user's latest saved birth profile in one indexed query; a
+    // correlated lookup uses idx_birth_profiles_user_id and avoids N+1 reads.
+    $stmt = $pdo->query("SELECT u.id, u.name, u.email, u.mobile, u.role, u.created_at,
+            bp.birth_place, bp.dob
+        FROM users u
+        LEFT JOIN birth_profiles bp ON bp.id = (
+            SELECT latest.id
+            FROM birth_profiles latest
+            WHERE latest.user_id = u.id
+            ORDER BY latest.updated_at DESC, latest.id DESC
+            LIMIT 1
+        )
+        ORDER BY u.created_at DESC, u.id ASC");
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $customers = array_map(function($row) {
+        $hasBirthProfile = $row['birth_place'] !== null || $row['dob'] !== null;
+        return [
+            'id' => (string)$row['id'],
+            'name' => (string)$row['name'],
+            'email' => (string)$row['email'],
+            'mobile' => (string)$row['mobile'],
+            'role' => (string)$row['role'],
+            'createdAt' => (string)$row['created_at'],
+            'birthProfile' => $hasBirthProfile ? [
+                'birthPlace' => (string)($row['birth_place'] ?? ''),
+                'dob' => (string)($row['dob'] ?? '')
+            ] : null
+        ];
+    }, $rows);
+    jsonResponse(['success' => true, 'count' => count($customers), 'users' => $customers, 'customers' => $customers]);
 }
 
 // 11. BANNED IPS MANAGEMENT (GET, POST, DELETE /api/admin/banned-ips)
@@ -2393,6 +2584,54 @@ if (strpos($path, 'admin/ai-handoffs') !== false) {
     logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'AI_HANDOFF_UPDATED',
         'AI chat escalation #' . $id . ' set to ' . $status . '.');
     jsonResponse(['success' => true, 'id' => $id, 'status' => $status]);
+}
+
+// Export a documented allowlist of business/operations data. Tables containing
+// provider credentials, payment signatures, sessions, rate-limit keys or raw
+// authentication secrets are intentionally excluded; users.password_hash and
+// the password-reset / OTP material are never selected.
+if (preg_match('#(?:^|/)admin/database/export/?$#', $path) && $method === 'GET') {
+    header('Cache-Control: no-store, no-cache, must-revalidate, private');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    header('X-Content-Type-Options: nosniff');
+    header('Content-Type: application/json; charset=utf-8');
+
+    $exportQueries = [
+        'users' => "SELECT id, name, email, mobile, role, auth_provider, email_verified, country, created_at, updated_at, last_login FROM users ORDER BY created_at ASC, id ASC",
+        'birth_profiles' => "SELECT id, user_id, name, dob, tob, birth_place, country, latitude, longitude, timezone_offset_hours, gender, updated_at FROM birth_profiles ORDER BY updated_at ASC, id ASC",
+        'orders' => "SELECT id, order_number, group_id, group_order_index, user_id, user_name, user_email, user_mobile, country, service_type, language, amount, currency, service_mode, status, payment_method, payment_reference, payment_status, payment_confirmed, email_status, email_sent_at, email_last_status_message, input_payload, calculated_result, has_pdf, has_invoice, admin_notes, refund_status, refund_reason, refund_percent, refund_amount, refund_currency, refund_processed_at, refund_deadline, refund_admin_notes, refund_method, refund_reference, created_at, updated_at FROM orders ORDER BY created_at ASC, id ASC",
+        'contact_messages' => "SELECT id, name, email, mobile, subject, message, status, admin_notes, created_at FROM contact_messages ORDER BY created_at ASC, id ASC",
+        'audit_logs' => "SELECT id, user_id, user_name, user_role, action, details, ip_address, created_at FROM audit_logs ORDER BY created_at ASC, id ASC"
+    ];
+    $requestedCollection = strtolower(trim((string)($_GET['collection'] ?? 'all')));
+    if ($requestedCollection !== 'all' && !array_key_exists($requestedCollection, $exportQueries)) {
+        jsonResponse(['success' => false, 'message' => 'Unknown or non-exportable collection.'], 400);
+    }
+
+    $collections = $requestedCollection === 'all' ? array_keys($exportQueries) : [$requestedCollection];
+    $tables = [];
+    $recordCounts = [];
+    foreach ($collections as $collection) {
+        if ($collection === 'contact_messages') {
+            astroAdminRequireColumns($pdo, 'contact_messages', ['admin_notes'], 'api/migrations/016_admin_contact_notes.sql');
+        }
+        $tables[$collection] = $pdo->query($exportQueries[$collection])->fetchAll(PDO::FETCH_ASSOC);
+        $recordCounts[$collection] = count($tables[$collection]);
+    }
+
+    logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'DATABASE_EXPORT',
+        'Exported allowlisted data collections: ' . implode(', ', $collections) . '. Counts: ' . json_encode($recordCounts) . '.');
+
+    jsonResponse([
+        'success' => true,
+        'data' => [
+            'format' => 'astrosivam-admin-export-v1',
+            'generatedAt' => date('c'),
+            'tables' => $tables,
+            'excludedSensitiveData' => ['password hashes', 'OTP and password-reset secrets', 'provider credentials', 'payment signatures', 'sessions and rate-limit keys']
+        ]
+    ]);
 }
 
 jsonResponse(['success' => false, 'message' => 'Admin endpoint not found'], 404);
