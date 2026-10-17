@@ -105,6 +105,12 @@ const testFiles = [
   // document with a self-referencing canonical and real body content — the
   // identical-empty-shell + homepage-canonical + fake-hreflang bug class.
   'tests/seo-prerender-contract.test.ts',
+  // The sitemap serving contract (2026-10-17 "sitemap.xml 406"): the sitemap
+  // was served as application/x-gzip with no Content-Encoding header (the
+  // compressed sibling was negotiated but its encoding was never declared),
+  // and the host WAF answers 406 to non-browser clients. Both are pinned
+  // here, together with the rule that the WAF is never switched off wholesale.
+  'tests/sitemap-serving-contract.test.ts',
   // SEO audit 2026-10-15. (1) Internal navigation is real <a href> links to
   // canonical URLs — the prerendered homepage used to ship two anchors and no
   // followable internal link; RouteLink's click semantics are executed here.

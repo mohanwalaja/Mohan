@@ -376,13 +376,21 @@ function mapAssetUrls(html, manifest) {
 
 /** Write a file with fresh pre-compressed siblings, deleting any stale ones
  *  first — .htaccess negotiates text assets to the .br/.gz copies, so a stale
- *  sibling silently overrides the file we just wrote. */
-function writeWithSiblings(absPath, contents) {
+ *  sibling silently overrides the file we just wrote.
+ *
+ *  `compress: false` writes the plain file ONLY (and still deletes stale
+ *  siblings). That is what the sitemap needs: it is a crawl-facing document,
+ *  and the pre-compressed sibling used to be served as `Content-Type:
+ *  application/x-gzip` with no `Content-Encoding` header — Google received
+ *  gzip bytes where XML was expected and could not parse the sitemap
+ *  (the 2026-10-17 "sitemap.xml 406" incident). A sitemap is ~2.4 KB;
+ *  compressing it saves nothing and only creates a way for it to break. */
+function writeWithSiblings(absPath, contents, { compress = true } = {}) {
   for (const stale of [`${absPath}.br`, `${absPath}.gz`]) {
     if (existsSync(stale)) rmSync(stale);
   }
   writeFileSync(absPath, contents);
-  if (Buffer.byteLength(contents) >= 1024) {
+  if (compress && Buffer.byteLength(contents) >= 1024) {
     writeFileSync(
       `${absPath}.br`,
       brotliCompressSync(contents, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } }),
@@ -1047,7 +1055,11 @@ async function main() {
       written += 1;
     }
 
-    writeWithSiblings(join(DIST, 'sitemap.xml'), renderSitemap());
+    // The sitemap is a CRAWL-FACING document: plain bytes only, no pre-compressed
+    // sibling. See writeWithSiblings() — the compressed sibling was served as
+    // application/x-gzip without a Content-Encoding header and Google could not
+    // read the sitemap (the 2026-10-17 "sitemap.xml 406" incident).
+    writeWithSiblings(join(DIST, 'sitemap.xml'), renderSitemap(), { compress: false });
     // The manifest exists only for the asset-URL rewriting above; leaving
     // dist/.vite behind would add a top-level folder to the deploy root, which
     // the dist-shape contract forbids.
