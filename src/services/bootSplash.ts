@@ -24,9 +24,10 @@
  *   - src/components/common/ErrorBoundary.tsx: on a render crash, so the
  *     support screen is visible immediately instead of hiding behind it.
  *
- * Prerendered production pages ship the light default and keep the splash
- * until the route renders. The browser's saved dark-mode choice is read during
- * the app's first render, before that splash fades. capturePrerenderedPage
+ * Prerendered production pages ship the light default. Customer pages keep the
+ * splash until a valid cached admin-selected design or the public settings
+ * response is available; the bounded failure path prevents an endless wait.
+ * Admin routes remain dark and release immediately. capturePrerenderedPage
  * below preserves the static content as a Suspense fallback during startup.
  *
  * The splash ITSELF also has two escape hatches that need no JavaScript at

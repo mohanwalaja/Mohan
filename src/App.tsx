@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy, startTransition } from 'react';
+import React, { useState, useEffect, useLayoutEffect, Suspense, lazy, startTransition } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -16,7 +16,6 @@ import {
 } from './services/routeChunks';
 import { dismissBootSplash, getPrerenderedPage, clearPrerenderedPage } from './services/bootSplash';
 import { routeHref } from './services/routePaths';
-import { getSavedColorMode, saveColorMode, type ColorMode } from './services/colorMode';
 
 // Routes are code-split (audit S1, widened by audit PERF-1): the admin portal,
 // the customer dashboard and the four report pages pull in the PDF/HTML report
@@ -215,22 +214,30 @@ function RouteFallback() {
 }
 
 /**
- * Mounts only after the (possibly lazy) route content has resolved. Two jobs,
- * both of which must happen exactly at that moment:
+ * Mounts only after the (possibly lazy) route content has resolved.
  *
- *   1. Clear the one-shot chunk-recovery flag: if the flag were cleared when
- *      the Suspense boundary first renders its fallback, a failing chunk could
- *      reload the page in an endless loop.
- *   2. Release the initial static-page fallback and dismiss the boot splash.
- *      The visitor's light/dark choice is already available synchronously from
- *      local storage, so no settings API request needs to hold up first paint.
+ * Clear the one-shot chunk-recovery state once the route has committed, but
+ * keep customer pages behind the boot splash until the admin-selected public
+ * design is known. A valid cache makes reloads immediate; the settings request
+ * and bounded fallback cover first visits and unavailable APIs. Admin pages
+ * stay dark and release immediately.
  */
-function RouteLoadedMarker() {
+function RouteLoadedMarker({
+  isAdminRoute,
+  settingsResolved
+}: {
+  isAdminRoute: boolean;
+  settingsResolved: boolean;
+}) {
   useEffect(() => {
     clearChunkRecoveryFlag();
     clearPrerenderedPage();
-    dismissBootSplash();
   }, []);
+
+  useEffect(() => {
+    if (isAdminRoute || settingsResolved) dismissBootSplash();
+  }, [isAdminRoute, settingsResolved]);
+
   return null;
 }
 
@@ -316,15 +323,15 @@ function AppContent() {
 
   const [currentRoute, setCurrentRoute] = useState<string>(getInitialRoute());
   const isAdminRoute = currentRoute === 'admin' || currentRoute === 'admin-portal';
-  const { user, birthProfile, settings } = useAuth();
+  const { user, birthProfile, settings, settingsResolved } = useAuth();
 
   // Public design configuration: Sacred Ivory (Light) is default; Cosmic Dark (Original) is secondary.
   // Admin pages ALWAYS maintain their dedicated dark UI regardless of this setting.
   const activeUserDesign = settings?.userDesign || 'ivory';
   const isLight = !isAdminRoute && activeUserDesign === 'ivory';
 
-  // Keep the browser canvas, native UI and address-bar color in step with the design.
-  useEffect(() => {
+  // Apply the resolved design before the splash is released or the browser paints.
+  useLayoutEffect(() => {
     document.documentElement.style.colorScheme = isLight ? 'light' : 'dark';
     document.documentElement.style.backgroundColor = isLight ? '#fffaf2' : '#0b0718';
     document.body.style.backgroundColor = isLight ? '#fffaf2' : '#0b0718';
@@ -444,16 +451,11 @@ function AppContent() {
       {/* Cosmic Constellations Background Canvas */}
       <CosmicBackground />
 
-      <Navbar
-        currentRoute={currentRoute}
-        onNavigate={handleNavigate}
-        colorMode={isLight ? 'light' : 'dark'}
-        showColorModeToggle={false}
-      />
+      <Navbar currentRoute={currentRoute} onNavigate={handleNavigate} />
       <main className="flex-grow relative z-10">
         <Suspense fallback={<RouteFallback />}>
           {renderRoute()}
-          <RouteLoadedMarker />
+          <RouteLoadedMarker isAdminRoute={isAdminRoute} settingsResolved={settingsResolved} />
         </Suspense>
       </main>
       <Footer onNavigate={handleNavigate} />

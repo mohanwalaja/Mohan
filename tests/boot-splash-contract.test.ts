@@ -125,9 +125,12 @@ await check('prerendered customer content stays covered and its loading surface 
   assert.match(css, /html\[data-prerendered\]\s+#boot-splash\s*\{[^}]*#fffaf2/);
   assert.match(css, /html\[data-prerendered\]\s+#boot-splash \.boot-word\s*\{\s*color:\s*#6f391f/);
   const app = read('src/App.tsx');
-  assert.match(app, /useState<ColorMode>\(getSavedColorMode\)/);
-  assert.match(app, /data-user-design=\{!isAdminRoute && colorMode === 'light' \? 'ivory' : undefined\}/);
-  assert.match(read('src/context/AuthContext.tsx'), /SETTINGS_CACHE_KEY/);
+  const auth = read('src/context/AuthContext.tsx');
+  assert.match(app, /const activeUserDesign = settings\?\.userDesign \|\| 'ivory'/);
+  assert.match(app, /data-user-design=\{isLight \? 'ivory' : undefined\}/);
+  assert.match(app, /if \(isAdminRoute \|\| settingsResolved\) dismissBootSplash\(\)/);
+  assert.match(auth, /SETTINGS_CACHE_KEY/);
+  assert.match(auth, /settings\?\.userDesign === 'original' \|\| settings\?\.userDesign === 'ivory'/);
 });
 
 await check('the splash is aria-hidden and does not impersonate the Suspense spinner', () => {
@@ -195,8 +198,8 @@ await check('the route-ready marker dismisses the splash inside the Suspense bou
   const app = read('src/App.tsx');
   assert.match(
     app,
-    /<Suspense fallback=\{<RouteFallback \/>\}>[\s\S]*?<RouteLoadedMarker \/>[\s\S]*?<\/Suspense>/,
-    'RouteLoadedMarker must stay INSIDE the Suspense boundary: dismissing the splash before a lazy route chunk resolves would reveal the spinner instead of the page',
+    /<Suspense fallback=\{<RouteFallback \/>\}>[\s\S]*?<RouteLoadedMarker isAdminRoute=\{isAdminRoute\} settingsResolved=\{settingsResolved\} \/>[\s\S]*?<\/Suspense>/,
+    'RouteLoadedMarker must stay INSIDE Suspense and receive the resolved public-design state: a lazy route cannot release the splash before both the route and its design are ready',
   );
   assert.match(
     app,

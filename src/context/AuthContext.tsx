@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   birthProfile: CustomerBirthProfile | null;
   settings: SystemSettings | null;
-  /** True once public settings have loaded or the bounded fallback has fired. */
+  /** True once a valid public design is cached, settings load, or the bounded fallback fires. */
   settingsResolved: boolean;
   isLoading: boolean;
   isAdmin: boolean;
@@ -43,6 +43,20 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const SETTINGS_CACHE_KEY = 'astrosivam_settings';
+
+/** Cached settings contain only the redacted public response, never admin secrets. */
+function readCachedSettings(): SystemSettings | null {
+  try {
+    const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as SystemSettings
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * PHP API responses and older saved records may return birth profiles in
@@ -98,23 +112,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(next);
   };
   const [birthProfile, setBirthProfile] = useState<CustomerBirthProfile | null>(null);
-  const [settings, setSettings] = useState<SystemSettings | null>(() => {
-    try {
-      const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
-      return cached ? JSON.parse(cached) : null;
-    } catch (e) {
-      return null;
-    }
-  });
+  const [settings, setSettings] = useState<SystemSettings | null>(() => readCachedSettings());
   const [isLoading, setIsLoading] = useState(true);
-  const [settingsResolved, setSettingsResolved] = useState(false);
+  // A cached, accepted public design is available synchronously on reload. If
+  // no such value exists, customer pages remain behind the boot splash until
+  // the public settings request settles or the bounded fallback fires.
+  const [settingsResolved, setSettingsResolved] = useState(() =>
+    settings?.userDesign === 'original' || settings?.userDesign === 'ivory'
+  );
 
-  // Never let an unavailable settings API hold settings-dependent UI indefinitely.
-  // Display mode is a separate browser preference and does not wait for the API.
+  // Never let an unavailable settings API hold customer pages behind the splash indefinitely.
   useEffect(() => {
+    if (settingsResolved) return;
     const fallback = window.setTimeout(() => setSettingsResolved(true), 4500);
     return () => window.clearTimeout(fallback);
-  }, []);
+  }, [settingsResolved]);
 
   const refreshSettings = async () => {
     const hasSession = Boolean(getAuthToken() || userRef.current);
@@ -164,8 +176,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const initAuth = async () => {
     setIsLoading(true);
-    // Fetch public settings in parallel with auth/session lookup. The visitor's
-    // display mode is resolved independently from local storage at first render.
+    // Fetch public settings in parallel with auth/session lookup. On a first
+    // visit the customer shell stays behind the splash until this design is
+    // known; a valid cached design is already available on the initial render.
     const settingsRequest = refreshSettings();
     // H3: the session lives in an httpOnly cookie, not in localStorage, so a
     // reload must ask the server who it is instead of inspecting stored
@@ -284,8 +297,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearAuthToken();
     applyUser(null);
     setBirthProfile(null);
-    // Drop admin-only secrets immediately. The visitor's display mode lives in
-    // its own browser preference and cannot change on sign-out.
+    // Drop admin-only secrets immediately, but retain the already-known public
+    // design in memory so sign-out cannot flash the customer site to a default.
     try {
       localStorage.removeItem(SETTINGS_CACHE_KEY);
     } catch (e) {}

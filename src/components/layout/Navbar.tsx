@@ -23,23 +23,13 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { BrandWordmark } from '../common/BrandLockup';
 import { RouteLink } from '../common/RouteLink';
-import type { ColorMode } from '../../services/colorMode';
 
 interface NavbarProps {
   currentRoute: string;
   onNavigate: (route: string) => void;
-  colorMode?: ColorMode;
-  showColorModeToggle?: boolean;
-  onToggleColorMode?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
-  currentRoute,
-  onNavigate,
-  colorMode,
-  showColorModeToggle,
-  onToggleColorMode
-}) => {
+export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
   const { user, birthProfile, isAdmin, logout } = useAuth();
   // The name saved in the website profile is authoritative — never a stale
   // name or one with a "(Google)" tag attached.

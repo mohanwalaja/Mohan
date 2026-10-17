@@ -805,9 +805,6 @@ function buildPageTree(mods, route, React) {
     React.createElement(Navbar, {
       currentRoute: route.routeKey,
       onNavigate,
-      colorMode: 'light',
-      showColorModeToggle: true,
-      onToggleColorMode: () => {}, // The client attaches the real handler when it mounts.
     }),
     React.createElement('main', { className: 'flex-grow relative z-10' }, pageEl),
     React.createElement(Footer, { onNavigate }),

@@ -27,15 +27,16 @@ assert.match(auth, /setTimeout\(\(\) => setSettingsResolved\(true\), 4500\)/);
 assert.match(auth, /finally\s*\{\s*setSettingsResolved\(true\)/);
 assert.match(api, /new AbortController\(\)/);
 assert.match(api, /setTimeout\(\(\) => controller\.abort\(\), 4000\)/);
-assert.match(app, /function RouteLoadedMarker\(\)[\s\S]*?clearPrerenderedPage\(\);\s*dismissBootSplash\(\)/);
-assert.match(app, /showColorModeToggle=\{!isAdminRoute\}/);
-
-// The navbar switch is a visitor preference, not an admin design preview.
-assert.match(navbar, /role="switch"/);
-assert.match(navbar, /aria-checked=\{colorMode === 'dark'\}/);
-assert.match(navbar, /aria-label="Dark mode"/);
-assert.doesNotMatch(navbar, /not saved|Testing preview|Test \{designPreview/);
-assert.match(app, /data-user-design=\{!isAdminRoute && colorMode === 'light' \? 'ivory' : undefined\}/);
+assert.match(app, /function RouteLoadedMarker\(\{[\s\S]*?settingsResolved[\s\S]*?clearPrerenderedPage\(\)/);
+assert.match(app, /if \(isAdminRoute \|\| settingsResolved\) dismissBootSplash\(\)/);
+// Public design comes from saved admin settings; admin pages remain dark.
+assert.match(app, /const activeUserDesign = settings\?\.userDesign \|\| 'ivory'/);
+assert.match(app, /const isLight = !isAdminRoute && activeUserDesign === 'ivory'/);
+assert.match(app, /data-user-design=\{isLight \? 'ivory' : undefined\}/);
+assert.match(app, /if \(isAdminRoute \|\| settingsResolved\) dismissBootSplash\(\)/);
+assert.match(app, /settingsResolved=\{settingsResolved\}/);
+assert.doesNotMatch(app, /showColorModeToggle|onToggleColorMode|getSavedColorMode|saveColorMode/);
+assert.doesNotMatch(navbar, /role="switch"|ColorMode|onToggleColorMode/);
 assert.doesNotMatch(navbar, /updateAdminSettings|localStorage/);
 
 // Only the decorative cosmic layer is dimmed; fixed chat interfaces remain
@@ -80,4 +81,4 @@ assert.match(picker, /verified-location-card/);
 assert.match(picker, /\[overflow-wrap:anywhere\]/);
 assert.match(css, /\.verified-location-card\s*\{[\s\S]*?background:linear-gradient\([^;]+!important/);
 assert.match(css, /\.verified-location-card button:hover[\s\S]*?color:#fff/);
-console.log('User design regression contracts passed: startup, customer mode switch, AI chat, and verified birthplace card.');
+console.log('User design regression contracts passed: startup design gate, AI chat, and verified birthplace card.');

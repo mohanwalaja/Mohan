@@ -34,12 +34,12 @@ createRoot(document.getElementById('root')!).render(
 
 // Boot-splash safety valve (mobile white-screen fix, 2026-10-14 — see
 // src/services/bootSplash.ts for the whole story). The normal hand-off is
-// App.tsx's RouteLoadedMarker, which fires the moment a route has rendered.
-// This timer only matters when that never happens even though this module DID
-// execute: a render that throws outside the boundary, a route chunk the
-// recovery could not rescue, a locked-up main thread. On those days the visitor
-// gets the prerendered document (fully styled by now — the stylesheet is a
-// separate, earlier request) instead of a spinner that never ends.
+// App.tsx's RouteLoadedMarker, which releases customer pages after their public
+// design resolves (or immediately when a valid cache exists) and keeps admin
+// startup immediate. This timer also covers a stuck settings request, a render
+// that throws outside the boundary, a route chunk the recovery could not
+// rescue, or a locked-up main thread. On those days the visitor gets the
+// prerendered document instead of a splash that never ends.
 //
 // The value sits below the splash's own 8 s CSS escape hatch (index.html), so
 // the CSS fallback remains what saves a document where this file never runs —
