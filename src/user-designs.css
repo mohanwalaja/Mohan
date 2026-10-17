@@ -1,7 +1,9 @@
 /* Additive, browser-local user previews. No selectors apply to admin routes,
    the original design, or exported report documents. */
 [data-user-design] { --paper:#fffaf2; --surface:#ffffff; --tint:#f7ecdc; --heading:#34271d; --muted:#6e6052; --accent:#9c4c1d; --line:#e7d7c3; --radius:14px; background:var(--paper)!important; color:var(--heading)!important; color-scheme:light; }
-[data-user-design] > .fixed { opacity:.08; }
+/* Decorative dimming applies to the cosmic background CANVAS only. Fixed UI
+   (the AI astrologer chat launcher/panel) must stay fully opaque and readable. */
+[data-user-design] .cosmic-background { opacity:.08; }
 [data-user-design] :is(header,footer) { background:var(--surface)!important; color:var(--heading)!important; border-color:var(--line)!important; box-shadow:0 4px 24px #24203006; }
 [data-user-design] :is(h1,h2,h3,h4,h5,h6) { color:var(--heading)!important; }
 [data-user-design] :is(p,li) { color:var(--muted); }
@@ -139,4 +141,83 @@
 [data-user-design] .customer-login-brand > div:first-child img {
   border-radius:0;
   object-fit:contain;
+}
+
+/* ------------------------------------------------------------------
+   AI astrologer chat: fully opaque and readable in the light design.
+   The dark chat look is untouched — these rules only exist under
+   [data-user-design]. The header's dark gradient and the thread's
+   dark gradient are bespoke surfaces (not Tailwind bg-* utilities),
+   so they need explicit light repaints; chat bubbles, dropdowns,
+   inputs and buttons are already converted by the rules above. */
+[data-user-design] :is(.ai-chat-panel-frame,.ai-chat-launcher,.ai-chat-panel,.ai-chat-panel-fallback) { opacity:1; }
+[data-user-design] .ai-chat-panel {
+  background:var(--surface)!important;
+  border-color:var(--line)!important;
+  color:var(--heading);
+  box-shadow:0 24px 60px #34271d26;
+}
+[data-user-design] .ai-chat-panel-fallback {
+  background:var(--surface)!important;
+  border-color:var(--line)!important;
+  color:var(--accent)!important;
+}
+[data-user-design] .ai-chat-header {
+  background:linear-gradient(120deg,var(--tint),var(--paper) 60%,#ffffff)!important;
+  color:var(--heading)!important;
+}
+[data-user-design] .ai-chat-header [class*="text-slate-3"] { color:var(--muted)!important; }
+[data-user-design] .ai-chat-header button { color:var(--muted)!important; }
+[data-user-design] .ai-chat-header button:hover { color:var(--heading)!important; background:var(--tint)!important; }
+[data-user-design] .ai-chat-thread {
+  background:linear-gradient(180deg,#fdf6ea,#ffffff)!important;
+  color:var(--heading);
+}
+[data-user-design] .ai-chat-menu {
+  background:var(--surface)!important;
+  border-color:var(--line)!important;
+  color:var(--heading);
+}
+[data-user-design] .ai-chat-menu :is(input,select,textarea) {
+  background:var(--surface)!important;
+  color:var(--heading)!important;
+  border-color:var(--line)!important;
+}
+[data-user-design] .ai-chat-launcher-pill {
+  background:var(--surface)!important;
+  border-color:var(--line)!important;
+  color:var(--heading)!important;
+  box-shadow:0 10px 30px #34271d1f;
+}
+[data-user-design] .ai-chat-launcher-pill span { color:var(--heading)!important; }
+
+/* ------------------------------------------------------------------
+   Verified birthplace card (shared GooglePlacesPicker): keep the dark
+   gradient out of the light design and make every reading — place
+   name, country, coordinates, UTC offset and the Adjust on Map
+   button — land on a light surface with readable ink. Long place
+   names wrap inside the card (see the component's flex-wrap). */
+[data-user-design] .verified-location-card {
+  background:linear-gradient(90deg,#fdf3e3,#fffaf2 55%,#fffdf8)!important;
+  border-color:var(--line)!important;
+  color:var(--heading);
+  box-shadow:0 8px 24px #34271d0f;
+}
+[data-user-design] .verified-location-card__title { color:var(--heading)!important; }
+[data-user-design] .verified-location-card__country {
+  background:var(--tint)!important;
+  color:var(--muted)!important;
+  border-color:var(--line);
+}
+[data-user-design] .verified-location-card__coords { color:var(--muted)!important; }
+[data-user-design] .verified-location-card__coords strong { color:var(--heading); font-weight:700; }
+[data-user-design] .verified-location-card__offset { color:#8a3c12!important; }
+[data-user-design] .verified-location-card__map-button {
+  background:#f3dfc2!important;
+  color:#7c3410!important;
+  border-color:#e0b98a!important;
+}
+[data-user-design] .verified-location-card__map-button:hover {
+  background:#eccfa4!important;
+  color:#6a2c0c!important;
 }

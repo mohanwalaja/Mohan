@@ -95,11 +95,11 @@ export const AiAstrologerLauncher: React.FC = () => {
   return (
     <>
       {isOpen && (
-        <div className="fixed bottom-24 right-3 z-[60] w-[calc(100vw-1.5rem)] max-w-lg select-auto sm:right-5">
+        <div className="ai-chat-panel-frame fixed bottom-24 right-3 z-[60] w-[calc(100vw-1.5rem)] max-w-lg select-auto sm:right-5">
           <Suspense
             fallback={
               <div
-                className="flex h-40 items-center justify-center rounded-2xl border border-amber-500/30 bg-slate-900/95 text-xs font-semibold text-amber-200 shadow-2xl backdrop-blur-md"
+                className="ai-chat-panel-fallback flex h-40 items-center justify-center rounded-2xl border border-amber-500/30 bg-slate-900/95 text-xs font-semibold text-amber-200 shadow-2xl backdrop-blur-md"
                 role="status"
               >
                 Opening ASTRO SIVAM…
@@ -117,9 +117,9 @@ export const AiAstrologerLauncher: React.FC = () => {
         </div>
       )}
 
-      <div className="fixed bottom-5 right-5 z-[60] flex items-center gap-3">
+      <div className="ai-chat-launcher fixed bottom-5 right-5 z-[60] flex items-center gap-3">
         {!isOpen && (
-          <div className="hidden items-center gap-2 rounded-full border border-amber-500/30 bg-slate-900/95 px-3.5 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur-md sm:flex">
+          <div className="ai-chat-launcher-pill hidden items-center gap-2 rounded-full border border-amber-500/30 bg-slate-900/95 px-3.5 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur-md sm:flex">
             <Sparkles className="h-4 w-4 text-amber-400" />
             <span>Ask ASTRO SIVAM</span>
           </div>

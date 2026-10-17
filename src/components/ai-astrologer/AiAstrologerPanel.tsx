@@ -635,9 +635,9 @@ export default function AiAstrologerPanel({
   );
 
   return (
-    <div className="relative flex flex-col h-[640px] max-h-[82vh] overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl shadow-slate-900/20">
+    <div className="ai-chat-panel relative flex flex-col h-[640px] max-h-[82vh] overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl shadow-slate-900/20">
       {/* Header - the name is fixed and never replaced by a person's name. */}
-      <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
+      <div className="ai-chat-header relative shrink-0 overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
         <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-amber-500/20 blur-3xl" />
         <div className="pointer-events-none absolute -left-8 -bottom-10 h-24 w-24 rounded-full bg-indigo-500/20 blur-2xl" />
         <div className="relative flex items-center gap-3 px-4 py-3.5">
@@ -673,7 +673,7 @@ export default function AiAstrologerPanel({
       {/* Conversation */}
       <div
         ref={scrollRef}
-        className="flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-slate-50 to-white px-4 py-5 dark:from-slate-950 dark:to-slate-900"
+        className="ai-chat-thread flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-slate-50 to-white px-4 py-5 dark:from-slate-950 dark:to-slate-900"
       >
         {messages.map((m) => {
           const isCustomer = m.role === 'customer';
@@ -739,7 +739,7 @@ export default function AiAstrologerPanel({
       {/* Guided menu: topics, then the options of the open topic. Customers
           never get a free question box; complaint options get one short
           detail line for the human team. */}
-      <div className="max-h-[42%] shrink-0 space-y-2.5 overflow-y-auto border-t border-slate-200/80 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+      <div className="ai-chat-menu max-h-[42%] shrink-0 space-y-2.5 overflow-y-auto border-t border-slate-200/80 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
         {/* The report this conversation is reading. The service chapters
             (Wedding Matching, Baby Naming, Subha Muhurtham) are answered from
             the attached report, and the floating launcher starts with none. */}

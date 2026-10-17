@@ -43,18 +43,50 @@ export const BOOT_SPLASH_ID = 'boot-splash';
 /** Class that triggers the fade-out (styles in index.html, .boot-splash-hide). */
 export const BOOT_SPLASH_HIDE_CLASS = 'boot-splash-hide';
 
+/**
+ * Pre-paint website design state (Ivory & Saffron dark-flash fix).
+ * assets/boot-design.js writes `data-boot-design` on <html> before the body
+ * paints; App.tsx keeps it in sync afterwards via applyBootDesign().
+ * Values: 'ivory' | 'original' | 'pending' | 'admin'.
+ */
+export const BOOT_DESIGN_ATTR = 'data-boot-design';
+
+/** The design skin attribute (matches src/user-designs.css selectors). */
+export const USER_DESIGN_ATTR = 'data-user-design';
+
 /** Must be >= the fade transition in index.html: removing a mid-fade node
  *  would flash the splash back to full opacity for one frame. */
 const REMOVE_AFTER_MS = 400;
 
 let dismissed = false;
+let dismissRequested = false;
+
+/** True while the saved design is still unknown (first visit, no cache). */
+function bootDesignPending(): boolean {
+  try {
+    return (
+      typeof document !== 'undefined' &&
+      !!document.documentElement &&
+      typeof document.documentElement.getAttribute === 'function' &&
+      document.documentElement.getAttribute(BOOT_DESIGN_ATTR) === 'pending'
+    );
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Fade the boot splash out and remove it. Safe to call at any time, any number
  * of times, and in documents that never had a splash.
+ *
+ * While the design hold is pending (no saved design resolved yet) the request
+ * is remembered but NOT executed: customer content must not appear in the
+ * wrong design. applyBootDesign() replays it the moment the hold ends.
  */
 export function dismissBootSplash(): void {
   if (dismissed) return;
+  dismissRequested = true;
+  if (bootDesignPending()) return;
   dismissed = true;
 
   if (typeof document === 'undefined') return;
@@ -68,6 +100,44 @@ export function dismissBootSplash(): void {
   window.setTimeout(() => {
     if (splash.parentNode) splash.parentNode.removeChild(splash);
   }, REMOVE_AFTER_MS);
+}
+
+/**
+ * Apply the resolved website design to the document and release any design
+ * hold (Ivory & Saffron dark-flash fix). Called by App.tsx once the saved
+ * settings are known — or have failed (fail open to the default dark design).
+ * `admin` routes never receive a user design: the admin screens stay dark.
+ */
+export function applyBootDesign(
+  design: 'ivory' | 'original',
+  options?: { admin?: boolean },
+): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  if (!root || typeof root.setAttribute !== 'function') return;
+
+  if (options?.admin) {
+    root.removeAttribute(USER_DESIGN_ATTR);
+    root.setAttribute(BOOT_DESIGN_ATTR, 'admin');
+  } else if (design === 'ivory') {
+    root.setAttribute(USER_DESIGN_ATTR, 'ivory');
+    root.setAttribute(BOOT_DESIGN_ATTR, 'ivory');
+  } else {
+    root.removeAttribute(USER_DESIGN_ATTR);
+    root.setAttribute(BOOT_DESIGN_ATTR, 'original');
+  }
+
+  // The hold just ended (or never applied): run any remembered dismissal now.
+  if (dismissRequested && !dismissed) dismissBootSplash();
+}
+
+/**
+ * Failure fallback for a slow or hung settings request: end the design hold
+ * and reveal the default dark design. src/main.tsx arms this a few seconds
+ * after boot so the page can never stay hidden behind the splash.
+ */
+export function forceReleaseBootDesignHold(): void {
+  if (bootDesignPending()) applyBootDesign('original');
 }
 
 

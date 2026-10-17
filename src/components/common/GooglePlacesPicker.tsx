@@ -402,26 +402,26 @@ export const GooglePlacesPicker: React.FC<GooglePlacesPickerProps> = ({
 
       {/* Modern Verified Location Coordinates Card */}
       {isLocationVerified && (
-        <div className="mt-2.5 p-3.5 bg-gradient-to-r from-amber-50/70 via-slate-50 to-white dark:from-slate-800/80 dark:via-slate-900/90 dark:to-slate-900 border border-amber-500/30 dark:border-amber-500/20 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+        <div className="verified-location-card mt-2.5 p-3.5 bg-gradient-to-r from-amber-50/70 via-slate-50 to-white dark:from-slate-800/80 dark:via-slate-900/90 dark:to-slate-900 border border-amber-500/30 dark:border-amber-500/20 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <MapPin className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
-                <span>{value.placeName}</span>
+              <div className="verified-location-card__title text-xs font-bold text-slate-900 dark:text-white flex flex-wrap items-center gap-1.5">
+                <span className="min-w-0 max-w-full break-words">{value.placeName}</span>
                 {value.country && (
-                  <span className="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-400 font-medium">
+                  <span className="verified-location-card__country shrink-0 px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-400 font-medium">
                     {value.country}
                   </span>
                 )}
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap font-mono">
+              <div className="verified-location-card__coords text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap font-mono">
                 <span>Lat: <strong>{value.latitude}°</strong></span>
                 <span>•</span>
                 <span>Long: <strong>{value.longitude}°</strong></span>
                 <span>•</span>
-                <span className="text-amber-600 dark:text-amber-400 font-sans font-semibold">
+                <span className="verified-location-card__offset text-amber-600 dark:text-amber-400 font-sans font-semibold">
                   Offset: {displayCurrentOffset(value)}
                 </span>
               </div>
@@ -431,7 +431,7 @@ export const GooglePlacesPicker: React.FC<GooglePlacesPickerProps> = ({
           <button
             type="button"
             onClick={openMapPicker}
-            className="text-[11px] text-amber-700 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 font-bold shrink-0 self-start sm:self-center flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-xl border border-amber-500/20 transition-all cursor-pointer"
+            className="verified-location-card__map-button text-[11px] text-amber-700 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 font-bold shrink-0 self-start sm:self-center flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-xl border border-amber-500/20 transition-all cursor-pointer"
           >
             <span>Adjust on Map</span>
             <ArrowRight className="w-3 h-3" />

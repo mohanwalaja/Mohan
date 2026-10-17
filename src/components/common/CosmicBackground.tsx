@@ -3,11 +3,15 @@ import React from 'react';
 /**
  * Authentic ASTRO SIVAM Cosmic Background
  * Deep celestial dark slate/indigo with warm amber-gold and navagraha cosmic glow.
+ *
+ * The `cosmic-background` class is the ONLY thing the decorative
+ * `[data-user-design]` opacity rule applies to (see src/user-designs.css):
+ * it must never fade fixed-position UI such as the AI astrologer chat.
  */
 export const CosmicBackground: React.FC = () => {
   return (
     <div
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
+      className="cosmic-background fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
       aria-hidden="true"
     >
       <div className="absolute inset-0 bg-[#0a0714] dark:bg-[#070512] transition-colors duration-500" />

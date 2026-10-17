@@ -1,7 +1,11 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
-import {dismissBootSplash, capturePrerenderedPage} from './services/bootSplash';
+import {
+  dismissBootSplash,
+  capturePrerenderedPage,
+  forceReleaseBootDesignHold,
+} from './services/bootSplash';
 import './index.css';
 
 // Prerendered documents (scripts/prerender.mjs) carry the page's SEO head
@@ -46,6 +50,16 @@ createRoot(document.getElementById('root')!).render(
 // a stale deploy whose entry chunk 404s, or a wrong content-encoding.
 const BOOT_SPLASH_GIVE_UP_MS = 6000;
 window.setTimeout(dismissBootSplash, BOOT_SPLASH_GIVE_UP_MS);
+
+// Design-hold backstop (Ivory & Saffron dark-flash fix). A first-time visitor
+// (no saved design yet) stays behind the boot splash until the public
+// settings request resolves, so customer content never appears in the wrong
+// design. If that request is slow or hangs, release into the default dark
+// design after a beat instead of holding the page hostage — a late flip to
+// light is the old bug; a stuck splash is worse. Shorter than the give-up
+// timer above and far shorter than the 8 s CSS escape in index.html.
+const BOOT_DESIGN_HOLD_MS = 2500;
+window.setTimeout(forceReleaseBootDesignHold, BOOT_DESIGN_HOLD_MS);
 
 // NOTE (2026-10-12): the offline service worker was removed (cache-first
 // served a stale app shell after deploys). public/sw.js now only self-retires

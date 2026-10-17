@@ -14,7 +14,7 @@ import {
   installRouteIntentPrefetch,
   safeImport,
 } from './services/routeChunks';
-import { dismissBootSplash, getPrerenderedPage, clearPrerenderedPage } from './services/bootSplash';
+import { dismissBootSplash, getPrerenderedPage, clearPrerenderedPage, applyBootDesign } from './services/bootSplash';
 import { routeHref } from './services/routePaths';
 
 // Routes are code-split (audit S1, widened by audit PERF-1): the admin portal,
@@ -315,8 +315,25 @@ function AppContent() {
 
   const [currentRoute, setCurrentRoute] = useState<string>(getInitialRoute());
   const isAdminRoute = currentRoute === 'admin' || currentRoute === 'admin-portal';
-  const { user, birthProfile, settings } = useAuth();
+  const { user, birthProfile, settings, isLoading } = useAuth();
   const design = settings?.userDesign === 'ivory' ? 'ivory' : 'original';
+
+  // Keep the pre-paint website design stamp (Ivory & Saffron dark-flash fix)
+  // in sync with the resolved settings and the current route. assets/boot-
+  // design.js set the first guess from the cached settings before the body
+  // painted; this effect confirms/corrects it once the live settings are
+  // known — and releases the design hold for first-time visitors (or fails
+  // open to the default dark design when the settings request ends empty,
+  // so a slow/failed request can never leave the page hidden).
+  useEffect(() => {
+    if (isAdminRoute) {
+      applyBootDesign('original', { admin: true });
+      return;
+    }
+    if (settings || !isLoading) {
+      applyBootDesign(design);
+    }
+  }, [design, isAdminRoute, settings, isLoading]);
 
   // Handle browser back/forward buttons and programmatic app:navigate events
   useEffect(() => {

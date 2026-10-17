@@ -505,16 +505,23 @@ check('none of the deferred chunks is part of the initial request set', () => {
     [],
     `a homepage visit must not download these chunks: ${offenders.join(', ')}`,
   );
-  // And the initial set is deliberately tiny: the entry + the React vendor chunk.
+  // And the initial set is deliberately tiny: the entry + the React vendor
+  // chunk + the pre-paint design stamp (Ivory & Saffron dark-flash fix —
+  // a classic script that must run before the body paints; kept <= 4 kB).
   const unexpected = initial.filter((url) => {
     const base = path.basename(url);
-    return !/^index-[^/]*\.js$/.test(base) && !/^vendor-core-/.test(base);
+    return !/^index-[^/]*\.js$/.test(base) && !/^vendor-core-/.test(base) && base !== 'boot-design.js';
   });
   assert.deepEqual(
     unexpected,
     [],
-    `the initial request set should be the entry + vendor-core and nothing else, found: ${unexpected.join(', ')}`,
+    `the initial request set should be the entry + vendor-core + boot-design.js and nothing else, found: ${unexpected.join(', ')}`,
   );
+  const stamp = initial.find((url) => path.basename(url) === 'boot-design.js');
+  if (stamp) {
+    const bytes = fs.statSync(abs(path.join('dist/assets', 'boot-design.js'))).size;
+    assert.ok(bytes <= 4096, `boot-design.js is ${bytes} bytes — it must stay a tiny pre-paint stamp`);
+  }
 });
 
 check('service forms do not import the sample calculator or report builders', () => {

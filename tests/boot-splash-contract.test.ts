@@ -118,8 +118,15 @@ await check('the splash costs no extra request and no inline script (the CSP for
   assert.doesNotMatch(scriptSrc, /'unsafe-inline'/, "inline <script> must stay blocked — do not 'fix' the splash with one");
 });
 
-await check('prerendered content is visible without waiting for JavaScript', () => {
+await check('prerendered content is visible without waiting for JavaScript, except the brief design hold', () => {
   assert.match(bootStyle(indexHtml), /html\[data-prerendered\] #boot-splash\s*\{\s*display:\s*none/);
+  // Light-design flash fix: a first-time visitor (no saved design yet) holds
+  // the content behind the splash until the design resolves — see
+  // tests/light-design-fixes.test.ts for the whole contract.
+  assert.match(
+    bootStyle(indexHtml),
+    /html\[data-prerendered\]\[data-boot-design="pending"\] #boot-splash\s*\{\s*display:\s*flex/,
+  );
 });
 
 await check('the splash is aria-hidden and does not impersonate the Suspense spinner', () => {
@@ -354,8 +361,11 @@ await check('the inline boot styles are parsed before the app stylesheet link', 
 await check('the boot-critical block stays inside its byte budget', () => {
   const css = bootStyle(read('dist/index.html'));
   const bytes = Buffer.byteLength(css, 'utf8');
+  // Raised 2026-10-17 for the pre-paint design palette (Ivory & Saffron
+  // dark-flash fix): those rules must live inline so the first paint matches
+  // the saved design before any stylesheet arrives.
   assert.ok(
-    bytes <= 5000,
+    bytes <= 5400,
     `the inline boot style is ${bytes} bytes — it ships in every document on every page load, keep it small`,
   );
 });

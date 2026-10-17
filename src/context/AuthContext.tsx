@@ -153,6 +153,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const initAuth = async () => {
     setIsLoading(true);
+    // Start the public settings request immediately, in parallel with the
+    // session probe (Ivory & Saffron dark-flash fix): the saved website
+    // design must resolve as early as possible so the boot design hold
+    // (src/services/bootSplash.ts) releases before the visitor notices it.
+    const settingsPromise = refreshSettings();
     // H3: the session lives in an httpOnly cookie, not in localStorage, so a
     // reload must ask the server who it is instead of inspecting stored
     // tokens. GET /api/auth/me is anonymous-safe: 401 simply means "signed
@@ -169,7 +174,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       clearAuthToken();
     }
-    await refreshSettings();
+    await settingsPromise;
+    if (userRef.current) {
+      // Signed in: reload through the admin-aware path for the complete,
+      // unredacted configuration (the parallel call above took the public one).
+      await refreshSettings();
+    }
     setIsLoading(false);
   };
 

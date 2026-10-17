@@ -119,7 +119,47 @@
         pointer-events: none;
         transition: opacity 320ms ease, visibility 0s linear 320ms;
       }
+      /* PRE-PAINT WEBSITE DESIGN (Ivory & Saffron dark-flash fix): assets/
+         boot-design.js stamps the saved design on <html> before the body
+         exists; these rules paint the matching canvas + splash palette. */
+      html[data-user-design="ivory"] {
+        background-color: #fffaf2 !important;
+        color-scheme: light !important;
+      }
+      html[data-user-design="ivory"],
+      html[data-user-design="ivory"] body {
+        background-color: #fffaf2 !important;
+        color: #34271d;
+      }
+      html[data-user-design="ivory"] #boot-splash {
+        background: radial-gradient(120% 90% at 50% 0%, #fdf1de 0%, #f7ecdc 48%, #fffaf2 100%);
+      }
+      html[data-user-design="ivory"] #boot-splash .boot-ring {
+        border-color: rgba(156, 76, 29, 0.18);
+        border-top-color: #9c4c1d;
+      }
+      html[data-user-design="ivory"] #boot-splash .boot-core {
+        background: #9c4c1d;
+        box-shadow: 0 0 18px 4px rgba(156, 76, 29, 0.35);
+      }
+      html[data-user-design="ivory"] #boot-splash .boot-word {
+        color: #9c4c1d;
+      }
+      html[data-user-design="ivory"] #boot-splash .boot-sub {
+        color: rgba(52, 39, 29, 0.62);
+      }
+      /* First-time visitors (data-boot-design="pending"): hold prerendered
+         content behind the splash until settings resolve — never the wrong
+         design. Failure fallback: main.tsx backstop + give-up timers + the
+         8 s CSS escape below. Never a blank/permanently hidden page. */
+      html[data-prerendered][data-boot-design="pending"] #boot-splash {
+        display: flex;
+      }
     </style>
+    <!-- Pre-paint website design stamp (see the boot style comment). Classic,
+         synchronous, EXTERNAL: CSP allows script-src 'self' but forbids inline
+         scripts. Keep it dependency free — it must not delay the first paint. -->
+    <script src="/assets/boot-design.js"></script>
     <!-- Every prerendered route document injects its own <title>/<meta>/
          <link> tags here (scripts/prerender.mjs). The anchor sits after the
          boot-critical style on purpose: <meta charset> and the first paint
