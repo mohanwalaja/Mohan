@@ -995,6 +995,33 @@ function astro_payment_refund_intent($pdo, $intent, $amount, $currency, $idempot
         return array_merge($manual, array('message' => 'There is no captured amount to return.'));
     }
 
+    // A family bundle may aggregate several order rows, but one captured intent
+    // is the provider's hard ceiling and currency source. Refuse any mismatch
+    // before building or sending a provider request.
+    $intentCurrency = is_array($intent) ? strtoupper(trim((string)($intent['currency'] ?? ''))) : '';
+    if ($intentCurrency !== '' && $intentCurrency !== $currency) {
+        return array_merge($manual, array(
+            'manual' => false,
+            'status' => 'REFUND_CURRENCY_MISMATCH',
+            'message' => 'Refund currency ' . $currency . ' does not match captured intent currency ' . $intentCurrency . '. Nothing was changed.'
+        ));
+    }
+
+    if (is_array($intent) && (string)($intent['provider'] ?? '') !== '') {
+        $capturedAmount = isset($intent['amount']) && is_numeric($intent['amount'])
+            ? (float)$intent['amount']
+            : 0.0;
+        if ($amount > $capturedAmount + 0.005) {
+            return array_merge($manual, array(
+                'manual' => false,
+                'status' => 'REFUND_AMOUNT_MISMATCH',
+                'message' => 'Refund amount ' . number_format($amount, 2, '.', '')
+                    . ' exceeds captured intent amount ' . number_format($capturedAmount, 2, '.', '')
+                    . '. Nothing was changed.'
+            ));
+        }
+    }
+
     $config = $configOverride;
     if (!is_array($config)) {
         try {

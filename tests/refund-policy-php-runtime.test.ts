@@ -82,6 +82,8 @@ check('the executed assertions cover the money, the calendar and the refusal', (
     'PayPal refunds hit the captures endpoint for the capture id',
     'PayPal refunds carry a deterministic idempotency request id',
     'Razorpay refunds are sent in minor units to the payments endpoint',
+    'a two-member bundle refund above its captured intent is refused before the provider call',
+    'a refund currency different from the captured intent is refused before the provider call',
     'a refused refund reports failure and promises no state change',
     'an offline payment has no provider request (manual settlement)'
   ];

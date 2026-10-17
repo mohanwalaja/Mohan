@@ -1163,9 +1163,12 @@ if (preg_match('/admin\/orders\/([^\/]+)\/process-refund/', $path, $matches) && 
         );
 
         if (empty($refundResult['ok'])) {
+            $mismatchCode = in_array($refundResult['status'] ?? '', ['REFUND_CURRENCY_MISMATCH', 'REFUND_AMOUNT_MISMATCH'], true)
+                ? $refundResult['status']
+                : null;
             jsonResponse([
                 'success' => false,
-                'code' => 'AUTO_REFUND_FAILED',
+                'code' => $mismatchCode ?? 'AUTO_REFUND_FAILED',
                 'message' => 'Automatic refund refused: ' . $refundResult['message'],
                 'refund' => [
                     'orderIds' => array_values($refundIds),
@@ -1177,7 +1180,7 @@ if (preg_match('/admin\/orders\/([^\/]+)\/process-refund/', $path, $matches) && 
                     'gatewayProvider' => $refundResult['provider'],
                     'gatewayStatus' => $refundResult['status']
                 ]
-            ], 502);
+            ], $mismatchCode !== null ? 409 : 502);
         }
 
         $settlementMode = 'GATEWAY';

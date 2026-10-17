@@ -27,6 +27,8 @@ const PROBE = 'tests/fixtures/php-refund-probes/refund-policy.php';
 
 /** Files the probe includes or syntax-checks. */
 const MOUNT_FILES = [
+  'api/config.php',
+  'api/client_ip.php',
   'api/refunds.php',
   // Parsed, not executed (each one opens a DB connection on load).
   'api/admin/index.php',
@@ -72,7 +74,10 @@ writeInto('/repo/' + probeRelative, readFileSync(resolve(repoRoot, PROBE)));
 const result = await php.run({
   scriptPath: '/repo/' + probeRelative,
   relativeUri: '/',
-  env: { REPO_ROOT: '/repo' },
+  env: {
+    REPO_ROOT: '/repo',
+    APP_SECRET_KEY: 'php-refund-runtime-test-only-secret-0123456789abcdef'
+  },
 });
 
 process.stdout.write(result.text ?? '');

@@ -23,6 +23,7 @@ if (!defined('ASTRO_REFUND_HOLIDAYS')) {
 }
 
 require_once $root . '/api/refunds.php';
+require_once $root . '/api/payments.php';
 
 function probe_check(&$checks, $name, $ok, $detail = '') {
     $checks[] = array('name' => $name, 'ok' => (bool) $ok, 'detail' => (string) $detail);
@@ -185,6 +186,33 @@ probe_check($checks, 'only a captured online payment is auto-refundable',
     && astro_refund_intent_is_refundable($capturedRazorpay)
     && !astro_refund_intent_is_refundable($offlineIntent)
     && !astro_refund_intent_is_refundable(array_merge($capturedPaypal, array('status' => 'CREATED'))));
+
+$providerCalls = 0;
+$recordingHttp = function () use (&$providerCalls) {
+    $providerCalls++;
+    return array('status' => 200, 'body' => array('id' => 'SHOULD_NOT_BE_CALLED'));
+};
+$bundleMembers = array(
+    array('status' => 'PENDING', 'amount' => 100.00, 'currency' => 'USD'),
+    array('status' => 'PENDING', 'amount' => 100.00, 'currency' => 'USD')
+);
+$bundleRefundAmount = 0.0;
+foreach ($bundleMembers as $member) $bundleRefundAmount += astro_refund_amount_for_order($member);
+$bundleRefundAmount = round($bundleRefundAmount, 2);
+$bundleMismatch = astro_payment_refund_intent(null, $capturedPaypal, $bundleRefundAmount, 'USD', 'refund-bundle-1', $recordingHttp, $config);
+probe_check($checks, 'a two-member bundle refund above its captured intent is refused before the provider call',
+    $bundleRefundAmount === 180.00
+    && $bundleMismatch['status'] === 'REFUND_AMOUNT_MISMATCH'
+    && !$bundleMismatch['ok']
+    && $providerCalls === 0,
+    $bundleMismatch['status'] . '; provider calls=' . $providerCalls);
+
+$currencyMismatch = astro_payment_refund_intent(null, $capturedPaypal, 90.00, 'INR', 'refund-currency-1', $recordingHttp, $config);
+probe_check($checks, 'a refund currency different from the captured intent is refused before the provider call',
+    $currencyMismatch['status'] === 'REFUND_CURRENCY_MISMATCH'
+    && !$currencyMismatch['ok']
+    && $providerCalls === 0,
+    $currencyMismatch['status'] . '; provider calls=' . $providerCalls);
 
 $paypalRequest = astro_refund_gateway_request($capturedPaypal, 90.00, 'USD', 'refund-ord-1', $config);
 probe_check($checks, 'PayPal refunds hit the captures endpoint for the capture id',

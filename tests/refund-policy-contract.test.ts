@@ -216,9 +216,18 @@ check('automatic refund: the provider is called BEFORE any order is marked refun
   assert.ok(providerCall < markRefunded, 'the money must be moved before the bookkeeping claims it was');
   assert.match(handler, /astro_payment_intent_for_order\(\$pdo, \$target\)/, 'the handler must resolve the captured payment intent per payable order');
   assert.match(handler, /AUTO_REFUND_FAILED/, 'a provider refusal must be a distinct, reportable outcome');
-  assert.match(handler, /502/, 'a provider refusal must answer 502 so the portal shows a retryable error');
-  const refusal = region(handler, "code' => 'AUTO_REFUND_FAILED'", '} elseif (count($onlineIntents) > 1)');
+  assert.match(handler, /REFUND_CURRENCY_MISMATCH/);
+  assert.match(handler, /REFUND_AMOUNT_MISMATCH/);
+  assert.match(handler, /409/, 'an intent mismatch must answer 409');
+  assert.match(handler, /502/, 'other provider refusals must still answer 502 so the portal shows a retryable error');
+  const refusal = region(handler, '$mismatchCode = in_array', '} elseif (count($onlineIntents) > 1)');
+  assert.match(refusal, /\$mismatchCode \?\? 'AUTO_REFUND_FAILED'/);
   assert.doesNotMatch(refusal, /UPDATE orders SET/, 'a refused automatic refund must not mark anything refunded');
+  const refundChecks = paymentsPhp.slice(paymentsPhp.indexOf('function astro_payment_refund_intent('));
+  assert.match(refundChecks, /intentCurrency !== '' && \$intentCurrency !== \$currency/);
+  assert.match(refundChecks, /\$amount > \$capturedAmount \+ 0\.005/);
+  assert.ok(refundChecks.indexOf('REFUND_CURRENCY_MISMATCH') < refundChecks.indexOf('$http('), 'currency validation must precede every provider call');
+  assert.ok(refundChecks.indexOf('REFUND_AMOUNT_MISMATCH') < refundChecks.indexOf('$http('), 'amount validation must precede every provider call');
 });
 
 check('automatic refund: both provider endpoints, with an idempotent request id', () => {
