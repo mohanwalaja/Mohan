@@ -142,6 +142,30 @@ checkLimit(astro_ip_in_cidr('172.32.5.5', '172.16.0.0/12') === false, 'IPv4 CIDR
 checkLimit(astro_ip_in_cidr('2606:4700::1111', '2606:4700::/32') === true, 'IPv6 CIDR membership works');
 checkLimit(astro_ip_in_cidr('2607:4700::1111', '2606:4700::/32') === false, 'IPv6 CIDR membership rejects outside addresses');
 
+foreach (array(
+    array('10.0.0.1', '10.0.0.0/33'),
+    array('10.0.0.1', '10.0.0.0/-1'),
+    array('::1', '::/129'),
+    array('10.0.0.1', 'garbage')
+) as $invalidCidr) {
+    $result = null;
+    $threw = false;
+    try {
+        $result = astro_ip_in_cidr($invalidCidr[0], $invalidCidr[1]);
+    } catch (Throwable $e) {
+        $threw = true;
+    }
+    checkLimit(!$threw && $result === false, $invalidCidr[1] . ' is rejected without throwing');
+}
+
+putenv('TRUSTED_PROXY_RANGES=198.18.0.0/15,10.0.0.0/33,10.0.0.0/-1,::/129,garbage');
+checkLimit(
+    astro_extra_trusted_proxy_ranges() === array('198.18.0.0/15'),
+    'Invalid TRUSTED_PROXY_RANGES entries are skipped while a valid explicit range remains'
+);
+checkLimit(astro_is_trusted_proxy_ip('198.18.7.7') === true, 'A valid TRUSTED_PROXY_RANGES override still trusts its proxy');
+putenv('TRUSTED_PROXY_RANGES');
+
 unset($_SERVER['REMOTE_ADDR']);
 unset($_SERVER['HTTP_X_FORWARDED_FOR']);
 

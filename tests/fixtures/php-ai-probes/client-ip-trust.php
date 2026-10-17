@@ -124,11 +124,12 @@ $results[] = scenario('trusted proxy with no usable header falls back to the pee
 // ---------------------------------------------------------------------------
 // TRUSTED_PROXY_RANGES override (ops escape hatch for a new range / own proxy).
 // ---------------------------------------------------------------------------
-putenv('TRUSTED_PROXY_RANGES=198.18.0.0/15');
-$results[] = scenario('TRUSTED_PROXY_RANGES admits an operator-supplied proxy', array(
+putenv('TRUSTED_PROXY_RANGES=198.18.0.0/15,10.0.0.0/33,10.0.0.0/-1,::/129,garbage');
+$results[] = scenario('TRUSTED_PROXY_RANGES admits a valid operator range beside malformed entries', array(
     'REMOTE_ADDR' => '198.18.7.7',
     'HTTP_X_FORWARDED_FOR' => '198.51.100.60'
 ), '198.51.100.60', 'x_forwarded_for', array('trustedPeer' => true, 'cloudflarePeer' => false));
+$parsedOverrideRanges = astro_extra_trusted_proxy_ranges();
 putenv('TRUSTED_PROXY_RANGES');
 
 // ---------------------------------------------------------------------------
@@ -148,7 +149,11 @@ $cidrCases = array(
     array('2606:4701::1', '2606:4700::/32', false),
     array('2606:4700::1', '104.16.0.0/13', false),
     array('203.0.113.7', '2606:4700::/32', false),
-    array('203.0.113.7', 'not-a-cidr', false)
+    array('203.0.113.7', 'not-a-cidr', false),
+    array('10.0.0.1', '10.0.0.0/33', false),
+    array('10.0.0.1', '10.0.0.0/-1', false),
+    array('::1', '::/129', false),
+    array('10.0.0.1', 'garbage', false)
 );
 $cidrFailures = array();
 foreach ($cidrCases as $case) {
@@ -162,6 +167,7 @@ echo json_encode(array(
     'scenarios' => $results,
     'cidrFailures' => $cidrFailures,
     'cidrCaseCount' => count($cidrCases),
+    'invalidTrustedProxyRangesSkipped' => $parsedOverrideRanges === array('198.18.0.0/15'),
     'cloudflareRangeCount' => count(astro_cloudflare_ranges()),
     'cloudflareRangesWellFormed' => count(array_filter(astro_cloudflare_ranges(), function ($cidr) {
         $parts = explode('/', (string)$cidr);

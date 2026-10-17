@@ -15,32 +15,43 @@
  * cannot create a circular include. Do not add require statements here.
  */
 
+/** Parse and validate a CIDR before any prefix arithmetic is attempted. */
+function astro_parse_cidr($cidr) {
+    $parts = explode('/', (string)$cidr);
+    if (count($parts) !== 2) return false;
+
+    $subnet = trim((string)$parts[0]);
+    $prefix = trim((string)$parts[1]);
+    if ($subnet === '' || $prefix === '' || !preg_match('/^[0-9]+$/D', $prefix)) return false;
+
+    $subnetBin = @inet_pton($subnet);
+    if ($subnetBin === false) return false;
+    $maxBits = strlen($subnetBin) === 4 ? 32 : (strlen($subnetBin) === 16 ? 128 : -1);
+    $bits = (int)$prefix;
+    if ($maxBits < 0 || $bits < 0 || $bits > $maxBits) return false;
+
+    return array('subnet' => $subnet, 'binary' => $subnetBin, 'bits' => $bits, 'maxBits' => $maxBits);
+}
+
 /** CIDR membership test for both IPv4 and IPv6 (no dependencies). */
 function astro_ip_in_cidr($ip, $cidr) {
-    $parts = explode('/', $cidr);
-    if (count($parts) !== 2) return false;
-    list($subnet, $bits) = $parts;
-    $bits = (int)$bits;
+    $network = astro_parse_cidr($cidr);
+    if ($network === false) return false;
 
-    if (strpos($ip, ':') !== false || strpos($subnet, ':') !== false) {
-        // IPv6
-        $ipBin = @inet_pton($ip);
-        $subnetBin = @inet_pton($subnet);
-        if ($ipBin === false || $subnetBin === false || strlen($ipBin) !== strlen($subnetBin)) return false;
-        $fullBytes = intdiv($bits, 8);
-        $remBits = $bits % 8;
-        if ($fullBytes > 0 && substr($ipBin, 0, $fullBytes) !== substr($subnetBin, 0, $fullBytes)) return false;
-        if ($remBits === 0) return true;
-        $mask = chr((0xFF << (8 - $remBits)) & 0xFF);
-        return ((ord($ipBin[$fullBytes]) & ord($mask)) === (ord($subnetBin[$fullBytes]) & ord($mask)));
-    }
+    $ipBin = @inet_pton((string)$ip);
+    $subnetBin = $network['binary'];
+    if ($ipBin === false || strlen($ipBin) !== strlen($subnetBin)) return false;
 
-    // IPv4
-    $ipLong = ip2long($ip);
-    $subnetLong = ip2long($subnet);
-    if ($ipLong === false || $subnetLong === false) return false;
-    $mask = $bits <= 0 ? 0 : (-1 << (32 - $bits));
-    return (($ipLong & $mask) === ($subnetLong & $mask));
+    $bits = $network['bits'];
+    $fullBytes = intdiv($bits, 8);
+    $remBits = $bits % 8;
+    if ($fullBytes > 0 && substr($ipBin, 0, $fullBytes) !== substr($subnetBin, 0, $fullBytes)) return false;
+    if ($remBits === 0) return true;
+
+    // astro_parse_cidr bounds the prefix to the address family, so this byte
+    // index is always within the packed IPv4/IPv6 address.
+    $mask = chr((0xFF << (8 - $remBits)) & 0xFF);
+    return ((ord($ipBin[$fullBytes]) & ord($mask)) === (ord($subnetBin[$fullBytes]) & ord($mask)));
 }
 
 /**
@@ -78,12 +89,21 @@ function astro_extra_trusted_proxy_ranges() {
     // test), while re-parsing on every call is wasted work in the hot path.
     static $cachedRaw = null;
     static $ranges = array();
+    static $loggedInvalid = false;
     $raw = (string)(getenv('TRUSTED_PROXY_RANGES') ?: '');
     if ($cachedRaw === $raw) return $ranges;
     $ranges = array();
     foreach (explode(',', $raw) as $cidr) {
         $cidr = trim($cidr);
-        if ($cidr !== '' && strpos($cidr, '/') !== false) $ranges[] = $cidr;
+        if ($cidr === '') continue;
+        if (astro_parse_cidr($cidr) === false) {
+            if (!$loggedInvalid) {
+                error_log('ASTRO SIVAM: invalid TRUSTED_PROXY_RANGES entries were ignored.');
+                $loggedInvalid = true;
+            }
+            continue;
+        }
+        $ranges[] = $cidr;
     }
     $cachedRaw = $raw;
     return $ranges;

@@ -119,6 +119,12 @@ check('the Cloudflare range list is complete, well formed and refreshable', () =
   assert.match(clientIp, /ONE client IP/, 'the consequence of a stale list must be documented');
 });
 
+check('operator proxy ranges reject malformed CIDRs and emit only one warning per process', () => {
+  assert.match(clientIp, /static \$loggedInvalid = false/);
+  assert.match(clientIp, /astro_parse_cidr\(\$cidr\) === false/);
+  assert.match(clientIp, /error_log\('ASTRO SIVAM: invalid TRUSTED_PROXY_RANGES entries were ignored\.'/);
+});
+
 check('the health endpoint detects an untrusted proxy / stale range list', () => {
   assert.match(health, /astro_health_run\('edge'/);
   assert.match(health, /Forwarding headers arrived from an untrusted peer/);
