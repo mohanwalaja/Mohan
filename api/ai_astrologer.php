@@ -47,8 +47,9 @@
  *   1. requireAuth()       — a signed-in account, with the token_version check
  *                            that api/config.php already applies.
  *   2. Customer entitlement — customers need a delivered report (a paid order
- *                            or the free-beta first report). Admins are exempt
- *                            from payment and daily-usage gates.
+ *                            or the free-beta first report). Admins bypass
+ *                            customer entitlement checks; both roles retain
+ *                            short-window abuse limits.
  *
  * A free-beta first report qualifies for customer access exactly like a paid
  * order once it has been delivered. An order that is
@@ -75,10 +76,15 @@ require_once __DIR__ . '/astrology/ai_astrologer_provider.php';
 // person picker reads order_persons / order_items for family reports.
 require_once __DIR__ . '/services/multi_person_order.php';
 
-// NO daily question limit: every entitled customer (and every admin) may ask
-// as many guided questions as they like while their report window is open.
-// Access stays gated by authentication + the delivered-report entitlement +
-// the 7-day window, so the endpoint cannot be hammered without a report.
+// There is no daily question quota: entitled customers and admins may use the
+// chat throughout the report window. High per-user burst limits below protect
+// PHP/PDF resources without changing the entitlement or unlimited-daily-use UI.
+const AI_ASTROLOGER_ASK_RATE_BUCKET = 'ai-ask-user';
+const AI_ASTROLOGER_ASK_RATE_MAX = 60;
+const AI_ASTROLOGER_ASK_RATE_WINDOW_SECONDS = 600;
+const AI_ASTROLOGER_UPLOAD_RATE_BUCKET = 'ai-upload-user';
+const AI_ASTROLOGER_UPLOAD_RATE_MAX = 10;
+const AI_ASTROLOGER_UPLOAD_RATE_WINDOW_SECONDS = 3600;
 const AI_ASTROLOGER_WINDOW_SECONDS = 86400;
 const AI_ASTROLOGER_MAX_UPLOAD_BYTES = 8388608; // 8 MB
 const AI_ASTROLOGER_HISTORY_CONTEXT_MESSAGES = 20;
@@ -584,6 +590,14 @@ function astro_ai_action_history(PDO $pdo, array $user, array $body): void
 
 function astro_ai_action_ask(PDO $pdo, array $user, array $body): void
 {
+    astro_rate_limit_enforce(
+        $pdo,
+        AI_ASTROLOGER_ASK_RATE_BUCKET,
+        (string) $user['id'],
+        AI_ASTROLOGER_ASK_RATE_MAX,
+        AI_ASTROLOGER_ASK_RATE_WINDOW_SECONDS,
+        'You have asked many questions in a short time. Please wait a few minutes and try again.'
+    );
     astro_ai_ensure_tables($pdo);
 
     // Fail fast only when the local answer path cannot run. This chat never
@@ -708,9 +722,8 @@ function astro_ai_action_ask(PDO $pdo, array $user, array $body): void
     if ($guided !== null && ($guided['kind'] ?? '') === 'complaint' && $complaintDetails !== '') {
         $storedQuestion = $question . "\n" . $complaintDetails;
     }
-    // No daily question cap: entitled customers ask without limit (admins too).
-    // The authentication + delivered-report + 7-day window gates are the only
-    // boundary; nothing here counts or refuses questions any more.
+    // The per-user burst limiter protects resources; it does not change the
+    // unlimited-daily-use entitlement or count a daily allowance.
 
     $startedAt = microtime(true);
 
@@ -722,8 +735,8 @@ function astro_ai_action_ask(PDO $pdo, array $user, array $body): void
         //    provider, model call or API key is involved.
         $reply = astro_ai_generate_reply($pdo, $user, $session, $language, $question, $guided);
 
-        // NOTE: questions are unlimited now - no rate-limit counter is bumped
-        // anywhere in this handler (the old daily allowance was removed).
+        // The per-user burst request was already counted at the top of this
+        // handler; there is no separate daily usage counter.
 
         $replyId = astro_ai_save_message($pdo, $sessionId, (string) $user['id'], 'assistant', $language, $reply['content'], [
             'area_id' => $reply['areaId'] ?? null,
@@ -801,6 +814,14 @@ function astro_ai_action_ask(PDO $pdo, array $user, array $body): void
 
 function astro_ai_action_upload(PDO $pdo, array $user, array $body): void
 {
+    astro_rate_limit_enforce(
+        $pdo,
+        AI_ASTROLOGER_UPLOAD_RATE_BUCKET,
+        (string) $user['id'],
+        AI_ASTROLOGER_UPLOAD_RATE_MAX,
+        AI_ASTROLOGER_UPLOAD_RATE_WINDOW_SECONDS,
+        'You have uploaded several reports recently. Please wait before uploading another.'
+    );
     astro_ai_ensure_tables($pdo);
     require_once __DIR__ . '/astrology/ai_report_extract.php';
 
@@ -849,6 +870,9 @@ function astro_ai_action_upload(PDO $pdo, array $user, array $body): void
         }
     }
 
+    // Extraction is CPU-heavy on shared hosting; bound this request while
+    // preserving the existing file-size, ownership and entitlement checks.
+    if (function_exists('set_time_limit')) @set_time_limit(120);
     // Extract, then gate. The PDF is an ownership token, not the explanation -
     // see knowledge/ai-astrologer/rules/report-sections.json.
     $extracted = AstroAiReportExtract::extractPdfText((string) $file['tmp_name']);

@@ -261,7 +261,54 @@ checkLimit(
 );
 
 // ---------------------------------------------------------------------------
-// 5. httpOnly auth cookie (H3): attributes and header/cookie precedence
+// 5. AI astrologer per-user burst buckets (static wiring + pure decisions)
+// ---------------------------------------------------------------------------
+$aiEndpointSource = (string)file_get_contents(__DIR__ . '/../api/ai_astrologer.php');
+checkLimit(
+    preg_match("/const AI_ASTROLOGER_ASK_RATE_BUCKET = 'ai-ask-user';/", $aiEndpointSource) === 1
+    && preg_match('/const AI_ASTROLOGER_ASK_RATE_MAX = 60;/', $aiEndpointSource) === 1
+    && preg_match('/const AI_ASTROLOGER_ASK_RATE_WINDOW_SECONDS = 600;/', $aiEndpointSource) === 1,
+    'AI ask bucket is wired to 60 requests per 10 minutes'
+);
+checkLimit(
+    preg_match("/const AI_ASTROLOGER_UPLOAD_RATE_BUCKET = 'ai-upload-user';/", $aiEndpointSource) === 1
+    && preg_match('/const AI_ASTROLOGER_UPLOAD_RATE_MAX = 10;/', $aiEndpointSource) === 1
+    && preg_match('/const AI_ASTROLOGER_UPLOAD_RATE_WINDOW_SECONDS = 3600;/', $aiEndpointSource) === 1,
+    'AI upload bucket is wired to 10 requests per hour'
+);
+$askStart = strpos($aiEndpointSource, 'function astro_ai_action_ask');
+$askEnd = strpos($aiEndpointSource, 'function astro_ai_action_upload', $askStart);
+$askBody = substr($aiEndpointSource, $askStart, $askEnd - $askStart);
+checkLimit(
+    strpos($askBody, 'astro_rate_limit_enforce(') !== false
+    && strpos($askBody, 'AI_ASTROLOGER_ASK_RATE_BUCKET') !== false
+    && strpos($askBody, '(string) $user[\'id\']') !== false,
+    'AI ask enforces its bucket against the authenticated user id'
+);
+$uploadStart = strpos($aiEndpointSource, 'function astro_ai_action_upload');
+$uploadEnd = strpos($aiEndpointSource, 'function astro_ai_action_handoff', $uploadStart);
+$uploadBody = substr($aiEndpointSource, $uploadStart, $uploadEnd - $uploadStart);
+checkLimit(
+    strpos($uploadBody, 'astro_rate_limit_enforce(') !== false
+    && strpos($uploadBody, 'AI_ASTROLOGER_UPLOAD_RATE_BUCKET') !== false
+    && strpos($uploadBody, '(string) $user[\'id\']') !== false,
+    'AI upload enforces its bucket against the authenticated user id'
+);
+checkLimit(
+    astro_rate_limit_decision(60, 60, 1000, 1000, 600)['allowed'] === true
+    && astro_rate_limit_decision(61, 60, 1000, 1000, 600)['allowed'] === false
+    && astro_rate_limit_decision(10, 10, 1000, 1000, 3600)['allowed'] === true
+    && astro_rate_limit_decision(11, 10, 1000, 1000, 3600)['allowed'] === false,
+    'AI ask/upload rate windows allow exactly their configured burst budgets'
+);
+checkLimit(
+    strpos($uploadBody, 'set_time_limit(120)') < strpos($uploadBody, 'extractPdfText(')
+    && strpos($aiEndpointSource, 'AI_ASTROLOGER_MAX_UPLOAD_BYTES = 8388608') !== false,
+    'PDF extraction is capped at 120 seconds and the 8 MB upload limit remains'
+);
+
+// ---------------------------------------------------------------------------
+// 6. httpOnly auth cookie (H3): attributes and header/cookie precedence
 // ---------------------------------------------------------------------------
 $cookieOptions = astro_auth_cookie_options(2592000, 1000, true);
 checkLimit($cookieOptions['httponly'] === true, 'The auth cookie is always httpOnly (unreadable to JavaScript)');

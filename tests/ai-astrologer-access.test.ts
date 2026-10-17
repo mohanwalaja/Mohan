@@ -121,24 +121,31 @@ check('BOTH gates run before any action is dispatched', () => {
   }
 });
 
-check('questions are unlimited: no daily cap is enforced on the ask handler', () => {
-  // The old 20-per-day allowance (astro_rate_limit_enforce on the ask bucket)
-  // was removed entirely - entitled customers and admins ask without limit.
-  assert.doesNotMatch(endpoint, /AI_ASTROLOGER_RATE_BUCKET/, 'the ask rate bucket must be gone');
-  assert.doesNotMatch(endpoint, /astro_ai_daily_limit\(/, 'the daily limit helper must be gone');
+check('daily questions remain unlimited while ask/upload bursts are rate-limited per user', () => {
+  assert.doesNotMatch(endpoint, /astro_ai_daily_limit\(/, 'a daily question quota must not be reintroduced');
+  assert.match(endpoint, /AI_ASTROLOGER_ASK_RATE_BUCKET\s*=\s*'ai-ask-user'/);
+  assert.match(endpoint, /AI_ASTROLOGER_ASK_RATE_MAX\s*=\s*60/);
+  assert.match(endpoint, /AI_ASTROLOGER_ASK_RATE_WINDOW_SECONDS\s*=\s*600/);
+  assert.match(endpoint, /AI_ASTROLOGER_UPLOAD_RATE_BUCKET\s*=\s*'ai-upload-user'/);
+  assert.match(endpoint, /AI_ASTROLOGER_UPLOAD_RATE_MAX\s*=\s*10/);
+  assert.match(endpoint, /AI_ASTROLOGER_UPLOAD_RATE_WINDOW_SECONDS\s*=\s*3600/);
 
   const askBody = code(sliceText(
     endpoint, 'function astro_ai_action_ask', 'function astro_ai_action_upload', 'ask handler body'
   ));
-  // The negative assertions below are only meaningful if the slice has content.
   assert.ok(askBody.length > 400, 'the ask handler slice looks truncated');
-  assert.ok(!/astro_rate_limit_enforce\(/.test(askBody), 'the ask handler must not enforce a question cap');
-  assert.ok(!/astro_rate_limit_bump\(/.test(askBody), 'the ask handler must not count questions');
-  // Every answered question reports unlimited, customer and admin alike.
+  assert.match(askBody, /astro_rate_limit_enforce\(\s*\$pdo,\s*AI_ASTROLOGER_ASK_RATE_BUCKET,\s*\(string\)\s*\$user\['id'\],\s*AI_ASTROLOGER_ASK_RATE_MAX,\s*AI_ASTROLOGER_ASK_RATE_WINDOW_SECONDS/s);
+  assert.ok(!/astro_rate_limit_bump\(/.test(askBody), 'the ask handler must not count a second time');
   assert.match(askBody, /'remainingToday'\s*=>\s*null/);
   assert.match(askBody, /'unlimited'\s*=>\s*true/);
-  // Access is still bounded by the gates, not by a counter.
   assert.match(askBody, /\$isAdmin = astro_ai_is_admin\(\$user\)/);
+
+  const uploadBody = code(sliceText(
+    endpoint, 'function astro_ai_action_upload', 'function astro_ai_action_handoff', 'upload handler body'
+  ));
+  assert.match(uploadBody, /astro_rate_limit_enforce\(\s*\$pdo,\s*AI_ASTROLOGER_UPLOAD_RATE_BUCKET,\s*\(string\)\s*\$user\['id'\],\s*AI_ASTROLOGER_UPLOAD_RATE_MAX,\s*AI_ASTROLOGER_UPLOAD_RATE_WINDOW_SECONDS/s);
+  assert.match(uploadBody, /AI_ASTROLOGER_MAX_UPLOAD_BYTES\s*\)/);
+  assert.ok(uploadBody.indexOf('set_time_limit(120)') < uploadBody.indexOf('extractPdfText('), 'PDF extraction must be bounded to 120 seconds');
 });
 
 check('the session and usage actions report unlimited for customers too', () => {
@@ -260,7 +267,7 @@ check('the endpoint only calls functions that exist somewhere in api/', () => {
     mb_strpos mb_strtolower microtime round max min is_string is_array is_uploaded_file file_get_contents json_decode
     random_bytes bin2hex header error_log time date count in_array isset empty class_exists file_exists
     is_readable strpos substr array_keys array_values intval number_format htmlspecialchars http_response_code
-    exit dirname preg_split preg_replace str_replace file elseif strrpos
+    exit dirname preg_split preg_replace str_replace file elseif strrpos set_time_limit
     array_unique array_key_exists usort unset function_exists finfo`.split(/\s+/));
 
   const called = new Set([...codeNoStrings(endpoint).matchAll(/(?<![->:\w$])([a-z_][a-z0-9_]*)\s*\(/g)].map((m) => m[1]));
