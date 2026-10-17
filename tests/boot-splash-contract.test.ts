@@ -118,10 +118,12 @@ await check('the splash costs no extra request and no inline script (the CSP for
   assert.doesNotMatch(scriptSrc, /'unsafe-inline'/, "inline <script> must stay blocked — do not 'fix' the splash with one");
 });
 
-await check('prerendered customer content stays covered until the saved design resolves', () => {
+await check('prerendered customer content stays covered and its loading surface is light', () => {
   const css = bootStyle(indexHtml);
   assert.doesNotMatch(css, /html\[data-prerendered\]\s+#boot-splash\s*\{\s*display:\s*none/);
-  assert.match(css, /Keep customer prerenders covered until saved design settings resolve/);
+  assert.match(css, /Public prerenders start on a neutral Ivory surface/);
+  assert.match(css, /html\[data-prerendered\]\s+#boot-splash\s*\{[^}]*#fffaf2/);
+  assert.match(css, /html\[data-prerendered\]\s+#boot-splash \.boot-word\s*\{\s*color:\s*#6f391f/);
   const app = read('src/App.tsx');
   assert.match(app, /if \(isAdminRoute \|\| settingsResolved\) dismissBootSplash\(\)/);
   assert.match(read('src/context/AuthContext.tsx'), /SETTINGS_CACHE_KEY/);

@@ -7,10 +7,11 @@
          is the whole first paint, but its styles live in /assets/index-*.css (a
          render-blocking second request) and its pixels come from the React
          bundle — so until both arrive the browser paints its own white canvas.
-         The inline style below paints the brand's dark surface and the ASTRO
-         SIVAM splash from the HTML alone: no extra request, no image, and no
-         JavaScript (the CSP allows inline styles but not inline scripts, so a
-         splash can only be CSS).
+         The inline style below paints the brand canvas and ASTRO SIVAM splash
+         from the HTML alone: public prerenders use a neutral light loading
+         surface until the saved design is known, while non-prerendered admin
+         startup stays dark. No extra request, image, or JavaScript is needed
+         (the CSP allows inline styles but not inline scripts).
 
          src/services/bootSplash.ts removes it once a route has rendered, and it
          cannot trap a visitor when that JS never runs: <noscript> hides it, an
@@ -44,9 +45,23 @@
         background: radial-gradient(120% 90% at 50% 0%, #1a1233 0%, #0e0a1e 48%, #0b0718 100%);
         animation: boot-splash-escape 600ms ease 8s forwards;
       }
-      /* Keep customer prerenders covered until saved design settings resolve.
-         The splash is removed by RouteLoadedMarker, with JS/CSS escape hatches
-         below for failed or unavailable startup code. */
+      /* Public prerenders start on a neutral Ivory surface: their saved design
+         is not available until settings resolve, and Original Dark must never
+         be the visible loading state for an Ivory visitor. Non-prerendered
+         admin startup keeps the original dark splash. */
+      html[data-prerendered] #boot-splash {
+        background: radial-gradient(120% 90% at 50% 0%, #fffdf9 0%, #fffaf2 58%, #f7ecdc 100%);
+      }
+      html[data-prerendered] #boot-splash .boot-ring {
+        border-color: rgba(156, 76, 29, 0.18);
+        border-top-color: #9c4c1d;
+      }
+      html[data-prerendered] #boot-splash .boot-core {
+        background: #9c4c1d;
+        box-shadow: 0 0 18px 4px rgba(156, 76, 29, 0.24);
+      }
+      html[data-prerendered] #boot-splash .boot-word { color: #6f391f; }
+      html[data-prerendered] #boot-splash .boot-sub { color: #6e6052; }
       #boot-splash .boot-lockup {
         display: flex;
         flex-direction: column;
