@@ -39,9 +39,14 @@ function getDbConnection() {
         return $pdo;
     } catch (PDOException $e) {
         error_log("Database connection error: " . $e->getMessage());
-        // Return sanitized JSON error without leaking DB credentials, host, or server paths
+        // Return sanitized JSON error without leaking DB credentials, host, or server paths.
+        // `retryable`: shared hosting briefly refuses connections ("too many
+        // connections", a restarting MySQL). A client that can safely resend
+        // (the Google sign-in does) tries again instead of showing the visitor
+        // a failure they would only clear by clicking "Try Again" themselves.
         jsonResponse([
             'success' => false,
+            'retryable' => true,
             'message' => 'Database service temporarily unavailable. Please try again later.'
         ], 500);
     }
