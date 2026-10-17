@@ -87,9 +87,15 @@ every rejected credential.
 ## How to verify
 
 ```bash
-npm run lint
-npm test                      # includes tests/google-login-first-attempt.test.ts
+npm run test:all              # the complete local gate (see README > Testing & CI)
 ```
+
+That runs TypeScript, the production build, the full Node suite (including
+`tests/google-login-first-attempt.test.ts` against the built `dist/`), all 15 PHP
+suites (native PHP, or php-wasm at PHP 8.1 when native PHP is absent) and the
+Playwright specs when a browser is installed. It exists because GitHub Actions
+minutes can be exhausted on this account; the workflow result is not required for
+a PR whose local gate passed.
 
 `tests/google-login-first-attempt.test.ts` runs the SDK loader against a fake DOM and
 clock, the login retry rules against a fake `fetch`, the button's first render, static
