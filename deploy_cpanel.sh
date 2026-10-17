@@ -5,6 +5,13 @@
 
 set -e
 
+# The runtime signing-key directory must never be exposed by a deploy without
+# its access-control file. Fail before copying any files if the source is absent.
+if [ ! -f "api/astrology/tmp/.htaccess" ]; then
+  echo "ERROR: required api/astrology/tmp/.htaccess is missing; refusing to deploy the runtime directory." >&2
+  exit 1
+fi
+
 # Detect cPanel public_html directory
 if [ -d "$HOME/public_html" ]; then
   TARGET_DIR="$HOME/public_html"
@@ -111,10 +118,8 @@ fi
 if [ -f "api/.htaccess" ]; then
   cp -f "api/.htaccess" "$TARGET_DIR/api/.htaccess"
 fi
-if [ -f "api/astrology/tmp/.htaccess" ]; then
-  mkdir -p "$TARGET_DIR/api/astrology/tmp"
-  cp -f "api/astrology/tmp/.htaccess" "$TARGET_DIR/api/astrology/tmp/.htaccess"
-fi
+mkdir -p "$TARGET_DIR/api/astrology/tmp"
+cp -f "api/astrology/tmp/.htaccess" "$TARGET_DIR/api/astrology/tmp/.htaccess"
 
 # Keep PHP readable by its account handler without making credentials or
 # runtime signing keys world-readable; directories remain owner-writable.
