@@ -15,7 +15,9 @@ import {
   Layers,
   ShoppingBag,
   Calendar,
-  CircleHelp
+  CircleHelp,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { resolveDisplayName } from '../../utils/displayName';
@@ -27,9 +29,18 @@ import { RouteLink } from '../common/RouteLink';
 interface NavbarProps {
   currentRoute: string;
   onNavigate: (route: string) => void;
+  designPreview?: 'original' | 'ivory';
+  showDesignPreview?: boolean;
+  onToggleDesignPreview?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  currentRoute,
+  onNavigate,
+  designPreview = 'original',
+  showDesignPreview = false,
+  onToggleDesignPreview
+}) => {
   const { user, birthProfile, isAdmin, logout } = useAuth();
   // The name saved in the website profile is authoritative — never a stale
   // name or one with a "(Google)" tag attached.
@@ -83,6 +94,22 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
 
           {/* Right Action Cluster: User & Auth Buttons & Family Tray */}
           <div className="flex items-center gap-2 sm:gap-3">
+
+            {/* Temporary, non-persisted switch for reviewing both customer designs. */}
+            {showDesignPreview && onToggleDesignPreview && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={designPreview === 'ivory'}
+                aria-label={designPreview === 'ivory' ? 'Disable Ivory & Saffron design preview' : 'Enable Ivory & Saffron design preview'}
+                title={`Testing preview: ${designPreview === 'ivory' ? 'Ivory & Saffron' : 'Original Dark'} (not saved)`}
+                onClick={onToggleDesignPreview}
+                className="flex h-11 items-center gap-1.5 rounded-xl border border-amber-500/35 bg-amber-500/10 px-2.5 text-[11px] font-bold text-amber-200 transition-colors hover:bg-amber-500/20 sm:px-3"
+              >
+                {designPreview === 'ivory' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                <span className="hidden sm:inline">Test {designPreview === 'ivory' ? 'dark' : 'light'}</span>
+              </button>
+            )}
 
             {/* Orders Cart Button */}
             {cartItems.length > 0 && (

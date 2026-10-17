@@ -7,7 +7,7 @@ import React from 'react';
 export const CosmicBackground: React.FC = () => {
   return (
     <div
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
+      className="cosmic-background fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
       aria-hidden="true"
     >
       <div className="absolute inset-0 bg-[#0a0714] dark:bg-[#070512] transition-colors duration-500" />
