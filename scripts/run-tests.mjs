@@ -10,6 +10,7 @@ const testFiles = [
   // Cheap and first on purpose: it enforces the requested PHP-only GitHub
   // Actions setup so additional workflows cannot silently return.
   'tests/ci-security-gate.test.ts',
+  'tests/local-gate-contract.test.ts',
   // Also cheap and first: it pins the money paths' ordering of operations
   // (claim the payment intent before inserting order rows) against silent
   // refactors that no runtime test in this sandbox can reach.
@@ -139,7 +140,10 @@ const testFiles = [
   'tests/lockfile-drift.test.ts',
   // USD is the base price; INR is always auto-calculated (Services page,
   // admin panel, checkout and the PHP order/payment checks).
-  'tests/usd-base-pricing.test.ts'
+  'tests/usd-base-pricing.test.ts',
+  // Direct, deterministic unit coverage for the shared pricing, route,
+  // order-payload, family-limit and multi-person checkout modules.
+  'tests/high-value-ts-modules.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 
