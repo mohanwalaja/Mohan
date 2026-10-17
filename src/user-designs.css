@@ -1,7 +1,39 @@
 /* Additive, browser-local user previews. No selectors apply to admin routes,
    the original design, or exported report documents. */
 [data-user-design] { --paper:#fffaf2; --surface:#ffffff; --tint:#f7ecdc; --heading:#34271d; --muted:#6e6052; --accent:#9c4c1d; --line:#e7d7c3; --radius:14px; background:var(--paper)!important; color:var(--heading)!important; color-scheme:light; }
-[data-user-design] > .fixed { opacity:.08; }
+/* Fix 2: fade only the decorative cosmic background. The previous `> .fixed`
+   selector also matched the fixed AI chat launcher/panel (fragments render as
+   direct children), leaving the chat at 8% opacity. */
+[data-user-design] .cosmic-background { opacity:.08; }
+[data-user-design] :is(.ai-astrologer-launcher,.ai-astrologer-panel-wrap,.ai-astrologer-panel) { opacity:1!important; }
+/* AI astrologer chat in the light design: light header/thread with readable
+   ink. The dark chat is untouched (all rules sit under [data-user-design]). */
+[data-user-design] .ai-astrologer-hint { background:var(--surface)!important; color:var(--heading)!important; border-color:var(--line)!important; }
+[data-user-design] .ai-astrologer-hint svg { color:var(--accent)!important; }
+[data-user-design] .ai-astrologer-header { background:linear-gradient(135deg,var(--surface),var(--tint))!important; color:var(--heading)!important; border-bottom:1px solid var(--line); }
+[data-user-design] .ai-astrologer-header button { color:var(--muted)!important; }
+[data-user-design] .ai-astrologer-header button:hover { background:var(--tint)!important; color:var(--heading)!important; }
+[data-user-design] .ai-astrologer-thread { background:var(--paper)!important; background-image:none!important; }
+[data-user-design] .ai-astrologer-bot { background:var(--tint)!important; color:var(--accent)!important; border:1px solid var(--line); }
+[data-user-design] .ai-astrologer-menu select { background:var(--surface)!important; color:var(--heading)!important; border-color:var(--line)!important; }
+[data-user-design] .ai-astrologer-panel textarea { background:var(--surface)!important; color:var(--heading)!important; border-color:var(--line)!important; }
+[data-user-design] .ai-astrologer-panel textarea::placeholder { color:var(--muted); opacity:1; }
+[data-user-design] .ai-astrologer-topic { background:var(--surface)!important; background-image:none!important; border-color:var(--line)!important; }
+[data-user-design] .ai-astrologer-topic span:last-child { color:var(--heading)!important; }
+[data-user-design] .ai-astrologer-option { background:var(--surface)!important; color:var(--heading)!important; border-color:var(--line)!important; }
+/* Fix 3: verified birthplace card. The shared picker renders a dark gradient
+   (dark: stops win because the page keeps .dark); pair the light ink with an
+   explicitly light surface and let long place names wrap inside the card. */
+[data-user-design] .verified-location-card { background:var(--surface)!important; background-image:none!important; border-color:var(--line)!important; color:var(--heading); box-shadow:0 8px 24px #34271d0d; }
+[data-user-design] .verified-location-card > div:first-child { min-width:0; flex:1 1 auto; }
+[data-user-design] .verified-location-card .truncate { white-space:normal!important; overflow:visible!important; text-overflow:clip!important; overflow-wrap:anywhere; word-break:break-word; }
+[data-user-design] .verified-location-card div[class*="text-slate-900"] { color:var(--heading)!important; flex-wrap:wrap; }
+[data-user-design] .verified-location-card span[class*="bg-slate-200"] { background:var(--tint)!important; color:var(--muted)!important; border:1px solid var(--line); flex-shrink:0; }
+[data-user-design] .verified-location-card div[class*="text-slate-500"] { color:var(--muted)!important; }
+[data-user-design] .verified-location-card div[class*="text-slate-500"] strong { color:var(--heading)!important; }
+[data-user-design] .verified-location-card span[class*="text-amber-600"] { color:var(--accent)!important; }
+[data-user-design] .verified-location-card button { background:var(--tint)!important; color:var(--accent)!important; border-color:var(--line)!important; flex-shrink:0; max-width:100%; }
+[data-user-design] .verified-location-card button:hover { background:var(--accent)!important; color:#fff!important; border-color:var(--accent)!important; }
 [data-user-design] :is(header,footer) { background:var(--surface)!important; color:var(--heading)!important; border-color:var(--line)!important; box-shadow:0 4px 24px #24203006; }
 [data-user-design] :is(h1,h2,h3,h4,h5,h6) { color:var(--heading)!important; }
 [data-user-design] :is(p,li) { color:var(--muted); }

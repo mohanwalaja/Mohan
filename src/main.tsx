@@ -1,7 +1,7 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
-import {dismissBootSplash, capturePrerenderedPage} from './services/bootSplash';
+import {dismissBootSplash, capturePrerenderedPage, prepareDesignGate} from './services/bootSplash';
 import './index.css';
 
 // Prerendered documents (scripts/prerender.mjs) carry the page's SEO head
@@ -25,6 +25,12 @@ const resetHorizontalScroll = () => {
 };
 document.addEventListener('focusin', () => requestAnimationFrame(resetHorizontalScroll));
 
+// Design gate (ivory dark-flash fix): when the prerendered dark document is
+// already correct (admin routes, cached original design), release it at once
+// so those visitors never wait behind the gate. Cached-ivory and first-time
+// visitors stay gated until App.tsx resolves the saved design. Synchronous,
+// never waits, admin startup unaffected.
+prepareDesignGate();
 capturePrerenderedPage();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

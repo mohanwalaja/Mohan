@@ -635,9 +635,9 @@ export default function AiAstrologerPanel({
   );
 
   return (
-    <div className="relative flex flex-col h-[640px] max-h-[82vh] overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl shadow-slate-900/20">
+    <div className="ai-astrologer-panel relative flex flex-col h-[640px] max-h-[82vh] overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl shadow-slate-900/20">
       {/* Header - the name is fixed and never replaced by a person's name. */}
-      <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
+      <div className="ai-astrologer-header relative shrink-0 overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
         <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-amber-500/20 blur-3xl" />
         <div className="pointer-events-none absolute -left-8 -bottom-10 h-24 w-24 rounded-full bg-indigo-500/20 blur-2xl" />
         <div className="relative flex items-center gap-3 px-4 py-3.5">
@@ -673,7 +673,7 @@ export default function AiAstrologerPanel({
       {/* Conversation */}
       <div
         ref={scrollRef}
-        className="flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-slate-50 to-white px-4 py-5 dark:from-slate-950 dark:to-slate-900"
+        className="ai-astrologer-thread flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-slate-50 to-white px-4 py-5 dark:from-slate-950 dark:to-slate-900"
       >
         {messages.map((m) => {
           const isCustomer = m.role === 'customer';
@@ -681,7 +681,7 @@ export default function AiAstrologerPanel({
           return (
             <div key={m.id} className={`flex items-end gap-2 ${isCustomer ? 'justify-end' : 'justify-start'}`}>
               {!isCustomer && !isSystem && (
-                <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-amber-400 shadow-sm dark:bg-slate-800">
+                <div className="ai-astrologer-bot mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-amber-400 shadow-sm dark:bg-slate-800">
                   <Bot className="h-3.5 w-3.5" />
                 </div>
               )}
@@ -703,7 +703,7 @@ export default function AiAstrologerPanel({
         )}
         {phase === 'typing' && (
           <div className="flex items-end gap-2">
-            <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-amber-400 shadow-sm dark:bg-slate-800">
+            <div className="ai-astrologer-bot mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-amber-400 shadow-sm dark:bg-slate-800">
               <Bot className="h-3.5 w-3.5" />
             </div>
             <div className="flex gap-1.5 rounded-2xl rounded-bl-sm border border-slate-200/70 bg-white px-4 py-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-800/90">
@@ -739,7 +739,7 @@ export default function AiAstrologerPanel({
       {/* Guided menu: topics, then the options of the open topic. Customers
           never get a free question box; complaint options get one short
           detail line for the human team. */}
-      <div className="max-h-[42%] shrink-0 space-y-2.5 overflow-y-auto border-t border-slate-200/80 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+      <div className="ai-astrologer-menu max-h-[42%] shrink-0 space-y-2.5 overflow-y-auto border-t border-slate-200/80 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
         {/* The report this conversation is reading. The service chapters
             (Wedding Matching, Baby Naming, Subha Muhurtham) are answered from
             the attached report, and the floating launcher starts with none. */}
@@ -835,7 +835,7 @@ export default function AiAstrologerPanel({
                   key={q.id}
                   onClick={() => tapOption(q)}
                   disabled={menuBusy}
-                  className="group flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[13px] font-medium text-slate-800 shadow-sm transition hover:-translate-y-px hover:border-amber-400/70 hover:shadow-md disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="ai-astrologer-option group flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[13px] font-medium text-slate-800 shadow-sm transition hover:-translate-y-px hover:border-amber-400/70 hover:shadow-md disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 >
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 transition group-hover:scale-125" />
                   <span className="flex-1 leading-snug">{q.text}</span>
@@ -855,7 +855,7 @@ export default function AiAstrologerPanel({
                   onClick={() => setActiveCategory(c.id)}
                   disabled={menuBusy}
                   title={c.hint}
-                  className="group flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 px-2 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400/70 hover:shadow-md disabled:opacity-40 dark:border-slate-700 dark:from-slate-800 dark:to-slate-900"
+                  className="ai-astrologer-topic group flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 px-2 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400/70 hover:shadow-md disabled:opacity-40 dark:border-slate-700 dark:from-slate-800 dark:to-slate-900"
                 >
                   <span className="text-xl leading-none transition group-hover:scale-110">{c.icon}</span>
                   <span className="text-center text-[11px] font-bold leading-tight text-slate-700 dark:text-slate-200">

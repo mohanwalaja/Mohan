@@ -1,5 +1,5 @@
 import React, { Component, ReactNode } from 'react';
-import { dismissBootSplash } from '../../services/bootSplash';
+import { dismissBootSplash, markDesignReady } from '../../services/bootSplash';
 
 interface Props {
   children: ReactNode;
@@ -41,6 +41,10 @@ export class ErrorBoundary extends Component<Props, State> {
     // as long as the splash's own CSS escape hatch allows (2026-10-14 mobile
     // white-screen fix — see src/services/bootSplash.ts).
     dismissBootSplash();
+    // The design gate (ivory dark-flash fix) hides prerendered #root until the
+    // saved design resolves; a crash must release it at once, or the support
+    // screen itself would stay hidden behind the gate.
+    markDesignReady();
   }
 
   render() {

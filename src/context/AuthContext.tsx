@@ -7,6 +7,11 @@ interface AuthContextType {
   user: User | null;
   birthProfile: CustomerBirthProfile | null;
   settings: SystemSettings | null;
+  /** True once the saved userDesign is known: synchronously when a settings
+   *  cache exists (reloads), otherwise after the first settings fetch settles
+   *  (success or failure). Customer pages wait for this before painting so a
+   *  first-time visitor never sees the wrong design; admin never waits. */
+  settingsReady: boolean;
   isLoading: boolean;
   isAdmin: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; message?: string; user?: User }>;
@@ -25,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   birthProfile: null,
   settings: null,
+  settingsReady: false,
   isLoading: true,
   isAdmin: false,
   login: async () => ({ success: false }),
@@ -103,6 +109,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
   });
+  // Design gate: a parseable cache means the saved design is already known,
+  // so reloads render the right design on the first frame. First-time
+  // visitors (no cache) stay gated until refreshSettings settles below.
+  const [settingsReady, setSettingsReady] = useState<boolean>(() => {
+    try {
+      const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
+      if (!cached) return false;
+      return JSON.parse(cached) !== null;
+    } catch (e) {
+      return false;
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshSettings = async () => {
@@ -137,6 +155,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {
       console.error('Failed to load settings', e);
+    } finally {
+      // Resolve the design gate even when the request fails: a slow or dead
+      // settings endpoint must fall back to the default design, never a blank.
+      setSettingsReady(true);
     }
   };
 
@@ -293,6 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         birthProfile,
         settings,
+        settingsReady,
         isLoading,
         isAdmin,
         login,

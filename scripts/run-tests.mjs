@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const projectRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const testFiles = [
   'tests/user-design.test.ts',
+  'tests/user-design-fixes.test.ts',
   'tests/remedies.test.ts',
   // Cheap and first on purpose: it fails loudly if the CI security gate is
   // ever unwired, which is otherwise invisible in review.

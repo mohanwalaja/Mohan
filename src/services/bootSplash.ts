@@ -86,3 +86,111 @@ export function getPrerenderedPage(): string {
 export function clearPrerenderedPage(): void {
   prerenderedPage = '';
 }
+
+/**
+ * USER-DESIGN GATE (ivory dark-flash fix).
+ *
+ * THE BUG THIS CLOSES: with “01 · Ivory & Saffron” selected, every customer
+ * page painted the dark design for ~2 s before switching to light. Two causes
+ * stacked: the prerendered documents are dark (first paint, before any JS),
+ * and App.tsx defaulted to `original` until GET /api/services/settings
+ * resolved (settings start as null for first-time visitors with no cache).
+ *
+ * THE FIX (CSP-safe — no inline script; the shipped policy blocks those):
+ *   - index.html hides prerendered #root until <html> carries
+ *     `data-design-ready`, with the boot splash shown as the loader and a CSS
+ *     fallback that reveals anyway after a few seconds;
+ *   - main.tsx calls prepareDesignGate() synchronously before createRoot: when
+ *     the prerendered dark document is already correct (admin routes, which
+ *     always stay dark, or a cached `original` design) the gate opens at once;
+ *   - otherwise App.tsx holds customer content until the saved settings
+ *     resolve (or its own timeout fires) and then calls markDesignReady().
+ *
+ * Admin startup is unaffected: admin routes open the gate synchronously and
+ * never wait for settings. A slow or failed settings request cannot trap the
+ * page: App’s timeout plus the CSS fallback always reveal something.
+ */
+
+/** Attribute on <html> that releases prerendered #root (see index.html). */
+export const DESIGN_READY_ATTR = 'data-design-ready';
+
+/**
+ * Cache key for the public settings. MUST stay identical to
+ * SETTINGS_CACHE_KEY in src/context/AuthContext.tsx (pinned by test).
+ */
+export const DESIGN_SETTINGS_CACHE_KEY = 'astrosivam_settings';
+
+export type CachedUserDesign = 'original' | 'ivory';
+
+/** Synchronously read the last saved design, if any. Null-safe. */
+export function getCachedUserDesign(): CachedUserDesign | null {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem(DESIGN_SETTINGS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { userDesign?: unknown } | null;
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed.userDesign === 'ivory' ? 'ivory' : 'original';
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether the current document is the admin route. Mirrors the admin branch
+ * of App.tsx getInitialRoute (clean paths, legacy aliases, ?route=).
+ */
+export function isAdminRouteLocation(
+  pathname = '',
+  search = '',
+): boolean {
+  try {
+    const params = new URLSearchParams(search || '');
+    const queryRoute = params.get('route');
+    if (queryRoute === 'admin' || queryRoute === 'admin-portal') return true;
+    const rawPath = pathname.toLowerCase().replace(/\/+$/, '');
+    const path = rawPath === '' ? '/' : rawPath;
+    return (
+      path === '/admin' ||
+      path === '/admin-portal' ||
+      path === '/admin.php' ||
+      path.endsWith('/admin') ||
+      path.endsWith('/admin-portal')
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Release the prerendered document. Idempotent and null-safe. */
+export function markDesignReady(): void {
+  try {
+    if (typeof document === 'undefined') return;
+    document.documentElement.setAttribute(DESIGN_READY_ATTR, 'true');
+  } catch {
+    // A document without a root cannot be gated; nothing to release.
+  }
+}
+
+/**
+ * Open the gate synchronously when the dark prerender is already correct.
+ * Called once from main.tsx before createRoot. Never throws, never waits.
+ */
+export function prepareDesignGate(): void {
+  try {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+    const root = document.documentElement;
+    if (!root || root.hasAttribute(DESIGN_READY_ATTR)) return;
+    if (isAdminRouteLocation(window.location.pathname, window.location.search)) {
+      root.setAttribute(DESIGN_READY_ATTR, 'true');
+      return;
+    }
+    if (getCachedUserDesign() === 'original') {
+      root.setAttribute(DESIGN_READY_ATTR, 'true');
+    }
+    // Cached ivory and first-time visitors (no cache) stay gated: App.tsx
+    // releases the gate once the saved design resolves or its timeout fires.
+  } catch {
+    // Gating must never break boot; the CSS fallback still reveals #root.
+  }
+}

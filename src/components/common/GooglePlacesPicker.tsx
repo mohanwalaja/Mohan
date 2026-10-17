@@ -402,7 +402,7 @@ export const GooglePlacesPicker: React.FC<GooglePlacesPickerProps> = ({
 
       {/* Modern Verified Location Coordinates Card */}
       {isLocationVerified && (
-        <div className="mt-2.5 p-3.5 bg-gradient-to-r from-amber-50/70 via-slate-50 to-white dark:from-slate-800/80 dark:via-slate-900/90 dark:to-slate-900 border border-amber-500/30 dark:border-amber-500/20 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+        <div className="verified-location-card mt-2.5 p-3.5 bg-gradient-to-r from-amber-50/70 via-slate-50 to-white dark:from-slate-800/80 dark:via-slate-900/90 dark:to-slate-900 border border-amber-500/30 dark:border-amber-500/20 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <MapPin className="w-4 h-4" />

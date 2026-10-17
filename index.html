@@ -49,6 +49,21 @@
       html[data-prerendered] #boot-splash {
         display: none;
       }
+      /* Design gate (ivory dark-flash fix): prerendered pages are dark, so until
+         JS confirms the saved design, hide #root and show the splash as the
+         loader instead. The 4s fallback reveals even if the gate never opens. */
+      html[data-prerendered]:not([data-design-ready]) #root {
+        visibility: hidden;
+        animation: boot-design-reveal 10ms linear 4s forwards;
+      }
+      html[data-prerendered]:not([data-design-ready]) #boot-splash {
+        display: flex;
+      }
+      @keyframes boot-design-reveal {
+        to {
+          visibility: visible;
+        }
+      }
       #boot-splash .boot-lockup {
         display: flex;
         flex-direction: column;
@@ -273,6 +288,7 @@
     </div>
     <!-- Escape hatch 1: a browser without scripting never sees the splash. -->
     <noscript><style>#boot-splash{display:none!important}</style></noscript>
+    <noscript><style>html[data-prerendered] #root{visibility:visible!important;animation:none!important}</style></noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

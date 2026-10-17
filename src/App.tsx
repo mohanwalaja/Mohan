@@ -14,8 +14,17 @@ import {
   installRouteIntentPrefetch,
   safeImport,
 } from './services/routeChunks';
-import { dismissBootSplash, getPrerenderedPage, clearPrerenderedPage } from './services/bootSplash';
+import { dismissBootSplash, getPrerenderedPage, clearPrerenderedPage, markDesignReady } from './services/bootSplash';
 import { routeHref } from './services/routePaths';
+
+/**
+ * DESIGN GATE TIMEOUT (ivory dark-flash fix). Customer pages wait for the
+ * saved settings before painting; when the request hangs, the gate opens
+ * anyway with the default design so the page can never stay blank. Stays
+ * below the CSS reveal fallback in index.html so React — which knows the
+ * cached/fallback design — always wins over the blind CSS timer.
+ */
+export const DESIGN_GATE_TIMEOUT_MS = 3000;
 
 // Routes are code-split (audit S1, widened by audit PERF-1): the admin portal,
 // the customer dashboard and the four report pages pull in the PDF/HTML report
@@ -315,8 +324,24 @@ function AppContent() {
 
   const [currentRoute, setCurrentRoute] = useState<string>(getInitialRoute());
   const isAdminRoute = currentRoute === 'admin' || currentRoute === 'admin-portal';
-  const { user, birthProfile, settings } = useAuth();
+  const { user, birthProfile, settings, settingsReady } = useAuth();
   const design = settings?.userDesign === 'ivory' ? 'ivory' : 'original';
+  /**
+   * Design gate: customer content must not paint in the wrong design while the
+   * saved settings are still resolving (first-time visitors have no cache, so
+   * `design` above defaults to dark until the fetch lands). Admin routes never
+   * wait — they always stay dark and render at once.
+   */
+  const [designGateTimedOut, setDesignGateTimedOut] = useState(false);
+  const designResolved = isAdminRoute || settingsReady || designGateTimedOut;
+  useEffect(() => {
+    if (isAdminRoute || settingsReady) return;
+    const timer = window.setTimeout(() => setDesignGateTimedOut(true), DESIGN_GATE_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [isAdminRoute, settingsReady]);
+  useEffect(() => {
+    if (designResolved) markDesignReady();
+  }, [designResolved]);
 
   // Handle browser back/forward buttons and programmatic app:navigate events
   useEffect(() => {
@@ -428,22 +453,34 @@ function AppContent() {
 
   return (
     <div data-user-design={!isAdminRoute && design !== 'original' ? design : undefined} className="min-h-screen flex flex-col bg-[#0b0718] dark:bg-[#0b0718] text-[#fffdfa] font-sans antialiased selection:bg-amber-500 selection:text-slate-950 relative">
-      {/* Cosmic Constellations Background Canvas */}
-      <CosmicBackground />
+      {designResolved ? (
+        <>
+          {/* Cosmic Constellations Background Canvas */}
+          <CosmicBackground />
 
-      <Navbar currentRoute={currentRoute} onNavigate={handleNavigate} />
-      <main className="flex-grow relative z-10">
-        <Suspense fallback={<RouteFallback />}>
-          {renderRoute()}
-          <RouteLoadedMarker />
-        </Suspense>
-      </main>
-      <Footer onNavigate={handleNavigate} />
+          <Navbar currentRoute={currentRoute} onNavigate={handleNavigate} />
+          <main className="flex-grow relative z-10">
+            <Suspense fallback={<RouteFallback />}>
+              {renderRoute()}
+              <RouteLoadedMarker />
+            </Suspense>
+          </main>
+          <Footer onNavigate={handleNavigate} />
 
-      {/* Family order tray trigger (eager) + the deferred cart surfaces. */}
-      <FamilyCartFloatingBar onNavigate={handleNavigate} />
-      <DeferredCartLayer onNavigate={handleNavigate} />
-      <DeferredAiAstrologer />
+          {/* Family order tray trigger (eager) + the deferred cart surfaces. */}
+          <FamilyCartFloatingBar onNavigate={handleNavigate} />
+          <DeferredCartLayer onNavigate={handleNavigate} />
+          <DeferredAiAstrologer />
+        </>
+      ) : (
+        /* Design gate placeholder: neutral loader, never customer content in
+           the wrong design. Prerendered #root stays hidden behind the splash
+           until markDesignReady above releases it; on dev servers the splash
+           covers this moment (RouteLoadedMarker is not mounted yet). */
+        <div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading website design">
+          <div className="h-12 w-12 rounded-full border-4 border-amber-400/25 border-t-amber-400 animate-spin" />
+        </div>
+      )}
 
     </div>
   );
