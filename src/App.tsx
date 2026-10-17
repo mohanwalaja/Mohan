@@ -316,20 +316,29 @@ function AppContent() {
 
   const [currentRoute, setCurrentRoute] = useState<string>(getInitialRoute());
   const isAdminRoute = currentRoute === 'admin' || currentRoute === 'admin-portal';
-  const { user, birthProfile, settings } = useAuth();
+  const { user, birthProfile } = useAuth();
 
-  // Public design configuration: Sacred Ivory (Light) is default; Cosmic Dark (Original) is secondary.
-  // Admin pages ALWAYS maintain their dedicated dark UI regardless of this setting.
-  const activeUserDesign = settings?.userDesign || 'ivory';
-  const isLight = !isAdminRoute && activeUserDesign === 'ivory';
+  // The display preference is a PERSONAL, browser-local choice — not an
+  // admin-wide setting. New visitors get Sacred Ivory (light) and keep it
+  // across visits; the admin panel always keeps its dedicated dark UI
+  // whatever the visitor picks. The value lives in localStorage
+  // (src/services/colorMode.ts), so the very first paint already matches the
+  // saved choice and no admin round-trip is needed for first paint.
+  const [colorMode, setColorMode] = useState<ColorMode>(getSavedColorMode);
+  const light = !isAdminRoute && colorMode === 'light';
+  const toggleColorMode = () => {
+    const nextMode: ColorMode = colorMode === 'light' ? 'dark' : 'light';
+    setColorMode(nextMode);
+    saveColorMode(nextMode);
+  };
 
   // Keep the browser canvas, native UI and address-bar color in step with the design.
   useEffect(() => {
-    document.documentElement.style.colorScheme = isLight ? 'light' : 'dark';
-    document.documentElement.style.backgroundColor = isLight ? '#fffaf2' : '#0b0718';
-    document.body.style.backgroundColor = isLight ? '#fffaf2' : '#0b0718';
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isLight ? '#fffaf2' : '#0b0813');
-  }, [isLight]);
+    document.documentElement.style.colorScheme = light ? 'light' : 'dark';
+    document.documentElement.style.backgroundColor = light ? '#fffaf2' : '#0b0718';
+    document.body.style.backgroundColor = light ? '#fffaf2' : '#0b0718';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#fffaf2' : '#0b0813');
+  }, [light]);
 
   // Handle browser back/forward buttons and programmatic app:navigate events
   useEffect(() => {
@@ -440,15 +449,16 @@ function AppContent() {
   };
 
   return (
-    <div data-user-design={isLight ? 'ivory' : undefined} className="min-h-screen flex flex-col bg-[#0b0718] dark:bg-[#0b0718] text-[#fffdfa] font-sans antialiased selection:bg-amber-500 selection:text-slate-950 relative">
+    <div data-user-design={!isAdminRoute && colorMode === 'light' ? 'ivory' : undefined} className="min-h-screen flex flex-col bg-[#0b0718] dark:bg-[#0b0718] text-[#fffdfa] font-sans antialiased selection:bg-amber-500 selection:text-slate-950 relative">
       {/* Cosmic Constellations Background Canvas */}
       <CosmicBackground />
 
       <Navbar
         currentRoute={currentRoute}
         onNavigate={handleNavigate}
-        colorMode={isLight ? 'light' : 'dark'}
-        showColorModeToggle={false}
+        colorMode={colorMode}
+        showColorModeToggle={!isAdminRoute}
+        onToggleColorMode={toggleColorMode}
       />
       <main className="flex-grow relative z-10">
         <Suspense fallback={<RouteFallback />}>

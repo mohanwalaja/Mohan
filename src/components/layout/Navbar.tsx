@@ -15,7 +15,9 @@ import {
   Layers,
   ShoppingBag,
   Calendar,
-  CircleHelp
+  CircleHelp,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { resolveDisplayName } from '../../utils/displayName';
@@ -58,6 +60,23 @@ export const Navbar: React.FC<NavbarProps> = ({
     { key: 'team', label: 'Astrology Team', route: 'team', icon: Users }
   ];
 
+  /* The dark-mode switch is a VISITOR preference, not an admin design
+     preview: it is icon-only (no visible "dark"/"light" text), carries a
+     stable accessible name, and announces its on/off state. The persistence
+     lives in App.tsx — the Navbar never touches storage itself. */
+  const colorModeSwitch = showColorModeToggle ? (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={colorMode === 'dark'}
+      aria-label="Dark mode"
+      onClick={() => onToggleColorMode?.()}
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-white/5 text-amber-300 transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+    >
+      {colorMode === 'light' ? <Moon aria-hidden="true" className="h-4 w-4" /> : <Sun aria-hidden="true" className="h-4 w-4" />}
+    </button>
+  ) : null;
+
   // Keep the phone menu focused on the core customer journey. Supporting
   // company links remain available in the footer and on larger screens.
   const mobileNavLinks = [
@@ -93,6 +112,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action Cluster: User & Auth Buttons & Family Tray */}
           <div className="flex items-center gap-2 sm:gap-3">
+
+            {/* Visitor dark-mode switch (icon only, accessible name + state) */}
+            {colorModeSwitch}
 
             {/* Orders Cart Button */}
             {cartItems.length > 0 && (
@@ -298,6 +320,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* User Account / Auth Section */}
             <div className="mt-4 pt-3.5 border-t border-white/10">
+              {/* The same visitor switch, so mobile users can change it too.
+                  Icon only: the button carries its own accessible name. */}
+              <div className="mb-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                {colorModeSwitch}
+              </div>
               {user ? (
                 <div className="space-y-2.5">
                   {/* Authenticated User Header Card */}
