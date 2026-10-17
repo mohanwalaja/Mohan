@@ -113,7 +113,7 @@ Both events have a configurable message. Supported placeholders:
 | `{customer_name}` | Ramesh Kumar |
 | `{order_number}` | ORD-A1B2C3 |
 | `{service_name}` | Birth Jathagam (Horoscope Reading) |
-| `{amount}` | FJD 35.00 |
+| `{amount}` | USD 35.00 |
 | `{status}` | PENDING / COMPLETED |
 | `{customer_email}` | ramesh@example.com |
 | `{payment_method}` | MPAISA |
@@ -130,7 +130,7 @@ Alerts go to the `user_mobile` saved on the order. Numbers are normalized to
 E.164 automatically:
 
 - `+679 777 1234` → `+6797771234`
-- Local `777 1234` with country **Fiji** → `+6797771234`
+- Local `98765 43210` with country **India** → `+919876543210`
 - Local `09876543210` with country **India** → `+919876543210`
 
 Country codes are mapped for all supported billing countries; numbers that are

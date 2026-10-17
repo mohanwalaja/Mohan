@@ -58,6 +58,16 @@ const APPROVED_PATTERNS = [
   new RegExp(`includes\\('${RETIRED_BRAND}'\\)`, 'i') // place-data heuristic
 ];
 
+/**
+ * The removal record. This document's whole purpose is to name what was
+ * removed and in which file, so it necessarily contains the retired tokens —
+ * it is the PAPERWORK of the removal, not a re-introduction of the branding.
+ * It is the only file allowed to keep them, and the name is assembled from
+ * the same character codes so this guard still contains no reference of its
+ * own. Everything else — code, tests, scripts, CI, docs — must stay clean.
+ */
+const REMOVAL_RECORD_FILE = `CODE_AUDIT_AND_${RETIRED_BRAND.toUpperCase()}_REMOVAL_2026_10_12.md`;
+
 interface Offence {
   file: string;
   line: number;
@@ -84,6 +94,8 @@ let scanned = 0;
 
 for (const absolute of walk(projectRoot)) {
   const relative = path.relative(projectRoot, absolute).split(path.sep).join('/');
+  // The removal record documents the removal, so it keeps the tokens.
+  if (relative === REMOVAL_RECORD_FILE) continue;
   let source: string;
   try {
     source = fs.readFileSync(absolute, 'utf8');

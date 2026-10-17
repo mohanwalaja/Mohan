@@ -73,7 +73,7 @@ used as-is (one row per free chart). Already-placed orders are untouched.
 
 ## Tests
 
-`npm test` → **TEST 16** now asserts first-chart-only pricing (0 / 35 / 35 FJD),
+`npm test` → **TEST 16** now asserts first-chart-only pricing in the order currency,
 that the next family order from the same IP is fully paid, and that a new IP
 gets exactly one free single order. New **TEST 18: Free Beta Grants Exactly
 1 Free Report Per IP Address** guards the rule across PHP, Node, the pricing

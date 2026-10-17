@@ -1,6 +1,6 @@
 # ASTRO SIVAM - Complete cPanel File Manager & Database Master Installation Guide
 
-This step-by-step guide walks you through setting up **ASTRO SIVAM** on **BigRock cPanel** hosting using **cPanel File Manager** and **cPanel MySQL Database Wizard**. The hosted application uses Apache/PHP and MySQL only: **BigRock does not need Node.js or a Node server**. Node.js is used by GitHub Actions/developers only to compile the frontend before deployment.
+This step-by-step guide walks you through setting up **ASTRO SIVAM** on **BigRock cPanel** hosting using **cPanel File Manager** and **cPanel MySQL Database Wizard**. The hosted application uses Apache/PHP and MySQL only: **BigRock does not need Node.js or a Node server**. Node.js is used on a developer machine to compile the frontend before deployment.
 
 ---
 
@@ -33,24 +33,16 @@ In your previous export, the old version of `/api/astrology/engine.php` was stil
 
 ## 📦 Step 1: Preparing Your Download Package
 
-You can get your production `dist.zip` package (which bundles both the frontend `dist/` and the updated PHP backend `api/` together) using either GitHub or the Admin Portal:
+Build the production `dist.zip` package locally. It bundles the compiled frontend and the updated PHP backend `api/` together. GitHub Actions runs only the PHP test suite; it no longer creates a release archive or an automatic GitHub Release.
 
-### Option A: Download from GitHub (Automated After Every Push)
-Every time changes are pushed to your GitHub repository, GitHub Actions automatically builds the code and packages `dist.zip` containing the updated frontend and backend `api/`:
+On a development machine with Node.js installed, from the repository root:
 
-1. **Via GitHub Actions Artifacts**:
-   - Go to your GitHub repository -> click the **Actions** tab at the top.
-   - Click the latest workflow run: **Build & Package Production dist.zip**.
-   - Scroll to **Artifacts** at the bottom -> click **dist-production-zip** (or **dist-folder**).
-2. **Via GitHub Releases**:
-   - In your GitHub repo, click **Releases** on the right sidebar.
-   - Under **ASTRO SIVAM Production Build (Latest)**, click **dist.zip** to download instantly.
-3. **Via GitHub Repository Files**:
-   - In your repository file list, click on `dist.zip` -> click **Download**.
+```bash
+npm ci
+npm run build:zip
+```
 
-### Option B: Download Directly from ASTRO SIVAM Admin Portal
-- Log into the ASTRO SIVAM Admin Portal -> click **Database & Backups** tab.
-- Click the golden **"Download dist.zip Now"** button (or click **Download dist.zip** in the top navigation bar).
+Upload the resulting `dist.zip` from the repository root to cPanel. The archive is ignored by Git and must be rebuilt for each release.
 
 ---
 
@@ -156,7 +148,7 @@ The package contains only the compiled static website, PHP API, and deployment n
 ## ⚡ Step 5: Initialize the Database & Provision an Administrator
 
 
-1. Import `api/schema.sql` into the newly created MySQL database using phpMyAdmin. The schema creates tables and non-user settings only; it does **not** create a default admin or demo customer.
+1. Import `api/schema.sql` into the newly created MySQL database using phpMyAdmin. The schema creates tables and non-user settings only; it does **not** create a default admin or demo customer. On an **existing** database (created before 2026-10), also import every newer file in `api/migrations/` in numeric order — currently `012_social_identity_columns.sql` through `015_contact_email_columns.sql` — then revoke schema-change rights from the web user (`REVOKE ALTER ON <database>.* FROM '<webuser>'@'<host>'; FLUSH PRIVILEGES;`). The API verifies the migrated schema on each request and answers 503 with a log line naming the missing migration when one was skipped.
 2. Provision the first admin with the CLI-only script from a trusted cPanel Terminal/SSH session. Set `ASTROSIVAM_ADMIN_EMAIL`, `ASTROSIVAM_ADMIN_NAME`, and `ASTROSIVAM_ADMIN_PASSWORD` in the shell environment (use a unique password of at least 12 characters), along with the database and `APP_SECRET_KEY` environment settings, then run:
 
    ```sh
@@ -177,7 +169,7 @@ is only *active* when its variable is present.
 
 | Variable | Used for | Fallback when unset |
 | --- | --- | --- |
-| `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT` | MySQL connection | values hard-coded in `api/config.php` |
+| `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT` | MySQL connection | none — the API refuses to start (`DB_NAME`/`DB_USER`/`DB_PASS` have no code defaults) |
 | `APP_SECRET_KEY` | signing tokens/OTP hashes (min 32 chars) | a key auto-generated into `api/astrology/tmp/` |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Razorpay checkout (UPI / Google Pay) | Admin → Payment Settings |
 | `RAZORPAY_WEBHOOK_SECRET` | verifying `payment.captured` / `order.paid` webhooks | Admin → Payment Settings → Webhook Secret |
@@ -238,7 +230,7 @@ credentials (`checkout` / `webhookVerification` booleans, no secret values), and
    - Name: `Mohan`
    - Date of Birth: `1990-08-15`
    - Time of Birth: `08:30`
-   - Birth City: `Walajapet, Tamil Nadu` (or `Nadi, Fiji`)
+   - Birth City: `Walajapet, Tamil Nadu` (or any other city worldwide)
 4. Click **Preview Ephemeris (ஜாதகக் கணிப்பு முன்னோட்டம்)**.
 5. Click **Download Official Certified PDF Report**:
    - The PDF will now output a **Multi-Page Certified Vedic Document** containing:
@@ -400,15 +392,13 @@ are one-time host settings (the last one lives in the Cloudflare dashboard). Ful
    work through `scripts/backup/RESTORE_VERIFICATION.md` into a sandbox database
    (never over production) and record the result.
 
-4. **Uptime + certificate monitoring.** GitHub → Settings → Secrets and
-   variables → Actions → **Variables** → add `PRODUCTION_URL`
-   (`https://astrosivam.com`). `.github/workflows/monitoring.yml` then checks
-   weekly: homepage 200, TLS expiry at ≤21 days (before the Let's Encrypt
-   window closes), that Cloudflare is actually in front (`cf-ray` present) with
-   HSTS intact, that `/api/*` is **not** being edge-cached, and that the deployed
-   `dist.zip` actually contains the payment-hardening migration. Without the
-   variable the workflow fails loudly with "Monitoring is unarmed". Optionally
-   add UptimeRobot/Uptime-Kuma on top and set `UPTIME_ROBOT_HEARTBEAT_URL`.
+4. **Uptime + certificate monitoring.** The GitHub monitoring workflow has
+   been removed to keep Actions PHP-only. Configure an external monitor such as
+   UptimeRobot or Uptime-Kuma for the homepage and TLS expiry, and manually
+   verify that Cloudflare is in front (`cf-ray` present), HSTS is intact, and
+   `/api/*` is **not** edge-cached. See
+   [HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md](HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md)
+   for the operational checks.
 
 5. **CDN in front (Cloudflare, dashboard settings).** Put the domain behind
    Cloudflare — DNS record **Proxied** (orange cloud), SSL/TLS **Full (strict)**,
