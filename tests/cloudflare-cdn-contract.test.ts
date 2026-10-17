@@ -186,7 +186,7 @@ if (!wasmInstalled) {
   console.log('  [SKIP] the IP-resolution spoofing matrix did not run (PHP-WASM is a dev-only install):');
   console.log('         npm install --no-save @php-wasm/node @php-wasm/universal');
 } else {
-  check('14 proxy/spoofing scenarios resolve correctly under real PHP', () => {
+  check('19 proxy/spoofing scenarios resolve correctly under real PHP', () => {
     const probe = 'tests/fixtures/php-ai-probes/client-ip-trust.php';
     const run = spawnSync(
       process.execPath,
@@ -197,8 +197,10 @@ if (!wasmInstalled) {
     const out = JSON.parse(run.stdout);
     const failures = (out.scenarios || []).filter((s: any) => !s.ok);
     assert.deepEqual(failures, [], `these scenarios resolved wrongly: ${JSON.stringify(failures, null, 2)}`);
-    assert.ok(out.scenarios.length >= 14, `expected the full spoofing matrix, got ${out.scenarios.length}`);
-    assert.deepEqual(out.cidrFailures, [], 'the CIDR helper must handle /0, /32, /128, mismatched families and junk');
+    assert.ok(out.scenarios.length >= 19, `expected the full spoofing matrix, got ${out.scenarios.length}`);
+    assert.deepEqual(out.cidrFailures, [], 'the CIDR helper must handle /0, /32, /128, mismatched families, invalid prefixes and junk');
+    assert.ok(out.cidrCaseCount >= 18, 'the matrix must include malformed prefix cases');
+    assert.equal(out.invalidTrustedProxyRangesSkipped, true, 'malformed environment ranges must be skipped while a valid override still works');
     assert.equal(out.cloudflareRangesWellFormed, true);
   });
 

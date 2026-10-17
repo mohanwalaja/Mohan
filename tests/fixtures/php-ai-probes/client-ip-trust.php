@@ -24,19 +24,25 @@ function scenario($name, array $server, $expectedIp, $expectedSource, array $exp
     $_SERVER = array_merge($_SERVER, $server);
 
     $resolution = astro_client_ip_resolution();
+    $flags = array(
+        'trustedPeer' => $resolution['trustedPeer'],
+        'cloudflarePeer' => $resolution['cloudflarePeer'],
+        'proxied' => $resolution['proxied']
+    );
+    $ok = $resolution['ip'] === $expectedIp && $resolution['source'] === $expectedSource;
+    foreach ($expectedFlags as $flag => $expectedValue) {
+        if (!array_key_exists($flag, $flags) || $flags[$flag] !== $expectedValue) $ok = false;
+    }
+
     return array(
         'name' => $name,
         'expectedIp' => $expectedIp,
         'actualIp' => $resolution['ip'],
         'expectedSource' => $expectedSource,
         'actualSource' => $resolution['source'],
-        'flags' => array(
-            'trustedPeer' => $resolution['trustedPeer'],
-            'cloudflarePeer' => $resolution['cloudflarePeer'],
-            'proxied' => $resolution['proxied']
-        ),
+        'flags' => $flags,
         'expectedFlags' => $expectedFlags,
-        'ok' => $resolution['ip'] === $expectedIp && $resolution['source'] === $expectedSource
+        'ok' => $ok
     );
 }
 
@@ -110,6 +116,31 @@ $results[] = scenario('private-network proxy + X-Real-IP', array(
     'REMOTE_ADDR' => '10.0.0.5',
     'HTTP_X_REAL_IP' => '198.51.100.51'
 ), '198.51.100.51', 'x_real_ip', array('trustedPeer' => true));
+
+$results[] = scenario('CGNAT peer + spoofed X-Forwarded-For is ignored', array(
+    'REMOTE_ADDR' => '100.64.0.1',
+    'HTTP_X_FORWARDED_FOR' => '198.51.100.55'
+), '100.64.0.1', 'remote_addr', array('trustedPeer' => false));
+
+$results[] = scenario('IPv4 link-local peer + spoofed X-Forwarded-For is ignored', array(
+    'REMOTE_ADDR' => '169.254.1.1',
+    'HTTP_X_FORWARDED_FOR' => '198.51.100.56'
+), '169.254.1.1', 'remote_addr', array('trustedPeer' => false));
+
+$results[] = scenario('IPv6 link-local is not an implicit trusted proxy', array(
+    'REMOTE_ADDR' => 'fe80::1',
+    'HTTP_X_FORWARDED_FOR' => '2001:db8::56'
+), 'fe80::1', 'remote_addr', array('trustedPeer' => false));
+
+$results[] = scenario('IPv6 ULA proxy + X-Forwarded-For remains trusted', array(
+    'REMOTE_ADDR' => 'fd12:3456::1',
+    'HTTP_X_FORWARDED_FOR' => '2001:db8::57'
+), '2001:db8::57', 'x_forwarded_for', array('trustedPeer' => true));
+
+$results[] = scenario('IPv6 loopback + X-Forwarded-For remains trusted', array(
+    'REMOTE_ADDR' => '::1',
+    'HTTP_X_FORWARDED_FOR' => '2001:db8::58'
+), '2001:db8::58', 'x_forwarded_for', array('trustedPeer' => true));
 
 $results[] = scenario('trusted proxy appends the client LAST (spoofed hops ignored)', array(
     'REMOTE_ADDR' => '10.0.0.5',

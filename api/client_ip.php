@@ -125,15 +125,17 @@ function astro_is_trusted_proxy_ip($ip) {
     if ($ip === '') return false;
     if ($ip === '127.0.0.1' || $ip === '::1') return true;
 
-    // Loopback / RFC1918 / link-local / CGNAT — proxies on our own infrastructure.
+    // Loopback / RFC1918 / IPv6 ULA. Link-local and CGNAT are not assumed to
+    // be proxies; deployments may trust a real proxy there via the explicit
+    // TRUSTED_PROXY_RANGES override below.
     $parsed = @inet_pton($ip);
     if ($parsed !== false && strpos($ip, ':') === false) {
-        foreach (array('127.0.0.0/8', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '169.254.0.0/16', '100.64.0.0/10') as $cidr) {
+        foreach (array('127.0.0.0/8', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16') as $cidr) {
             if (astro_ip_in_cidr($ip, $cidr)) return true;
         }
     }
     if ($parsed !== false && strpos($ip, ':') !== false) {
-        foreach (array('fc00::/7', 'fe80::/10') as $cidr) {
+        foreach (array('fc00::/7') as $cidr) {
             if (astro_ip_in_cidr($ip, $cidr)) return true;
         }
     }

@@ -134,9 +134,27 @@ unset($_SERVER['HTTP_X_REAL_IP']);
 checkLimit(getClientIpAddress() === '10.0.0.5', 'With no forwarding headers the direct peer is used');
 
 checkLimit(astro_is_trusted_proxy_ip('192.168.1.10') === true, 'RFC1918 peers are trusted proxies');
+checkLimit(astro_is_trusted_proxy_ip('127.0.0.1') === true, 'IPv4 loopback remains a trusted proxy');
+checkLimit(astro_is_trusted_proxy_ip('10.1.2.3') === true, 'RFC1918 10/8 remains a trusted proxy');
+checkLimit(astro_is_trusted_proxy_ip('::1') === true, 'IPv6 loopback remains a trusted proxy');
+checkLimit(astro_is_trusted_proxy_ip('fd12:3456::1') === true, 'IPv6 unique-local peers remain trusted proxies');
 checkLimit(astro_is_trusted_proxy_ip('104.16.0.1') === true, 'Cloudflare edge ranges are trusted');
+checkLimit(astro_is_trusted_proxy_ip('100.64.0.1') === false, 'CGNAT is not an implicit trusted proxy range');
+checkLimit(astro_is_trusted_proxy_ip('169.254.1.1') === false, 'IPv4 link-local is not an implicit trusted proxy range');
+checkLimit(astro_is_trusted_proxy_ip('fe80::1') === false, 'IPv6 link-local is not an implicit trusted proxy range');
 checkLimit(astro_is_trusted_proxy_ip('8.8.8.8') === false, 'A public resolver address is not a trusted proxy');
 checkLimit(astro_is_trusted_proxy_ip('') === false, 'An empty peer is never trusted');
+
+unset($_SERVER['HTTP_CF_CONNECTING_IP'], $_SERVER['HTTP_X_REAL_IP']);
+foreach (array('100.64.0.1', '169.254.1.1') as $untrustedPeer) {
+    $_SERVER['REMOTE_ADDR'] = $untrustedPeer;
+    $_SERVER['HTTP_X_FORWARDED_FOR'] = '198.51.100.99';
+    checkLimit(
+        getClientIpAddress() === $untrustedPeer,
+        $untrustedPeer . ' cannot spoof X-Forwarded-For to reset per-IP limits'
+    );
+}
+unset($_SERVER['HTTP_X_FORWARDED_FOR']);
 checkLimit(astro_ip_in_cidr('172.16.5.5', '172.16.0.0/12') === true, 'IPv4 CIDR membership works');
 checkLimit(astro_ip_in_cidr('172.32.5.5', '172.16.0.0/12') === false, 'IPv4 CIDR membership rejects outside addresses');
 checkLimit(astro_ip_in_cidr('2606:4700::1111', '2606:4700::/32') === true, 'IPv6 CIDR membership works');
