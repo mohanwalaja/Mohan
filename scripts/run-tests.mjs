@@ -41,6 +41,7 @@ const testFiles = [
   // failure path, none of which a code-reading review would catch.
   'tests/backup-and-health-contract.test.ts',
   'tests/deploy-security-contract.test.ts',
+  'tests/diagnostic-gate-contract.test.ts',
   'tests/admin-features-contract.test.ts',
   // Also early: the render densities (~300 dpi email capture, JPEG 0.95) are a
   // contract. A "performance" commit that lowers them to shave bytes would

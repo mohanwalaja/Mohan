@@ -2,10 +2,10 @@
 /**
  * ASTRO SIVAM - mPDF & Font Diagnostic & Self-Test Script
  *
- * Debugging aid only - DISABLED unless ASTROSIVAM_DIAGNOSTICS=1 is set in the
- * API environment (or with `SetEnv ASTROSIVAM_DIAGNOSTICS 1` in .htaccess).
- * This page prints filesystem paths and the font inventory, so it must not be
- * publicly readable on a production host.
+ * Private staging/local debugging aid only - disabled unless
+ * ASTROSIVAM_DIAGNOSTICS=1 is explicitly set in that environment. Never enable
+ * it on production: this page prints filesystem paths and a font inventory.
+ * Production mPDF status is available through the authenticated admin health check.
  *
  * When enabled it checks if mPDF is loaded, tests font availability, and
  * generates a sample test PDF.

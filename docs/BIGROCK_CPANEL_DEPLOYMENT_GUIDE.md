@@ -179,7 +179,7 @@ is only *active* when its variable is present.
 | `FAMILY_EMAIL_MAX_ATTACHMENT_MB` | optional custom per-email cap; code default is 25 MiB | `FAMILY_EMAIL_MAX_ATTACHMENT_BYTES`, else 25 MiB |
 | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE_NAME` | WhatsApp order alerts | alerts stay off |
 | `VIBER_AUTH_TOKEN`, `VIBER_SENDER_NAME` | Viber order alerts | alerts stay off |
-| `ASTROSIVAM_DIAGNOSTICS` | enables `/api/check_mpdf.php` (prints server paths) | page answers 404 |
+| `ASTROSIVAM_DIAGNOSTICS` | private local/staging only; diagnostic prints server paths | leave blank in production; page answers 404 |
 | `AI_ASTROLOGER_DAILY_LIMIT` | customer questions per rolling 24 h (admins unlimited) | `20`; local chat replies need no provider key or model settings |
 
 The application uses a 25 MiB email budget by default, so no email-budget `SetEnv` line is needed. To use this default on an existing deployment, remove any explicit `FAMILY_EMAIL_MAX_ATTACHMENT_MB` or `FAMILY_EMAIL_MAX_ATTACHMENT_BYTES` setting from the hosting environment or `api/.htaccess`; explicit host settings take precedence over the code default. Keep any custom value at or below your SMTP provider's message-size limit.
@@ -266,10 +266,13 @@ composer require mpdf/mpdf
 into `public_html/`, then extract it so that
 `public_html/vendor/autoload.php` exists.
 
-**Verify:** set `ASTROSIVAM_DIAGNOSTICS=1` (see Step 5b), open
-`https://yourdomain.com/api/check_mpdf.php`, and confirm mPDF is loaded and the
-Tamil/Hindi fonts are listed. Then remove the flag so the diagnostic page goes
-back to answering 404.
+**Production verification:** use the authenticated Admin → Health Monitor
+(`GET /api/admin/health.php`); it reports whether mPDF is available without
+publishing filesystem paths. Never set `ASTROSIVAM_DIAGNOSTICS=1` on production.
+
+For a deeper check, use a private local/staging copy only: temporarily set the
+flag there, open that staging host's `/api/check_mpdf.php`, confirm mPDF and the
+Tamil/Hindi fonts, then unset it immediately so the page returns to 404.
 
 `vendor/` lives outside the deployed zip, so it survives later re-deployments.
 
