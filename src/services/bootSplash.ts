@@ -185,6 +185,17 @@ export function prepareDesignGate(): void {
       root.setAttribute(DESIGN_READY_ATTR, 'true');
       return;
     }
+    // TEMPORARY preview override (?design=) for testing. Remove before merge.
+    try {
+      const previewParam = new URLSearchParams(window.location.search).get('design');
+      if (previewParam === 'original') {
+        root.setAttribute(DESIGN_READY_ATTR, 'true');
+        return;
+      }
+      if (previewParam === 'ivory') return;
+    } catch {
+      // Fall through to the cache check below.
+    }
     if (getCachedUserDesign() === 'original') {
       root.setAttribute(DESIGN_READY_ATTR, 'true');
     }

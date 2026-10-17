@@ -84,6 +84,38 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, onNavigate }) => {
           {/* Right Action Cluster: User & Auth Buttons & Family Tray */}
           <div className="flex items-center gap-2 sm:gap-3">
 
+            {/* TEMPORARY design preview switch for testing (?design=). Remove before merge. */}
+            {currentRoute !== 'admin' && currentRoute !== 'admin-portal' && (
+              <div className="flex items-center rounded-xl border border-white/15 bg-white/5 p-0.5 text-[11px] font-bold" role="group" aria-label="Preview website design">
+                {(['original', 'ivory'] as const).map(value => {
+                  let active = false;
+                  try {
+                    active = new URLSearchParams(window.location.search).get('design') === value;
+                  } catch {}
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={active}
+                      title={value === 'ivory' ? 'Preview Ivory & Saffron design' : 'Preview Original dark design'}
+                      onClick={() => {
+                        try {
+                          const url = new URL(window.location.href);
+                          url.searchParams.set('design', value);
+                          window.location.href = url.toString();
+                        } catch {}
+                      }}
+                      className={active
+                        ? 'rounded-lg bg-amber-400 px-2.5 py-1.5 text-slate-950 shadow-xs'
+                        : 'rounded-lg px-2.5 py-1.5 text-slate-300 hover:bg-white/10 hover:text-white'}
+                    >
+                      {value === 'ivory' ? 'Ivory' : 'Dark'}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Orders Cart Button */}
             {cartItems.length > 0 && (
               <button

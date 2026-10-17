@@ -157,7 +157,7 @@ await check('App.tsx gates customer content on settings with an admin bypass and
   const app = read('src/App.tsx');
   assert.match(app, /export const DESIGN_GATE_TIMEOUT_MS = 3000;/);
   assert.match(app, /const \{ user, birthProfile, settings, settingsReady \} = useAuth\(\);/);
-  assert.match(app, /const designResolved = isAdminRoute \|\| settingsReady \|\| designGateTimedOut;/);
+  assert.match(app, /const designResolved = isAdminRoute \|\| settingsReady \|\| designGateTimedOut \|\| previewDesign !== null;/);
   assert.match(app, /window\.setTimeout\(\(\) => setDesignGateTimedOut\(true\), DESIGN_GATE_TIMEOUT_MS\)/);
   assert.match(app, /if \(designResolved\) markDesignReady\(\);/);
   assert.match(app, /aria-label="Loading website design"/);
@@ -311,6 +311,23 @@ await check('the card button keeps contrast and long names wrap inside the card'
     /\[data-user-design\] \.verified-location-card \.truncate \{ white-space:normal!important; overflow:visible!important;/,
   );
   assert.match(css, /overflow-wrap:anywhere/);
+});
+
+// ---------------------------------------------------------------------------
+// TEMPORARY preview switch (?design=) — remove with the switch before merge.
+// ---------------------------------------------------------------------------
+
+await check('TEMPORARY: ?design= preview override bypasses the gate', () => {
+  const app = read('src/App.tsx');
+  assert.match(app, /function getPreviewDesign\(\): 'original' \| 'ivory' \| null/);
+  assert.match(app, /const design = previewDesign \?\? savedDesign;/);
+  assert.match(app, /url\.searchParams\.set\('design', preview\);/);
+  const gate = read('src/services/bootSplash.ts');
+  assert.match(gate, /const previewParam = new URLSearchParams\(window\.location\.search\)\.get\('design'\);/);
+  const navbar = read('src/components/layout/Navbar.tsx');
+  assert.match(navbar, /aria-label="Preview website design"/);
+  assert.match(navbar, /url\.searchParams\.set\('design', value\);/);
+  assert.doesNotMatch(navbar, /DesignSwitcher/);
 });
 
 console.log(`\nUser design fixes passed (${passed} checks).`);

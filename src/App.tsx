@@ -26,6 +26,19 @@ import { routeHref } from './services/routePaths';
  */
 export const DESIGN_GATE_TIMEOUT_MS = 3000;
 
+/**
+ * TEMPORARY preview override (?design=original|ivory) for testing the two
+ * designs without the PHP API. Remove before merge.
+ */
+function getPreviewDesign(): 'original' | 'ivory' | null {
+  try {
+    const value = new URLSearchParams(window.location.search).get('design');
+    return value === 'ivory' || value === 'original' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 // Routes are code-split (audit S1, widened by audit PERF-1): the admin portal,
 // the customer dashboard and the four report pages pull in the PDF/HTML report
 // builders; every other page is a chunk of its own too, because the homepage
@@ -325,7 +338,10 @@ function AppContent() {
   const [currentRoute, setCurrentRoute] = useState<string>(getInitialRoute());
   const isAdminRoute = currentRoute === 'admin' || currentRoute === 'admin-portal';
   const { user, birthProfile, settings, settingsReady } = useAuth();
-  const design = settings?.userDesign === 'ivory' ? 'ivory' : 'original';
+  const savedDesign = settings?.userDesign === 'ivory' ? 'ivory' : 'original';
+  // TEMPORARY preview override for testing. Remove before merge.
+  const previewDesign = getPreviewDesign();
+  const design = previewDesign ?? savedDesign;
   /**
    * Design gate: customer content must not paint in the wrong design while the
    * saved settings are still resolving (first-time visitors have no cache, so
@@ -333,12 +349,12 @@ function AppContent() {
    * wait — they always stay dark and render at once.
    */
   const [designGateTimedOut, setDesignGateTimedOut] = useState(false);
-  const designResolved = isAdminRoute || settingsReady || designGateTimedOut;
+  const designResolved = isAdminRoute || settingsReady || designGateTimedOut || previewDesign !== null;
   useEffect(() => {
-    if (isAdminRoute || settingsReady) return;
+    if (isAdminRoute || settingsReady || previewDesign !== null) return;
     const timer = window.setTimeout(() => setDesignGateTimedOut(true), DESIGN_GATE_TIMEOUT_MS);
     return () => window.clearTimeout(timer);
-  }, [isAdminRoute, settingsReady]);
+  }, [isAdminRoute, settingsReady, previewDesign]);
   useEffect(() => {
     if (designResolved) markDesignReady();
   }, [designResolved]);
@@ -395,6 +411,11 @@ function AppContent() {
         const order = currentParams.get('order');
         if (order) url.searchParams.set('order', order);
       }
+      // TEMPORARY: keep the design preview override across navigation. Remove before merge.
+      try {
+        const preview = new URLSearchParams(window.location.search).get('design');
+        if (preview === 'ivory' || preview === 'original') url.searchParams.set('design', preview);
+      } catch (e) {}
       window.history.pushState({}, '', url.pathname + url.search);
     } catch (e) {
       // Ignore if History API unavailable
