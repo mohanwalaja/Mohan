@@ -63,3 +63,6 @@ tests/fixtures/php-ai-probes/out-birth-chart-sample.json
 # wasm PHP probe (scripts/php-refund-policy-check.mjs). The probe is tracked;
 # its output is not.
 tests/fixtures/php-refund-probes/out.json
+
+# Local visual-check screenshots (Playwright capture of the colour modes)
+shots/
