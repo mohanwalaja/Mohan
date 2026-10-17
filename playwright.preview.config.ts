@@ -13,7 +13,7 @@ import { defineConfig } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/browser',
-  testMatch: /(route-lazy-loading|deferred-features)\.spec\.ts/,
+  testMatch: /(route-lazy-loading|deferred-features|google-first-attempt)\.spec\.ts/,
   timeout: 60000,
   workers: 1,
   reporter: 'list',
