@@ -24,9 +24,10 @@
  *   - src/components/common/ErrorBoundary.tsx: on a render crash, so the
  *     support screen is visible immediately instead of hiding behind it.
  *
- * Prerendered production pages hide the splash using a build-time HTML
- * attribute: they already have real content and must not wait for this code.
- * capturePrerenderedPage below preserves that content during React startup.
+ * Prerendered production pages keep the splash until the route and saved user
+ * design have resolved, so their baked Original Dark markup is never exposed
+ * briefly when Ivory & Saffron is selected. capturePrerenderedPage below
+ * preserves that content as a Suspense fallback during React startup.
  *
  * The splash ITSELF also has two escape hatches that need no JavaScript at
  * all (they live in index.html): <noscript> hides it for browsers without

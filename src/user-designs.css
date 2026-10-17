@@ -1,7 +1,7 @@
-/* Additive, browser-local user previews. No selectors apply to admin routes,
-   the original design, or exported report documents. */
+/* Additive customer-facing Ivory & Saffron design. Admin routes deliberately
+   omit data-user-design, preserving their original dark appearance. */
 [data-user-design] { --paper:#fffaf2; --surface:#ffffff; --tint:#f7ecdc; --heading:#34271d; --muted:#6e6052; --accent:#9c4c1d; --line:#e7d7c3; --radius:14px; background:var(--paper)!important; color:var(--heading)!important; color-scheme:light; }
-[data-user-design] > .fixed { opacity:.08; }
+[data-user-design] > .cosmic-background { opacity:.08; }
 [data-user-design] :is(header,footer) { background:var(--surface)!important; color:var(--heading)!important; border-color:var(--line)!important; box-shadow:0 4px 24px #24203006; }
 [data-user-design] :is(h1,h2,h3,h4,h5,h6) { color:var(--heading)!important; }
 [data-user-design] :is(p,li) { color:var(--muted); }
@@ -139,4 +139,76 @@
 [data-user-design] .customer-login-brand > div:first-child img {
   border-radius:0;
   object-fit:contain;
+}
+
+/* The settings-driven Ivory & Saffron design is also used for optional navbar
+   previews. Keep fixed chat interfaces fully opaque. */
+[data-user-design] :is(.ai-astrologer-launcher,.ai-astrologer-panel-shell,.ai-astrologer-panel) { opacity:1; }
+
+/* Shared verified birthplace card: override the dark Tailwind gradient and
+   preserve readable, wrap-safe metadata on every service form. */
+[data-user-design] .verified-location-card {
+  background:linear-gradient(120deg,#fff8eb 0%,#fffdf9 52%,#fff 100%)!important;
+  border-color:#e7d7c3!important;
+  color:#34271d!important;
+}
+[data-user-design] .verified-location-card :is(.text-slate-900,[class~="dark:text-white"]) { color:#34271d!important; }
+[data-user-design] .verified-location-card :is(.text-slate-600,.text-slate-500,.text-slate-400) { color:#6e6052!important; }
+[data-user-design] .verified-location-card :is(.bg-slate-200,[class~="dark:bg-slate-800"]) { background:#f1e6d6!important; }
+[data-user-design] .verified-location-card .text-amber-600 { color:#8f451b!important; }
+[data-user-design] .verified-location-card button {
+  color:#814016!important;
+  background:#f7e7d3!important;
+  border-color:#dec5a6!important;
+}
+[data-user-design] .verified-location-card button:hover { color:#fff!important; background:#9c4c1d!important; border-color:#9c4c1d!important; }
+[data-user-design] .verified-location-card [class*="truncate"] { white-space:normal; }
+
+/* Chat keeps its original cosmic look in dark mode. In the light design, use
+   deliberate light surfaces for the gradient header, transcript, and controls
+   so the global dark utility compatibility rules cannot create mismatched ink. */
+[data-user-design="ivory"] .ai-astrologer-panel {
+  background:#fffdf9!important;
+  border-color:#e7d7c3!important;
+  color:#34271d!important;
+  opacity:1!important;
+}
+[data-user-design="ivory"] .ai-astrologer-header {
+  background:linear-gradient(115deg,#fff7e8,#f5e6d2)!important;
+  color:#34271d!important;
+  border-bottom:1px solid #e7d7c3;
+}
+[data-user-design="ivory"] .ai-astrologer-header :is(.text-white,.text-slate-300) { color:#34271d!important; }
+[data-user-design="ivory"] .ai-astrologer-header button { color:#6e6052!important; }
+[data-user-design="ivory"] .ai-astrologer-header button:hover { background:#ead8bf!important; color:#34271d!important; }
+[data-user-design="ivory"] .ai-astrologer-conversation {
+  background:linear-gradient(180deg,#fffdf9,#fffaf2)!important;
+  color:#34271d!important;
+}
+[data-user-design="ivory"] .ai-astrologer-controls {
+  background:#fff!important;
+  border-color:#e7d7c3!important;
+  color:#34271d!important;
+}
+[data-user-design="ivory"] .ai-astrologer-panel :is(select,textarea,input) {
+  background:#fff!important;
+  color:#34271d!important;
+  border-color:#d8c8b3!important;
+  caret-color:#34271d;
+}
+[data-user-design="ivory"] .ai-astrologer-panel :is(select,textarea,input)::placeholder { color:#786a5b!important; opacity:1; }
+[data-user-design="ivory"] .ai-astrologer-panel :is(.text-slate-700,.text-slate-800,.text-slate-600,.text-slate-500,.text-slate-400) { color:#514337!important; }
+[data-user-design="ivory"] .ai-astrologer-panel :is(.bg-slate-100,.bg-white) { background:#fff!important; }
+[data-user-design="ivory"] .ai-astrologer-panel :is(.bg-gradient-to-b,.bg-slate-800) { background:#fff!important; }
+[data-user-design="ivory"] .ai-astrologer-panel .ai-astrologer-header .bg-slate-900 { background:#f0dfc9!important; }
+[data-user-design="ivory"] .ai-astrologer-panel :is(button,select,textarea,input) { opacity:1; }
+[data-user-design="ivory"] .ai-astrologer-launcher > div {
+  color:#34271d!important;
+  background:#fffdf9!important;
+  border-color:#e7d7c3!important;
+}
+[data-user-design="ivory"] .ai-astrologer-launcher button { opacity:1!important; }
+@media (max-width: 640px) {
+  [data-user-design="ivory"] .ai-astrologer-panel { max-height:78vh; border-radius:20px; }
+  [data-user-design="ivory"] .ai-astrologer-panel-shell { right:12px; width:calc(100vw - 24px); }
 }

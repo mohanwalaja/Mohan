@@ -331,6 +331,18 @@ async function postStagedDoc(
   return { success: false, unsupported: true, message: lastMessage };
 }
 
+// Settings are part of first paint: bound network waits so the customer UI can
+// fall back to the cached design (or Original Dark) instead of staying masked.
+async function fetchSettingsWithTimeout(url: string, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4000);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export const api = {
   async getAdminClientErrors(): Promise<{ success: boolean; errors: Array<{ id: string; message: string; endpoint: string; status?: number; createdAt: string; resolvedAt?: string }>; openCount: number }> {
     const res = await apiFetch(`${getApiBase()}/admin/client-errors`); return safeJson(res);
@@ -343,13 +355,19 @@ export const api = {
   async getSettings(): Promise<{ success: boolean; settings: SystemSettings }> {
     const apiBase = getApiBase();
     try {
-      const res = await fetch(`${apiBase}/services.php?action=settings`);
+      const res = await fetchSettingsWithTimeout(`${apiBase}/services.php?action=settings`);
       const data = await safeJson(res);
       if (data.success || res.status !== 404) return data;
-    } catch (e) {}
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') return { success: false, settings: {} as SystemSettings };
+    }
 
-    const res = await fetch(`${apiBase}/services/settings`);
-    return safeJson(res);
+    try {
+      const res = await fetchSettingsWithTimeout(`${apiBase}/services/settings`);
+      return safeJson(res);
+    } catch {
+      return { success: false, settings: {} as SystemSettings };
+    }
   },
 
   // Public Astrology Team
@@ -1657,7 +1675,7 @@ export const api = {
   },
 
   async getAdminSettings(): Promise<{ success: boolean; settings: SystemSettings }> {
-    const res = await fetch(`${API_BASE}/admin/settings`, {
+    const res = await fetchSettingsWithTimeout(`${API_BASE}/admin/settings`, {
       headers: { ...getAuthHeader() }
     });
     return safeJson(res);

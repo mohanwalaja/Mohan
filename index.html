@@ -44,11 +44,9 @@
         background: radial-gradient(120% 90% at 50% 0%, #1a1233 0%, #0e0a1e 48%, #0b0718 100%);
         animation: boot-splash-escape 600ms ease 8s forwards;
       }
-      /* Built pages already have real content: do not cover it while JS loads.
-         Dev / non-prerendered documents retain the white-screen safety splash. */
-      html[data-prerendered] #boot-splash {
-        display: none;
-      }
+      /* Keep customer prerenders covered until saved design settings resolve.
+         The splash is removed by RouteLoadedMarker, with JS/CSS escape hatches
+         below for failed or unavailable startup code. */
       #boot-splash .boot-lockup {
         display: flex;
         flex-direction: column;

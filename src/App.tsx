@@ -220,16 +220,19 @@ function RouteFallback() {
  *   1. Clear the one-shot chunk-recovery flag: if the flag were cleared when
  *      the Suspense boundary first renders its fallback, a failing chunk could
  *      reload the page in an endless loop.
- *   2. Release the initial static-page fallback and dismiss the dev/non-static
- *      boot splash. Production's prerendered pages are already visible from
- *      HTML; neither their first paint nor navigation waits behind an overlay.
+ *   2. Release the initial static-page fallback and dismiss the boot splash.
+ *      Customer prerenders stay covered until their saved design resolves;
+ *      the admin path remains immediate and dark.
  */
-function RouteLoadedMarker() {
+function RouteLoadedMarker({ isAdminRoute }: { isAdminRoute: boolean }) {
+  const { settingsResolved } = useAuth();
   useEffect(() => {
     clearChunkRecoveryFlag();
     clearPrerenderedPage();
-    dismissBootSplash();
-  }, []);
+    // Admin must retain its existing immediate, dark startup. Customer pages
+    // stay behind the boot splash until the saved public design has resolved.
+    if (isAdminRoute || settingsResolved) dismissBootSplash();
+  }, [isAdminRoute, settingsResolved]);
   return null;
 }
 
@@ -316,7 +319,9 @@ function AppContent() {
   const [currentRoute, setCurrentRoute] = useState<string>(getInitialRoute());
   const isAdminRoute = currentRoute === 'admin' || currentRoute === 'admin-portal';
   const { user, birthProfile, settings } = useAuth();
-  const design = settings?.userDesign === 'ivory' ? 'ivory' : 'original';
+  const savedDesign = settings?.userDesign === 'ivory' ? 'ivory' : 'original';
+  const [previewDesign, setPreviewDesign] = useState<'original' | 'ivory' | null>(null);
+  const design = previewDesign ?? savedDesign;
 
   // Handle browser back/forward buttons and programmatic app:navigate events
   useEffect(() => {
@@ -431,11 +436,17 @@ function AppContent() {
       {/* Cosmic Constellations Background Canvas */}
       <CosmicBackground />
 
-      <Navbar currentRoute={currentRoute} onNavigate={handleNavigate} />
+      <Navbar
+        currentRoute={currentRoute}
+        onNavigate={handleNavigate}
+        designPreview={design}
+        showDesignPreview={!isAdminRoute}
+        onToggleDesignPreview={() => setPreviewDesign((current) => (current ?? savedDesign) === 'ivory' ? 'original' : 'ivory')}
+      />
       <main className="flex-grow relative z-10">
         <Suspense fallback={<RouteFallback />}>
           {renderRoute()}
-          <RouteLoadedMarker />
+          <RouteLoadedMarker isAdminRoute={isAdminRoute} />
         </Suspense>
       </main>
       <Footer onNavigate={handleNavigate} />

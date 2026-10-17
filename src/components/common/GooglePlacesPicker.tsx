@@ -402,16 +402,16 @@ export const GooglePlacesPicker: React.FC<GooglePlacesPickerProps> = ({
 
       {/* Modern Verified Location Coordinates Card */}
       {isLocationVerified && (
-        <div className="mt-2.5 p-3.5 bg-gradient-to-r from-amber-50/70 via-slate-50 to-white dark:from-slate-800/80 dark:via-slate-900/90 dark:to-slate-900 border border-amber-500/30 dark:border-amber-500/20 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+        <div className="verified-location-card mt-2.5 p-3.5 bg-gradient-to-r from-amber-50/70 via-slate-50 to-white dark:from-slate-800/80 dark:via-slate-900/90 dark:to-slate-900 border border-amber-500/30 dark:border-amber-500/20 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <MapPin className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
-                <span>{value.placeName}</span>
+              <div className="flex min-w-0 flex-wrap items-start gap-x-1.5 gap-y-1 text-xs font-bold text-slate-900 dark:text-white">
+                <span className="min-w-0 break-words [overflow-wrap:anywhere]">{value.placeName}</span>
                 {value.country && (
-                  <span className="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-400 font-medium">
+                  <span className="shrink-0 px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-400 font-medium">
                     {value.country}
                   </span>
                 )}

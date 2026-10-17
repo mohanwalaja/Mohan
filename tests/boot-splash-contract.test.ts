@@ -118,8 +118,13 @@ await check('the splash costs no extra request and no inline script (the CSP for
   assert.doesNotMatch(scriptSrc, /'unsafe-inline'/, "inline <script> must stay blocked — do not 'fix' the splash with one");
 });
 
-await check('prerendered content is visible without waiting for JavaScript', () => {
-  assert.match(bootStyle(indexHtml), /html\[data-prerendered\] #boot-splash\s*\{\s*display:\s*none/);
+await check('prerendered customer content stays covered until the saved design resolves', () => {
+  const css = bootStyle(indexHtml);
+  assert.doesNotMatch(css, /html\[data-prerendered\]\s+#boot-splash\s*\{\s*display:\s*none/);
+  assert.match(css, /Keep customer prerenders covered until saved design settings resolve/);
+  const app = read('src/App.tsx');
+  assert.match(app, /if \(isAdminRoute \|\| settingsResolved\) dismissBootSplash\(\)/);
+  assert.match(read('src/context/AuthContext.tsx'), /SETTINGS_CACHE_KEY/);
 });
 
 await check('the splash is aria-hidden and does not impersonate the Suspense spinner', () => {
@@ -187,12 +192,12 @@ await check('the route-ready marker dismisses the splash inside the Suspense bou
   const app = read('src/App.tsx');
   assert.match(
     app,
-    /<Suspense fallback=\{<RouteFallback \/>\}>[\s\S]*?<RouteLoadedMarker \/>[\s\S]*?<\/Suspense>/,
+    /<Suspense fallback=\{<RouteFallback \/>\}>[\s\S]*?<RouteLoadedMarker isAdminRoute=\{isAdminRoute\} \/>[\s\S]*?<\/Suspense>/,
     'RouteLoadedMarker must stay INSIDE the Suspense boundary: dismissing the splash before a lazy route chunk resolves would reveal the spinner instead of the page',
   );
   assert.match(
     app,
-    /function RouteLoadedMarker\(\)\s*\{[\s\S]*?useEffect\(\(\)\s*=>\s*\{[\s\S]*?dismissBootSplash\(\)/,
+    /function RouteLoadedMarker\([^)]*\)\s*\{[\s\S]*?useEffect\(\(\)\s*=>\s*\{[\s\S]*?dismissBootSplash\(\)/,
     'RouteLoadedMarker must dismiss the splash once the route has rendered',
   );
 });

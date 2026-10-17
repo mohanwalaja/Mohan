@@ -7,6 +7,8 @@ interface AuthContextType {
   user: User | null;
   birthProfile: CustomerBirthProfile | null;
   settings: SystemSettings | null;
+  /** True once saved public settings have loaded or the bounded fallback has fired. */
+  settingsResolved: boolean;
   isLoading: boolean;
   isAdmin: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; message?: string; user?: User }>;
@@ -25,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   birthProfile: null,
   settings: null,
+  settingsResolved: false,
   isLoading: true,
   isAdmin: false,
   login: async () => ({ success: false }),
@@ -104,39 +107,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [settingsResolved, setSettingsResolved] = useState(false);
+
+  // Never let an unavailable settings API hold the customer UI behind the boot
+  // splash indefinitely. The cached design remains the fallback if this fires.
+  useEffect(() => {
+    const fallback = window.setTimeout(() => setSettingsResolved(true), 4500);
+    return () => window.clearTimeout(fallback);
+  }, []);
 
   const refreshSettings = async () => {
+    const hasSession = Boolean(getAuthToken() || userRef.current);
+    let publicSettingsLoaded = false;
     try {
-      // If a session exists (httpOnly cookie or in-memory token), try the admin
-      // endpoint first for the complete, unredacted configuration.
-      // SECURITY: the admin payload contains the SMTP password, PayPal secret
-      // and Facebook app secret. It is held in memory ONLY and deliberately
-      // never written to localStorage, where it would survive logout and stay
-      // readable to the next person using a shared computer.
-      if (getAuthToken() || userRef.current) {
+      // Load the redacted public settings first: userDesign controls first paint,
+      // and it must not queue behind a slower authenticated/admin request.
+      const res = await api.getSettings();
+      if (res.success && res.settings) {
+        setSettings(prev => ({ ...prev, ...res.settings }));
+        publicSettingsLoaded = true;
+        // Only public (already redacted) settings are cached offline.
+        try {
+          localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(res.settings));
+        } catch (e) {}
+      }
+      if (publicSettingsLoaded) setSettingsResolved(true);
+
+      // Admin payloads contain SMTP/payment/social secrets. Keep them memory-only;
+      // never cache them alongside the public customer design preference.
+      if (hasSession) {
         try {
           const adminRes = await api.getAdminSettings();
           if (adminRes.success && adminRes.settings) {
             setSettings(adminRes.settings);
             localStorage.removeItem(SETTINGS_CACHE_KEY);
-            return;
           }
         } catch (e) {}
       }
-
-      const res = await api.getSettings();
-      if (res.success && res.settings) {
-        setSettings(prev => {
-          const merged = { ...prev, ...res.settings };
-          // Only the public (already redacted) settings are cached offline.
-          try {
-            localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(res.settings));
-          } catch (e) {}
-          return merged;
-        });
-      }
     } catch (e) {
       console.error('Failed to load settings', e);
+    } finally {
+      setSettingsResolved(true);
     }
   };
 
@@ -153,6 +164,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const initAuth = async () => {
     setIsLoading(true);
+    // Resolve the public customer design in parallel with auth/session lookup;
+    // a slow /me request must not expose a prerendered page in the wrong theme.
+    const settingsRequest = refreshSettings();
     // H3: the session lives in an httpOnly cookie, not in localStorage, so a
     // reload must ask the server who it is instead of inspecting stored
     // tokens. GET /api/auth/me is anonymous-safe: 401 simply means "signed
@@ -169,7 +183,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       clearAuthToken();
     }
-    await refreshSettings();
+    await settingsRequest;
+    // A cookie-authenticated administrator is discovered only after /me. Fetch
+    // the unredacted admin settings separately; admin startup stays dark.
+    if (userRef.current?.role === 'admin') await refreshSettings();
     setIsLoading(false);
   };
 
@@ -267,11 +284,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearAuthToken();
     applyUser(null);
     setBirthProfile(null);
-    // Drop any cached configuration so an admin session leaves nothing behind.
+    // Drop admin-only secrets immediately, but keep the public design choice in
+    // memory so signing out cannot flash the customer site back to Original Dark.
     try {
       localStorage.removeItem(SETTINGS_CACHE_KEY);
     } catch (e) {}
-    setSettings(null);
+    setSettings(settings?.userDesign ? ({ userDesign: settings.userDesign } as SystemSettings) : null);
     refreshSettings();
   };
 
@@ -293,6 +311,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         birthProfile,
         settings,
+        settingsResolved,
         isLoading,
         isAdmin,
         login,
