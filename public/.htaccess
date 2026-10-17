@@ -67,6 +67,76 @@
 </IfModule>
 
 # ------------------------------------------------------------------------------
+# 2b. ModSecurity / WAF exemptions for search-engine crawlers (2026-10-17)
+# ------------------------------------------------------------------------------
+# WHY THIS BLOCK EXISTS
+# ---------------------
+# Google Search Console reported the sitemap as unreadable / "406 Not
+# Acceptable". The sitemap itself was fine; the REQUEST was being rejected.
+# Shared cPanel hosts run ModSecurity (or a host WAF) that scores a request by
+# the SHAPE of its headers: a real browser sends User-Agent, Accept,
+# Accept-Language, Accept-Encoding and Sec-Fetch-*, while a crawler, a
+# Search Console fetcher or a monitoring probe sends a bare User-Agent (or
+# nothing else). The generic "missing / invalid header" rules then trip and
+# the WAF answers 406. The rules that fire are, depending on the ruleset
+# version in use:
+#
+#   200002-200006  CRS 2.x "protocol enforcement" (invalid/missing User-Agent,
+#                  Accept, Accept-Encoding)
+#   920350 920420  CRS 3.x "protocol enforcement" (header/cookie not allowed)
+#   949110          CRS 3.x bot fingerprinting (generic non-browser client)
+#   980130          CRS 3.x anomaly score exceeded (the usual 406 trigger)
+#
+# WHAT THIS BLOCK DOES (and deliberately does NOT do)
+# ---------------------------------------------------
+# It does NOT switch the WAF off. `SecRuleEngine Off` / `SecFilterEngine Off`
+# would remove a real protection layer from the whole site, which is exactly
+# the "fix" that turns a crawler problem into a security problem. Instead:
+#
+#   1. The two crawl-critical documents (sitemap.xml, robots.txt) are exempt
+#      from the header-shape rules. They are static text; no header rule
+#      protects them, and every search engine fetches them with a non-browser
+#      client. SecRuleRemoveById is a CONFIG-time removal for that file, so it
+#      works no matter in which order the server-level rules run.
+#   2. Verified search-engine crawlers are allowed past the same header-shape
+#      rules site-wide, via ctl:ruleRemoveById. Only the header-shape rules
+#      are removed — every injection, traversal and bot-blocking rule still
+#      applies to crawlers.
+#
+# IF A 406 STILL APPEARS: the host's ruleset uses an ID that is not listed
+# here. Find it in the ModSecurity audit log and add it to the list below
+# (docs/SITEMAP_406_WAF_FIX_AND_GSC_SUBMISSION.md has the exact commands).
+
+# The block is written twice on purpose: ModSecurity 2 loads as
+# mod_security2.c and ModSecurity 3 as mod_security3.c, and <IfModule> matches
+# the module FILE name. A single <IfModule mod_security.c> (a very common
+# copy-paste) matches NOTHING on most servers and silently disables the whole
+# exemption.
+<IfModule mod_security2.c>
+  # 1. The crawl-critical documents: exempt from the header-shape rules.
+  <FilesMatch "^(sitemap\.xml|robots\.txt)$">
+    SecRuleRemoveById 200002 200003 200004 200005 200006 920350 920420 949110 980130
+  </FilesMatch>
+
+  # 2. Verified search-engine crawlers: skip the header-shape rules only.
+  #    Phase 1 so the removal is in place before the phase-2 anomaly-scoring
+  #    and bot-fingerprint rules (949110, 980130) evaluate the request.
+  SecRule REQUEST_HEADERS:User-Agent "@rx (?i)\b(googlebot|google-inspectiontool|googleother|adsbot-google|google-extended|bingbot|bingpreview|adidxbot|slurp|duckduckbot|baiduspider|yandex(bot|images)|applebot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|petalbot|semrushbot|ahrefsbot|mj12bot|dotbot)\b" \
+    "id:1002001,phase:1,pass,nolog,t:none,ctl:ruleRemoveById=200002,ctl:ruleRemoveById=200003,ctl:ruleRemoveById=200004,ctl:ruleRemoveById=200005,ctl:ruleRemoveById=200006,ctl:ruleRemoveById=920350,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=980130"
+</IfModule>
+
+<IfModule mod_security3.c>
+  # Same exemptions for ModSecurity 3 (variable syntax differs: v3 uses
+  # REQUEST_HEADERS.<name> instead of REQUEST_HEADERS:<name>).
+  <FilesMatch "^(sitemap\.xml|robots\.txt)$">
+    SecRuleRemoveById 200002 200003 200004 200005 200006 920350 920420 949110 980130
+  </FilesMatch>
+
+  SecRule REQUEST_HEADERS.User-Agent "@rx (?i)\b(googlebot|google-inspectiontool|googleother|adsbot-google|google-extended|bingbot|bingpreview|adidxbot|slurp|duckduckbot|baiduspider|yandex(bot|images)|applebot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|petalbot|semrushbot|ahrefsbot|mj12bot|dotbot)\b" \
+    "id:1002002,phase:1,pass,nolog,t:none,ctl:ruleRemoveById=200002,ctl:ruleRemoveById=200003,ctl:ruleRemoveById=200004,ctl:ruleRemoveById=200005,ctl:ruleRemoveById=200006,ctl:ruleRemoveById=920350,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=980130"
+</IfModule>
+
+# ------------------------------------------------------------------------------
 # 3. Rewrite Engine, Canonical HTTPS & Non-WWW Redirection, SPA Fallback
 # ------------------------------------------------------------------------------
 <IfModule mod_rewrite.c>
@@ -91,15 +161,32 @@
   RewriteCond %{REQUEST_FILENAME}\.(br|gz) -s
   RewriteRule ^ - [E=no-gzip:1,E=no-brotli:1]
 
+  # (0-crawl) CRAWL-FACING TEXT DOCUMENTS ARE ALWAYS SERVED AS PLAIN BYTES.
+  # Fix for the sitemap.xml 406 / "Sitemap could not be read" failure
+  # (2026-10-17): /sitemap.xml was answered with "Content-Type:
+  # application/x-gzip" and NO Content-Encoding header, because the
+  # pre-compression negotiation below swapped in the gzip sibling while the
+  # Content-Encoding/Content-Type mapping only covered .js/.css/.html. Google
+  # received gzip bytes where XML was expected and could not parse the file.
+  # A crawler-facing document must be boring: no sibling negotiation, no
+  # on-the-fly compression, one obvious content type. 2.4 KB uncompressed
+  # costs nothing next to a sitemap that no search engine can read.
+  # The condition uses REQUEST_FILENAME (the on-disk path, no query string).
+  RewriteCond %{REQUEST_FILENAME} \.(xml|txt)$
+  RewriteRule ^ - [E=no-gzip:1,E=no-brotli:1]
+
   # (0) Serve PRE-COMPRESSED assets by content negotiation. This MUST run before
   # the "existing file" rule (e) below, which would otherwise stop processing and
   # return the uncompressed original. The build emits <file>.br / <file>.gz for
   # every text asset (vite-plugin-compress.ts); index.html always references the
   # original URL, so we transparently swap in the compressed sibling here.
+  # Crawl-facing text documents (.xml/.txt) are excluded — see (0-crawl) above.
+  RewriteCond %{REQUEST_FILENAME} !\.(xml|txt)$
   RewriteCond %{HTTP:Accept-Encoding} br [NC]
   RewriteCond %{REQUEST_FILENAME}\.br -s
   RewriteRule ^(.*)\.(js|mjs|css|html|json|svg|txt|xml|webmanifest|wasm|map)$ /$1.$2.br [L]
 
+  RewriteCond %{REQUEST_FILENAME} !\.(xml|txt)$
   RewriteCond %{HTTP:Accept-Encoding} gzip [NC]
   RewriteCond %{REQUEST_FILENAME}\.gz -s
   RewriteRule ^(.*)\.(js|mjs|css|html|json|svg|txt|xml|webmanifest|wasm|map)$ /$1.$2.gz [L]
@@ -184,6 +271,10 @@ ErrorDocument 404 /404.html
   AddType text/css .css
   AddType image/svg+xml .svg
   AddType application/json .json
+  AddType application/xml .xml
+  AddType text/plain .txt
+  AddType application/manifest+json .webmanifest
+  AddType application/wasm .wasm
   AddType font/woff .woff
   AddType font/woff2 .woff2
   AddType image/webp .webp
@@ -248,6 +339,67 @@ ErrorDocument 404 /404.html
   <FilesMatch "\.html\.gz$">
     Header set Content-Encoding gzip
     Header set Content-Type text/html
+  </FilesMatch>
+
+  # Every OTHER type the negotiation rule above can still reach must declare
+  # its true Content-Encoding AND the Content-Type of the ORIGINAL file, for
+  # the same reason: a sibling served without the encoding header hands the
+  # client raw Brotli/gzip bytes. This is exactly how /sitemap.xml started
+  # answering "Content-Type: application/x-gzip" with no Content-Encoding and
+  # became unreadable to Google — a mapping that existed for .js/.css/.html
+  # but not for the type that actually mattered. Keep this list in sync with
+  # the extension list of the negotiation rule, or REMOVE the extension from
+  # the negotiation rule instead.
+  <FilesMatch "\.mjs\.br$">
+    Header set Content-Encoding br
+    Header set Content-Type application/javascript
+  </FilesMatch>
+  <FilesMatch "\.mjs\.gz$">
+    Header set Content-Encoding gzip
+    Header set Content-Type application/javascript
+  </FilesMatch>
+  <FilesMatch "\.json\.br$">
+    Header set Content-Encoding br
+    Header set Content-Type application/json
+  </FilesMatch>
+  <FilesMatch "\.json\.gz$">
+    Header set Content-Encoding gzip
+    Header set Content-Type application/json
+  </FilesMatch>
+  <FilesMatch "\.svg\.br$">
+    Header set Content-Encoding br
+    Header set Content-Type image/svg+xml
+  </FilesMatch>
+  <FilesMatch "\.svg\.gz$">
+    Header set Content-Encoding gzip
+    Header set Content-Type image/svg+xml
+  </FilesMatch>
+  <FilesMatch "\.wasm\.br$">
+    Header set Content-Encoding br
+    Header set Content-Type application/wasm
+  </FilesMatch>
+  <FilesMatch "\.wasm\.gz$">
+    Header set Content-Encoding gzip
+    Header set Content-Type application/wasm
+  </FilesMatch>
+  <FilesMatch "\.webmanifest\.br$">
+    Header set Content-Encoding br
+    Header set Content-Type application/manifest+json
+  </FilesMatch>
+  <FilesMatch "\.webmanifest\.gz$">
+    Header set Content-Encoding gzip
+    Header set Content-Type application/manifest+json
+  </FilesMatch>
+
+  # The crawl-critical documents get an explicit, host-independent content type.
+  # Some cPanel/LiteSpeed mime.types map .xml to text/xml and others to
+  # application/xml — both are valid for a sitemap — but the type must never be
+  # application/x-gzip, which is what the compressed sibling used to produce.
+  <FilesMatch "^sitemap\.xml$">
+    Header set Content-Type "application/xml"
+  </FilesMatch>
+  <FilesMatch "^robots\.txt$">
+    Header set Content-Type "text/plain"
   </FilesMatch>
 </IfModule>
 

@@ -103,6 +103,14 @@ if [ -f "$ROOT/public/.htaccess" ]; then
   cp -f "$ROOT/public/.htaccess" "$TARGET/.htaccess"
 fi
 
+# Remove stale pre-compressed siblings of the crawl-facing documents. The build
+# no longer emits them (a crawl-facing document must be served as plain bytes),
+# but a copy left over from an earlier deploy would still be negotiated and
+# served as "application/x-gzip" with no Content-Encoding header - the exact
+# 2026-10-17 "sitemap.xml 406" failure.
+rm -f "$TARGET"/sitemap.xml.gz "$TARGET"/sitemap.xml.br \
+      "$TARGET"/robots.txt.gz "$TARGET"/robots.txt.br 2>/dev/null || true
+
 echo "Synced $copied file(s) into $TARGET (skipped $skipped protected file(s))."
 echo
 echo "Per-file permissions expected on the host (deploy_cpanel.sh):"

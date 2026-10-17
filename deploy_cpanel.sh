@@ -108,6 +108,14 @@ fi
 if [ -f "public/.htaccess" ]; then
   cp -f "public/.htaccess" "$TARGET_DIR/.htaccess"
 fi
+
+# Remove stale pre-compressed siblings of the crawl-facing documents.
+# The build no longer emits them (a crawl-facing document must be served as
+# plain bytes), but a copy left over from an earlier deploy would still be
+# negotiated by .htaccess and served as "application/x-gzip" with no
+# Content-Encoding header — the exact 2026-10-17 "sitemap.xml 406" failure.
+rm -f "$TARGET_DIR"/sitemap.xml.gz "$TARGET_DIR"/sitemap.xml.br \
+      "$TARGET_DIR"/robots.txt.gz "$TARGET_DIR"/robots.txt.br 2>/dev/null || true
 if [ -f "api/.htaccess" ]; then
   cp -f "api/.htaccess" "$TARGET_DIR/api/.htaccess"
 fi

@@ -57,7 +57,23 @@ check('the PHP filters the citation line to citable Tamil ids', () => {
   // defines the filter); every rule-sourced reply path there must filter.
   const offline = read('api/astrology/ai_astrologer_offline.php');
   assert.match(offline, /tamilOnlySourceLine\(\(string\) \(\$retrieved\['sourceLine'\]/, 'answer() must filter the source line');
-  assert.match(offline, /tamilOnlySourceLine\(\(string\) \(\$forced\['sourceLine'\]/, 'guided answers must filter the source line too');
+  // The guided branch (a curated area option) must run its citation line
+  // through the SAME filter. The line it filters is now produced by the
+  // focusSourceLine() helper — each option shows the sources of the rules
+  // that answer it — so this assertion pins the INTENT (a filtered source
+  // line in the guided branch) instead of the exact argument expression,
+  // which changed when per-option sources were introduced.
+  const guidedStart = offline.indexOf("if ($guidedKind === 'area'");
+  assert.ok(guidedStart !== -1, 'the guided area branch must exist');
+  const guidedBranch = offline.slice(
+    guidedStart,
+    offline.indexOf('return self::finish($bubbles, $sourceLine', guidedStart),
+  );
+  assert.match(
+    guidedBranch,
+    /AstroAiProvider::tamilOnlySourceLine\(/,
+    'guided answers must filter the source line too',
+  );
 });
 
 check('the output guard rejects any non-Tamil or unverified source id', () => {

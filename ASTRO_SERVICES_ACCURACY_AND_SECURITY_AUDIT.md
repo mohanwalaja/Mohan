@@ -140,7 +140,7 @@ multi-person order) and in three languages (Tamil / English / Hindi).
 | Live Panchangam bar | every page | `calculatePrecisionPanchangam()` | tithi / nakshatra / yoga / karana / vara / sunrise / sunset + inauspicious windows |
 
 Pricing is payment-method driven (`astro_currency_for_payment()` in PHP,
-`resolveOrderCurrency()` in Node): UPI & Google Pay → INR, M-PAiSA & MyCash → FJD,
+`resolveOrderCurrency()` in Node): UPI & Google Pay → INR, PayPal & cards → USD,
 PayPal & card → USD. A family bundle is always charged in the single currency the
 customer pays with — verified by `tests/multi-person-orders.test.ts`.
 

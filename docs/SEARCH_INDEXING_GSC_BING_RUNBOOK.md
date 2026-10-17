@@ -47,6 +47,16 @@ cache Rule 3 is enabled — purge the cached HTML afterwards
 
 ## 2. Google Search Console (the highest-leverage manual step)
 
+> **2026-10-17 — read this first.** The sitemap was submitted but Google could
+> not READ it: the origin served the pre-compressed `sitemap.xml.gz` as
+> `Content-Type: application/x-gzip` with no `Content-Encoding` header, and the
+> host WAF answered 406 to the non-browser fetcher. Both are fixed
+> (`public/.htaccess`, `scripts/prerender.mjs`); the full diagnosis, the deploy
+> steps, the Cloudflare purge and the API submission are in
+> [SITEMAP_406_WAF_FIX_AND_GSC_SUBMISSION.md](SITEMAP_406_WAF_FIX_AND_GSC_SUBMISSION.md).
+> Verify the live sitemap with `npm run sitemap:check` **before** submitting —
+> submitting a sitemap that cannot be read is a no-op.
+
 Do this **once, right after the deploy**:
 
 1. **Property.** If none exists, add `astrosivam.com` as a **Domain property**
@@ -54,9 +64,13 @@ Do this **once, right after the deploy**:
    record** — add it in the Cloudflare DNS zone (the origin is behind
    Cloudflare, so cPanel DNS is not the place). A URL-prefix property also
    works (HTML-tag or meta-tag verification) but misses the `www` host.
+   The API identifier for a Domain property is `sc-domain:astrosivam.com`
+   (no protocol, no slash).
 2. **Sitemap.** Indexing → **Sitemaps** → add `sitemap.xml` (it resolves to
    `https://astrosivam.com/sitemap.xml`; `robots.txt` already points at it).
    It should report "Success, 14 URLs".
+   Repeatable alternative (verifies readability first, then submits and reads
+   the status back): `npm run sitemap:submit` — see the runbook linked above.
 3. **Request indexing for the money pages** (Indexing → **URL Inspection** →
    paste URL → *Request Indexing*, one by one — the queue is capped, so do
    these ten first, in this order):
@@ -98,6 +112,8 @@ sanity check that the pages are technically indexable.
 
 1. Add the site (DNS TXT verification — same Cloudflare zone).
 2. Sitemaps → submit `https://astrosivam.com/sitemap.xml`.
+   (There is no ping shortcut left: `https://www.bing.com/ping?sitemap=…`
+   answers **410 Gone** as of 2026-10-17 — submit through the UI.)
 3. **Submit URLs** for the four money pages (`/marriage-compatibility`,
    `/baby-naming`, `/birth-jathagam`, `/muhurtham`).
 4. Check Indexing status weekly; Bing often shows "Discovered" within days.

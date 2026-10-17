@@ -175,7 +175,7 @@ Verified in `api/services/index.php`, `api/payments.php`, `api/payment_webhook.p
   fail closed (503). Events are deduplicated in `payment_webhook_events`.
 - Amount mismatches produce `MISMATCH` (never captured).
 - Currency rule is deterministic (`astro_currency_for_payment`): payment
-  method decides FJD/INR/USD; birth-country never changes the charge currency.
+  method decides USD/INR; birth-country never changes the charge currency.
 - Manual (offline M-PAiSA/MyCash) orders stay `PENDING` until an admin
   verifies and approves — appropriate for the workflow.
 - Verification endpoints are rate-limited per user and per IP.
@@ -306,7 +306,7 @@ probing it, plus component review. TypeScript compiles with **zero errors**.
 **Design/UX findings:**
 
 - **W1 (medium, performance):** the build produces one **3.48 MB JS chunk**
-  (933 KB gzip). For the primary mobile audience (Fiji/India) this materially
+  (933 KB gzip). For the primary mobile audience (India and the diaspora) this materially
   slows first load. Recommend code-splitting (route-level dynamic imports;
   admin portal, Leaflet, recharts, html2canvas/jsPDF are natural split points).
 - **W2 (low):** 7 links use `target="_blank"` with `rel="noreferrer"` but no
@@ -320,6 +320,9 @@ probing it, plus component review. TypeScript compiles with **zero errors**.
   consider removing the clipboard wipe at minimum.
 - **W4 (info):** Google Fonts are loaded from `fonts.googleapis.com` —
   availability/privacy dependency on a third party; consider self-hosting.
+  **Follow-up (2026-10-14):** resolved for the render-critical app shell: Plus
+  Jakarta Sans and Playfair Display are now self-hosted, subsetted variable
+  WOFF2 faces. Lazy report documents still use their separate font pipeline.
 
 ---
 
@@ -384,7 +387,7 @@ probing it, plus component review. TypeScript compiles with **zero errors**.
 | **F3** | LOW | Accuracy | Vasya porutham table differs from one of two published Tamil sources on 5/12 rasis (sources disagree with each other) | Pundit ruling; document the chosen tradition in the report footer |
 | **A4** | LOW | Auth | No CSRF token for cookie-authenticated writes. Mitigated: `SameSite=Lax` + every state change is POST (Lax blocks cross-site POST form CSRF) | Optional double-submit token if you ever add GET mutations |
 | **W3** | INFO | UX | Right-click block / clipboard wipe is bypassable theatre and harms UX | Remove clipboard wipe; keep at most the console notice |
-| **W4** | INFO | Web | Google Fonts fetched from third-party CDN | Self-host the 3 font families |
+| **W4** | INFO | Web | Google Fonts fetched from third-party CDN for the initial app shell | **Resolved 2026-10-14:** self-host Plus Jakarta Sans + Playfair Display and remove unused Cinzel; report documents retain their separate lazy font pipeline |
 | **I2** | INFO | CI | `build.yml` tolerates composer failures (`|| echo`) | Fail the step |
 | **L1** | INFO | Ops | Prior audit docs reference the retired Node `server/` stack | Add a historical-note header to `LAUNCH_READINESS_AUDIT.md` / `ASTRO_SERVICES_ACCURACY_AND_SECURITY_AUDIT.md` |
 

@@ -43,7 +43,16 @@ check('package.json declares dependencies', () => {
 check('bun.lock records the same version range as package.json for every package', () => {
   const lockPath = path.join(projectRoot, 'bun.lock');
   if (!fs.existsSync(lockPath)) {
-    console.log('    (bun.lock absent — skipped)');
+    // The project installs with npm (package-lock.json is the maintained
+    // lockfile; the deployment guide runs `npm ci && npm run build:zip`).
+    // The committed bun.lock was a REWOUND copy from the pre-Vite/Express
+    // era of this project — its root package was still named "react-example"
+    // and it still pinned express, nodemailer, @google/genai, bcryptjs and
+    // dotenv, dependencies this application does not have. A lockfile that
+    // describes a different application is a trap: installing from it pulls
+    // a dependency tree nobody chose. If bun is ever adopted, regenerate it
+    // with `bun install --lockfile-only` and this check comes back to life.
+    console.log('    (bun.lock absent — the project installs with npm; skipped)');
     return;
   }
   const lock = parseJsonc(fs.readFileSync(lockPath, 'utf8'));
