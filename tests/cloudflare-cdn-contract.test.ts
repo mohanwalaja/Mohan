@@ -41,7 +41,6 @@ const htaccess = read('public/.htaccess');
 const configPhp = read('api/config.php');
 const clientIp = read('api/client_ip.php');
 const health = read('api/admin/health.php');
-const monitoring = read('.github/workflows/monitoring.yml');
 const setupDoc = read('docs/CLOUDFLARE_CDN_SETUP.md');
 
 console.log('--- CDN (CLOUDFLARE) CONTRACT ---');
@@ -128,15 +127,6 @@ check('the health endpoint detects an untrusted proxy / stale range list', () =>
   for (const field of ['clientIpSource', 'peerTrusted', 'cloudflarePeer', 'cfRay', 'trustedRangeCount', 'extraTrustedRanges']) {
     assert.ok(health.includes(field), `the edge probe must expose ${field}`);
   }
-});
-
-check('the weekly monitor asserts the edge is in front and is not caching the API', () => {
-  assert.match(monitoring, /^ {6}- name: Edge is in front and is not caching the API$/m);
-  assert.match(monitoring, /grep -qi '\^cf-ray:'/, 'the edge must be proven present');
-  assert.match(monitoring, /CF_STATUS" = "HIT"/, 'an edge-cached API response must fail the monitor');
-  assert.match(monitoring, /cf-cache-status/);
-  assert.match(monitoring, /strict-transport-security/);
-  assert.match(monitoring, /Cache-Control: no-store/);
 });
 
 check('the runbook pins the settings that break the app when wrong', () => {

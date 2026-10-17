@@ -25,21 +25,22 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { BrandWordmark } from '../common/BrandLockup';
 import { RouteLink } from '../common/RouteLink';
+import type { ColorMode } from '../../services/colorMode';
 
 interface NavbarProps {
   currentRoute: string;
   onNavigate: (route: string) => void;
-  designPreview?: 'original' | 'ivory';
-  showDesignPreview?: boolean;
-  onToggleDesignPreview?: () => void;
+  colorMode: ColorMode;
+  showColorModeToggle: boolean;
+  onToggleColorMode: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentRoute,
   onNavigate,
-  designPreview = 'original',
-  showDesignPreview = false,
-  onToggleDesignPreview
+  colorMode,
+  showColorModeToggle,
+  onToggleColorMode
 }) => {
   const { user, birthProfile, isAdmin, logout } = useAuth();
   // The name saved in the website profile is authoritative — never a stale
@@ -95,19 +96,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right Action Cluster: User & Auth Buttons & Family Tray */}
           <div className="flex items-center gap-2 sm:gap-3">
 
-            {/* Temporary, non-persisted switch for reviewing both customer designs. */}
-            {showDesignPreview && onToggleDesignPreview && (
+            {/* Icon-only customer preference; the switch is on in dark mode. */}
+            {showColorModeToggle && (
               <button
                 type="button"
                 role="switch"
-                aria-checked={designPreview === 'ivory'}
-                aria-label={designPreview === 'ivory' ? 'Disable Ivory & Saffron design preview' : 'Enable Ivory & Saffron design preview'}
-                title={`Testing preview: ${designPreview === 'ivory' ? 'Ivory & Saffron' : 'Original Dark'} (not saved)`}
-                onClick={onToggleDesignPreview}
-                className="flex h-11 items-center gap-1.5 rounded-xl border border-amber-500/35 bg-amber-500/10 px-2.5 text-[11px] font-bold text-amber-200 transition-colors hover:bg-amber-500/20 sm:px-3"
+                aria-checked={colorMode === 'dark'}
+                aria-label="Dark mode"
+                onClick={onToggleColorMode}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/10 text-amber-300 transition-colors hover:bg-amber-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
               >
-                {designPreview === 'ivory' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                <span className="hidden sm:inline">Test {designPreview === 'ivory' ? 'dark' : 'light'}</span>
+                {colorMode === 'light' ? <Moon aria-hidden="true" className="h-5 w-5" /> : <Sun aria-hidden="true" className="h-5 w-5" />}
               </button>
             )}
 

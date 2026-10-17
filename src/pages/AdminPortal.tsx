@@ -1,4 +1,3 @@
-import { UserDesignSettings } from '../components/admin/UserDesignSettings';
 import React, { useState, useEffect } from 'react';
 import {
   Shield,
@@ -3601,8 +3600,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
           <h3 className="text-base font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
             System Operating Mode & Pricing Settings
           </h3>
-
-          <UserDesignSettings />
 
           <form onSubmit={handleSaveSettings} className="space-y-6">
             {/* Service Mode Selector */}

@@ -8,7 +8,7 @@
  * worse than no backup at all, because the dashboard then says "protected".
  *
  * Two layers:
- *   1. static  — the endpoint's auth/secret rules and the workflow's wire-up,
+ *   1. static  — the endpoint's auth/secret rules and the backup/rotation wiring,
  *   2. dynamic — the backup script is executed end to end with a stubbed
  *      mysqldump, proving the marker, the retention rotation and the
  *      "refuse to fake a backup" failure path.
@@ -32,7 +32,6 @@ function check(name: string, fn: () => void) {
 
 const health = read('api/admin/health.php');
 const backup = read('scripts/backup/astro_site_backup.sh');
-const monitoring = read('.github/workflows/monitoring.yml');
 const rotate = read('scripts/ops/rotate_php_logs.sh');
 const restoreDoc = read('scripts/backup/RESTORE_VERIFICATION.md');
 
@@ -122,7 +121,7 @@ check('the runbook documents a sandbox restore, not a production one', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. The external monitor
+// 3. Local log rotation and packaging
 // ---------------------------------------------------------------------------
 check('the log rotation script rotates by size and prunes old generations', () => {
   assert.match(rotate, /MAX_MB="\$\{MAX_MB:-20\}"/);
@@ -144,20 +143,6 @@ check('the release archive ships the ops scripts the cron entries point at', () 
   for (const doc of ['HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md', 'PAYMENT_WEBHOOK_IDEMPOTENCY_AND_CI.md']) {
     assert.ok(zipBuilder.includes(`'${doc}'`), `the archive must ship ${doc}`);
   }
-});
-
-check('the weekly monitor is external, scheduled and credentialless', () => {
-  assert.match(monitoring, /^name: Production monitoring$/m);
-  assert.match(monitoring, /cron: '15 6 \* \* 1'/, 'it must run weekly without a human');
-  assert.match(monitoring, /workflow_dispatch/);
-  assert.doesNotMatch(monitoring, /secrets\./, 'the monitor must not need secrets to check a public URL');
-  assert.match(monitoring, /vars\.PRODUCTION_URL/);
-  for (const probe of ['Uptime + latency', 'TLS certificate expiry', 'Deployed build actually contains the payment hardening']) {
-    assert.ok(monitoring.includes(probe), `missing monitor step: ${probe}`);
-  }
-  assert.match(monitoring, /::error title=Certificate expiring soon::/);
-  assert.match(monitoring, /MIN_DAYS: '21'/, 'alert before the certificate lapses, not after');
-  assert.match(monitoring, /::error title=Monitoring is unarmed::/);
 });
 
 // ---------------------------------------------------------------------------

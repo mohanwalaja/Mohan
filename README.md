@@ -49,11 +49,11 @@ npm run parity:compare   # diff Node vs PHP
 
 ## Testing & CI
 
-- `npm test` — 47 contract suites: auth/payment invariants, astrology accuracy regressions, Node↔PHP parity, refund policy, CDN/cache safety, lockfile drift, and more.
-- `npm run test:php` — 13 pure-PHP suites (mPDF reports, webhook, rate limit, mailer guards).
-- `npm run test:pdf` — Playwright browser specs (report PDFs, checkout, layout).
-- GitHub Actions (`build.yml`) gates every PR on dependency audits, `php -l`, the Node suite and a Playwright smoke test, then packages `dist.zip` for release.
-- `monitoring.yml` runs a weekly external uptime / TLS / deployed-build check.
+- `npm test` — local Node contract suites: auth/payment invariants, astrology accuracy regressions, Node↔PHP parity, refund policy, CDN/cache safety, and more.
+- `npm run test:php` — 15 PHP suites (mPDF reports, webhook, rate limit, mailer guards).
+- `npm run test:pdf` — local Playwright browser specs (report PDFs, checkout, layout).
+- GitHub Actions runs **only** `.github/workflows/tests.yml`: PHP 8.1 syntax checks and the PHP test suite on pull requests and pushes to main/master. Node, browser, security-audit, build/package, and monitoring workflows are not run on GitHub.
+- Build release archives locally with `npm run build:zip`; arrange external uptime/TLS monitoring separately.
 
 ## Deployment
 

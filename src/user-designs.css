@@ -64,6 +64,35 @@
 [data-user-design] :is(.service-page-hero__eyebrow,.service-page-hero__icon) { color:var(--accent); }
 [data-user-design] .service-page-hero__description { color:var(--muted); }
 
+/* Services catalogue: its intro header and guided banner use dark-mode ink and
+   gradients by default. Give both a deliberate light surface and readable text
+   while leaving the original dark-mode styling untouched. */
+[data-user-design] .services-catalogue-header {
+  background:transparent!important;
+  box-shadow:none!important;
+}
+[data-user-design] .services-catalogue-eyebrow {
+  color:#713911!important;
+  background:#f4e5d1;
+  border:1px solid #ddbea0;
+  border-radius:999px;
+  padding:.5rem .8rem;
+  font-size:.78rem;
+  letter-spacing:.14em;
+}
+[data-user-design] .services-guided-banner {
+  background:linear-gradient(120deg,#fffdf8 0%,#fff7eb 55%,#f5e5d3 100%)!important;
+  color:var(--heading);
+  border-color:var(--line)!important;
+  box-shadow:0 10px 32px rgba(52,39,29,.1);
+}
+[data-user-design] .services-guided-banner::after {
+  border-color:#d9b994;
+  box-shadow:0 0 0 20px rgba(156,76,29,.05),0 0 0 40px rgba(156,76,29,.03);
+}
+[data-user-design] .services-guided-banner h2 { color:var(--heading)!important; }
+[data-user-design] .services-guided-banner p { color:#584638!important; }
+
 /* How it works: light reading surfaces, with the cinema itself kept dark. */
 [data-user-design] .hiw-page { color:var(--heading); }
 [data-user-design] :is(.hiw-hero > p,.hiw-section-heading > p,.hiw-trust-band p,.hiw-final-cta p) { color:var(--muted)!important; }
@@ -141,8 +170,8 @@
   object-fit:contain;
 }
 
-/* The settings-driven Ivory & Saffron design is also used for optional navbar
-   previews. Keep fixed chat interfaces fully opaque. */
+/* The visitor's light-mode choice also styles the chat. Keep its fixed
+   interfaces fully opaque. */
 [data-user-design] :is(.ai-astrologer-launcher,.ai-astrologer-panel-shell,.ai-astrologer-panel) { opacity:1; }
 
 /* Shared verified birthplace card: override the dark Tailwind gradient and

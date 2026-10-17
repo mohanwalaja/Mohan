@@ -140,7 +140,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <div className="py-9 sm:py-12">
+    <div className="services-catalogue py-9 sm:py-12">
       <SEO
         title="ASTRO SIVAM - Vedic Astrology Services"
         description="Explore Birth Jathagam, 10-Poruthams marriage matching, baby naming, and Subha Muhurtham date reports with ASTRO SIVAM. Order your Vedic astrology report."
@@ -156,8 +156,8 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
       />
 
       <div className="site-container space-y-8 sm:space-y-10">
-        <header className="mx-auto max-w-2xl space-y-2.5 text-center">
-          <div className="eyebrow justify-center text-[#f3ba70]">
+        <header className="services-catalogue-header mx-auto max-w-2xl space-y-2.5 text-center">
+          <div className="services-catalogue-eyebrow eyebrow justify-center text-[#f3ba70]">
             <Sparkles className="h-3 w-3" aria-hidden="true" />
             <span>Vedic astrology services</span>
           </div>
@@ -265,7 +265,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
           </div>
         </section>
 
-        <section className="beta-banner flex flex-col items-start justify-between gap-5 p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8">
+        <section className="beta-banner services-guided-banner flex flex-col items-start justify-between gap-5 p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8">
           <div className="relative z-10 max-w-2xl space-y-2">
             <div className="eyebrow text-amber-400">A guided beginning</div>
             <h2 className="display-serif text-xl font-bold text-amber-100 sm:text-2xl">
