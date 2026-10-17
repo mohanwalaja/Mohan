@@ -126,16 +126,10 @@ if (!function_exists('astro_logo_absolute_url')) {
     function astro_logo_absolute_url(): string
     {
         $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
-        if ($host === '') {
-            return 'https://astrosivam.com/' . ASTRO_LOGO_FILENAME;
-        }
-        $scheme = 'https';
-        if (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') {
-            $scheme = 'https';
-        } elseif (!empty($_SERVER['REQUEST_SCHEME'])) {
-            $scheme = (string) $_SERVER['REQUEST_SCHEME'];
-        }
-        return $scheme . '://' . $host . astro_logo_url();
+        $origin = in_array($host, ['astrosivam.com', 'www.astrosivam.com'], true)
+            ? 'https://' . $host
+            : 'https://astrosivam.com';
+        return $origin . astro_logo_url();
     }
 }
 

@@ -149,7 +149,30 @@ checkMailer(
 );
 
 // ---------------------------------------------------------------------------
-// 6. The inline brand logo is always attachable (branding regression guard)
+// 6. Email logo origins never trust a forged Host header
+// ---------------------------------------------------------------------------
+$_SERVER['SCRIPT_NAME'] = '/api/test.php';
+$_SERVER['HTTPS'] = 'off';
+$_SERVER['REQUEST_SCHEME'] = 'http';
+$_SERVER['HTTP_HOST'] = 'evil.example';
+checkMailer(
+    astro_logo_absolute_url() === 'https://astrosivam.com/astrosivam_logo.png',
+    'A forged Host header falls back to the canonical HTTPS logo origin'
+);
+$_SERVER['HTTP_HOST'] = 'astrosivam.com';
+checkMailer(
+    astro_logo_absolute_url() === 'https://astrosivam.com/astrosivam_logo.png',
+    'The canonical apex host is accepted for the email logo URL'
+);
+$_SERVER['HTTP_HOST'] = 'www.astrosivam.com';
+checkMailer(
+    astro_logo_absolute_url() === 'https://www.astrosivam.com/astrosivam_logo.png',
+    'The canonical www host is accepted for the email logo URL'
+);
+unset($_SERVER['HTTP_HOST'], $_SERVER['SCRIPT_NAME'], $_SERVER['HTTPS'], $_SERVER['REQUEST_SCHEME']);
+
+// ---------------------------------------------------------------------------
+// 7. The inline brand logo is always attachable (branding regression guard)
 // ---------------------------------------------------------------------------
 $logo = astro_inline_logo_attachment();
 checkMailer(is_array($logo) && count($logo) === 1, 'The inline logo attachment resolves to a single part');
