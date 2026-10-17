@@ -151,65 +151,28 @@ function isServerAuthenticatedResponse(data: any): data is { success: true; toke
     (role === 'customer' || role === 'admin');
 }
 
-// Google sign-in: one request may take this long (a cold PHP host plus the
-// server's own round trips to Google) before it is abandoned and sent again,
-// and a transient failure is re-sent this many times (delay before each).
-const GOOGLE_LOGIN_ATTEMPT_TIMEOUT_MS = 30_000;
-const GOOGLE_LOGIN_RETRY_DELAYS_MS = [800, 2000];
-
-/**
- * A reply that says "try again" rather than "no": the host/proxy was briefly
- * unavailable (HTTP 408/502/503/504) or the API itself marked the failure as
- * retryable (e.g. it could not reach Google). A wrong password or a rejected
- * credential is never transient.
- */
-function isTransientAuthReply(status: number, data: any): boolean {
-  return status === 408 || status === 502 || status === 503 || status === 504 || data?.retryable === true;
-}
-
-interface PostAuthOptions {
-  requireAdmin?: boolean;
-  /** Abort a request that has not completed after this long (default: wait for the browser). */
-  timeoutMs?: number;
-  /**
-   * After a network error (no reply at all) move on to the next endpoint
-   * (default). A network error says nothing about an endpoint being missing,
-   * so callers that retry the same request themselves turn this off — otherwise
-   * every failed attempt silently POSTs the same login twice.
-   */
-  fallbackOnNetworkError?: boolean;
-}
-
 /**
  * Try supported PHP/Node auth endpoints, accepting success only when the
  * server provides both a real user record and a signed bearer token. Endpoint
  * fallback is limited to missing/unsupported routes; credential failures are
  * never replaced with a locally fabricated session.
- *
- * A failure that is worth repeating (no reply, timeout, 502/503/504, or an
- * API reply flagged `retryable`) carries `transient: true`.
  */
 async function postAuthEndpoints(
   endpoints: string[],
   payload: Record<string, unknown>,
-  options: PostAuthOptions = {}
+  options: { requireAdmin?: boolean } = {}
 ): Promise<any> {
   let lastMessage = '';
-  let lastTransient = false;
   for (const endpoint of endpoints) {
-    const controller = options.timeoutMs ? new AbortController() : null;
-    const timer = controller ? setTimeout(() => controller.abort(), options.timeoutMs) : null;
     try {
       checkOnline();
       const response = await fetch(endpoint, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        ...(controller ? { signal: controller.signal } : {})
+        body: JSON.stringify(payload)
       });
       const data = await safeJson<any>(response);
-      if (controller?.signal.aborted) throw new DOMException('The sign-in request timed out.', 'AbortError');
       if (isServerAuthenticatedResponse(data)) {
         if (options.requireAdmin && String(data.user.role).toLowerCase() !== 'admin') {
           return { success: false, message: 'This account is not provisioned as an administrator.' };
@@ -218,30 +181,17 @@ async function postAuthEndpoints(
       }
       if (response.status === 404 || response.status === 405) {
         lastMessage = data?.message || `Authentication endpoint unavailable (HTTP ${response.status}).`;
-        lastTransient = false;
         continue;
       }
       if (data?.success) {
         return { success: false, message: 'Authentication server did not issue a verified user session.' };
       }
-      return {
-        ...data,
-        success: false,
-        message: data?.message || 'Authentication failed.',
-        transient: isTransientAuthReply(response.status, data)
-      };
+      return { ...data, success: false, message: data?.message || 'Authentication failed.' };
     } catch (error: any) {
-      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-      lastTransient = !offline;
-      lastMessage = options.timeoutMs && lastTransient
-        ? 'We could not reach the sign-in service. Please check your connection and try again.'
-        : error?.message || 'Authentication service is unavailable.';
-      if (options.fallbackOnNetworkError === false) break;
-    } finally {
-      if (timer) clearTimeout(timer);
+      lastMessage = error?.message || 'Authentication service is unavailable.';
     }
   }
-  return { success: false, message: lastMessage || 'Authentication service is unavailable.', transient: lastTransient };
+  return { success: false, message: lastMessage || 'Authentication service is unavailable.' };
 }
 
 // Universal fetch wrapper supporting both PHP Session cookies and Bearer tokens
@@ -393,19 +343,6 @@ async function fetchSettingsWithTimeout(url: string, init?: RequestInit): Promis
   }
 }
 
-// A background retry (the Google button recovering a client id that the
-// first-paint request above never delivered on a slow link) may be more patient:
-// nothing is masked while it waits, so it takes the caller's budget instead.
-async function fetchSettingsPatiently(url: string, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 export const api = {
   async getAdminClientErrors(): Promise<{ success: boolean; errors: Array<{ id: string; message: string; endpoint: string; status?: number; createdAt: string; resolvedAt?: string }>; openCount: number }> {
     const res = await apiFetch(`${getApiBase()}/admin/client-errors`); return safeJson(res);
@@ -415,14 +352,10 @@ export const api = {
   },
 
   // Public settings
-  async getSettings(options: { timeoutMs?: number } = {}): Promise<{ success: boolean; settings: SystemSettings }> {
+  async getSettings(): Promise<{ success: boolean; settings: SystemSettings }> {
     const apiBase = getApiBase();
-    // First paint uses the bounded 4 s helper; only an explicit retry is patient.
-    const patientMs = options.timeoutMs;
-    const fetchSettings = (url: string) =>
-      patientMs ? fetchSettingsPatiently(url, patientMs) : fetchSettingsWithTimeout(url);
     try {
-      const res = await fetchSettings(`${apiBase}/services.php?action=settings`);
+      const res = await fetchSettingsWithTimeout(`${apiBase}/services.php?action=settings`);
       const data = await safeJson(res);
       if (data.success || res.status !== 404) return data;
     } catch (e) {
@@ -430,7 +363,7 @@ export const api = {
     }
 
     try {
-      const res = await fetchSettings(`${apiBase}/services/settings`);
+      const res = await fetchSettingsWithTimeout(`${apiBase}/services/settings`);
       return safeJson(res);
     } catch {
       return { success: false, settings: {} as SystemSettings };
@@ -496,27 +429,14 @@ export const api = {
     if (!googleData.credential?.trim() && !googleData.accessToken?.trim()) {
       return { success: false, message: 'A verified Google credential is required.' };
     }
-    const endpoints = [
+    return postAuthEndpoints([
       `${apiBase}/auth/index.php?action=google`,
       `${apiBase}/auth/google`
-    ];
-    const payload = {
+    ], {
       credential: googleData.credential,
       accessToken: googleData.accessToken,
       action: 'google-login'
-    };
-    // The Google token stays valid for about an hour and the server resolves the
-    // account idempotently, so a request that failed for a transient reason (a
-    // cold host, a proxy 502/503, a dropped connection) is simply sent again —
-    // the visitor should not have to reopen the Google window for it.
-    const options: PostAuthOptions = { timeoutMs: GOOGLE_LOGIN_ATTEMPT_TIMEOUT_MS, fallbackOnNetworkError: false };
-    let result = await postAuthEndpoints(endpoints, payload, options);
-    for (const delayMs of GOOGLE_LOGIN_RETRY_DELAYS_MS) {
-      if (result.success || !result.transient) break;
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-      result = await postAuthEndpoints(endpoints, payload, options);
-    }
-    return result;
+    });
   },
 
   // Auth - Dedicated Admin Portal Authentication

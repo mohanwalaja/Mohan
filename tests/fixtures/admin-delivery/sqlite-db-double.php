@@ -82,33 +82,9 @@ final class AstroSqliteTestPdo extends PDO
         return $sql;
     }
 
-    /** Set once the optional concurrent-writer hook below has fired. */
-    private $concurrentWriterDone = false;
-
-    /**
-     * OPTIONAL TEST HOOK (used by tests/google-login-first-attempt.test.ts): when
-     * ASTRO_TEST_RACE_SQL is set, run it ONCE, committed on its own, right before
-     * the first `INSERT INTO users` is prepared — exactly what a second request
-     * for the same brand-new account does between this request's SELECT and its
-     * INSERT. Unset (every other test), this is a no-op.
-     */
-    private function simulateConcurrentWriter(string $query): void
-    {
-        if ($this->concurrentWriterDone) {
-            return;
-        }
-        $raceSql = getenv('ASTRO_TEST_RACE_SQL');
-        if (!is_string($raceSql) || $raceSql === '' || !preg_match('/^\s*INSERT\s+INTO\s+`?users`?\b/i', $query)) {
-            return;
-        }
-        $this->concurrentWriterDone = true;
-        parent::exec($raceSql);
-    }
-
     #[\ReturnTypeWillChange]
     public function prepare($query, $options = [])
     {
-        $this->simulateConcurrentWriter((string) $query);
         $sql = $this->translate((string) $query);
         return parent::prepare($sql === null ? 'SELECT 1 WHERE 0' : $sql, $options);
     }

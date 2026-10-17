@@ -7,7 +7,6 @@ require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../astrology/engine.php';
 require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../rate_limit.php';
-require_once __DIR__ . '/../google_login.php';
 
 $pdo = getDbConnection();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -193,42 +192,6 @@ function astro_ensure_social_identity_columns($pdo) {
         }
     }
     $ready = true;
-}
-
-/**
- * Creates the account for a first-time social (Google/Facebook) sign-in and
- * returns its row.
- *
- * Two requests for the same brand-new account can overlap — a double click, a
- * browser re-sending a slow request, the client's own automatic retry — and the
- * second INSERT then hits the unique (auth_provider, provider_subject) / e-mail
- * key. That is not a failure: the account now exists, so re-read it and carry
- * on as an ordinary sign-in instead of failing the visitor's first attempt.
- *
- * Returns null when the duplicate-key hit belongs to a DIFFERENT identity (the
- * e-mail was taken in the meantime); the caller answers with the usual
- * "this email already belongs to an account" conflict.
- */
-function astro_create_social_user($pdo, $provider, $subject, $name, $email) {
-    $id = astro_random_id('usr_', 16);
-    $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
-    try {
-        $ins = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, auth_provider, provider_subject, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'customer', ?, ?, 1, '', NOW(), NOW())");
-        $ins->execute([$id, $name, $email, $hash, $provider, $subject]);
-    } catch (PDOException $e) {
-        if ((string)$e->getCode() !== '23000') throw $e; // not a duplicate-key violation
-        $existing = $pdo->prepare("SELECT * FROM users WHERE auth_provider = ? AND provider_subject = ? LIMIT 1");
-        $existing->execute([$provider, $subject]);
-        $row = $existing->fetch();
-        return $row ?: null;
-    }
-
-    // Provider login does not supply DOB/time/place; leave profile empty.
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
-    $stmt->execute([$id]);
-    $row = $stmt->fetch();
-    if (!$row) throw new RuntimeException('The new social account could not be read back after it was created.');
-    return $row;
 }
 
 // ---------------------------------------------------------------------------
@@ -466,10 +429,15 @@ if ($isFacebookRoute) {
         }
 
         if (!$user) {
-            $user = astro_create_social_user($pdo, 'facebook', $fbId, $name, $email);
-            if (!$user) {
-                jsonResponse(['success' => false, 'message' => 'This email already belongs to an account. Automatic social account linking is disabled; sign in using the existing account.'], 409);
-            }
+            $id = astro_random_id('usr_', 16);
+            $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
+            $ins = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, auth_provider, provider_subject, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'customer', 'facebook', ?, 1, '', NOW(), NOW())");
+            $ins->execute([$id, $name, $email, $hash, $fbId]);
+
+            // Provider login does not supply DOB/time/place; leave profile empty.
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
+            $stmt->execute([$id]);
+            $user = $stmt->fetch();
         }
 
         if (strtolower(trim($user['role'] ?? 'customer')) === 'admin') {
@@ -517,11 +485,7 @@ if ($isFacebookRoute) {
             ] : null
         ]);
     } catch (PDOException $e) {
-        error_log('ASTRO SIVAM: facebook-login database error - ' . $e->getMessage());
-        jsonResponse(['success' => false, 'retryable' => true, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
-    } catch (Throwable $e) {
-        error_log('ASTRO SIVAM: facebook-login unexpected ' . get_class($e) . ' - ' . $e->getMessage());
-        jsonResponse(['success' => false, 'message' => 'Facebook sign-in hit a temporary server problem. Please try again shortly.'], 500);
+        jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
     }
 }
 
@@ -550,21 +514,12 @@ if ($isGoogleRoute) {
     $expectedGoogleClientId = GOOGLE_CLIENT_ID !== ''
         ? GOOGLE_CLIENT_ID
         : trim((string)($googleGeneral['googleClientId'] ?? ''));
-    $googleFailure = null;
-    $googleVerified = astro_verify_google_login($credential, $clientAccessToken, $expectedGoogleClientId, $googleFailure);
+    $googleVerified = verifyGoogleLogin($credential, $clientAccessToken, $expectedGoogleClientId);
 
     // SECURITY: no client-trust fallback. The identity MUST come from Google's
     // tokeninfo/userinfo endpoints. (The previous fallback accepted
     // client-supplied sub/email, allowing login as any account.)
     if (!$googleVerified) {
-        if ($googleFailure === 'unavailable') {
-            // This server could not get an answer from Google (network blip,
-            // timeout, 5xx): the credential was never judged. That is not the
-            // visitor's failed attempt, so it must not burn their failed-login
-            // budget, and the client may simply send the same token again.
-            error_log('ASTRO SIVAM: google-login - Google token verification endpoints were unreachable (transient).');
-            jsonResponse(['success' => false, 'retryable' => true, 'message' => 'Google could not be reached right now. Please try again in a moment.'], 503);
-        }
         astro_auth_failure_record($pdo, $googleClientIp, 'google-login');
         jsonResponse(['success' => false, 'message' => 'Could not verify Google login. Please try again.'], 401);
     }
@@ -606,10 +561,15 @@ if ($isGoogleRoute) {
         }
 
         if (!$user) {
-            $user = astro_create_social_user($pdo, 'google', $googleId, $name, $email);
-            if (!$user) {
-                jsonResponse(['success' => false, 'message' => 'This email already belongs to an account. Automatic social account linking is disabled; sign in using the existing account.'], 409);
-            }
+            $id = astro_random_id('usr_', 16);
+            $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
+            $ins = $pdo->prepare("INSERT INTO users (id, name, email, mobile, password_hash, role, auth_provider, provider_subject, email_verified, country, created_at, updated_at) VALUES (?, ?, ?, '', ?, 'customer', 'google', ?, 1, '', NOW(), NOW())");
+            $ins->execute([$id, $name, $email, $hash, $googleId]);
+
+            // Provider login does not supply DOB/time/place; leave profile empty.
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
+            $stmt->execute([$id]);
+            $user = $stmt->fetch();
         }
 
         if (strtolower(trim($user['role'] ?? 'customer')) === 'admin') {
@@ -658,13 +618,7 @@ if ($isGoogleRoute) {
             ] : null
         ]);
     } catch (PDOException $e) {
-        error_log('ASTRO SIVAM: google-login database error - ' . $e->getMessage());
-        jsonResponse(['success' => false, 'retryable' => true, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
-    } catch (Throwable $e) {
-        // Anything else (a PHP error, a failed random_bytes()) used to escape as a
-        // bare HTTP 500 with no JSON; answer in the API's own format instead.
-        error_log('ASTRO SIVAM: google-login unexpected ' . get_class($e) . ' - ' . $e->getMessage());
-        jsonResponse(['success' => false, 'message' => 'Google sign-in hit a temporary server problem. Please try again shortly.'], 500);
+        jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
     }
 }
 

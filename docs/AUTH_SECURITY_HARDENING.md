@@ -25,7 +25,6 @@ Every **failed** credential check — wrong password, unknown account, wrong ema
 | `auth-fail-global` | 300 failures / 15 min | site-wide |
 
 * Only failures count — a valid sign-in never consumes the budget, and a successful password login still clears the `login-pair` counter.
-* A Google token that Google **rejects** is a failure and counts. Our server being **unable to reach Google** (network blip, timeout, 5xx) is not the visitor's failed login: the route answers `503` with `"retryable": true`, the budgets are left alone, and the browser sends the same token again (see `docs/GOOGLE_LOGIN_FIRST_ATTEMPT_FIX.md`).
 * The previous layers (`login-pair`, `login-ip`, `register-*`, `otp-*`) remain in place; this is strictly additive.
 * Counter identifiers stay HMAC-hashed (no raw IP/e-mail is stored), the limiter fails **closed** (503) if the database is unreachable, and exceeded budgets answer `429` + `Retry-After`.
 * Tunables: `AUTH_FAIL_LIMIT_ENDPOINT`, `AUTH_FAIL_LIMIT_IP`, `AUTH_FAIL_LIMIT_GLOBAL`, `AUTH_FAIL_WINDOW_SECONDS`.

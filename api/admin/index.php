@@ -1426,6 +1426,7 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
             if (!isset($settings['facebookAppId'])) $settings['facebookAppId'] = $general['facebookAppId'] ?? '';
             if (!isset($settings['facebookAppSecret'])) $settings['facebookAppSecret'] = $general['facebookAppSecret'] ?? '';
             if (!isset($settings['activeThemeTemplate'])) $settings['activeThemeTemplate'] = $general['activeThemeTemplate'] ?? 'classic-primary';
+            if (!isset($settings['userDesign'])) $settings['userDesign'] = $general['userDesign'] ?? 'ivory';
             if (!isset($settings['vodafoneMPaisaNumber'])) $settings['vodafoneMPaisaNumber'] = $general['vodafoneMPaisaNumber'] ?? '+679 999 1234';
             if (!isset($settings['vodafoneMPaisaPaymentMode'])) $settings['vodafoneMPaisaPaymentMode'] = $general['vodafoneMPaisaPaymentMode'] ?? 'offline';
             if (!isset($settings['indiaGpayPaymentMode'])) $settings['indiaGpayPaymentMode'] = $general['indiaGpayPaymentMode'] ?? 'online';
@@ -1449,6 +1450,7 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
                 'facebookAppId' => '',
                 'facebookAppSecret' => '',
                 'activeThemeTemplate' => 'classic-primary',
+                'userDesign' => 'ivory',
                 'vodafoneMPaisaNumber' => '+679 999 1234',
                 'vodafoneMPaisaPaymentMode' => 'offline',
                 'indiaGpayPaymentMode' => 'online',

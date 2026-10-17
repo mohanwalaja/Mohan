@@ -57,14 +57,6 @@ const testFiles = [
   // real PHP for the client-IP spoofing matrix and the session-cookie Secure
   // flag, so a resolver "simplification" cannot pass by reading plausibly.
   'tests/cloudflare-cdn-contract.test.ts',
-  // First-attempt Google sign-in for new visitors: the SDK loader state machine
-  // (fake DOM + clock), the login request's retry/timeout rules (fake fetch),
-  // the button's first render and click contract, and — with php-wasm — the
-  // REAL auth router creating a brand-new Google account, telling "Google was
-  // unreachable" apart from "token rejected", and surviving two requests that
-  // race to create the same account. The real-browser reproduction is
-  // tests/browser/google-first-attempt.spec.ts.
-  'tests/google-login-first-attempt.test.ts',
   'tests/jathagam-summary-parity.test.ts',
   'tests/namakaran-meanings.test.ts',
   'tests/logo-assets.test.ts',

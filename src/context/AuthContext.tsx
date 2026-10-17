@@ -19,8 +19,7 @@ interface AuthContextType {
   googleLogin: (googleData: { id?: string; sub?: string; name?: string; email?: string; credential?: string; accessToken?: string }) => Promise<{ success: boolean; message?: string; user?: User }>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
-  /** `timeoutMs` lets a background retry be more patient than the first-paint request. */
-  refreshSettings: (options?: { timeoutMs?: number }) => Promise<void>;
+  refreshSettings: () => Promise<void>;
   updateBirthProfile: (profile: Partial<CustomerBirthProfile>) => Promise<{ success: boolean; message?: string }>;
 }
 
@@ -117,13 +116,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.clearTimeout(fallback);
   }, []);
 
-  const refreshSettings = async (options?: { timeoutMs?: number }) => {
+  const refreshSettings = async () => {
     const hasSession = Boolean(getAuthToken() || userRef.current);
     let publicSettingsLoaded = false;
     try {
       // Load redacted public settings before the authenticated/admin payload;
       // customer settings must not queue behind a slower admin request.
-      const res = await api.getSettings(options);
+      const res = await api.getSettings();
       if (res.success && res.settings) {
         setSettings(prev => ({ ...prev, ...res.settings }));
         publicSettingsLoaded = true;
@@ -271,11 +270,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile = normalizeBirthProfile(res.birthProfile);
       applyUser(normalizeUser(userObj, profile?.name));
       setBirthProfile(profile);
-      // The visitor is already signed in (cookie + state above). Refreshing the
-      // settings is housekeeping, so it must not hold the Google button on
-      // "Connecting..." for up to two 4-second request budgets: that silence
-      // looks like a failed attempt and invites a second click.
-      void refreshSettings();
+      await refreshSettings();
       return { success: true, message: res.message || 'Google login successful', user: normalizeUser(userObj) };
     }
     return { success: false, message: res.message || 'Google login failed' };

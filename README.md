@@ -28,7 +28,7 @@ docs/         Runbooks, audits and fix records (see "Documentation" below)
 ```bash
 npm ci
 npm run dev          # Vite dev server on 0.0.0.0
-npm test             # full Node contract suite (63 suites)
+npm test             # full Node contract suite (47 suites)
 npm run lint         # tsc --noEmit
 npm run build        # production build to dist/
 npm run build:zip    # dist/ + api/ packaged for cPanel upload
@@ -49,11 +49,10 @@ npm run parity:compare   # diff Node vs PHP
 
 ## Testing & CI
 
-- `npm run test:all` — the complete local gate, and the one to run before opening a pull request: TypeScript, production build, the full Node suite (including built-`dist/` checks), all 15 PHP suites, and the Playwright browser specs when a browser is installed. PHP runs natively when available, otherwise through php-wasm at PHP 8.1 (the version CI uses).
-- `npm test` — local Node contract suites (63): auth/payment invariants, astrology accuracy regressions, Node↔PHP parity, refund policy, CDN/cache safety, Google sign-in first-attempt regressions, and more.
-- `npm run test:php` — 15 PHP suites (mPDF reports, webhook, rate limit, mailer guards). Without native PHP, run a suite with `node scripts/php-wasm-run.mjs --php 8.1 tests/<suite>.test.php` after `npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54`.
-- `npm run test:pdf` — local Playwright browser specs (report PDFs, checkout, layout, Google sign-in timing). Install the browser once with `npx playwright install chromium`.
-- GitHub Actions runs **only** `.github/workflows/tests.yml`: PHP 8.1 syntax checks and the PHP test suite on pull requests and pushes to main/master. Node, browser, security-audit, build/package, and monitoring workflows are not run on GitHub. If the account's Actions minutes are exhausted the workflow cannot start; `npm run test:all` is then the authoritative pre-PR check.
+- `npm test` — local Node contract suites: auth/payment invariants, astrology accuracy regressions, Node↔PHP parity, refund policy, CDN/cache safety, and more.
+- `npm run test:php` — 15 PHP suites (mPDF reports, webhook, rate limit, mailer guards).
+- `npm run test:pdf` — local Playwright browser specs (report PDFs, checkout, layout).
+- GitHub Actions runs **only** `.github/workflows/tests.yml`: PHP 8.1 syntax checks and the PHP test suite on pull requests and pushes to main/master. Node, browser, security-audit, build/package, and monitoring workflows are not run on GitHub.
 - Build release archives locally with `npm run build:zip`; arrange external uptime/TLS monitoring separately.
 
 ## Deployment

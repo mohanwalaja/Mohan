@@ -865,14 +865,6 @@ function googleEmailIsVerified($value) {
     return $value === true || $value === 1 || strtolower((string)$value) === 'true';
 }
 
-/*
- * NOTE: api/auth/index.php no longer calls verifyGoogleLogin(). Google tokens are
- * verified by astro_verify_google_login() in api/google_login.php, which also
- * reports WHY a verification failed ("Google was unreachable" vs "token
- * rejected"). Both deploy paths keep the live api/config.php (it holds the
- * host's database credentials), so new server logic lives in its own deployed
- * file. This function stays for compatibility with older callers.
- */
 function verifyGoogleLogin($credential, $accessToken, $expectedClientId = '') {
     $expectedClientId = trim((string)$expectedClientId);
     if ($expectedClientId === '') return null;

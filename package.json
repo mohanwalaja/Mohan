@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "node scripts/run-tests.mjs",
-    "test:all": "bash scripts/run-all-tests.sh",
     "parity:corpus": "tsx scripts/build-parity-corpus.ts",
     "parity:node": "tsx scripts/parity-emit-node.ts",
     "parity:php": "php tests/emit-php-parity.php",

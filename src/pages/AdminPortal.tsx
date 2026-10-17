@@ -3601,6 +3601,81 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
             System Operating Mode & Pricing Settings
           </h3>
 
+          {/* Website UI Theme Appearance (Public Site Theme Control) */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🎨 Public Website Theme Appearance</span>
+                </label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Change the public design for visitors. The admin panel always keeps its dedicated dark UI.
+                </p>
+              </div>
+              <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase w-fit border ${
+                (settings?.userDesign || 'ivory') === 'ivory'
+                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300'
+                  : 'bg-purple-500/15 border-purple-500/40 text-purple-700 dark:text-purple-300'
+              }`}>
+                Current: {(settings?.userDesign || 'ivory') === 'ivory' ? '☀️ Sacred Ivory (Default)' : '🌙 Cosmic Dark (Secondary)'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Option 1: Sacred Ivory (Light) — Primary Default */}
+              <button
+                type="button"
+                onClick={() => handleUpdateSettingsGeneric({ userDesign: 'ivory' })}
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer space-y-1 ${
+                  (settings?.userDesign || 'ivory') === 'ivory'
+                    ? 'bg-amber-950/25 border-amber-500 ring-2 ring-amber-500/50 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span>☀️ Sacred Ivory (Light)</span>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-700 dark:text-amber-300 px-1.5 py-0.2 rounded font-extrabold">Default</span>
+                  </span>
+                  {(settings?.userDesign || 'ivory') === 'ivory' && (
+                    <span className="text-[10px] bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-full">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Warm temple ivory parchment with terracotta saffron &amp; crisp high-contrast obsidian text.
+                </p>
+              </button>
+
+              {/* Option 2: Cosmic Dark (Original) — Secondary Option */}
+              <button
+                type="button"
+                onClick={() => handleUpdateSettingsGeneric({ userDesign: 'original' })}
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer space-y-1 ${
+                  settings?.userDesign === 'original'
+                    ? 'bg-purple-950/30 border-purple-500 ring-2 ring-purple-500/50 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span>🌙 Cosmic Dark (Original)</span>
+                    <span className="text-[10px] bg-purple-500/20 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded font-extrabold">Secondary</span>
+                  </span>
+                  {settings?.userDesign === 'original' && (
+                    <span className="text-[10px] bg-purple-600 text-white font-bold px-2 py-0.5 rounded-full">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Classic deep cosmic slate &amp; starry night with glowing amber-gold accents.
+                </p>
+              </button>
+            </div>
+          </div>
+
           <form onSubmit={handleSaveSettings} className="space-y-6">
             {/* Service Mode Selector */}
             <div className="space-y-2">
