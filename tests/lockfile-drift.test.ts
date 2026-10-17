@@ -49,6 +49,7 @@ check('bun.lock records the same version range as package.json for every package
   const lock = parseJsonc(fs.readFileSync(lockPath, 'utf8'));
   const root = lock?.workspaces?.[''];
   assert.ok(root, 'bun.lock has no root workspace entry');
+  assert.equal(root.name, pkg.name, 'bun.lock root workspace name must match package.json');
 
   const locked: Record<string, string> = {
     ...(root.dependencies ?? {}),
@@ -90,6 +91,8 @@ check('package-lock.json describes this project and the same declared ranges', (
   const lock = readJson('package-lock.json');
   const root = lock?.packages?.[''];
   assert.ok(root, 'package-lock.json has no root package entry');
+  assert.equal(lock.name, pkg.name, 'package-lock.json project name must match package.json');
+  assert.equal(root.name, pkg.name, 'package-lock.json root package name must match package.json');
 
   const locked: Record<string, string> = {
     ...(root.dependencies ?? {}),
