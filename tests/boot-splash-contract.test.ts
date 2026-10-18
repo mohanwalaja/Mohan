@@ -70,13 +70,13 @@ console.log('--- BOOT SPLASH CONTRACT (mobile white screen) ---');
 // 1. Ships inside the document, ahead of anything that needs a request.
 // ---------------------------------------------------------------------------
 
-await check('index.html carries the dark surface on <html> itself (earliest paint signal)', () => {
+await check('index.html carries the light surface on <html> itself (earliest paint signal)', () => {
   assert.match(
     indexHtml,
-    /<html[^>]*style="[^"]*background-color:\s*#0b0718/,
+    /<html[^>]*style="[^"]*background-color:\s*#fffaf2/,
     'the <html> element must declare the brand background inline: it is the only signal available before any stylesheet is parsed',
   );
-  assert.match(indexHtml, /<html[^>]*style="[^"]*color-scheme:\s*dark/);
+  assert.match(indexHtml, /<html[^>]*style="[^"]*color-scheme:\s*light/);
 });
 
 await check('the boot-critical style is inline and ahead of the prerender anchor', () => {
@@ -94,8 +94,8 @@ await check('the boot style paints the surface and the splash without any extern
   const css = bootStyle(indexHtml);
   assert.match(
     css,
-    /html,\s*body\s*\{[^}]*background-color:\s*#0b0718/,
-    'the dark canvas must be painted by the inline style',
+    /html,\s*body\s*\{[^}]*background-color:\s*#fffaf2/,
+    'the light canvas must be painted by the inline style',
   );
   assert.match(css, /#boot-splash\s*\{[^}]*position:\s*fixed/, 'the splash must be a fixed overlay');
   assert.match(css, /#boot-splash\s*\{[^}]*inset:\s*0/, 'the splash must cover the viewport');
@@ -121,9 +121,9 @@ await check('the splash costs no extra request and no inline script (the CSP for
 await check('prerendered customer content stays covered and its loading surface is light', () => {
   const css = bootStyle(indexHtml);
   assert.doesNotMatch(css, /html\[data-prerendered\]\s+#boot-splash\s*\{\s*display:\s*none/);
-  assert.match(css, /Public prerenders start on the default Ivory surface/);
-  assert.match(css, /html\[data-prerendered\]\s+#boot-splash\s*\{[^}]*#fffaf2/);
-  assert.match(css, /html\[data-prerendered\]\s+#boot-splash \.boot-word\s*\{\s*color:\s*#6f391f/);
+  assert.match(css, /Light canvas by default/);
+  assert.match(css, /#boot-splash\s*\{[^}]*#fffaf2/);
+  assert.match(css, /#boot-splash \.boot-word\s*\{\s*color:\s*#6f391f/);
   const app = read('src/App.tsx');
   assert.match(app, /useState<ColorMode>\(getSavedColorMode\)/);
   assert.match(app, /data-user-design=\{!isAdminRoute && colorMode === 'light' \? 'ivory' : undefined\}/);

@@ -2657,7 +2657,7 @@ class AstroEngine {
             return $h['isOwnSign'] ? 'स्वराशि' : "{$h['bhava']}वें भाव";
         };
 
-        // Live Sani Transit computation
+        // Live Sani Transit computation — detailed breakdown for Birth Jathagam Page 1
         $nowTs = time();
         $nowJd = ($nowTs / 86400.0) + 2440587.5;
         $saturnTransitSidereal = self::computeGeocentricPositions($nowJd, false)['sidereal']['saturn'];
@@ -2665,6 +2665,29 @@ class AstroEngine {
         $saturnHouseFromMoon = (($saturnTransitRasiIdx - $moonRasiIndex + 12) % 12) + 1;
         $isSaniFavourable = in_array($saturnHouseFromMoon, [3, 6, 11], true);
         $saturnHouseOrdinal = $ordinal($saturnHouseFromMoon);
+        $saniDiff = ($saturnTransitRasiIdx - $moonRasiIndex + 12) % 12;
+        $isEzharaiSani = in_array($saniDiff, [11, 0, 1], true);
+        $isAshtamaSani = $saniDiff === 7;
+        $isKandakaSani = in_array($saniDiff, [3, 6, 9], true);
+        $isArdhashtamaSani = $saniDiff === 3;
+        if ($saniDiff === 11) {
+            $ezharaiTypeEn = 'Viraya Sani (12th House - Phase 1)';
+            $ezharaiTypeTa = 'விரய சனி (12-ம் வீடு - முதல் பருவம்)';
+            $ezharaiTypeHi = 'व्यय शनि (12वां भाव - प्रथम चरण)';
+        } elseif ($saniDiff === 0) {
+            $ezharaiTypeEn = 'Jenma Sani (Janma Rasi - Core Phase 2)';
+            $ezharaiTypeTa = 'ஜென்ம சனி (ஜென்ம ராசி - இரண்டாம் பருவம்)';
+            $ezharaiTypeHi = 'जन्म शनि (जन्म राशि - द्वितीय चरण)';
+        } elseif ($saniDiff === 1) {
+            $ezharaiTypeEn = 'Patha Sani (2nd House - Phase 3)';
+            $ezharaiTypeTa = 'பாத சனி (2-ம் வீடு - மூன்றாம் பருவம்)';
+            $ezharaiTypeHi = 'पाद शनि (दूसरा भाव - तृतीय चरण)';
+        } else {
+            $ezharaiTypeEn = 'None';
+            $ezharaiTypeTa = 'இல்லை';
+            $ezharaiTypeHi = 'कोई नहीं';
+        }
+        $saniRasiInfo = self::$RASIS[$saturnTransitRasiIdx] ?? ['en' => 'N/A', 'ta' => 'N/A', 'hi' => 'N/A'];
 
         $saniTransitStatusEn = $isSaniFavourable ? 'Favourable Transit' : 'Transit demands remedies';
         $saniTransitStatusTa = $isSaniFavourable ? 'அனுகூலமான சனி பெயர்ச்சி' : 'பரிகாரங்கள் தேவைப்படும் சனி பெயர்ச்சி';
@@ -2885,7 +2908,36 @@ class AstroEngine {
                 'statusTa' => $saniTransitStatusTa,
                 'statusHi' => $saniTransitStatusHi,
                 'house' => $saturnHouseFromMoon,
-                'phase' => "{$saturnHouseOrdinal} House Transit"
+                'phase' => "{$saturnHouseOrdinal} House Transit",
+                'isEzharaiSani' => $isEzharaiSani,
+                'ezharaiTypeEn' => $ezharaiTypeEn,
+                'ezharaiTypeTa' => $ezharaiTypeTa,
+                'ezharaiTypeHi' => $ezharaiTypeHi,
+                'isAshtamaSani' => $isAshtamaSani,
+                'isKandakaSani' => $isKandakaSani,
+                'isArdhashtamaSani' => $isArdhashtamaSani,
+                'saniHouseFromMoon' => $saturnHouseFromMoon,
+                'currentSaniRasi' => $saturnTransitRasiIdx + 1,
+                'saniRasiNameEn' => $saniRasiInfo['en'],
+                'saniRasiNameTa' => $saniRasiInfo['ta'],
+                'saniRasiNameHi' => $saniRasiInfo['hi']
+            ],
+            'saniStatus' => [
+                'isEzharaiSani' => $isEzharaiSani,
+                'ezharaiTypeEn' => $ezharaiTypeEn,
+                'ezharaiTypeTa' => $ezharaiTypeTa,
+                'ezharaiTypeHi' => $ezharaiTypeHi,
+                'isAshtamaSani' => $isAshtamaSani,
+                'isKandakaSani' => $isKandakaSani,
+                'isArdhashtamaSani' => $isArdhashtamaSani,
+                'saniHouseFromMoon' => $saturnHouseFromMoon,
+                'currentSaniRasi' => $saturnTransitRasiIdx + 1,
+                'saniRasiNameEn' => $saniRasiInfo['en'],
+                'saniRasiNameTa' => $saniRasiInfo['ta'],
+                'saniRasiNameHi' => $saniRasiInfo['hi'],
+                'remedyEn' => 'Pray to Shiva.',
+                'remedyTa' => 'சிவனைப் பிரார்த்தனை செய்யுங்கள்.',
+                'remedyHi' => 'शिव से प्रार्थना करें।'
             ],
             'kujaDosha' => $kujaDosha,
             'dosha' => [

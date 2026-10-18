@@ -1033,11 +1033,95 @@ HTML;
             ];
         }
 
-        $doshaCardsHtml = '';
+        // ---- Sani Doshas (Birth Jathagam Page 1) — replaces Kuja/Sevvay ----
+        // Kuja is retained for Wedding Compatibility but removed from Birth chart
+        // per user request. Live Sani-transit families: Sade Sati (Ezharai),
+        // Ashtama and Kandaka/Ardhashtama are derived from saniStatus.
+        $saniStatusData = $result['saniStatus'] ?? $result['saniTransit'] ?? null;
+        $saniHouseForPdf = null;
+        $saniRasiNameForPdf = 'N/A';
+        $saniMoonRasiNameForPdf = $chandraRasiInfo[$lang] ?? 'N/A';
+        if (is_array($saniStatusData)) {
+            $saniHouseForPdf = isset($saniStatusData['saniHouseFromMoon']) ? (int) $saniStatusData['saniHouseFromMoon'] : (isset($saniStatusData['house']) ? (int) $saniStatusData['house'] : null);
+            $saniRasiKeyForPdf = $isTa ? 'saniRasiNameTa' : ($isHi ? 'saniRasiNameHi' : 'saniRasiNameEn');
+            $saniRasiNameForPdf = $saniStatusData[$saniRasiKeyForPdf] ?? $saniStatusData['saniRasiNameEn'] ?? 'N/A';
+        }
+        $saniOrdEn = ['', '1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th'];
+        $saniHouseTextForPdf = function($n) use ($isTa, $isHi, $saniOrdEn) {
+            if ($n === null || $n === '') return 'N/A';
+            $num = (int) $n;
+            if ($isTa) return $num . '-ஆம்';
+            if ($isHi) return $num . 'वें';
+            return $saniOrdEn[$num] ?? $num . 'th';
+        };
+        $saniRemedyFullForPdf = $isTa ? 'வழிபாடு: சனி பகவான் அல்லது அனுமன். நாள்: சனி. நிறம்: கருப்பு அல்லது அடர் நீலம். கொடை: கருப்பு எள்ளு, நல்லெண்ணெய், இரும்பு, போர்வைகள். நடத்தை: ஏழைகள், முதியோர், மாற்றுத்திறனாளிகளுக்கு உதவுங்கள்; பொறுமையும் ஒழுக்கமும் கடைப்பிடியுங்கள்.'
+            : ($isHi ? 'आराधना: भगवान शनि या हनुमान जी। वार: शनिवार। रंग: काला या गहरा नीला। सहायता सामग्री: काले तिल, तिल का तेल, लोहा, कंबल। आचरण: निर्धनों, वृद्धों और दिव्यांगों की सेवा करें, और धैर्य तथा अनुशासन रखें।'
+            : 'Pray to: Lord Shani or Lord Hanuman. Day: Saturday. Colour: Black or dark blue. Give in charity: Black sesame seeds, sesame oil (nallennai), iron, black cloth or warm blankets. Conduct: Serve the poor, the elderly and the disabled, and stay patient and disciplined.');
+        $saniCardsHtml = '';
+        // Show only the active Sani dosha; if none active, show a single
+        // "There is no active any of Sani Dosha" card with current transit info.
+        if (is_array($saniStatusData)) {
+            $isEzharaiForPdf = !empty($saniStatusData['isEzharaiSani']);
+            $isAshtamaForPdf = !empty($saniStatusData['isAshtamaSani']);
+            $isKandakaForPdf = !empty($saniStatusData['isKandakaSani']);
+            $ezharaiTypeLabelForPdf = $isTa ? ($saniStatusData['ezharaiTypeTa'] ?? '') : ($isHi ? ($saniStatusData['ezharaiTypeHi'] ?? '') : ($saniStatusData['ezharaiTypeEn'] ?? ''));
+            $houseInfoForPdf = $saniHouseForPdf !== null ? ($isTa ? $saniHouseTextForPdf($saniHouseForPdf) . ' வீட்டில் (' . $saniRasiNameForPdf . ')' : ($isHi ? $saniHouseTextForPdf($saniHouseForPdf) . ' भाव में (' . $saniRasiNameForPdf . ')' : 'in the ' . $saniOrdEn[$saniHouseForPdf] . ' from Janma Rasi ' . $saniMoonRasiNameForPdf . ' (' . $saniRasiNameForPdf . ')')) : '';
+            if ($isEzharaiForPdf) {
+                $ezharaiStatusForPdf = $ezharaiTypeLabelForPdf !== '' ? $ezharaiTypeLabelForPdf : ($isTa ? 'ஏழரை சனி உள்ளது' : ($isHi ? 'साढ़े साती है' : 'In Sade Sati'));
+                $ezharaiBadgeForPdf = 'badge-moderate';
+                $phaseForPdfEn = $saniHouseForPdf === 12 ? 'Viraya Sani (12th) — first phase: expenses, foreign/outer matters, detachment and initial pressure.' : ($saniHouseForPdf === 1 ? 'Jenma Sani (1st/Janma Rasi) — core phase: health, self, most intense; patience and discipline are tested.' : ($saniHouseForPdf === 2 ? 'Patha Sani (2nd) — final phase: family, speech, finances and concluding adjustments.' : 'Ezharai Sani period'));
+                $phaseForPdfTa = $saniHouseForPdf === 12 ? 'விரய சனி (12-ஆம்) — முதல் பருவம்: செலவு, வெளித்தொடர்பு, பிரிவு, ஆரம்ப அழுத்தம்.' : ($saniHouseForPdf === 1 ? 'ஜென்ம சனி (1-ஆம்) — மைய பருவம்: உடல், மனம், மிக தீவிரம்; பொறுமை, ஒழுக்கம் சோதனை.' : ($saniHouseForPdf === 2 ? 'பாத சனி (2-ஆம்) — இறுதி பருவம்: குடும்பம், பேச்சு, நிதி, முடிவு சரிசெய்தல்.' : 'ஏழரை சனி காலம்'));
+                $phaseForPdfHi = $saniHouseForPdf === 12 ? 'व्यय शनि (12वां) — प्रथम चरण: व्यय, बाहरी संबंध, अलगाव और प्रारंभिक दबाव।' : ($saniHouseForPdf === 1 ? 'जन्म शनि (1st) — मुख्य चरण: स्वास्थ्य, स्वयं, सर्वाधिक तीव्र; धैर्य-परीक्षा।' : ($saniHouseForPdf === 2 ? 'पाद शनि (2सरा) — अंतिम चरण: परिवार, वाणी, वित्त और समापन।' : 'साढ़े साती अवधि'));
+                $ezharaiDescForPdf = ($isTa ? 'சனி ' . $houseInfoForPdf . ' — ' . $phaseForPdfTa . ' மரபில் 7.5 ஆண்டு ஏழரை சனி காலம் ஒழுக்கம், உழைப்பு, பொறுமைக்கான காலம் எனக் கருதப்படும். அவசர முடிவு, புது கடன், வாக்குவாதம் தவிர்க்கவும்; பெரியோருக்கு உதவவும்.' : ($isHi ? 'शनि ' . $houseInfoForPdf . ' — ' . $phaseForPdfHi . ' परंपरा में 7.5 वर्ष की साढ़े साती अनुशासन, परिश्रम, धैर्य का समय मानी जाती है। जल्दबाजी, नया ऋण, विवाद से बचें; बड़ों की सेवा करें।' : 'Saturn ' . $houseInfoForPdf . ' — ' . $phaseForPdfEn . ' Traditionally the 7.5-year Sade Sati is read as a period for discipline, hard work and patience. Avoid hasty decisions, new loans and arguments; serve elders and keep steady effort. Traditions differ on intensity.')) . ' ' . $saniRemedyFullForPdf;
+                $ezharaiTitleForPdf = $isTa ? 'ஏழரை சனி — சனி பெயர்ச்சி (Sade Sati / Ezharai Sani)' : ($isHi ? 'साढ़े साती — शनि गोचर (Ezharai Sani)' : 'Ezharai Sani — Saturn Transit (Sade Sati)');
+                $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($ezharaiTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge ' . $ezharaiBadgeForPdf . '">' . self::e($ezharaiStatusForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($ezharaiDescForPdf) . '</div></div>';
+            }
+            if ($isAshtamaForPdf) {
+                $ashtamaStatusForPdf = $isTa ? 'அஷ்டம சனி உள்ளது — 8-ஆம் வீடு' : ($isHi ? 'अष्टम शनि — 8वें भाव में' : 'Ashtama Sani — Saturn in 8th');
+                $ashtamaBadgeForPdf = 'badge-moderate';
+                $ashtamaDescForPdf = ($isTa ? 'சனி ' . $houseInfoForPdf . ' — அஷ்டம சனி (8-ஆம்). மரபில் திடீர் மாற்றம், உடல் கவனம், கூட்டு நிதி, மாமியார் வீடு, மாற்றம் எனக் கருதப்படும். உடல் பரிசோதனை, ஆவண கவனம், குடும்ப பொறுமை, எளிய பரிகாரம் நலம். மரபுகள் வேறுபடும்.' : ($isHi ? 'शनि ' . $houseInfoForPdf . ' — अष्टम शनि (8वां)। परंपरा में आकस्मिक परिवर्तन, स्वास्थ्य-देखभाल, संयुक्त वित्त, ससुराल, रूपांतरण से जोड़ा जाता है। स्वास्थ्य जाँच, कागज़ सावधानी, परिवार में धैर्य और सरल उपाय हितकर। व्याख्याएँ भिन्न हैं।' : 'Saturn ' . $houseInfoForPdf . ' — Ashtama Sani (8th). Traditionally linked with sudden changes, health attention, joint finances, in-laws and transformation. Regular health checks, careful documents, patience in family matters and simple remedies are advised. Traditions differ on intensity.')) . ' ' . $saniRemedyFullForPdf;
+                $ashtamaTitleForPdf = $isTa ? 'அஷ்டம சனி (Ashtama Sani — 8-ஆம் வீடு)' : ($isHi ? 'अष्टम शनि (Ashtama Sani — 8वाँ भाव)' : 'Ashtama Sani (Saturn in 8th House)');
+                $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($ashtamaTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge ' . $ashtamaBadgeForPdf . '">' . self::e($ashtamaStatusForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($ashtamaDescForPdf) . '</div></div>';
+            }
+            if ($isKandakaForPdf) {
+                if ($saniHouseForPdf === 4) { $kandakaStatusForPdf = $isTa ? 'அர்த்தாஷ்டம சனி — 4-ஆம் வீட்டில்' : ($isHi ? 'अर्धाष्टम शनि — 4th में' : 'Ardhashtama Sani — Saturn in 4th'); }
+                elseif ($saniHouseForPdf === 7) { $kandakaStatusForPdf = $isTa ? 'கண்டக சனி — 7-ஆம் வீட்டில்' : ($isHi ? 'कंटक शनि — 7वें में' : 'Kandaka Sani — Saturn in 7th'); }
+                elseif ($saniHouseForPdf === 10) { $kandakaStatusForPdf = $isTa ? 'கண்டக சனி — 10-ஆம் வீட்டில்' : ($isHi ? 'कंटक शनि — 10वें में' : 'Kandaka Sani — Saturn in 10th'); }
+                else { $kandakaStatusForPdf = $isTa ? 'கண்டக / அர்த்தாஷ்டம சனி உள்ளது' : ($isHi ? 'कंटक / अर्धाष्टम शनि है' : 'Kandaka / Ardhashtama Sani present'); }
+                $kandakaBadgeForPdf = 'badge-moderate';
+                if ($saniHouseForPdf === 4) { $specificForPdf = $isTa ? 'அர்த்தாஷ்டம சனி (4-ஆம்) — வீடு, தாய், சொத்து, வாகனம், மன அமைதி பாதிப்பு; 2.5 ஆண்டு.' : ($isHi ? 'अर्धाष्टम शनि (4था) — घर, माता, संपत्ति, वाहन, मानसिक शांति पर प्रभाव; 2.5 वर्ष।' : 'Ardhashtama Sani (4th) — home, mother, property, vehicles and peace of mind; 2.5 years.'); }
+                elseif ($saniHouseForPdf === 7) { $specificForPdf = $isTa ? 'கண்டக சனி (7-ஆம்) — திருமணம், கூட்டாண்மை, வணிக ஒப்பந்தம்; பொறுமை, வெளிப்படை பேச்சு தேவை.' : ($isHi ? 'कंटक शनि (7वां) — विवाह, साझेदारी, व्यापार; धैर्य, स्पष्ट संवाद आवश्यक।' : 'Kandaka Sani (7th) — marriage, partnerships and business alliances; patience and clear communication needed.'); }
+                elseif ($saniHouseForPdf === 10) { $specificForPdf = $isTa ? 'கண்டக சனி (10-ஆம்) — தொழில், தந்தை, புகழ், கர்ம ஸ்தானம்; பொறுப்பு, கடின உழைப்பு சோதனை.' : ($isHi ? 'कंटक शनि (10वां) — करियर, पिता, प्रतिष्ठा, कर्म; जिम्मेदारी और परिश्रम की परीक्षा।' : 'Kandaka Sani (10th) — career, father, reputation and karma; responsibility and hard work are tested.'); }
+                else { $specificForPdf = $isTa ? 'கண்டக / அர்த்தாஷ்டம சனி — கேந்திர ஸ்தானத்தில் சனி; தடை, தாமதம் என மரபில் கருதப்படும்.' : ($isHi ? 'कंटक / अर्धाष्टम शनि — केंद्र में शनि; बाधा, विलंब माना जाता है।' : 'Kandaka / Ardhashtama Sani — Saturn in kendra; traditionally read as obstacles/delays.'); }
+                $kandakaDescForPdf = ($isTa ? 'சனி ' . $houseInfoForPdf . ' — ' . $specificForPdf . ' மரபில் 2.5 ஆண்டு காலம்; திட்டமிடல், ஆவண சரிபார்ப்பு, பொறுமை நலம்.' : ($isHi ? 'शनि ' . $houseInfoForPdf . ' — ' . $specificForPdf . ' परंपरा में 2.5 वर्ष की अवधि; योजना, कागज़ जाँच, धैर्य हितकर।' : 'Saturn ' . $houseInfoForPdf . ' — ' . $specificForPdf . ' Traditionally a 2.5-year period; planning, document checks and patience help.')) . ' ' . $saniRemedyFullForPdf;
+                $kandakaTitleForPdf = $isTa ? 'கண்டக / அர்த்தாஷ்டம சனி (4, 7, 10-ஆம் வீடு)' : ($isHi ? 'कंटक / अर्धाष्टम शनि (4, 7, 10वाँ भाव)' : 'Kandaka / Ardhashtama Sani (Saturn in 4th, 7th, 10th)');
+                $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($kandakaTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge ' . $kandakaBadgeForPdf . '">' . self::e($kandakaStatusForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($kandakaDescForPdf) . '</div></div>';
+            }
+            $hasAnySaniForPdf = $isEzharaiForPdf || $isAshtamaForPdf || $isKandakaForPdf;
+            if (!$hasAnySaniForPdf) {
+                $noSaniTitleForPdf = $isTa ? 'சனி தோஷ நிலை' : ($isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status');
+                $noSaniBadgeForPdf = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha');
+                $noSaniDescForPdf = $isTa ? 'எந்த சனி தோஷமும் தற்போது இல்லை. சனி தற்போது ' . $houseInfoForPdf . ' சஞ்சரிக்கிறார் — 12/1/2 (ஏழரை), 8 (அஷ்டம) மற்றும் 4/7/10 (கண்டக/அர்த்தாஷ்டம) ஆகியவற்றுக்கு வெளியே. மரபில் இது சாதகமான காலம் எனக் கருதப்படும்.'
+                    : ($isHi ? 'कोई सक्रिय शनि दोष नहीं है। शनि वर्तमान में ' . $houseInfoForPdf . ' गोचर में है — 12/1/2 (साढ़े साती), 8 (अष्टम) और 4/7/10 (कंटक/अर्धाष्टम) से बाहर। परंपरा में इसे अनुकूल समय माना जाता है।'
+                    : 'There is no active any of Sani Dosha. Saturn currently transits ' . $houseInfoForPdf . ' — outside 12th/1st/2nd (Ezharai), 8th (Ashtama) and 4th/7th/10th (Kandaka/Ardhashtama) under this sign-level rule. Traditionally a favourable window; maintain discipline and good conduct.');
+                $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($noSaniTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge badge-clean">' . self::e($noSaniBadgeForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($noSaniDescForPdf) . '</div></div>';
+            }
+        } else {
+            // No saniStatus (legacy payload) — show the same "no active" card as fallback
+            $fallbackTitle = $isTa ? 'சனி தோஷ நிலை' : ($isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status');
+            $fallbackBadge = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha');
+            $fallbackDesc = $isTa ? 'எந்த சனி தோஷமும் தற்போது இல்லை.' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं है।' : 'There is no active any of Sani Dosha.');
+            $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($fallbackTitle) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge badge-clean">' . self::e($fallbackBadge) . '</span></td></tr></table><div class="dosha-desc">' . self::e($fallbackDesc) . '</div></div>';
+        }
+
+        $doshaCardsHtml = $saniCardsHtml;
         $baseDoshas = array_values(array_filter($doshasList, static function ($d) {
-            return is_array($d) && empty($d['isNavagrahaAfflictionIndicator']);
+            if (!is_array($d) || !empty($d['isNavagrahaAfflictionIndicator'])) return false;
+            $name = ($d['nameEn'] ?? '') . ($d['nameTa'] ?? '') . ($d['nameHi'] ?? '');
+            if (stripos($name, 'Kuja') !== false || stripos($name, 'Mangala') !== false || stripos($name, 'Sevvay') !== false || stripos($name, 'Mars (Kuja)') !== false || stripos($name, 'செவ்வாய்') !== false || stripos($name, 'मंगल') !== false) return false;
+            return true;
         }));
-        foreach (array_slice($baseDoshas, 0, 4) as $d) {
+        foreach (array_slice($baseDoshas, 0, 3) as $d) {
             $dName = $isTa ? ($d['nameTa'] ?? $d['nameEn'] ?? '') : ($isHi ? ($d['nameHi'] ?? $d['nameEn'] ?? '') : ($d['nameEn'] ?? ''));
             $dSev = $isTa ? ($d['severityTa'] ?? $d['severityEn'] ?? '') : ($isHi ? ($d['severityHi'] ?? $d['severityEn'] ?? '') : ($d['severityEn'] ?? ''));
             $dDesc = $isTa ? ($d['descriptionTa'] ?? $d['descriptionEn'] ?? '') : ($isHi ? ($d['descriptionHi'] ?? $d['descriptionEn'] ?? '') : ($d['descriptionEn'] ?? ''));
@@ -1081,71 +1165,10 @@ HTML;
         // 1. The screening rules themselves stay in the engine (and surface in
         // the Short Summary planet read), so only this page-1 card was dropped.
 
-        // Items 3/6/7a: the Neecha Bhanga cancellation, the yoga notes (Sarala,
-        // own-sign Saturn and the 9th lord in the 8th read as a caution) and any
-        // Graha Yuddha pair in one compact card, small text with one line per
-        // note, so the certified page-1 layout stays inside three physical pages.
+        // Yogas & Graha Yuddha intentionally not rendered per user request
         $yogaNoteLines = [];
-        $yogaFirstSentence = static function (string $text): string {
-            $text = trim($text);
-            if ($text === '') { return ''; }
-            $parts = preg_split('/\.\s|।/u', $text, 2);
-            return trim((string) ($parts[0] ?? $text));
-        };
-        foreach ((array) ($result['yogas'] ?? []) as $yogaNote) {
-            if (!is_array($yogaNote)) { continue; }
-            $yName = $isTa ? ($yogaNote['nameTa'] ?? '') : ($isHi ? ($yogaNote['nameHi'] ?? '') : ($yogaNote['nameEn'] ?? ''));
-            $yDesc = $isTa ? ($yogaNote['descriptionTa'] ?? '') : ($isHi ? ($yogaNote['descriptionHi'] ?? '') : ($yogaNote['descriptionEn'] ?? ''));
-            // The engine's yoga names already say what the yoga is and carry
-            // their own caution wording, so the compact line names the yoga.
-            $yLine = trim($yName);
-            $yDetail = $yogaFirstSentence($yDesc);
-            if ($yDetail !== '' && strlen($yDetail) <= 70) {
-                // Only add the detail when it is not just the name reworded.
-                $nameWords = array_values(array_filter(
-                    preg_split('/[^\p{L}\p{N}]+/u', $yName) ?: [],
-                    static function ($word) { return strlen($word) >= 6; }
-                ));
-                $shared = 0;
-                foreach ($nameWords as $nameWord) {
-                    if (stripos($yDetail, $nameWord) !== false) { $shared += 1; }
-                }
-                $mostlySame = $nameWords !== [] && ($shared / count($nameWords)) >= 0.6;
-                if (!$mostlySame) { $yLine = trim($yLine . ' — ' . $yDetail); }
-            }
-            if ($yLine !== '') { $yogaNoteLines[] = $yLine; }
-        }
-        foreach ((array) ($result['grahaYuddha'] ?? []) as $yuddha) {
-            if (!is_array($yuddha)) { continue; }
-            $wName = $isTa ? ($yuddha['planetANameTa'] ?? '') . ' / ' . ($yuddha['planetBNameTa'] ?? '') : ($isHi ? ($yuddha['planetANameHi'] ?? '') . ' / ' . ($yuddha['planetBNameHi'] ?? '') : ($yuddha['planetANameEn'] ?? '') . ' / ' . ($yuddha['planetBNameEn'] ?? ''));
-            $wDesc = $isTa ? ($yuddha['descriptionTa'] ?? '') : ($isHi ? ($yuddha['descriptionHi'] ?? '') : ($yuddha['descriptionEn'] ?? ''));
-            $wSep = number_format((float) ($yuddha['separationDegrees'] ?? 0), 2, '.', '') . '°';
-            $wWinner = $isTa ? ($yuddha['winnerNameTa'] ?? '') : ($isHi ? ($yuddha['winnerNameHi'] ?? '') : ($yuddha['winnerNameEn'] ?? ''));
-            $wLabel = $isTa ? 'வெற்றி' : ($isHi ? 'विजेता' : 'winner');
-            $wLine = trim(($isTa ? 'கிரக யுத்தம் (Graha Yuddha): ' : ($isHi ? 'ग्रह युद्ध (Graha Yuddha): ' : 'Graha Yuddha: ')) . $wName . ' (' . $wSep . ')'
-                . ($wWinner !== '' ? ' — ' . $wLabel . ': ' . $wWinner : ''));
-            if ($wLine !== '') { $yogaNoteLines[] = $wLine; }
-        }
-        foreach ((array) ($result['planetPositions'] ?? []) as $positionNow) {
-            if (!is_array($positionNow) || empty($positionNow['dignity']['isNeechaBhanga'])) { continue; }
-            $nbText = $isTa ? ($positionNow['dignity']['neechaBhangaTa'] ?? '') : ($isHi ? ($positionNow['dignity']['neechaBhangaHi'] ?? '') : ($positionNow['dignity']['neechaBhangaEn'] ?? ''));
-            if (trim((string) $nbText) === '') { continue; }
-            $nbGraha = $isTa ? ($positionNow['nameTa'] ?? '') : ($isHi ? ($positionNow['nameHi'] ?? '') : ($positionNow['nameEn'] ?? ''));
-            $nbShort = preg_split('/\.\s/u', trim((string) $nbText), 2);
-            $yogaNoteLines[] = ($nbGraha !== '' ? $nbGraha . ': ' : '') . trim((string) (($nbShort[0] ?? $nbText))) . '.';
-        }
-        if ($yogaNoteLines !== []) {
-            $yogaCardsHtml = '<div class="dosha-card" style="padding:1.2mm 2mm; margin-top:1mm;"><table style="width:100%; border-collapse:collapse; margin:0 0 0.8mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; text-align:left;">'
-                . self::e($isTa ? 'யோகங்கள், நீச பங்க & கிரக யுத்தம்' : ($isHi ? 'योग, नीच भंग एवं ग्रह युद्ध' : 'Yogas, Neecha Bhanga & Graha Yuddha'))
-                . '</td><td style="text-align:right; width:35%;"><span class="dosha-badge badge-clean">' . count($yogaNoteLines) . '</span></td></tr></table>';
-            foreach ($yogaNoteLines as $yogaLine) {
-                $yogaCardsHtml .= '<div class="rule-note">' . self::e($yogaLine) . '</div>';
-            }
-            // The card goes on the life-card sheet: page 1 is already full on
-            // charts with many dosha cards, and the yoga notes belong with the
-            // predictions. The three-page contract is unchanged.
-            $yogaNotesCardHtml = $yogaCardsHtml . '</div>';
-        }
+        $yogaCardsHtml = '';
+        $yogaNotesCardHtml = '';
 
         $p1Sub = $isTa ? 'ஜாதக கணிப்பு அறிக்கை (Birth Jathagam)' : ($isHi ? 'जन्म कुंडली रिपोर्ट (Birth Horoscope)' : 'Certified Vedic Horoscope &amp; Ephemeris');
         $panelDevoteeTitle = $isTa ? 'ஜாதகர் விவரங்கள்' : ($isHi ? 'जातक जन्म विवरण (Birth Particulars)' : 'User Particulars');
