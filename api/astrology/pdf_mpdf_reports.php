@@ -1058,9 +1058,8 @@ HTML;
             : ($isHi ? 'आराधना: भगवान शनि या हनुमान जी। वार: शनिवार। रंग: काला या गहरा नीला। सहायता सामग्री: काले तिल, तिल का तेल, लोहा, कंबल। आचरण: निर्धनों, वृद्धों और दिव्यांगों की सेवा करें, और धैर्य तथा अनुशासन रखें।'
             : 'Pray to: Lord Shani or Lord Hanuman. Day: Saturday. Colour: Black or dark blue. Give in charity: Black sesame seeds, sesame oil (nallennai), iron, black cloth or warm blankets. Conduct: Serve the poor, the elderly and the disabled, and stay patient and disciplined.');
         $saniCardsHtml = '';
-        // Only show a Sani dosha card when that Sani transit is currently active
-        // (Ezharai 12/1/2, Ashtama 8th, Kandaka/Ardhashtama 4/7/10). No Sani period
-        // => no Sani card on Page 1 (user request: "Which is available can show").
+        // Show only the active Sani dosha; if none active, show a single
+        // "There is no active any of Sani Dosha" card with current transit info.
         if (is_array($saniStatusData)) {
             $isEzharaiForPdf = !empty($saniStatusData['isEzharaiSani']);
             $isAshtamaForPdf = !empty($saniStatusData['isAshtamaSani']);
@@ -1098,6 +1097,21 @@ HTML;
                 $kandakaTitleForPdf = $isTa ? 'கண்டக / அர்த்தாஷ்டம சனி (4, 7, 10-ஆம் வீடு)' : ($isHi ? 'कंटक / अर्धाष्टम शनि (4, 7, 10वाँ भाव)' : 'Kandaka / Ardhashtama Sani (Saturn in 4th, 7th, 10th)');
                 $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($kandakaTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge ' . $kandakaBadgeForPdf . '">' . self::e($kandakaStatusForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($kandakaDescForPdf) . '</div></div>';
             }
+            $hasAnySaniForPdf = $isEzharaiForPdf || $isAshtamaForPdf || $isKandakaForPdf;
+            if (!$hasAnySaniForPdf) {
+                $noSaniTitleForPdf = $isTa ? 'சனி தோஷ நிலை' : ($isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status');
+                $noSaniBadgeForPdf = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha');
+                $noSaniDescForPdf = $isTa ? 'எந்த சனி தோஷமும் தற்போது இல்லை. சனி தற்போது ' . $houseInfoForPdf . ' சஞ்சரிக்கிறார் — 12/1/2 (ஏழரை), 8 (அஷ்டம) மற்றும் 4/7/10 (கண்டக/அர்த்தாஷ்டம) ஆகியவற்றுக்கு வெளியே. மரபில் இது சாதகமான காலம் எனக் கருதப்படும்.'
+                    : ($isHi ? 'कोई सक्रिय शनि दोष नहीं है। शनि वर्तमान में ' . $houseInfoForPdf . ' गोचर में है — 12/1/2 (साढ़े साती), 8 (अष्टम) और 4/7/10 (कंटक/अर्धाष्टम) से बाहर। परंपरा में इसे अनुकूल समय माना जाता है।'
+                    : 'There is no active any of Sani Dosha. Saturn currently transits ' . $houseInfoForPdf . ' — outside 12th/1st/2nd (Ezharai), 8th (Ashtama) and 4th/7th/10th (Kandaka/Ardhashtama) under this sign-level rule. Traditionally a favourable window; maintain discipline and good conduct.');
+                $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($noSaniTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge badge-clean">' . self::e($noSaniBadgeForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($noSaniDescForPdf) . '</div></div>';
+            }
+        } else {
+            // No saniStatus (legacy payload) — show the same "no active" card as fallback
+            $fallbackTitle = $isTa ? 'சனி தோஷ நிலை' : ($isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status');
+            $fallbackBadge = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha');
+            $fallbackDesc = $isTa ? 'எந்த சனி தோஷமும் தற்போது இல்லை.' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं है।' : 'There is no active any of Sani Dosha.');
+            $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($fallbackTitle) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge badge-clean">' . self::e($fallbackBadge) . '</span></td></tr></table><div class="dosha-desc">' . self::e($fallbackDesc) . '</div></div>';
         }
 
         $doshaCardsHtml = $saniCardsHtml;

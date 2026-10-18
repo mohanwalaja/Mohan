@@ -983,6 +983,18 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
     }
   })();
 
+  const hasAnySaniDosha = Boolean(isEzharaiSani || isAshtamaSani || isKandakaSani);
+  const noSaniTitle = isTa ? 'சனி தோஷ நிலை' : isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status';
+  const noSaniBadge = isTa ? 'எந்த சனி தோஷமும் இல்லை' : isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha';
+  const noSaniDesc = (() => {
+    if (!saniStatus) return unavailableDosha;
+    const houseInfo = saniHouse !== null ? (isTa ? `${saniHouseText(saniHouse)} வீட்டில் (${saniRasiName})` : isHi ? `${saniHouseText(saniHouse)} भाव में (${saniRasiName})` : `in the ${saniHouseOrdinalEn(saniHouse)} from Janma Rasi ${moonRasiNameForSani} (${saniRasiName})`) : '';
+    const baseEn = `There is no active any of Sani Dosha. Saturn currently transits ${houseInfo} — outside 12th/1st/2nd (Ezharai), 8th (Ashtama) and 4th/7th/10th (Kandaka/Ardhashtama) under this sign-level rule. Traditionally a favourable window; maintain discipline and good conduct.`;
+    const baseTa = `எந்த சனி தோஷமும் தற்போது இல்லை. சனி தற்போது ${houseInfo} சஞ்சரிக்கிறார் — 12/1/2 (ஏழரை), 8 (அஷ்டம) மற்றும் 4/7/10 (கண்டக/அர்த்தாஷ்டம) ஆகியவற்றுக்கு வெளியே. மரபில் இது சாதகமான காலம் எனக் கருதப்படும்.`;
+    const baseHi = `कोई सक्रिय शनि दोष नहीं है। शनि वर्तमान में ${houseInfo} गोचर में है — 12/1/2 (साढ़े साती), 8 (अष्टम) और 4/7/10 (कंटक/अर्धाष्टम) से बाहर। परंपरा में इसे अनुकूल समय माना जाता है।`;
+    return isTa ? baseTa : isHi ? baseHi : baseEn;
+  })();
+
   const kalaSarpaEngine = findEngineDosha(/kala.?sarpa/i);
   const isKalaSarpa: boolean | null = kalaSarpaEngine ? kalaSarpaEngine.isPresent : null;
   const kalaSarpaStatus = isKalaSarpa === null
@@ -1997,6 +2009,7 @@ ${REPORT_FONT_LINK_TAG}
     ${isEzharaiSani ? `<div class="dosha-card"><div class="dosha-header"><span class="name">${isTa ? 'ஏழரை சனி — சனி பெயர்ச்சி (Sade Sati / Ezharai Sani)' : isHi ? 'साढ़े साती — शनि गोचर (Ezharai Sani)' : 'Ezharai Sani — Saturn Transit (Sade Sati)'}</span><span class="dosha-badge ${ezharaiBadgeClass}">${escapeHtml(ezharaiStatus)}</span></div><div class="desc">${escapeHtml(ezharaiDesc)}</div></div>` : ''}
     ${isAshtamaSani ? `<div class="dosha-card"><div class="dosha-header"><span class="name">${isTa ? 'அஷ்டம சனி (Ashtama Sani — 8-ஆம் வீடு)' : isHi ? 'अष्टम शनि (Ashtama Sani — 8वाँ भाव)' : 'Ashtama Sani (Saturn in 8th House)'}</span><span class="dosha-badge ${ashtamaBadgeClass}">${escapeHtml(ashtamaStatus)}</span></div><div class="desc">${escapeHtml(ashtamaDesc)}</div></div>` : ''}
     ${isKandakaSani ? `<div class="dosha-card"><div class="dosha-header"><span class="name">${isTa ? 'கண்டக / அர்த்தாஷ்டம சனி (4, 7, 10-ஆம் வீடு)' : isHi ? 'कंटक / अर्धाष्टम शनि (4, 7, 10वाँ भाव)' : 'Kandaka / Ardhashtama Sani (Saturn in 4th, 7th, 10th)'}</span><span class="dosha-badge ${kandakaBadgeClass}">${escapeHtml(kandakaStatus)}</span></div><div class="desc">${escapeHtml(kandakaDesc)}</div></div>` : ''}
+    ${!hasAnySaniDosha ? `<div class="dosha-card"><div class="dosha-header"><span class="name">${noSaniTitle}</span><span class="dosha-badge badge-clean">${noSaniBadge}</span></div><div class="desc">${escapeHtml(noSaniDesc)}</div></div>` : ''}
     <div class="dosha-card">
       <div class="dosha-header">
         <span class="name">${isTa ? 'காலசர்ப தோஷம்' : isHi ? 'काल सर्प दोष' : 'Kala Sarpa Dosha'}</span>
