@@ -2016,27 +2016,9 @@ ${REPORT_FONT_LINK_TAG}
     </div>
 
     <div class="section-title">${isTa ? 'தோஷ பரிசீலனை' : isHi ? 'दोष विश्लेषण' : 'Dosha Analysis'}</div>
-    <div class="dosha-card">
-      <div class="dosha-header">
-        <span class="name">${isTa ? 'ஏழரை சனி — சனி பெயர்ச்சி (Sade Sati / Ezharai Sani)' : isHi ? 'साढ़े साती — शनि गोचर (Ezharai Sani)' : 'Ezharai Sani — Saturn Transit (Sade Sati)'}</span>
-        <span class="dosha-badge ${ezharaiBadgeClass}">${escapeHtml(ezharaiStatus)}</span>
-      </div>
-      <div class="desc">${escapeHtml(ezharaiDesc)}</div>
-    </div>
-    <div class="dosha-card">
-      <div class="dosha-header">
-        <span class="name">${isTa ? 'அஷ்டம சனி (Ashtama Sani — 8-ஆம் வீடு)' : isHi ? 'अष्टम शनि (Ashtama Sani — 8वाँ भाव)' : 'Ashtama Sani (Saturn in 8th House)'}</span>
-        <span class="dosha-badge ${ashtamaBadgeClass}">${escapeHtml(ashtamaStatus)}</span>
-      </div>
-      <div class="desc">${escapeHtml(ashtamaDesc)}</div>
-    </div>
-    <div class="dosha-card">
-      <div class="dosha-header">
-        <span class="name">${isTa ? 'கண்டக / அர்த்தாஷ்டம சனி (4, 7, 10-ஆம் வீடு)' : isHi ? 'कंटक / अर्धाष्टम शनि (4, 7, 10वाँ भाव)' : 'Kandaka / Ardhashtama Sani (Saturn in 4th, 7th, 10th)'}</span>
-        <span class="dosha-badge ${kandakaBadgeClass}">${escapeHtml(kandakaStatus)}</span>
-      </div>
-      <div class="desc">${escapeHtml(kandakaDesc)}</div>
-    </div>
+    ${isEzharaiSani ? `<div class="dosha-card"><div class="dosha-header"><span class="name">${isTa ? 'ஏழரை சனி — சனி பெயர்ச்சி (Sade Sati / Ezharai Sani)' : isHi ? 'साढ़े साती — शनि गोचर (Ezharai Sani)' : 'Ezharai Sani — Saturn Transit (Sade Sati)'}</span><span class="dosha-badge ${ezharaiBadgeClass}">${escapeHtml(ezharaiStatus)}</span></div><div class="desc">${escapeHtml(ezharaiDesc)}</div></div>` : ''}
+    ${isAshtamaSani ? `<div class="dosha-card"><div class="dosha-header"><span class="name">${isTa ? 'அஷ்டம சனி (Ashtama Sani — 8-ஆம் வீடு)' : isHi ? 'अष्टम शनि (Ashtama Sani — 8वाँ भाव)' : 'Ashtama Sani (Saturn in 8th House)'}</span><span class="dosha-badge ${ashtamaBadgeClass}">${escapeHtml(ashtamaStatus)}</span></div><div class="desc">${escapeHtml(ashtamaDesc)}</div></div>` : ''}
+    ${isKandakaSani ? `<div class="dosha-card"><div class="dosha-header"><span class="name">${isTa ? 'கண்டக / அர்த்தாஷ்டம சனி (4, 7, 10-ஆம் வீடு)' : isHi ? 'कंटक / अर्धाष्टम शनि (4, 7, 10वाँ भाव)' : 'Kandaka / Ardhashtama Sani (Saturn in 4th, 7th, 10th)'}</span><span class="dosha-badge ${kandakaBadgeClass}">${escapeHtml(kandakaStatus)}</span></div><div class="desc">${escapeHtml(kandakaDesc)}</div></div>` : ''}
     <div class="dosha-card">
       <div class="dosha-header">
         <span class="name">${isTa ? 'காலசர்ப தோஷம்' : isHi ? 'काल सर्प दोष' : 'Kala Sarpa Dosha'}</span>
