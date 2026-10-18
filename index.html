@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark" style="background-color: #0b0718; color-scheme: dark">
+<html lang="en" style="background-color: #fffaf2; color-scheme: light">
   <head>
     <meta charset="UTF-8" />
     <!-- BOOT CRITICAL (mobile white-screen fix, 2026-10-14). Reported: opening
@@ -21,20 +21,19 @@
          Pinned by: tests/boot-splash-contract.test.ts
          It is inlined into all 18 prerendered documents — keep it small. -->
     <style id="boot-critical">
-      /* The dark canvas, for the frame(s) before the app stylesheet arrives. */
+      /* Light canvas by default (user request) — dark only when explicitly chosen. */
       html,
       body {
-        background-color: #0b0718;
-        color: #fffdfa;
+        background-color: #fffaf2;
+        color: #1a1233;
       }
       html {
-        color-scheme: dark;
+        color-scheme: light;
       }
       body {
         margin: 0;
       }
-      /* The splash itself: fixed overlay, painted above the (still unstyled)
-         prerendered document so the visitor never sees raw markup either. */
+      /* Splash — light Ivory surface by default. */
       #boot-splash {
         position: fixed;
         inset: 0;
@@ -42,25 +41,19 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(120% 90% at 50% 0%, #1a1233 0%, #0e0a1e 48%, #0b0718 100%);
+        background: radial-gradient(120% 90% at 50% 0%, #fffdf9 0%, #fffaf2 58%, #f7ecdc 100%);
         animation: boot-splash-escape 600ms ease 8s forwards;
       }
-      /* Public prerenders start on the default Ivory surface. The app reads a
-         returning visitor's dark-mode choice before showing their page.
-         Non-prerendered admin startup keeps the original dark splash. */
-      html[data-prerendered] #boot-splash {
-        background: radial-gradient(120% 90% at 50% 0%, #fffdf9 0%, #fffaf2 58%, #f7ecdc 100%);
-      }
-      html[data-prerendered] #boot-splash .boot-ring {
+      #boot-splash .boot-ring {
         border-color: rgba(156, 76, 29, 0.18);
         border-top-color: #9c4c1d;
       }
-      html[data-prerendered] #boot-splash .boot-core {
+      #boot-splash .boot-core {
         background: #9c4c1d;
         box-shadow: 0 0 18px 4px rgba(156, 76, 29, 0.24);
       }
-      html[data-prerendered] #boot-splash .boot-word { color: #6f391f; }
-      html[data-prerendered] #boot-splash .boot-sub { color: #6e6052; }
+      #boot-splash .boot-word { color: #6f391f; }
+      #boot-splash .boot-sub { color: #6e6052; }
       #boot-splash .boot-lockup {
         display: flex;
         flex-direction: column;
@@ -79,8 +72,8 @@
       #boot-splash .boot-ring {
         position: absolute;
         inset: 0;
-        border: 2px solid rgba(245, 196, 116, 0.18);
-        border-top-color: #f5c474;
+        border: 2px solid rgba(156, 76, 29, 0.18);
+        border-top-color: #9c4c1d;
         border-radius: 50%;
         animation: boot-splash-spin 1.05s linear infinite;
       }
@@ -88,8 +81,8 @@
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        background: #f5c474;
-        box-shadow: 0 0 18px 4px rgba(245, 196, 116, 0.45);
+        background: #9c4c1d;
+        box-shadow: 0 0 18px 4px rgba(156, 76, 29, 0.24);
       }
       #boot-splash .boot-word {
         margin: 0;
@@ -98,7 +91,7 @@
         font-weight: 600;
         letter-spacing: 0.32em;
         text-indent: 0.32em;
-        color: #f5c474;
+        color: #6f391f;
       }
       #boot-splash .boot-sub {
         margin: 0;
@@ -106,7 +99,7 @@
         font-size: 0.68rem;
         letter-spacing: 0.24em;
         text-transform: uppercase;
-        color: rgba(255, 253, 250, 0.62);
+        color: #6e6052;
       }
       @keyframes boot-splash-spin {
         to {
@@ -155,8 +148,8 @@
     <link rel="shortcut icon" href="/favicon.ico?v=20261003" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20261003" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#0b0813" />
-    <meta name="msapplication-TileColor" content="#0b0813" />
+    <meta name="theme-color" content="#fffaf2" />
+    <meta name="msapplication-TileColor" content="#fffaf2" />
     <title>ASTRO SIVAM - Understand Your Life Through Vedic Astrology</title>
     <meta name="description" content="ASTRO SIVAM offers Birth Jathagam, 10-Poruthams Marriage Compatibility, Vedic Baby Naming, and Subha Muhurtham reports in Tamil, English, and Hindi." />
     <meta name="author" content="ASTRO SIVAM" />
