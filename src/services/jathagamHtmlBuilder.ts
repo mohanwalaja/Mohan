@@ -11,7 +11,6 @@ import {
 } from './jathagamDoshaData';
 import { classifyJathagamPlanetsForSummary } from './jathagamPlanetSummary';
 import { withDerivedNavamsa } from './navamsa';
-import { kujaDoshaFromHoroscope } from '../lib/astrology/kujaDosha';
 import {
   dignityCardLine,
   debilitationSign,
@@ -868,49 +867,121 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
     : isHi
     ? 'आवश्यक ग्रह स्थिति उपलब्ध नहीं है; N/A।'
     : 'Required planetary placement is unavailable; N/A.';
-  const kujaEngine = findEngineDosha(/kuja|manglik|sevvay/i);
-  // Fallback for stale results that carry no engine dosha block: use the SAME
-  // classical rule set as the engine (houses 2, 4, 7, 8, 12 from the Lagna,
-  // Moon and Venus with exceptions). The old fallback checked houses 2, 4, 7, 8,
-  // 12 from the Lagna only, so a rerender of a stale result could contradict the
-  // PDF the engine produced.
-  const kujaFallback = kujaEngine ? null : kujaDoshaFromHoroscope(result);
-  const isKujaDosha: boolean | null = kujaEngine ? kujaEngine.isPresent : kujaFallback?.isPresent ?? null;
-  // Item 2: the badge speaks the verdict — none / present / present-cancelled.
-  // Keying it off isPresent made a cancelled dosha read "no indication" while
-  // the paragraph underneath listed the dosha and its cancellation rule.
-  const kujaVerdict = kujaEngine?.verdict ?? kujaFallback?.verdict ?? null;
-  const kujaVerdictLabel = kujaVerdict === 'none'
-    ? (isTa ? 'செவ்வாய் தோஷம் இல்லை' : isHi ? 'मंगल दोष नहीं' : 'No Kuja Dosha under this rule set')
-    : kujaVerdict === 'present' || kujaVerdict === 'present-cancelled'
-    ? ((kujaEngine
-        ? (isTa ? kujaEngine.verdictLabelTa : isHi ? kujaEngine.verdictLabelHi : kujaEngine.verdictLabelEn)
-        : (isTa ? kujaFallback?.verdictLabelTa : isHi ? kujaFallback?.verdictLabelHi : kujaFallback?.verdictLabelEn))
-      || (isTa ? 'செவ்வாய் தோஷம் உள்ளது' : isHi ? 'मंगल दोष उपस्थित' : 'Kuja Dosha present'))
-    : 'N/A';
-  const kujaStatus = kujaVerdictLabel;
-  const kujaBadgeClass = kujaVerdict === null || kujaVerdict === 'not-assessed'
-    ? 'badge-na'
-    : kujaVerdict === 'present-cancelled'
-    ? 'badge-cancelled'
-    : kujaVerdict === 'present'
-    ? 'badge-moderate'
-    : 'badge-clean';
-  const kujaDesc = kujaEngine
-    ? engineDoshaText(kujaEngine, kujaEngine.isPresent)
-    : !kujaFallback || kujaFallback.status === 'NOT_ASSESSED'
-    ? unavailableDosha
-    : kujaFallback.status === 'DOSHA_NONE'
-    ? (isTa
-        ? `லக்னம், சந்திரன், சுக்கிரன் ஆகியவற்றிலிருந்து செவ்வாய் தோஷ ஸ்தானங்களில் இல்லை; பிற மரபுகள் மாறுபடலாம்.`
-        : isHi
-        ? 'लग्न, चंद्र, शुक्र से मंगल दोष भाव में नहीं; अन्य परंपराएँ भिन्न हो सकती हैं।'
-        : 'Mars is not in a Kuja Dosha house from the Lagna, Moon or Venus; other Manglik traditions may differ.')
-    : isTa
-    ? `${kujaFallback.explanationTa} இது குறியீடு மட்டுமே; பரிகாரம் அல்லது திருமண முடிவை உறுதி செய்யாது.`
-    : isHi
-    ? `${kujaFallback.explanationHi} यह संकेत मात्र है; उपाय या वैवाहिक परिणाम की गारंटी नहीं।`
-    : `${kujaFallback.explanationEn} This is an indicator only; it does not guarantee that a remedy or relationship outcome is needed.`;
+  // Kuja/Sevvay Dosha is intentionally not shown on Birth Jathagam Page 1 — it
+  // is evaluated in Wedding Compatibility (10 Poruthams). See Sani blocks below.
+
+  // ---- Sani Doshas (replaces Kuja on Birth Jathagam Page 1) ----
+  // Kuja/Sevvay is retained in Wedding Compatibility (10 Poruthams) but not
+  // shown on the Birth chart per user request. Page 1 now shows the three
+  // live Saturn-transit families: Ezharai Sani (Sade Sati), Ashtama Sani and
+  // Kandaka/Ardhashtama Sani — all derived from saniStatus (house from Moon).
+  const saniStatus: any = (result as any).saniStatus || null;
+  const saniHouse: number | null = typeof saniStatus?.saniHouseFromMoon === 'number' ? Number(saniStatus.saniHouseFromMoon) : null;
+  const saniRasiName = (() => {
+    if (saniStatus?.currentSaniRasi && RASI_NAMES_REPORT[Number(saniStatus.currentSaniRasi)]) return RASI_NAMES_REPORT[Number(saniStatus.currentSaniRasi)][lang];
+    if (saniStatus?.saniRasiNameEn) return isTa ? (saniStatus.saniRasiNameTa || saniStatus.saniRasiNameEn) : isHi ? (saniStatus.saniRasiNameHi || saniStatus.saniRasiNameEn) : saniStatus.saniRasiNameEn;
+    return 'N/A';
+  })();
+  const moonRasiNameForSani = chandraRasi !== null ? (RASI_NAMES_REPORT[chandraRasi]?.[lang] || 'N/A') : 'N/A';
+  const saniRemedyFull = (() => {
+    try {
+      const saturnInfo = NAVAGRAHA_DOSHA_DATA.saturn;
+      if (!saturnInfo) return '';
+      // Full universal remedy line: deity, day, colour, charity, conduct
+      const label: any = { en: { pray: 'Pray to', day: 'Day', colour: 'Colour', charity: 'Give in charity', practice: 'Conduct', end: '.' }, ta: { pray: 'வழிபாடு', day: 'நாள்', colour: 'நிறம்', charity: 'கொடை', practice: 'நடத்தை', end: '.' }, hi: { pray: 'आराधना', day: 'वार', colour: 'रंग', charity: 'सहायता सामग्री', practice: 'आचरण', end: '।' } }[lang] || { pray: 'Pray to', day: 'Day', colour: 'Colour', charity: 'Give in charity', practice: 'Conduct', end: '.' };
+      const sep = lang === 'hi' ? '। ' : '. ';
+      return [`${label.pray}: ${saturnInfo.deity[lang]}`, `${label.day}: ${saturnInfo.day[lang]}`, `${label.colour}: ${saturnInfo.colour[lang]}`, `${label.charity}: ${saturnInfo.charity[lang]}`, `${label.practice}: ${saturnInfo.practice[lang]}`].join(sep) + label.end;
+    } catch { return ''; }
+  })();
+  const saniHouseOrdinalEn = (n: number) => { const ord = ['', '1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th']; return ord[n] || `${n}th`; };
+  const saniHouseOrdinalTa = (n: number) => `${n}-ஆம்`;
+  const saniHouseOrdinalHi = (n: number) => `${n}वें`;
+  const saniHouseText = (n: number | null) => n === null ? 'N/A' : isTa ? saniHouseOrdinalTa(n) : isHi ? saniHouseOrdinalHi(n) : saniHouseOrdinalEn(n);
+
+  // Ezharai Sani (Sade Sati) — houses 12, 1, 2
+  const isEzharaiSani: boolean | null = saniStatus ? Boolean(saniStatus.isEzharaiSani) : null;
+  const ezharaiTypeLabel = saniStatus ? (isTa ? saniStatus.ezharaiTypeTa : isHi ? saniStatus.ezharaiTypeHi : saniStatus.ezharaiTypeEn) : '';
+  const ezharaiStatus = isEzharaiSani === null ? 'N/A' : isEzharaiSani ? (ezharaiTypeLabel || (isTa ? 'ஏழரை சனி உள்ளது' : isHi ? 'साढ़े साती है' : 'In Sade Sati')) : (isTa ? 'ஏழரை சனி இல்லை' : isHi ? 'साढ़े साती नहीं' : 'Not in Sade Sati');
+  const ezharaiBadgeClass = isEzharaiSani === null ? 'badge-na' : isEzharaiSani ? 'badge-moderate' : 'badge-clean';
+  const ezharaiDesc = (() => {
+    if (isEzharaiSani === null) return unavailableDosha;
+    const houseInfo = saniHouse !== null ? (isTa ? `${saniHouseText(saniHouse)} வீட்டில் (${saniRasiName})` : isHi ? `${saniHouseText(saniHouse)} भाव में (${saniRasiName})` : `in the ${saniHouseOrdinalEn(saniHouse)} from Janma Rasi ${moonRasiNameForSani} (${saniRasiName})`) : '';
+    if (isEzharaiSani) {
+      // Phase-specific traditional reading
+      const phaseEn = saniHouse === 12 ? 'Viraya Sani (12th) — first phase: expenses, foreign/outer matters, detachment and initial pressure.'
+        : saniHouse === 1 ? 'Jenma Sani (1st/Janma Rasi) — core phase: health, self, most intense; patience and discipline are tested.'
+        : saniHouse === 2 ? 'Patha Sani (2nd) — final phase: family, speech, finances and concluding adjustments.'
+        : 'Ezharai Sani period';
+      const phaseTa = saniHouse === 12 ? 'விரய சனி (12-ஆம்) — முதல் பருவம்: செலவு, வெளித்தொடர்பு, பிரிவு, ஆரம்ப அழுத்தம்.'
+        : saniHouse === 1 ? 'ஜென்ம சனி (1-ஆம்) — மைய பருவம்: உடல், மனம், மிக தீவிரம்; பொறுமை, ஒழுக்கம் சோதனை.'
+        : saniHouse === 2 ? 'பாத சனி (2-ஆம்) — இறுதி பருவம்: குடும்பம், பேச்சு, நிதி, முடிவு சரிசெய்தல்.'
+        : 'ஏழரை சனி காலம்';
+      const phaseHi = saniHouse === 12 ? 'व्यय शनि (12वां) — प्रथम चरण: व्यय, बाहरी संबंध, अलगाव और प्रारंभिक दबाव।'
+        : saniHouse === 1 ? 'जन्म शनि (1st) — मुख्य चरण: स्वास्थ्य, स्वयं, सर्वाधिक तीव्र; धैर्य-परीक्षा।'
+        : saniHouse === 2 ? 'पाद शनि (2सरा) — अंतिम चरण: परिवार, वाणी, वित्त और समापन।'
+        : 'साढ़े साती अवधि';
+      const base = isTa ? `சனி ${houseInfo} — ${phaseTa} மரபில் 7.5 ஆண்டு ஏழரை சனி காலம் ஒழுக்கம், உழைப்பு, பொறுமைக்கான காலம் எனக் கருதப்படும். அவசர முடிவு, புது கடன், வாக்குவாதம் தவிர்க்கவும்; பெரியோருக்கு உதவவும்.`
+        : isHi ? `शनि ${houseInfo} — ${phaseHi} परंपरा में 7.5 वर्ष की साढ़े साती अनुशासन, परिश्रम, धैर्य का समय मानी जाती है। जल्दबाजी, नया ऋण, विवाद से बचें; बड़ों की सेवा करें।`
+        : `Saturn ${houseInfo} — ${phaseEn} Traditionally the 7.5-year Sade Sati is read as a period for discipline, hard work and patience. Avoid hasty decisions, new loans and arguments; serve elders and keep steady effort. Traditions differ on intensity.`;
+      return `${base} ${saniRemedyFull}`;
+    } else {
+      const base = isTa ? `சனி தற்போது ${houseInfo} சஞ்சரிக்கிறார் — 12/1/2-க்கு வெளியே, எனவே ஏழரை சனி இல்லை. மரபில் இது நிவாரண காலம் எனக் கருதப்படும்; ஒழுக்கம் எப்போதும் பேணவும்.`
+        : isHi ? `शनि वर्तमान में ${houseInfo} गोचर में है — 12/1/2 से बाहर, अतः साढ़े साती नहीं। परंपरा में इसे राहत का समय माना जाता है; अनुशासन बनाए रखें।`
+        : `Saturn currently transits ${houseInfo} — outside 12th/1st/2nd, so no Sade Sati under this sign-level rule. Traditionally a relief window for this dosha; maintain discipline as always.`;
+      return `${base} ${saniRemedyFull}`;
+    }
+  })();
+
+  // Ashtama Sani — house 8
+  const isAshtamaSani: boolean | null = saniStatus ? Boolean(saniStatus.isAshtamaSani) : null;
+  const ashtamaStatus = isAshtamaSani === null ? 'N/A' : isAshtamaSani ? (isTa ? 'அஷ்டம சனி உள்ளது — 8-ஆம் வீடு' : isHi ? 'अष्टम शनि — 8वें भाव में' : 'Ashtama Sani — Saturn in 8th') : (isTa ? 'அஷ்டம சனி இல்லை' : isHi ? 'अष्टम शनि नहीं' : 'No Ashtama Sani');
+  const ashtamaBadgeClass = isAshtamaSani === null ? 'badge-na' : isAshtamaSani ? 'badge-moderate' : 'badge-clean';
+  const ashtamaDesc = (() => {
+    if (isAshtamaSani === null) return unavailableDosha;
+    const houseInfo = saniHouse !== null ? (isTa ? `${saniHouseText(saniHouse)} வீட்டில் (${saniRasiName})` : isHi ? `${saniHouseText(saniHouse)} भाव में (${saniRasiName})` : `in the ${saniHouseOrdinalEn(saniHouse)} from Janma Rasi ${moonRasiNameForSani} (${saniRasiName})`) : '';
+    if (isAshtamaSani) {
+      const base = isTa ? `சனி ${houseInfo} — அஷ்டம சனி (8-ஆம்). மரபில் திடீர் மாற்றம், உடல் கவனம், கூட்டு நிதி, மாமியார் வீடு, மாற்றம் எனக் கருதப்படும். உடல் பரிசோதனை, ஆவண கவனம், குடும்ப பொறுமை, எளிய பரிகாரம் நலம். மரபுகள் வேறுபடும்.`
+        : isHi ? `शनि ${houseInfo} — अष्टम शनि (8वां)। परंपरा में आकस्मिक परिवर्तन, स्वास्थ्य-देखभाल, संयुक्त वित्त, ससुराल, रूपांतरण से जोड़ा जाता है। स्वास्थ्य जाँच, कागज़ सावधानी, परिवार में धैर्य और सरल उपाय हितकर। व्याख्याएँ भिन्न हैं।`
+        : `Saturn ${houseInfo} — Ashtama Sani (8th). Traditionally linked with sudden changes, health attention, joint finances, in-laws and transformation. Regular health checks, careful documents, patience in family matters and simple remedies are advised. Traditions differ on intensity.`;
+      return `${base} ${saniRemedyFull}`;
+    } else {
+      const base = isTa ? `சனி தற்போது ${houseInfo} — 8-க்கு வெளியே, எனவே அஷ்டம சனி இல்லை. இது இந்த ராசி-விதி மட்டுமே; பிற சனி பாதிப்புகள் இல்லை என உறுதி செய்யாது.`
+        : isHi ? `शनि वर्तमान में ${houseInfo} — 8वें से बाहर, अतः अष्टम शनि नहीं। यह केवल राशि-स्तरीय नियम है; अन्य शनि-पीड़ा की अनुपस्थिति सिद्ध नहीं होती।`
+        : `Saturn currently transits ${houseInfo} — outside the 8th, so no Ashtama Sani under this sign-level rule. It does not establish absence of other Saturn afflictions.`;
+      return `${base} ${saniRemedyFull}`;
+    }
+  })();
+
+  // Kandaka / Ardhashtama Sani — houses 4, 7, 10 (kendra)
+  const isKandakaSani: boolean | null = saniStatus ? Boolean(saniStatus.isKandakaSani) : null;
+  const isArdhashtama = saniStatus ? Boolean(saniStatus.isArdhashtamaSani) : false;
+  const kandakaStatus = (() => {
+    if (isKandakaSani === null) return 'N/A';
+    if (!isKandakaSani) return isTa ? 'கண்டக / அர்த்தாஷ்டம சனி இல்லை' : isHi ? 'कंटक / अर्धाष्टम शनि नहीं' : 'No Kandaka / Ardhashtama Sani';
+    if (saniHouse === 4) return isTa ? 'அர்த்தாஷ்டம சனி — 4-ஆம் வீட்டில்' : isHi ? 'अर्धाष्टम शनि — 4th में' : 'Ardhashtama Sani — Saturn in 4th';
+    if (saniHouse === 7) return isTa ? 'கண்டக சனி — 7-ஆம் வீட்டில்' : isHi ? 'कंटक शनि — 7वें में' : 'Kandaka Sani — Saturn in 7th';
+    if (saniHouse === 10) return isTa ? 'கண்டக சனி — 10-ஆம் வீட்டில்' : isHi ? 'कंटक शनि — 10वें में' : 'Kandaka Sani — Saturn in 10th';
+    return isTa ? 'கண்டக / அர்த்தாஷ்டம சனி உள்ளது' : isHi ? 'कंटक / अर्धाष्टम शनि है' : 'Kandaka / Ardhashtama Sani present';
+  })();
+  const kandakaBadgeClass = isKandakaSani === null ? 'badge-na' : isKandakaSani ? 'badge-moderate' : 'badge-clean';
+  const kandakaDesc = (() => {
+    if (isKandakaSani === null) return unavailableDosha;
+    const houseInfo = saniHouse !== null ? (isTa ? `${saniHouseText(saniHouse)} வீட்டில் (${saniRasiName})` : isHi ? `${saniHouseText(saniHouse)} भाव में (${saniRasiName})` : `in the ${saniHouseOrdinalEn(saniHouse)} from Janma Rasi ${moonRasiNameForSani} (${saniRasiName})`) : '';
+    if (isKandakaSani) {
+      let specific = '';
+      if (saniHouse === 4) specific = isTa ? 'அர்த்தாஷ்டம சனி (4-ஆம்) — வீடு, தாய், சொத்து, வாகனம், மன அமைதி பாதிப்பு; 2.5 ஆண்டு.' : isHi ? 'अर्धाष्टम शनि (4था) — घर, माता, संपत्ति, वाहन, मानसिक शांति पर प्रभाव; 2.5 वर्ष।' : 'Ardhashtama Sani (4th) — home, mother, property, vehicles and peace of mind; 2.5 years.';
+      else if (saniHouse === 7) specific = isTa ? 'கண்டக சனி (7-ஆம்) — திருமணம், கூட்டாண்மை, வணிக ஒப்பந்தம்; பொறுமை, வெளிப்படை பேச்சு தேவை.' : isHi ? 'कंटक शनि (7वां) — विवाह, साझेदारी, व्यापार; धैर्य, स्पष्ट संवाद आवश्यक।' : 'Kandaka Sani (7th) — marriage, partnerships and business alliances; patience and clear communication needed.';
+      else if (saniHouse === 10) specific = isTa ? 'கண்டக சனி (10-ஆம்) — தொழில், தந்தை, புகழ், கர்ம ஸ்தானம்; பொறுப்பு, கடின உழைப்பு சோதனை.' : isHi ? 'कंटक शनि (10वां) — करियर, पिता, प्रतिष्ठा, कर्म; जिम्मेदारी और परिश्रम की परीक्षा।' : 'Kandaka Sani (10th) — career, father, reputation and karma; responsibility and hard work are tested.';
+      else specific = isTa ? 'கண்டக / அர்த்தாஷ்டம சனி — கேந்திர ஸ்தானத்தில் சனி; தடை, தாமதம் என மரபில் கருதப்படும்.' : isHi ? 'कंटक / अर्धाष्टम शनि — केंद्र में शनि; बाधा, विलंब माना जाता है।' : 'Kandaka / Ardhashtama Sani — Saturn in kendra; traditionally read as obstacles/delays.';
+      const base = isTa ? `சனி ${houseInfo} — ${specific} மரபில் 2.5 ஆண்டு காலம்; திட்டமிடல், ஆவண சரிபார்ப்பு, பொறுமை நலம்.` : isHi ? `शनि ${houseInfo} — ${specific} परंपरा में 2.5 वर्ष की अवधि; योजना, कागज़ जाँच, धैर्य हितकर।` : `Saturn ${houseInfo} — ${specific} Traditionally a 2.5-year period; planning, document checks and patience help.`;
+      return `${base} ${saniRemedyFull}`;
+    } else {
+      const base = isTa ? `சனி தற்போது ${houseInfo} — 4/7/10-க்கு வெளியே, எனவே கண்டக / அர்த்தாஷ்டம சனி இல்லை. இது இந்த ராசி-விதி மட்டுமே; பிற சனி பாதிப்புகள் இல்லை என உறுதி செய்யாது.`
+        : isHi ? `शनि वर्तमान में ${houseInfo} — 4/7/10 से बाहर, अतः कंटक / अर्धाष्टम शनि नहीं। यह केवल राशि-स्तरीय नियम है; अन्य शनि-पीड़ा सिद्ध नहीं होती।`
+        : `Saturn currently transits ${houseInfo} — outside 4th/7th/10th, so no Kandaka / Ardhashtama Sani under this sign-level rule. It does not establish absence of other Saturn afflictions.`;
+      return `${base} ${saniRemedyFull}`;
+    }
+  })();
 
   const kalaSarpaEngine = findEngineDosha(/kala.?sarpa/i);
   const isKalaSarpa: boolean | null = kalaSarpaEngine ? kalaSarpaEngine.isPresent : null;
@@ -1947,31 +2018,45 @@ ${REPORT_FONT_LINK_TAG}
     <div class="section-title">${isTa ? 'தோஷ பரிசீலனை' : isHi ? 'दोष विश्लेषण' : 'Dosha Analysis'}</div>
     <div class="dosha-card">
       <div class="dosha-header">
-        <span class="name">${isTa ? 'செவ்வாய் தோஷம் (Kuja Dosha)' : isHi ? 'मंगल (कुज) दोष' : 'Mars (Kuja) Dosha'}</span>
-        <span class="dosha-badge ${kujaBadgeClass}">${kujaStatus}</span>
+        <span class="name">${isTa ? 'ஏழரை சனி — சனி பெயர்ச்சி (Sade Sati / Ezharai Sani)' : isHi ? 'साढ़े साती — शनि गोचर (Ezharai Sani)' : 'Ezharai Sani — Saturn Transit (Sade Sati)'}</span>
+        <span class="dosha-badge ${ezharaiBadgeClass}">${escapeHtml(ezharaiStatus)}</span>
       </div>
-      <div class="desc">${kujaDesc}</div>
+      <div class="desc">${escapeHtml(ezharaiDesc)}</div>
+    </div>
+    <div class="dosha-card">
+      <div class="dosha-header">
+        <span class="name">${isTa ? 'அஷ்டம சனி (Ashtama Sani — 8-ஆம் வீடு)' : isHi ? 'अष्टम शनि (Ashtama Sani — 8वाँ भाव)' : 'Ashtama Sani (Saturn in 8th House)'}</span>
+        <span class="dosha-badge ${ashtamaBadgeClass}">${escapeHtml(ashtamaStatus)}</span>
+      </div>
+      <div class="desc">${escapeHtml(ashtamaDesc)}</div>
+    </div>
+    <div class="dosha-card">
+      <div class="dosha-header">
+        <span class="name">${isTa ? 'கண்டக / அர்த்தாஷ்டம சனி (4, 7, 10-ஆம் வீடு)' : isHi ? 'कंटक / अर्धाष्टम शनि (4, 7, 10वाँ भाव)' : 'Kandaka / Ardhashtama Sani (Saturn in 4th, 7th, 10th)'}</span>
+        <span class="dosha-badge ${kandakaBadgeClass}">${escapeHtml(kandakaStatus)}</span>
+      </div>
+      <div class="desc">${escapeHtml(kandakaDesc)}</div>
     </div>
     <div class="dosha-card">
       <div class="dosha-header">
         <span class="name">${isTa ? 'காலசர்ப தோஷம்' : isHi ? 'काल सर्प दोष' : 'Kala Sarpa Dosha'}</span>
         <span class="dosha-badge ${kalaSarpaBadgeClass}">${kalaSarpaStatus}</span>
       </div>
-      <div class="desc">${kalaSarpaDesc}</div>
+      <div class="desc">${escapeHtml(kalaSarpaDesc)}</div>
     </div>
     <div class="dosha-card">
       <div class="dosha-header">
         <span class="name">${isTa ? 'பித்ரு தோஷம்' : isHi ? 'पितृ दोष' : 'Pitru Dosha'}</span>
         <span class="dosha-badge ${pitruBadgeClass}">${pitruStatus}</span>
       </div>
-      <div class="desc">${pitruDesc}</div>
+      <div class="desc">${escapeHtml(pitruDesc)}</div>
     </div>
     <div class="dosha-card">
       <div class="dosha-header">
         <span class="name">${isTa ? 'குரு சண்டாள தோஷம் (Guru Chandala)' : isHi ? 'गुरु चांडाल दोष' : 'Guru Chandala Dosha'}</span>
         <span class="dosha-badge ${guruChandalaBadgeClass}">${guruChandalaStatus}</span>
       </div>
-      <div class="desc">${guruChandalaDesc}</div>
+      <div class="desc">${escapeHtml(guruChandalaDesc)}</div>
     </div>
     ${yogaCardsHtml}
     ${grahaYuddhaCardsHtml}

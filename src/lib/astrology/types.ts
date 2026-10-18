@@ -167,6 +167,14 @@ export interface SaniTransitStatus {
   ezharaiTypeHi: string;
   isAshtamaSani: boolean;
   isKandakaSani: boolean;
+  /** House of current Saturn transit counted from Moon (1 = Jenma, 12 = Viraya, 8 = Ashtama, etc.) */
+  saniHouseFromMoon?: number;
+  currentSaniRasi?: Rasi;
+  saniRasiNameEn?: string;
+  saniRasiNameTa?: string;
+  saniRasiNameHi?: string;
+  /** Saturn in 4th from Moon — Ardhashtama (half-Ashtama). */
+  isArdhashtamaSani?: boolean;
   remedyTa: string;
   remedyEn: string;
   remedyHi: string;

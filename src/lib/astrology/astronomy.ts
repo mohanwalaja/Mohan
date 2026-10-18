@@ -1244,6 +1244,12 @@ export function calculatePrecisionHoroscope(
     ezharaiTypeHi: ezharaiHi,
     isAshtamaSani: saniDiff === 7,
     isKandakaSani: [3, 6, 9].includes(saniDiff),
+    saniHouseFromMoon: saniDiff + 1,
+    currentSaniRasi: currentSaniRasi,
+    saniRasiNameEn: RASI_INFO[currentSaniRasi].nameEn,
+    saniRasiNameTa: RASI_INFO[currentSaniRasi].nameTa,
+    saniRasiNameHi: RASI_INFO[currentSaniRasi].nameHi,
+    isArdhashtamaSani: saniDiff === 3,
     remedyTa: 'சிவனைப் பிரார்த்தனை செய்யுங்கள்.',
     remedyEn: 'Pray to Shiva.',
     remedyHi: 'शिव से प्रार्थना करें।'
