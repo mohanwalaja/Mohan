@@ -190,52 +190,17 @@ check('the deploy removes a stale compressed sibling left by an earlier release'
   assert.match(cpanel, /sitemap\.xml\.br/);
 });
 
-check('the WAF exemptions cover the crawl-critical paths', () => {
-  // ModSecurity 2 loads as mod_security2.c and ModSecurity 3 as
-  // mod_security3.c. A block guarded by <IfModule mod_security.c> (the most
-  // common copy-paste) matches NOTHING on a real server and silently disables
-  // the whole exemption — so both engine names must be present.
-  for (const moduleName of ['mod_security2.c', 'mod_security3.c']) {
-    const start = htaccess.indexOf(`<IfModule ${moduleName}>`);
-    assert.ok(start !== -1, `the WAF exemption block must exist for ${moduleName}`);
-    const end = htaccess.indexOf('</IfModule>', start);
-    const block = htaccess.slice(start, end);
-
-    assert.match(
-      block,
-      /<FilesMatch "\^\(sitemap\\\.xml\|robots\\\.txt\)\$">\s*\n\s*SecRuleRemoveById/,
-      `${moduleName}: the crawl-critical documents must be exempt from the header-shape rules`,
-    );
-    assert.match(
-      block,
-      /SecRule REQUEST_HEADERS[:.]User-Agent "@rx \(\?i\).*googlebot.*bingbot/s,
-      `${moduleName}: verified search-engine crawlers must be recognised by user agent`,
-    );
-    // The rules that actually produce the 406 must be in the removal list.
-    for (const ruleId of ['949110', '980130', '920350', '200002']) {
-      assert.ok(
-        block.includes(ruleId),
-        `${moduleName}: the WAF removal list must contain rule ${ruleId} (a known 406 trigger)`,
-      );
-    }
-  }
-});
-
-check('the WAF is never switched off wholesale', () => {
-  // "Fixing" a 406 by turning ModSecurity off for the whole site is the trap
-  // this test exists to catch: it removes a real protection layer to fix a
-  // crawler problem. Only targeted, per-path / per-user-agent exemptions are
-  // allowed. The check runs on the DIRECTIVES only — the file's prose
-  // explains the rule and must not trip it.
+check('shared hosting safety: SecRule directives are omitted from .htaccess', () => {
+  // CRITICAL (500 Internal Server Error prevention):
+  // On shared cPanel/Apache hosts (such as Bluehost/UnifiedLayer), SecRule and
+  // SecRuleRemoveById in .htaccess trigger an immediate AH00526 / 500 Internal
+  // Server Error across the entire domain because ModSecurity overrides are
+  // not permitted in .htaccess context by default.
+  // ModSecurity exclusions must be managed via cPanel's ModSecurity GUI or host support.
   assert.doesNotMatch(
     htaccessDirectives,
-    /SecRuleEngine\s+Off/i,
-    'ModSecurity must stay enabled for the site (use a targeted SecRuleRemoveById instead)',
-  );
-  assert.doesNotMatch(
-    htaccessDirectives,
-    /SecFilterEngine\s+Off/i,
-    'the legacy ModSecurity 1 filter engine must not be disabled',
+    /\bSecRule\b|\bSecRuleRemoveById\b|\bSecRuleEngine\b/i,
+    '.htaccess must never contain SecRule/SecRuleRemoveById directives as they break shared cPanel hosts with HTTP 500',
   );
   assert.doesNotMatch(
     htaccessDirectives,

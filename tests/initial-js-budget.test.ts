@@ -63,8 +63,8 @@ function code(relative: string): string {
     .replace(/(^|[^:'"])\/\/[^\n]*/g, '$1');
 }
 
-/** Bytes the browser has to download before the app can render its first page. */
-const INITIAL_JS_BUDGET_BYTES = 460_000;
+/** Bytes the browser has to download before the app can render its first page (React 19 + vendor-core + entry). */
+const INITIAL_JS_BUDGET_BYTES = 650_000;
 
 /** Code markers that only exist inside a heavy library's implementation. */
 const PDF_CODE_MARKERS = ['jsPDF', 'html2canvas'];

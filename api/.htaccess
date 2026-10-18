@@ -1,5 +1,7 @@
-# Prevent directory indexing
-Options -Indexes
+# Prevent directory indexing safely across all Apache / LiteSpeed hosts
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
 
 # Security: Block direct web access to sensitive files (SQL, ENV, LOGS, LOCKS, INI, TMP, JSON).
 # NOTE: `json` is load-bearing here — without it, api/astrology/*.json rule
@@ -75,55 +77,60 @@ Options -Indexes
     php_value max_input_time 300
 </IfModule>
 
-RewriteEngine On
-RewriteBase /api/
+<IfModule mod_setenvif.c>
+    # Ensure Authorization headers are passed through to PHP FastCGI/cPanel/LiteSpeed
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+    SetEnvIf X-Authorization "(.*)" HTTP_AUTHORIZATION=$1
+    SetEnvIf X-Auth-Token "(.*)" HTTP_X_AUTH_TOKEN=$1
+</IfModule>
 
-# Ensure Authorization headers are passed through to PHP FastCGI/cPanel/LiteSpeed
-SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
-SetEnvIf X-Authorization "(.*)" HTTP_AUTHORIZATION=$1
-SetEnvIf X-Auth-Token "(.*)" HTTP_X_AUTH_TOKEN=$1
-RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-RewriteRule .* - [E=HTTP_X_AUTH_TOKEN:%{HTTP:X-Auth-Token}]
-
-# SECURITY: Do NOT set Access-Control-Allow-Origin here with a wildcard.
-# config.php now echoes only the site's own origins (with credentials enabled),
-# so the wildcard header here would conflict/override that protection.
 <IfModule mod_headers.c>
+    # SECURITY: Do NOT set Access-Control-Allow-Origin here with a wildcard.
+    # config.php now echoes only the site's own origins (with credentials enabled),
+    # so the wildcard header here would conflict/override that protection.
     Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
     Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Authorization, X-Auth-Token, X-Requested-With"
 </IfModule>
 
-# Handle direct PHP endpoints
-RewriteRule ^login\.php$ auth/index.php [L,QSA]
-RewriteRule ^register\.php$ auth/index.php?action=register [L,QSA]
-RewriteRule ^services\.php$ services/index.php [L,QSA]
-RewriteRule ^admin\.php$ admin/index.php [L,QSA]
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /api/
 
-# Route module subpaths
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^auth/(.*)$ auth/index.php [L,QSA]
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    RewriteRule .* - [E=HTTP_X_AUTH_TOKEN:%{HTTP:X-Auth-Token}]
 
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^services/(.*)$ services/index.php [L,QSA]
+    # Handle direct PHP endpoints
+    RewriteRule ^login\.php$ auth/index.php [L,QSA]
+    RewriteRule ^register\.php$ auth/index.php?action=register [L,QSA]
+    RewriteRule ^services\.php$ services/index.php [L,QSA]
+    RewriteRule ^admin\.php$ admin/index.php [L,QSA]
 
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^admin/(.*)$ admin/index.php [L,QSA]
+    # Route module subpaths
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^auth/(.*)$ auth/index.php [L,QSA]
 
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^astrology/(.*)$ astrology/index.php [L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^services/(.*)$ services/index.php [L,QSA]
 
-# Payment provider webhooks (Razorpay / PayPal) — dedicated router. Provider
-# events must reach this handler even though it is not a "module" folder.
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^payment/(.*)$ payment_webhook.php [L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^admin/(.*)$ admin/index.php [L,QSA]
 
-# Fallback for any other API route: answer JSON 404 instead of executing a
-# script. (This used to rewrite to index.php, which was a font-test page.)
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ 404.php [L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^astrology/(.*)$ astrology/index.php [L,QSA]
+
+    # Payment provider webhooks (Razorpay / PayPal) — dedicated router. Provider
+    # events must reach this handler even though it is not a "module" folder.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^payment/(.*)$ payment_webhook.php [L,QSA]
+
+    # Fallback for any other API route: answer JSON 404 instead of executing a
+    # script. (This used to rewrite to index.php, which was a font-test page.)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ 404.php [L,QSA]
+</IfModule>

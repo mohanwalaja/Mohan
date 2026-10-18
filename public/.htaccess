@@ -67,74 +67,13 @@
 </IfModule>
 
 # ------------------------------------------------------------------------------
-# 2b. ModSecurity / WAF exemptions for search-engine crawlers (2026-10-17)
+# 2b. Search Engine Crawlers & Static Sitemap Delivery
 # ------------------------------------------------------------------------------
-# WHY THIS BLOCK EXISTS
-# ---------------------
-# Google Search Console reported the sitemap as unreadable / "406 Not
-# Acceptable". The sitemap itself was fine; the REQUEST was being rejected.
-# Shared cPanel hosts run ModSecurity (or a host WAF) that scores a request by
-# the SHAPE of its headers: a real browser sends User-Agent, Accept,
-# Accept-Language, Accept-Encoding and Sec-Fetch-*, while a crawler, a
-# Search Console fetcher or a monitoring probe sends a bare User-Agent (or
-# nothing else). The generic "missing / invalid header" rules then trip and
-# the WAF answers 406. The rules that fire are, depending on the ruleset
-# version in use:
-#
-#   200002-200006  CRS 2.x "protocol enforcement" (invalid/missing User-Agent,
-#                  Accept, Accept-Encoding)
-#   920350 920420  CRS 3.x "protocol enforcement" (header/cookie not allowed)
-#   949110          CRS 3.x bot fingerprinting (generic non-browser client)
-#   980130          CRS 3.x anomaly score exceeded (the usual 406 trigger)
-#
-# WHAT THIS BLOCK DOES (and deliberately does NOT do)
-# ---------------------------------------------------
-# It does NOT switch the WAF off. `SecRuleEngine Off` / `SecFilterEngine Off`
-# would remove a real protection layer from the whole site, which is exactly
-# the "fix" that turns a crawler problem into a security problem. Instead:
-#
-#   1. The two crawl-critical documents (sitemap.xml, robots.txt) are exempt
-#      from the header-shape rules. They are static text; no header rule
-#      protects them, and every search engine fetches them with a non-browser
-#      client. SecRuleRemoveById is a CONFIG-time removal for that file, so it
-#      works no matter in which order the server-level rules run.
-#   2. Verified search-engine crawlers are allowed past the same header-shape
-#      rules site-wide, via ctl:ruleRemoveById. Only the header-shape rules
-#      are removed — every injection, traversal and bot-blocking rule still
-#      applies to crawlers.
-#
-# IF A 406 STILL APPEARS: the host's ruleset uses an ID that is not listed
-# here. Find it in the ModSecurity audit log and add it to the list below
-# (docs/SITEMAP_406_WAF_FIX_AND_GSC_SUBMISSION.md has the exact commands).
-
-# The block is written twice on purpose: ModSecurity 2 loads as
-# mod_security2.c and ModSecurity 3 as mod_security3.c, and <IfModule> matches
-# the module FILE name. A single <IfModule mod_security.c> (a very common
-# copy-paste) matches NOTHING on most servers and silently disables the whole
-# exemption.
-<IfModule mod_security2.c>
-  # 1. The crawl-critical documents: exempt from the header-shape rules.
-  <FilesMatch "^(sitemap\.xml|robots\.txt)$">
-    SecRuleRemoveById 200002 200003 200004 200005 200006 920350 920420 949110 980130
-  </FilesMatch>
-
-  # 2. Verified search-engine crawlers: skip the header-shape rules only.
-  #    Phase 1 so the removal is in place before the phase-2 anomaly-scoring
-  #    and bot-fingerprint rules (949110, 980130) evaluate the request.
-  SecRule REQUEST_HEADERS:User-Agent "@rx (?i)\b(googlebot|google-inspectiontool|googleother|adsbot-google|google-extended|bingbot|bingpreview|adidxbot|slurp|duckduckbot|baiduspider|yandex(bot|images)|applebot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|petalbot|semrushbot|ahrefsbot|mj12bot|dotbot)\b" \
-    "id:1002001,phase:1,pass,nolog,t:none,ctl:ruleRemoveById=200002,ctl:ruleRemoveById=200003,ctl:ruleRemoveById=200004,ctl:ruleRemoveById=200005,ctl:ruleRemoveById=200006,ctl:ruleRemoveById=920350,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=980130"
-</IfModule>
-
-<IfModule mod_security3.c>
-  # Same exemptions for ModSecurity 3 (variable syntax differs: v3 uses
-  # REQUEST_HEADERS.<name> instead of REQUEST_HEADERS:<name>).
-  <FilesMatch "^(sitemap\.xml|robots\.txt)$">
-    SecRuleRemoveById 200002 200003 200004 200005 200006 920350 920420 949110 980130
-  </FilesMatch>
-
-  SecRule REQUEST_HEADERS.User-Agent "@rx (?i)\b(googlebot|google-inspectiontool|googleother|adsbot-google|google-extended|bingbot|bingpreview|adidxbot|slurp|duckduckbot|baiduspider|yandex(bot|images)|applebot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|petalbot|semrushbot|ahrefsbot|mj12bot|dotbot)\b" \
-    "id:1002002,phase:1,pass,nolog,t:none,ctl:ruleRemoveById=200002,ctl:ruleRemoveById=200003,ctl:ruleRemoveById=200004,ctl:ruleRemoveById=200005,ctl:ruleRemoveById=200006,ctl:ruleRemoveById=920350,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=980130"
-</IfModule>
+# NOTE: SecRule and SecRuleRemoveById are deliberately NOT placed in .htaccess
+# because on shared cPanel / Apache / UnifiedLayer hosts, ModSecurity directives
+# are forbidden in .htaccess context and trigger a 500 Internal Server Error
+# across the entire domain. The sitemap 406 issue is resolved in Section 3
+# below by serving static text/xml directly with no pre-compressed rewrites.
 
 # ------------------------------------------------------------------------------
 # 3. Rewrite Engine, Canonical HTTPS & Non-WWW Redirection, SPA Fallback
