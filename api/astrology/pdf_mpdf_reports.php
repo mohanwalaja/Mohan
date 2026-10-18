@@ -1151,71 +1151,10 @@ HTML;
         // 1. The screening rules themselves stay in the engine (and surface in
         // the Short Summary planet read), so only this page-1 card was dropped.
 
-        // Items 3/6/7a: the Neecha Bhanga cancellation, the yoga notes (Sarala,
-        // own-sign Saturn and the 9th lord in the 8th read as a caution) and any
-        // Graha Yuddha pair in one compact card, small text with one line per
-        // note, so the certified page-1 layout stays inside three physical pages.
+        // Yogas & Graha Yuddha intentionally not rendered per user request
         $yogaNoteLines = [];
-        $yogaFirstSentence = static function (string $text): string {
-            $text = trim($text);
-            if ($text === '') { return ''; }
-            $parts = preg_split('/\.\s|।/u', $text, 2);
-            return trim((string) ($parts[0] ?? $text));
-        };
-        foreach ((array) ($result['yogas'] ?? []) as $yogaNote) {
-            if (!is_array($yogaNote)) { continue; }
-            $yName = $isTa ? ($yogaNote['nameTa'] ?? '') : ($isHi ? ($yogaNote['nameHi'] ?? '') : ($yogaNote['nameEn'] ?? ''));
-            $yDesc = $isTa ? ($yogaNote['descriptionTa'] ?? '') : ($isHi ? ($yogaNote['descriptionHi'] ?? '') : ($yogaNote['descriptionEn'] ?? ''));
-            // The engine's yoga names already say what the yoga is and carry
-            // their own caution wording, so the compact line names the yoga.
-            $yLine = trim($yName);
-            $yDetail = $yogaFirstSentence($yDesc);
-            if ($yDetail !== '' && strlen($yDetail) <= 70) {
-                // Only add the detail when it is not just the name reworded.
-                $nameWords = array_values(array_filter(
-                    preg_split('/[^\p{L}\p{N}]+/u', $yName) ?: [],
-                    static function ($word) { return strlen($word) >= 6; }
-                ));
-                $shared = 0;
-                foreach ($nameWords as $nameWord) {
-                    if (stripos($yDetail, $nameWord) !== false) { $shared += 1; }
-                }
-                $mostlySame = $nameWords !== [] && ($shared / count($nameWords)) >= 0.6;
-                if (!$mostlySame) { $yLine = trim($yLine . ' — ' . $yDetail); }
-            }
-            if ($yLine !== '') { $yogaNoteLines[] = $yLine; }
-        }
-        foreach ((array) ($result['grahaYuddha'] ?? []) as $yuddha) {
-            if (!is_array($yuddha)) { continue; }
-            $wName = $isTa ? ($yuddha['planetANameTa'] ?? '') . ' / ' . ($yuddha['planetBNameTa'] ?? '') : ($isHi ? ($yuddha['planetANameHi'] ?? '') . ' / ' . ($yuddha['planetBNameHi'] ?? '') : ($yuddha['planetANameEn'] ?? '') . ' / ' . ($yuddha['planetBNameEn'] ?? ''));
-            $wDesc = $isTa ? ($yuddha['descriptionTa'] ?? '') : ($isHi ? ($yuddha['descriptionHi'] ?? '') : ($yuddha['descriptionEn'] ?? ''));
-            $wSep = number_format((float) ($yuddha['separationDegrees'] ?? 0), 2, '.', '') . '°';
-            $wWinner = $isTa ? ($yuddha['winnerNameTa'] ?? '') : ($isHi ? ($yuddha['winnerNameHi'] ?? '') : ($yuddha['winnerNameEn'] ?? ''));
-            $wLabel = $isTa ? 'வெற்றி' : ($isHi ? 'विजेता' : 'winner');
-            $wLine = trim(($isTa ? 'கிரக யுத்தம் (Graha Yuddha): ' : ($isHi ? 'ग्रह युद्ध (Graha Yuddha): ' : 'Graha Yuddha: ')) . $wName . ' (' . $wSep . ')'
-                . ($wWinner !== '' ? ' — ' . $wLabel . ': ' . $wWinner : ''));
-            if ($wLine !== '') { $yogaNoteLines[] = $wLine; }
-        }
-        foreach ((array) ($result['planetPositions'] ?? []) as $positionNow) {
-            if (!is_array($positionNow) || empty($positionNow['dignity']['isNeechaBhanga'])) { continue; }
-            $nbText = $isTa ? ($positionNow['dignity']['neechaBhangaTa'] ?? '') : ($isHi ? ($positionNow['dignity']['neechaBhangaHi'] ?? '') : ($positionNow['dignity']['neechaBhangaEn'] ?? ''));
-            if (trim((string) $nbText) === '') { continue; }
-            $nbGraha = $isTa ? ($positionNow['nameTa'] ?? '') : ($isHi ? ($positionNow['nameHi'] ?? '') : ($positionNow['nameEn'] ?? ''));
-            $nbShort = preg_split('/\.\s/u', trim((string) $nbText), 2);
-            $yogaNoteLines[] = ($nbGraha !== '' ? $nbGraha . ': ' : '') . trim((string) (($nbShort[0] ?? $nbText))) . '.';
-        }
-        if ($yogaNoteLines !== []) {
-            $yogaCardsHtml = '<div class="dosha-card" style="padding:1.2mm 2mm; margin-top:1mm;"><table style="width:100%; border-collapse:collapse; margin:0 0 0.8mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; text-align:left;">'
-                . self::e($isTa ? 'யோகங்கள், நீச பங்க & கிரக யுத்தம்' : ($isHi ? 'योग, नीच भंग एवं ग्रह युद्ध' : 'Yogas, Neecha Bhanga & Graha Yuddha'))
-                . '</td><td style="text-align:right; width:35%;"><span class="dosha-badge badge-clean">' . count($yogaNoteLines) . '</span></td></tr></table>';
-            foreach ($yogaNoteLines as $yogaLine) {
-                $yogaCardsHtml .= '<div class="rule-note">' . self::e($yogaLine) . '</div>';
-            }
-            // The card goes on the life-card sheet: page 1 is already full on
-            // charts with many dosha cards, and the yoga notes belong with the
-            // predictions. The three-page contract is unchanged.
-            $yogaNotesCardHtml = $yogaCardsHtml . '</div>';
-        }
+        $yogaCardsHtml = '';
+        $yogaNotesCardHtml = '';
 
         $p1Sub = $isTa ? 'ஜாதக கணிப்பு அறிக்கை (Birth Jathagam)' : ($isHi ? 'जन्म कुंडली रिपोर्ट (Birth Horoscope)' : 'Certified Vedic Horoscope &amp; Ephemeris');
         $panelDevoteeTitle = $isTa ? 'ஜாதகர் விவரங்கள்' : ($isHi ? 'जातक जन्म विवरण (Birth Particulars)' : 'User Particulars');

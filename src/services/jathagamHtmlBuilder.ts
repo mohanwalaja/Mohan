@@ -1076,31 +1076,9 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
   // Summary planet read on page 3), so no rule data was lost — only the page-1
   // card was dropped to keep the certified first sheet compact.
 
-  // ---- Items 6 & 7: yoga notes and Graha Yuddha ---------------------------
-  // Sarala yoga, Saturn in its own sign and the "9th lord in the 8th" caution
-  // come straight from the engine so a Java/Jataka reader can audit the rule.
-  const yogaCardsHtml = (result.yogas || []).map(y => `
-    <div class="dosha-card">
-      <div class="dosha-header">
-        <span class="name">${escapeHtml(isTa ? y.nameTa : isHi ? y.nameHi : y.nameEn)}</span>
-        <span class="dosha-badge ${y.severity === 'caution' ? 'badge-moderate' : 'badge-clean'}">${y.severity === 'caution'
-          ? (isTa ? 'கவனம்' : isHi ? 'सावधानी' : 'Caution')
-          : (isTa ? 'நன்மை' : isHi ? 'शुभ' : 'Benefit')}</span>
-      </div>
-      <div class="desc">${escapeHtml(isTa ? y.descriptionTa : isHi ? y.descriptionHi : y.descriptionEn)}</div>
-    </div>`).join('');
-  const grahaYuddhaCardsHtml = (result.grahaYuddha || []).map(w => `
-    <div class="dosha-card">
-      <div class="dosha-header">
-        <span class="name">${escapeHtml(isTa
-          ? `கிரக யுத்தம் — ${w.planetANameTa} / ${w.planetBNameTa}`
-          : isHi
-          ? `ग्रह युद्ध — ${w.planetANameHi} / ${w.planetBNameHi}`
-          : `Graha Yuddha — ${w.planetANameEn} / ${w.planetBNameEn}`)}</span>
-        <span class="dosha-badge badge-moderate">${Number(w.separationDegrees).toFixed(2)}°</span>
-      </div>
-      <div class="desc">${escapeHtml(isTa ? w.descriptionTa : isHi ? w.descriptionHi : w.descriptionEn)}</div>
-    </div>`).join('');
+  // Yogas & Graha Yuddha intentionally not rendered on Page 1 per user request
+  const yogaCardsHtml = '';
+  const grahaYuddhaCardsHtml = '';
   const lifeCards = buildJathagamLifeCards(result, lang);
 
   // ---- Page 3 (Short Summary) ---------------------------------------------
@@ -2040,9 +2018,6 @@ ${REPORT_FONT_LINK_TAG}
       </div>
       <div class="desc">${escapeHtml(guruChandalaDesc)}</div>
     </div>
-    ${yogaCardsHtml}
-    ${grahaYuddhaCardsHtml}
-
     ${footerHtmlFor(1)}
   </div>
 </div>
