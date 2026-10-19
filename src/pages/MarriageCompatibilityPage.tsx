@@ -49,6 +49,7 @@ import { RouteLink } from '../components/common/RouteLink';
 import { SampleReportButton } from '../components/common/SampleReportButton';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
+  FAMILY_RELATION_OPTIONS,
   isValidBirthTime,
   isValidIsoBirthDate,
   isVerifiedBirthLocation,
@@ -59,13 +60,15 @@ import {
   type SavedPerson
 } from '../utils/birthDetails';
 import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
+import { SaveBirthDetailsOption } from '../components/common/SaveBirthDetailsOption';
+import { saveBirthDetailsForNextTime } from '../services/saveBirthDetails';
 
 interface MarriageCompatibilityPageProps {
   onNavigate: (route: string) => void;
 }
 
 export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps> = ({ onNavigate }) => {
-  const { user, settings } = useAuth();
+  const { user, settings, saveFamilyMember, updateBirthProfile } = useAuth();
   const { language: currentAppLang } = useLanguage();
   const {
     addItem,
@@ -115,6 +118,9 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
 
   // Settings & Submission
   const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>('en');
+  const [saveAsProfile, setSaveAsProfile] = useState(false);
+  const [p1SaveRelation, setP1SaveRelation] = useState('OTHER');
+  const [p2SaveRelation, setP2SaveRelation] = useState('SPOUSE');
   const [paymentRef, setPaymentRef] = useState('');
   const [paymentIntentId, setPaymentIntentId] = useState('');
 
@@ -194,6 +200,9 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
       return;
     }
 
+    persistMarriageBirthDetails();
+    setSaveAsProfile(false);
+
     const reachedFamilyLimit = cartItems.length + 1 >= MAX_FAMILY_ORDER_ITEMS;
     setTraySuccessMessage(reachedFamilyLimit
       ? `Matching for "${pairTitle}" added to Cart! Maximum ${MAX_FAMILY_ORDER_ITEMS} orders reached. You can checkout & pay now, and place your next order after payment.`
@@ -216,8 +225,11 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
   const [p1PickedKey, setP1PickedKey] = useState('');
   const [p2PickedKey, setP2PickedKey] = useState('');
   const savedPeople = useSavedPeople();
+  const pickedPerson1 = savedPeople.find(person => person.key === p1PickedKey) || null;
+  const pickedPerson2 = savedPeople.find(person => person.key === p2PickedKey) || null;
 
   const handlePickPerson1 = (person: SavedPerson | null, key: string) => {
+    setSaveAsProfile(false);
     setP1PickedKey(key);
     if (person) {
       setP1Name(person.name);
@@ -234,6 +246,7 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
   };
 
   const handlePickPerson2 = (person: SavedPerson | null, key: string) => {
+    setSaveAsProfile(false);
     setP2PickedKey(key);
     if (person) {
       setP2Name(person.name);
@@ -322,6 +335,58 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
     };
   };
 
+  const persistMarriageBirthDetails = (includeSelf = true) => {
+    if (!saveAsProfile || !user) return;
+
+    let savedSelf = false;
+    const savePerson = (
+      selectedPerson: SavedPerson | null,
+      relation: string,
+      fullName: string,
+      dateOfBirth: string,
+      timeOfBirth: string,
+      location: LocationData | null,
+      timezoneOffsetHours: number | undefined,
+      gender: 'M' | 'F'
+    ) => {
+      if (!location || (selectedPerson?.source === 'self' && (!includeSelf || savedSelf))) return;
+      if (selectedPerson?.source === 'self') savedSelf = true;
+      void saveBirthDetailsForNextTime({
+        saveFamilyMember,
+        updateBirthProfile,
+        selectedPerson,
+        relation: relation as any,
+        name: fullName,
+        dob: dateOfBirth,
+        tob: timeOfBirth,
+        location,
+        timezoneOffsetHours,
+        gender: selectedPerson?.gender || gender
+      });
+    };
+
+    savePerson(
+      pickedPerson1,
+      p1SaveRelation,
+      p1Name,
+      p1Dob,
+      p1Tob,
+      p1Location,
+      p1TimezonePreview?.timezoneOffsetHours,
+      p1Role === 'bride' ? 'F' : 'M'
+    );
+    savePerson(
+      pickedPerson2,
+      p2SaveRelation,
+      p2Name,
+      p2Dob,
+      p2Tob,
+      p2Location,
+      p2TimezonePreview?.timezoneOffsetHours,
+      p1Role === 'bride' ? 'M' : 'F'
+    );
+  };
+
   const executeOrderSubmission = async () => {
     const validationMessage = validateMarriageForm();
     if (validationMessage) {
@@ -356,10 +421,12 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
         currency: chargeCurrency,
         paymentReference: orderWillBeFree ? undefined : paymentRef,
         paymentIntentId: orderWillBeFree ? undefined : paymentIntentId || undefined,
-        inputPayload: payloads
+        inputPayload: payloads,
+        saveAsProfile: saveAsProfile && (pickedPerson1?.source === 'self' || pickedPerson2?.source === 'self')
       });
 
       if (res.success && res.order) {
+        persistMarriageBirthDetails(false);
         setOrderSuccess(res.order);
       } else {
         setErrorMessage(res.message || 'Failed to submit order');
@@ -504,7 +571,7 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
                 <SavedPersonPicker
                   value={p1PickedKey}
                   onPick={handlePickPerson1}
-                  label="Who is Person 1?"
+                  label="Use saved birth details for Person 1"
                 />
                 <div className="flex items-center justify-between border-b border-white/10 pb-3 flex-wrap gap-2">
                   <div className="flex items-center gap-2.5 text-xs font-bold text-slate-100 uppercase tracking-wider">
@@ -596,7 +663,7 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
                 <SavedPersonPicker
                   value={p2PickedKey}
                   onPick={handlePickPerson2}
-                  label="Who is Person 2?"
+                  label="Use saved birth details for Person 2"
                 />
                 <div className="flex items-center justify-between border-b border-pink-500/25 pb-3">
                   <div className="flex items-center gap-2.5 text-xs font-bold text-pink-200 uppercase tracking-wider">
@@ -694,6 +761,47 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
 
               {/* 4. Streamlined Checkout Action Section */}
               <div className="space-y-4 pt-4 border-t border-white/10">
+                {user && (
+                  <SaveBirthDetailsOption
+                    id="marriage-save-details"
+                    checked={saveAsProfile}
+                    onChange={setSaveAsProfile}
+                    label="Save both people's birth details for next time"
+                    helperText="Optional. Selected profiles are updated; new details are added to Family Members."
+                  >
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {!pickedPerson1 && (
+                        <select
+                          value={p1SaveRelation}
+                          onChange={event => setP1SaveRelation(event.target.value)}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 cursor-pointer"
+                          aria-label="Relationship for Person 1"
+                        >
+                          {FAMILY_RELATION_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>
+                              Person 1: {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {!pickedPerson2 && (
+                        <select
+                          value={p2SaveRelation}
+                          onChange={event => setP2SaveRelation(event.target.value)}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 cursor-pointer"
+                          aria-label="Relationship for Person 2"
+                        >
+                          {FAMILY_RELATION_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>
+                              Person 2: {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </SaveBirthDetailsOption>
+                )}
+
                 {/* Tray Success Message Banner */}
                 {traySuccessMessage && (
                   <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-between gap-3">
@@ -879,7 +987,9 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
         selectedLanguage={selectedLanguage}
         onLanguageChange={setSelectedLanguage}
         inputPayload={getBrideAndGroomPayloads()}
+        saveAsProfile={saveAsProfile && (pickedPerson1?.source === 'self' || pickedPerson2?.source === 'self')}
         onSuccess={ord => {
+          persistMarriageBirthDetails(false);
           setOrderSuccess(ord);
           setShowCheckoutModal(false);
         }}

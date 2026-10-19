@@ -51,6 +51,7 @@ import { BABY_NAMING_FAQ_ITEMS } from '../data/serviceFaqs';
 import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
+  FAMILY_RELATION_OPTIONS,
   isValidBirthTime,
   isValidIsoBirthDate,
   isVerifiedBirthLocation,
@@ -61,13 +62,15 @@ import {
   type SavedPerson
 } from '../utils/birthDetails';
 import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
+import { SaveBirthDetailsOption } from '../components/common/SaveBirthDetailsOption';
+import { saveBirthDetailsForNextTime } from '../services/saveBirthDetails';
 
 interface BabyNamingPageProps {
   onNavigate: (route: string) => void;
 }
 
 export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) => {
-  const { user, settings } = useAuth();
+  const { user, settings, saveFamilyMember, updateBirthProfile } = useAuth();
   const { language: currentAppLang } = useLanguage();
   const {
     addItem,
@@ -110,8 +113,12 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
   // Saved-person picker: blank by default; picking a saved child/family
   // member fills the baby particulars explicitly (e.g. a saved newborn).
   const [pickedKey, setPickedKey] = useState('');
+  const [saveAsProfile, setSaveAsProfile] = useState(false);
+  const [saveRelation, setSaveRelation] = useState('CHILD');
   const savedPeople = useSavedPeople();
+  const pickedPerson = savedPeople.find(person => person.key === pickedKey) || null;
   const handlePickPerson = (person: SavedPerson | null, key: string) => {
+    setSaveAsProfile(false);
     setPickedKey(key);
     if (person) {
       setBabyName(person.name);
@@ -128,6 +135,23 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
     }
   };
   useDashboardOrderFor(savedPeople, person => handlePickPerson(person, person.key));
+
+  const persistBabyDetailsForNextTime = () => {
+    if (!saveAsProfile || !user || !location) return;
+    const effectiveName = normalizePersonName(babyName) || (gender === 'M' ? 'Newborn Boy' : 'Newborn Girl');
+    void saveBirthDetailsForNextTime({
+      saveFamilyMember,
+      updateBirthProfile,
+      selectedPerson: pickedPerson,
+      relation: saveRelation as any,
+      name: effectiveName,
+      dob,
+      tob,
+      location,
+      timezoneOffsetHours: locationTimezone?.timezoneOffsetHours,
+      gender
+    });
+  };
 
   const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>('en');
   const [paymentRef, setPaymentRef] = useState('');
@@ -204,6 +228,12 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
       return;
     }
 
+    // The customer explicitly opted in; save on cart add because tray
+    // checkouts do not update profiles themselves. Reset consent for the next
+    // person so it is never carried across separate family reports.
+    persistBabyDetailsForNextTime();
+    setSaveAsProfile(false);
+
     const reachedFamilyLimit = cartItems.length + 1 >= MAX_FAMILY_ORDER_ITEMS;
     setTraySuccessMessage(reachedFamilyLimit
       ? `"${effectiveName}" added to Cart! Maximum ${MAX_FAMILY_ORDER_ITEMS} orders reached. You can checkout & pay now, and place your next order after payment.`
@@ -260,10 +290,12 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
         currency: chargeCurrency,
         paymentReference: orderWillBeFree ? undefined : paymentRef,
         paymentIntentId: orderWillBeFree ? undefined : paymentIntentId || undefined,
-        inputPayload: payload
+        inputPayload: payload,
+        saveAsProfile: saveAsProfile && pickedPerson?.source === 'self'
       });
 
       if (res.success && res.order) {
+        if (pickedPerson?.source !== 'self') persistBabyDetailsForNextTime();
         setOrderSuccess(res.order);
       } else {
         setErrorMessage(res.message || 'Failed to submit order');
@@ -408,7 +440,7 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
                 <SavedPersonPicker
                   value={pickedKey}
                   onPick={handlePickPerson}
-                  label="Is this baby already saved in your family?"
+                  label="Use saved birth details for this baby"
                 />
                 <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
                   <span className="w-7 h-7 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950 text-xs font-black flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">1</span>
@@ -538,6 +570,34 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
 
               {/* 3. Streamlined Checkout Action Section */}
               <div className="space-y-4 pt-4 border-t border-white/10">
+                {user && (
+                  <SaveBirthDetailsOption
+                    id="baby-naming-save-details"
+                    checked={saveAsProfile}
+                    onChange={setSaveAsProfile}
+                    label={pickedPerson?.source === 'self'
+                      ? 'Update my saved birth profile with these details'
+                      : pickedPerson?.source === 'family'
+                        ? `Update ${pickedPerson.name}'s saved family details`
+                        : 'Save these baby details for next time'}
+                  >
+                    {!pickedPerson && (
+                      <select
+                        value={saveRelation}
+                        onChange={event => setSaveRelation(event.target.value)}
+                        className="w-full max-w-xs rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 cursor-pointer"
+                        aria-label="Relationship of this baby"
+                      >
+                        {FAMILY_RELATION_OPTIONS.map(option => (
+                          <option key={option.value} value={option.value}>
+                            Relationship: {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </SaveBirthDetailsOption>
+                )}
+
                 {/* Tray Success Message Banner */}
                 {traySuccessMessage && (
                   <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-between gap-3">
@@ -721,7 +781,9 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
           timezoneOffsetHours: locationTimezone?.timezoneOffsetHours ?? location?.timezoneOffsetHours,
           timeZoneId: locationTimezone?.timeZoneId ?? location?.timeZoneId
         }}
+        saveAsProfile={saveAsProfile && pickedPerson?.source === 'self'}
         onSuccess={ord => {
+          if (pickedPerson?.source !== 'self') persistBabyDetailsForNextTime();
           setOrderSuccess(ord);
           setShowCheckoutModal(false);
         }}

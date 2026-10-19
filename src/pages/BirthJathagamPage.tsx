@@ -62,13 +62,15 @@ import {
   type SavedPerson
 } from '../utils/birthDetails';
 import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
+import { SaveBirthDetailsOption } from '../components/common/SaveBirthDetailsOption';
+import { saveBirthDetailsForNextTime } from '../services/saveBirthDetails';
 
 interface BirthJathagamPageProps {
   onNavigate: (route: string) => void;
 }
 
 export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate }) => {
-  const { user, settings, saveFamilyMember } = useAuth();
+  const { user, settings, saveFamilyMember, updateBirthProfile } = useAuth();
   const { language: currentAppLang } = useLanguage();
   const {
     addItem,
@@ -121,6 +123,7 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
   const savedPeople = useSavedPeople();
 
   const handlePickPerson = (person: SavedPerson | null, key: string) => {
+    setSaveAsProfile(false);
     setPickedKey(key);
     setPickedPerson(person);
     if (person) {
@@ -139,35 +142,21 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
   };
   useDashboardOrderFor(savedPeople, person => handlePickPerson(person, person.key));
 
-  /**
-   * Persists the save-checkbox choice to the RIGHT record: the holder's own
-   * profile is saved server-side with the order (saveAsProfile), so here we
-   * only handle a picked family member (update) or new details (create).
-   * Ordering for family can therefore never overwrite the holder's profile.
-   */
+  /** Save only after the visitor explicitly checks the optional save box. */
   const persistFamilySave = async () => {
     if (!saveAsProfile || !user || !location) return;
-    if (pickedPerson?.source === 'self') return;
-    const details = {
-      name: normalizePersonName(name),
+    await saveBirthDetailsForNextTime({
+      saveFamilyMember,
+      updateBirthProfile,
+      selectedPerson: pickedPerson,
+      relation: saveRelation as any,
+      name,
       dob,
       tob,
-      birthPlace: location.placeName,
-      country: location.country || '',
-      latitude: Number(location.latitude),
-      longitude: Number(location.longitude),
-      timezoneOffsetHours: locationTimezone?.timezoneOffsetHours ?? Number(location.timezoneOffsetHours),
+      location,
+      timezoneOffsetHours: locationTimezone?.timezoneOffsetHours,
       gender
-    };
-    try {
-      if (pickedPerson?.source === 'family') {
-        await saveFamilyMember({ ...details, id: pickedPerson.id, relation: pickedPerson.relation as any });
-      } else {
-        await saveFamilyMember({ ...details, relation: saveRelation as any });
-      }
-    } catch {
-      /* saving is a convenience; the order itself is unaffected */
-    }
+    });
   };
 
   // Payment state for Paid Mode
@@ -251,6 +240,7 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
     // Save-to-family was requested and the details are validated: persist now
     // (the tray checkout itself never touches saved profiles).
     void persistFamilySave();
+    setSaveAsProfile(false);
 
     const addedDevotee = devoteeName;
     const reachedFamilyLimit = cartItems.length + 1 >= MAX_FAMILY_ORDER_ITEMS;
@@ -452,8 +442,7 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
                 </div>
               )}
 
-              {/* Who is this report for? Blank by default; a saved profile or
-                  family member fills the form only when explicitly picked. */}
+              {/* Saved details are only used after an explicit pick; otherwise this form stays blank. */}
               <SavedPersonPicker value={pickedKey} onPick={handlePickPerson} />
 
               {errorMessage && (
@@ -611,41 +600,32 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
 
               {/* 3. Streamlined Checkout Action Section */}
               <div className="space-y-4 pt-4 border-t border-white/10">
-                {/* Save checkbox: writes to the record the customer picked —
-                    own profile, that family member, or a new family member. */}
                 {user && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="saveProfileCheck"
-                        checked={saveAsProfile}
-                        onChange={e => setSaveAsProfile(e.target.checked)}
-                        className="rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-400 w-4 h-4 cursor-pointer"
-                      />
-                      <label htmlFor="saveProfileCheck" className="text-xs text-slate-400 cursor-pointer">
-                        {pickedPerson?.source === 'self'
-                          ? 'Update my own saved birth details with these details.'
-                          : pickedPerson?.source === 'family'
-                            ? `Update ${pickedPerson.name}'s saved family details with any corrections.`
-                            : 'Save these birth details as a family member for 1-click ordering next time.'}
-                      </label>
-                    </div>
-                    {saveAsProfile && !pickedPerson && (
+                  <SaveBirthDetailsOption
+                    id="birth-jathagam-save-details"
+                    checked={saveAsProfile}
+                    onChange={setSaveAsProfile}
+                    label={pickedPerson?.source === 'self'
+                      ? 'Update my saved birth profile with these details'
+                      : pickedPerson?.source === 'family'
+                        ? `Update ${pickedPerson.name}'s saved family details`
+                        : 'Save these birth details for next time'}
+                  >
+                    {!pickedPerson && (
                       <select
                         value={saveRelation}
-                        onChange={e => setSaveRelation(e.target.value)}
-                        className="ml-6 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 cursor-pointer"
-                        aria-label="Relation of this person"
+                        onChange={event => setSaveRelation(event.target.value)}
+                        className="w-full max-w-xs rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 cursor-pointer"
+                        aria-label="Relationship of this person"
                       >
                         {FAMILY_RELATION_OPTIONS.map(option => (
                           <option key={option.value} value={option.value}>
-                            Relation: {option.label}
+                            Relationship: {option.label}
                           </option>
                         ))}
                       </select>
                     )}
-                  </div>
+                  </SaveBirthDetailsOption>
                 )}
 
                 {/* Tray Success Message Banner */}

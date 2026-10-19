@@ -80,6 +80,7 @@ const testFiles = [
   'tests/family-report-engine-parity.test.ts',
   'tests/astrology-accuracy-regression.test.ts',
   'tests/birth-jathagam-sample.test.ts',
+  'tests/subha-muhurtham-sample.test.ts',
   'tests/node-php-parity.test.ts',
   'tests/astrology-integrity-regression.test.tsx',
   'tests/jathagam-card-rules.test.ts',
@@ -160,6 +161,7 @@ const testFiles = [
   // zero recalculation. Includes real PHP renderer execution under
   // PHP-WASM when installed.
   'tests/family-members-and-frozen-download.test.ts',
+  'tests/service-form-save-details.test.ts',
   // WhatsApp/Viber alerts + the download-language rule: downloads render
   // ONLY the ordered language (never all three, never switchable by
   // parameter), customers verify one saved number per app by OTP, and
