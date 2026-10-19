@@ -1207,6 +1207,10 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
    * frozen snapshot downloaded years later still prints its original
    * prepared date — the report can never look freshly prepared. Live
    * previews, whose result was just calculated, print today's date.
+   *
+   * Placement (owner request, Oct 2026): the FIRST page of every report
+   * only, printed on the LEFT of the footer — never centred on the brand
+   * line with the page numbers.
    */
   const preparedOnLabel = isTa ? 'தயாரிக்கப்பட்ட நாள்' : isHi ? 'तैयार तिथि' : 'Prepared on';
   const preparedDate = (() => {
@@ -1217,12 +1221,13 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
     return parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   })();
   const preparedStamp = preparedDate
-    ? ` <span class="footer-prepared">• ${escapeHtml(preparedOnLabel)}: ${escapeHtml(preparedDate)}</span>`
+    ? `<span class="footer-prepared">${escapeHtml(preparedOnLabel)}: ${escapeHtml(preparedDate)}</span>`
     : '';
   const footerHtmlFor = (pageNumber: number) => `
     <div class="footer">
+      ${pageNumber === 1 ? preparedStamp : ''}
       <div class="brand-title">${brandTitle}</div>
-      <div class="brand-sub">${brandSubtitle} <span class="footer-page">${escapeHtml(jathagamPageLabel(pageNumber, lang))}</span>${preparedStamp}</div>
+      <div class="brand-sub">${brandSubtitle} <span class="footer-page">${escapeHtml(jathagamPageLabel(pageNumber, lang))}</span></div>
     </div>
   `;
 
@@ -1769,7 +1774,10 @@ ${REPORT_FONT_LINK_TAG}
     page-break-inside: avoid;
   }
   .footer .footer-page { color: #7a1230; font-weight: 800; white-space: nowrap; }
-  .footer .footer-prepared { color: #7a1230; font-weight: 700; white-space: nowrap; }
+  /* Page 1 only: the "Prepared on" stamp sits on the LEFT edge of the footer,
+     level with the last footer line, so the centred brand + page line keeps
+     exactly the width it had. */
+  .footer .footer-prepared { position: absolute; left: 0; bottom: 0; color: #7a1230; font-weight: 700; white-space: nowrap; font-size: 10.5px; }
 
   /* Page 3 second half: the complete Navagraha reference. Compact enough to
      keep all nine grahas on the sheet, and every suggestion is universal
@@ -1823,7 +1831,7 @@ ${REPORT_FONT_LINK_TAG}
 
   /* No auto top margin: the growing block owns the leftover space and .inner
      spreads whatever is left, so the footer never sits under a void. */
-  .footer { text-align: center; border-top: 1px solid var(--slate-border); padding-top: 2mm; flex-shrink: 0;
+  .footer { position: relative; text-align: center; border-top: 1px solid var(--slate-border); padding-top: 2mm; flex-shrink: 0;
     font-size: 11px; color: var(--ink-muted); line-height: 1.35; }
   .footer .brand-title { color: var(--maroon); font-weight: 800; font-size: 12px; letter-spacing: 0.5px; }
   .footer .brand-sub { font-size: 10.5px; color: var(--ink-muted); font-weight: 600; margin-top: 0.2mm; }
