@@ -26,7 +26,9 @@ Jathagam, Marriage Compatibility and Baby Naming.
 Each button opens the **same live PDF preview modal the real reports use**
 (page-by-page preview, English / Tamil / Hindi switch, zoom, and
 *"Download PDF (exactly this preview)"*). The download is a real, print-quality
-A4 PDF of the sample.
+A4 PDF of the sample, captured at the same 300 dpi profile as a paid report
+(3.2× ≈ 307 dpi, JPEG 0.95, 2480 × 3508 px floor) — samples have no lighter
+quality setting of their own.
 
 No sign-in is required — the samples are public, which is the whole point: a
 visitor can judge the report before paying.
@@ -91,8 +93,8 @@ Every page of a sample carries a light diagonal **SAMPLE** stamp
 content). It is injected **into the report HTML itself**, so it is present in:
 
 * the live preview iframe,
-* the html2canvas “exactly this preview” PDF download,
-* the server-rendered direct-download recovery path (mPDF only; paid email delivery never uses it).
+* the html2canvas “exactly this preview” PDF download (the only sample PDF
+  renderer; there is no server-side renderer).
 
 `applySampleWatermark()` is idempotent (a page can never be double-stamped) and
 leaves the report markup untouched, so a sample PDF can never be mistaken for a

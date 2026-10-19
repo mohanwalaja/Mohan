@@ -5,7 +5,7 @@ Paid customers receive the report and invoice rendered from the same browser HTM
 ## Customer approval and resend emails
 
 - Single-order and family report/invoice PDFs are rendered in the browser from the shared report and invoice HTML builders with `html2canvas` + `jsPDF`.
-- Every paid document is captured at 3.2× scale (A4 print density) with JPEG quality 0.95. Every A4 page must be at least **2480 × 3508 pixels** (300 dpi); a capture that misses either dimension is retried and then fails before upload/email. The email path never falls back to a lighter download-only capture.
+- Every document — paid reports, invoices and public **samples** alike — is captured at 3.2× scale (A4 print density) with JPEG quality 0.95. Every A4 page must be at least **2480 × 3508 pixels** (300 dpi); a capture that misses either dimension is retried and then fails before upload/email. The email path never falls back to a lighter download-only capture.
 - The PHP API validates each uploaded PDF's header and EOF marker, page count, and embedded raster resolution before staging or mail dispatch. Missing, low-resolution, vector-only, truncated, or oversized documents are rejected.
 - Every report and invoice must pass before approval/resend. If a capture or upload fails, the action returns an error and **no email is sent**.
 
@@ -13,7 +13,7 @@ The raster and page checks are a technical floor, not a replacement for visual r
 
 ## Customer dashboard downloads
 
-The dashboard's **Download Report** is the same browser-rendered document as the email and the approved preview. It fetches the immutable snapshot (`GET /api/services/orders/:id/report-snapshot`, owner-only, delivered-only, one report per request), rebuilds the report with the shared HTML builders and captures it at the email profile (300 dpi, JPEG 0.95, 2480 × 3508 px floor). A device that cannot allocate the print canvas retries at the documented last-resort density (same renderer, same HTML); if that also fails the dashboard says so instead of downloading anything, because **there is no server-side PDF renderer any more**. No download path recalculates a report.
+The dashboard's **Download Report** is the same browser-rendered document as the email and the approved preview. It fetches the immutable snapshot (`GET /api/services/orders/:id/report-snapshot`, owner-only, delivered-only, one report per request), rebuilds the report with the shared HTML builders and captures it with `renderEmailPdfBase64` — the *same* 300 dpi profile (3.2× scale, JPEG 0.95, 2480 × 3508 px floor) used for the emailed PDF and the admin preview. A failed capture is retried at the same density; if the device still cannot manage it the dashboard says so instead of downloading anything, because **there is no server-side PDF renderer any more** and no lighter copy is ever produced. No download path recalculates a report.
 
 ## No server-side PDF renderer
 

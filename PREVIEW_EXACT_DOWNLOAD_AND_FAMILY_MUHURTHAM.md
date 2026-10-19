@@ -72,7 +72,8 @@ html2canvas    ──► onclone: async (cloneDoc) => …   (html2canvas AWAITS 
 DOM nodes** — already painted, fonts loaded, gradients applied, charts drawn —
 through the shared capture loop (`renderPageElementsToPdfDoc` /
 `downloadPreviewPagesPdf` in `jathagamPdfExporter.ts`), at print density
-(3× desktop / 2.5× phone ≈ 300 dpi) with the same page-by-page memory discipline
+(300 dpi: 2480 × 3508 px per A4 page, captured at scale 3.2 on every device)
+with the same page-by-page memory discipline
 as family bundles.
 
 Nothing is re-parsed, nothing is re-fitted (the preview pages are already A4), so
@@ -81,17 +82,13 @@ the PDF cannot differ from the preview *by construction*:
 ```
 Download ─► 1. live preview DOM  ──► html2canvas ──► jsPDF A4 ──► save()
             2. (same HTML string, same font-safe pipeline)     ← if the frame is not readable
-            3. (server mPDF render)                            ← only if the device cannot capture canvas
 ```
 
-Both remaining paths inherit the font fix, so even the fallbacks are now
-font-correct; only step 3 (explicitly announced in the amber banner) still uses
-the thinner mPDF renderer.
-
-A device that runs out of canvas memory at 3× retries at 2.5× and finally at
-1.8× (`downloadAttemptOptions()` — same renderer, same HTML, smaller raster,
-~180 dpi) **before** the server renderer is considered. Dropping density never
-changes how a page looks; changing engines does.
+There is no third step: the server-side mPDF renderer was removed in October
+2026, and there is no reduced-density retry either. Both paths use the same
+print profile (3.2× ≈ 307 dpi, JPEG 0.95, 2480 × 3508 px floor); a failed
+capture is retried at that same density and then reported. Public sample
+reports use exactly the same profile — there is no lighter sample setting.
 
 **Button label changed** to *"Download PDF (exactly this preview)"* so the
 guarantee is visible to the customer and the admin.
@@ -151,7 +148,7 @@ member is calculated by the *same* code path:
 
 * The admin family card shows the Muhurtham member, its ceremony/month, and the
   *Approve (N)* button renders it with the preview-exact pipeline (2 pages,
-  ~300 dpi) like every other member.
+  300 dpi) like every other member.
 * A legacy Muhurtham order (or a hand-made one) **without** a stored scan is
   rescanned server-side, so no customer can ever receive an empty calendar.
 * `/api/services/calculate-preview` for Muhurtham no longer 500s on a payload

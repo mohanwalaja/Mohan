@@ -114,12 +114,14 @@ single-order "View" / Live PDF Preview in the admin panel. Now:
 * **View Invoice** on a family card opens the live preview of a **consolidated
   family tax invoice** built with the exact same premium design as the
   single-order tax invoice (one line item per member, combined totals, group
-  reference). *Invoice PDF* downloads that same render at 2.5x canvas quality.
+  reference). *Invoice PDF* downloads that same render at the shared print
+  profile (3.2× ≈ 307 dpi, JPEG 0.95) — the same quality as every other download.
 * **Approve (N)** / **Resend Email** render all N member reports + the
   consolidated family invoice **client-side from the live preview** and send
   those preview-exact PDFs to the backend (`reportPdfs` + `invoicePdfBase64`),
-  which attaches them to the single customer email. Server-side rendering is
-  only a fallback.
+  which attaches them to the single customer email. There is no server-side
+  rendering fallback: the mPDF renderer was removed in October 2026, and a
+  missing browser render fails the send instead of substituting a lighter PDF.
 
 Backend (`api/admin/family_approval.php`, Node `server/routes/admin.ts`) accepts
 the optional client PDF payload on approve/resend and validates every PDF
@@ -163,7 +165,7 @@ The group flow now works like the single-order flow, member by member:
 ```
 for each devotee in the family order:
     calculate / refresh the chart        (same calculate-preview API)
-    render the report in the browser     (same HTML builders, html2canvas scale 2.5)
+    render the report in the browser     (same HTML builders, html2canvas at 3.2× print scale)
     upload that ONE ~2 MB PDF            POST /api/admin/family-orders/:groupId/stage-doc
 render the consolidated family invoice   (same premium invoice builder)
 upload it                                POST .../stage-doc  (kind=invoice)
@@ -179,7 +181,7 @@ Each request is ≈2.7 MB, so no host limit is ever hit.
 |---|---|
 | `api/admin/family_docs.php` | Staging area: validate (`%PDF-`), store one document per request, TTL-prune (6 h), deny web access, fall back to the system temp dir when `public_html` is read-only |
 | `api/admin/index.php` | New `POST/DELETE /api/admin/family-orders/:groupId/stage-doc` and `/api/admin/orders/:id/stage-doc`; single-order approve/resend also accept staged documents; a discarded body is now reported explicitly (`bodyTooLarge`, HTTP 413) instead of silently downgrading quality |
-| `api/admin/family_approval.php` | Merges staged documents with any inline payload, clears them once the email is sent, and reports `renderQuality` (`PREVIEW_EXACT` / `MIXED` / `SERVER_RENDER`), per-member fallbacks and the total attachment size |
+| `api/admin/family_approval.php` | Merges staged documents with any inline payload, clears them once the email is sent, and reports `renderQuality` (`PREVIEW_EXACT` — the only quality since the mPDF renderer was removed), per-member status and the total attachment size |
 | `api/.user.ini`, `api/.htaccess` | Raise `post_max_size` (128M), `upload_max_filesize`, `memory_limit` (512M) and the execution limits — `.user.ini` for PHP-FPM/CGI/LSPHP, the `mod_php` blocks for Apache-module PHP |
 | `api/storage/.htaccess` | `Require all denied` — staged customer PDFs are never reachable over HTTP |
 | `server/services/stagedDocs.ts`, `server/routes/admin.ts`, `server.ts` | The Node backend does exactly the same (staging endpoints, merge, cleanup, quality telemetry, 64 MB body limit) |

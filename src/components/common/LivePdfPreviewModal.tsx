@@ -361,15 +361,12 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
   const handleDownload = async () => {
     setIsDownloading(true);
     /**
-     * Samples render at their own, deliberately lighter profile (~200 dpi);
-     * everything else keeps the preview-exact print density. The choice is
-     * passed down as an explicit profile, which downloadAttemptOptions() treats
-     * as a ceiling — a sample is never escalated back to 300 dpi on retry.
-     * Paid reports (customer download, admin approval, emailed PDFs) pass no
-     * profile here and are untouched by this.
+     * ONE quality everywhere: samples, the admin preview download and the paid
+     * documents are all captured at the same print density (3.2× ≈ 307 dpi,
+     * JPEG 0.95). No caller passes a lighter profile, because none exists.
      */
     setDownloadNote(sampleMode
-      ? 'Preparing the sample report — this takes a few seconds…'
+      ? 'Preparing the sample report at print resolution — this takes a few seconds…'
       : 'Preparing the report you see above at print resolution — this takes a few seconds…');
     // Deferred renderer (see loadReportPdfRenderer): opening a report — the
     // public samples included — no longer downloads jspdf/html2canvas; the
@@ -377,10 +374,8 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
     // instant, and the note above is already on screen while it arrives.
     const {
       downloadHtmlPdf,
-      downloadPreviewPagesPdf,
-      SAMPLE_RENDER_OPTIONS
+      downloadPreviewPagesPdf
     } = await loadReportPdfRenderer();
-    const downloadProfile = sampleMode ? SAMPLE_RENDER_OPTIONS : undefined;
     try {
       if (!previewHtml) {
         throw new Error('The preview has no content to render yet.');
@@ -392,7 +387,7 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
       const livePages = getLivePreviewPages();
       if (livePages.length > 0) {
         try {
-          await downloadPreviewPagesPdf(livePages, previewFileName(), downloadProfile);
+          await downloadPreviewPagesPdf(livePages, previewFileName());
           setDownloadNote('');
           return;
         } catch (liveError: any) {
@@ -401,7 +396,7 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
       }
       // 2. Equivalent fallback: the very same HTML string the iframe is showing,
       //    rendered off-screen with the same html2canvas pipeline (now font-safe).
-      await downloadHtmlPdf(previewHtml, previewFileName(), downloadProfile);
+      await downloadHtmlPdf(previewHtml, previewFileName());
       setDownloadNote('');
     } catch (e: any) {
       // There is NO server-side renderer any more: rendering either succeeds in

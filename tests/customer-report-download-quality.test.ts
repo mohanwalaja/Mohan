@@ -79,7 +79,7 @@ check('api client fetches exactly one frozen snapshot for the click', () => {
 });
 
 // ------------------------------------------------------------------ renderer ---
-check('the download uses the paid email helper at print density first', () => {
+check('the download IS the emailed document: one print profile, no lighter copy', () => {
   const start = exporter.indexOf('export async function downloadPaidReportPdf');
   const end = exporter.indexOf('export async function downloadPreviewPagesPdf');
   assert.ok(start > 0 && end > start, 'downloadPaidReportPdf exists');
@@ -87,10 +87,13 @@ check('the download uses the paid email helper at print density first', () => {
   assert.match(body, /await renderEmailPdfBase64\(htmlContent, 'Report PDF'\)/,
     'print density through the same helper every paid email uses');
   assert.match(body, /savePdfBase64AsFile\(pdfBase64, fileName\)/);
-  assert.match(body, /downloadHtmlPdf\(htmlContent, fileName, DOWNLOAD_RENDER_OPTIONS_SAFE\)/,
-    'only a device that cannot capture the print canvas drops density');
+  assert.doesNotMatch(body, /DOWNLOAD_RENDER_OPTIONS_SAFE|downloadHtmlPdf\(/,
+    'there is no reduced-density second attempt any more');
+  assert.doesNotMatch(body, /'REDUCED'|redus/i, 'the download cannot report a lighter quality');
+  assert.match(body, /throw new Error\(PDF_CAPTURE_ERROR\)/,
+    'a device that cannot capture at print density is told, and nothing is saved');
   assert.match(exporter, /export function savePdfBase64AsFile/);
-  assert.doesNotMatch(body, /SAMPLE_RENDER_OPTIONS/, 'the sample profile must never reach a paid download');
+  assert.doesNotMatch(body, /SAMPLE_RENDER_OPTIONS/, 'samples have no profile of their own');
 });
 
 // ----------------------------------------------------------------- dashboard ---

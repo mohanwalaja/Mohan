@@ -154,58 +154,33 @@ export const DOWNLOAD_RENDER_OPTIONS: HtmlPdfRenderOptions = {
 };
 
 /**
- * Last-resort capture density used only when the device rejects the print
- * attempt above (out of canvas memory, a tainted-canvas policy, …).
+ * ON THE WHOLE SITE, THERE IS ONLY ONE PDF QUALITY: THIS ONE.
  *
- * It is still the SAME renderer and the SAME HTML as the preview — just a
- * smaller raster — which is why it is the last retry before the caller is told.
- * Switching engines is what made a download look different from the preview;
- * dropping from ~300 dpi to ~180 dpi never does.
- *
- * DOWNLOADS ONLY. The email path has no last-resort step: a document that
- * misses the 300 dpi floor is not uploaded, and nothing is emailed.
+ * The emailed report + invoice, the admin preview download, the family bundle,
+ * the customer dashboard download and the public sample reports are all
+ * captured with the SAME profile (3.2× ≈ 307 dpi, JPEG 0.95, A4 2480 × 3508 px
+ * floor). There is deliberately NO lighter sample profile and NO reduced-density
+ * retry any more: a device that cannot allocate the print canvas is told, and
+ * nothing is downloaded or emailed at a lower quality. Reviews of this file
+ * should treat the numbers above as a contract — see
+ * tests/pdf-pipeline-integrity.test.ts.
  */
-export const DOWNLOAD_RENDER_OPTIONS_SAFE: HtmlPdfRenderOptions = { scale: 1.8, jpegQuality: 0.92 };
+export const PDF_RENDER_OPTIONS: HtmlPdfRenderOptions = EMAIL_RENDER_OPTIONS;
+
+/** Two attempts at the SAME density: enough for transient canvas pressure. */
+const RENDER_ATTEMPTS = 2;
 
 /**
- * PUBLIC SAMPLE REPORTS — deliberately lighter than a paid report.
- *
- * A sample is a marketing preview of the same fixed example person on every
- * visit: nobody's money depends on its raster density, and it is rendered in
- * the visitor's browser on the service pages, often on a phone. Scale 2 on A4
- * is ≈200 dpi — still crisp on screen and in a normal print — at roughly half
- * the canvas memory and PDF size of the 300 dpi profile.
- *
- * THIS PROFILE MUST NEVER REACH A PAID PATH. Samples are watermarked and carry
- * no order, and `SAMPLE_RENDER_OPTIONS` is referenced ONLY from the sample
- * branch of LivePdfPreviewModal; the paid download, the admin approval render
- * and the emailed PDF all use EMAIL_RENDER_OPTIONS/DOWNLOAD_RENDER_OPTIONS.
- * tests/pdf-pipeline-integrity.test.ts fails if that ever stops being true.
+ * The one profile a render may use. `options` can only ever ADD the email-only
+ * pixel floors; it can never lower the scale or the JPEG quality, so no caller
+ * can request a lighter capture.
  */
-export const SAMPLE_RENDER_OPTIONS: HtmlPdfRenderOptions = { scale: 2, jpegQuality: 0.9 };
-
-/**
- * The capture densities a download may try, best first, without ever repeating
- * one. Guarantees at least one preview-exact attempt on every device.
- *
- * An EXPLICIT profile is a ceiling, not a starting point: a caller that asked
- * for a lighter capture (the public samples) is never silently upgraded to
- * print density on retry. Escalating is the wrong reaction to the usual reason
- * an attempt fails — the device ran out of canvas memory.
- */
-export function downloadAttemptOptions(preferred?: HtmlPdfRenderOptions): HtmlPdfRenderOptions[] {
-  const first = preferred || DOWNLOAD_RENDER_OPTIONS;
-  const candidates = [first, EMAIL_RENDER_OPTIONS, DOWNLOAD_RENDER_OPTIONS_SAFE];
-  const pool = preferred
-    ? candidates.filter(option => (option.scale ?? 0) <= (first.scale ?? 0))
-    : candidates;
-  const usable = pool.length > 0 ? pool : [first];
-  return usable.filter(
-    (option, index) =>
-      usable.findIndex(
-        other => other.scale === option.scale && other.jpegQuality === option.jpegQuality
-      ) === index
-  );
+function resolveRenderOptions(options?: HtmlPdfRenderOptions): HtmlPdfRenderOptions {
+  return {
+    ...PDF_RENDER_OPTIONS,
+    minimumCaptureWidthPx: options?.minimumCaptureWidthPx ?? PDF_RENDER_OPTIONS.minimumCaptureWidthPx,
+    minimumCaptureHeightPx: options?.minimumCaptureHeightPx ?? PDF_RENDER_OPTIONS.minimumCaptureHeightPx
+  };
 }
 
 /**
@@ -214,9 +189,9 @@ export function downloadAttemptOptions(preferred?: HtmlPdfRenderOptions): HtmlPd
  */
 function highQualityEmailRenderOptions(): HtmlPdfRenderOptions {
   return {
-    ...DOWNLOAD_RENDER_OPTIONS,
-    minimumCaptureWidthPx: EMAIL_RENDER_OPTIONS.minimumCaptureWidthPx,
-    minimumCaptureHeightPx: EMAIL_RENDER_OPTIONS.minimumCaptureHeightPx
+    ...PDF_RENDER_OPTIONS,
+    minimumCaptureWidthPx: PDF_RENDER_OPTIONS.minimumCaptureWidthPx,
+    minimumCaptureHeightPx: PDF_RENDER_OPTIONS.minimumCaptureHeightPx
   };
 }
 
@@ -340,7 +315,7 @@ async function capturePageIntoDoc(
       ) {
         throw new Error(
           `Page ${pageNumber + 1} rendered at ${canvas.width} × ${canvas.height}px; ` +
-          `email PDFs require at least ${minimumCaptureWidthPx || 0} × ${minimumCaptureHeightPx || 0}px per A4 page.`
+          `print-quality PDFs require at least ${minimumCaptureWidthPx || 0} × ${minimumCaptureHeightPx || 0}px per A4 page.`
         );
       }
 
@@ -407,8 +382,9 @@ export async function renderPageElementsToPdfDoc(
   if (!pages || pages.length === 0) {
     throw new Error('No report pages available to render.');
   }
-  const captureScale = options?.scale ?? PRINT_CAPTURE_SCALE;
-  const jpegQuality = options?.jpegQuality ?? EMAIL_RENDER_OPTIONS.jpegQuality ?? 0.92;
+  const resolved = resolveRenderOptions(options);
+  const captureScale = resolved.scale ?? PRINT_CAPTURE_SCALE;
+  const jpegQuality = resolved.jpegQuality ?? 0.95;
 
   const task = async (): Promise<jsPDF> => {
     const ownerDoc = pages[0].ownerDocument || document;
@@ -435,8 +411,8 @@ export async function renderPageElementsToPdfDoc(
         pageNumber: idx,
         windowWidth: ownerDoc.defaultView?.innerWidth,
         windowHeight: ownerDoc.defaultView?.innerHeight,
-        minimumCaptureWidthPx: options?.minimumCaptureWidthPx,
-        minimumCaptureHeightPx: options?.minimumCaptureHeightPx
+        minimumCaptureWidthPx: resolved.minimumCaptureWidthPx,
+        minimumCaptureHeightPx: resolved.minimumCaptureHeightPx
       });
       await new Promise(r => setTimeout(r, 180));
     }
@@ -450,8 +426,9 @@ export async function renderHtmlToPdfDoc(
   htmlContent: string,
   options?: HtmlPdfRenderOptions
 ): Promise<jsPDF> {
-  const captureScale = options?.scale ?? PRINT_CAPTURE_SCALE;
-  const jpegQuality = options?.jpegQuality ?? EMAIL_RENDER_OPTIONS.jpegQuality ?? 0.92;
+  const resolved = resolveRenderOptions(options);
+  const captureScale = resolved.scale ?? PRINT_CAPTURE_SCALE;
+  const jpegQuality = resolved.jpegQuality ?? 0.95;
 
   const task = async (): Promise<jsPDF> => {
     // Reports are complete HTML documents, just like the live srcDoc preview.
@@ -589,8 +566,8 @@ export async function renderHtmlToPdfDoc(
           pageNumber: idx,
           windowWidth: reportDoc.defaultView?.innerWidth,
           windowHeight: reportDoc.defaultView?.innerHeight,
-          minimumCaptureWidthPx: options?.minimumCaptureWidthPx,
-          minimumCaptureHeightPx: options?.minimumCaptureHeightPx
+          minimumCaptureWidthPx: resolved.minimumCaptureWidthPx,
+          minimumCaptureHeightPx: resolved.minimumCaptureHeightPx
         });
 
         // Yield between pages to let the browser GC and keep UI responsive
@@ -671,7 +648,7 @@ export async function renderEmailPdfBase64(
   label: string,
   options?: HtmlPdfRenderOptions
 ): Promise<string> {
-  const renderOptions = options || highQualityEmailRenderOptions();
+  const renderOptions = options ? resolveRenderOptions(options) : highQualityEmailRenderOptions();
   const maxAttempts = 2;
   let lastError: unknown = null;
 
@@ -795,10 +772,9 @@ export function orderInvoiceFileName(order: Order): string {
  * a downloaded report is pixel-identical to the preview instead of the thinner
  * server-side render.
  *
- * The first attempt uses the highest capture density the device can afford. If
- * a phone runs out of canvas memory the render is retried once at the baseline
- * density (still preview-exact, only slightly smaller). There is no server
- * renderer to fall back to.
+ * There is ONE quality: the print profile. A failed capture is retried at that
+ * same density (transient canvas pressure); it never drops to a lighter raster,
+ * and there is no server renderer to fall back to.
  */
 export async function downloadHtmlPdf(
   htmlContent: string,
@@ -807,10 +783,9 @@ export async function downloadHtmlPdf(
 ): Promise<void> {
   if (!htmlContent) throw new Error('Nothing to render — the report HTML is empty.');
 
-  const attempts = downloadAttemptOptions(options);
-
+  const attempt = resolveRenderOptions(options);
   let lastError: any = null;
-  for (const attempt of attempts) {
+  for (let attemptNumber = 1; attemptNumber <= RENDER_ATTEMPTS; attemptNumber++) {
     try {
       const doc = await renderHtmlToPdfDoc(htmlContent, attempt);
       doc.save(fileName);
@@ -854,45 +829,30 @@ export function savePdfBase64AsFile(pdfBase64: string, fileName: string): void {
  * THE customer dashboard download: the emailed document, fetched again.
  *
  * The dashboard renders the frozen snapshot through the SAME HTML builders and
- * the SAME print-density capture (`EMAIL_RENDER_OPTIONS`, 300 dpi, JPEG 0.95
+ * the SAME print-density capture (`PDF_RENDER_OPTIONS`, 300 dpi, JPEG 0.95
  * with the 2480 × 3508 px floor) that produced the emailed PDF and the admin's
  * approved preview. The server-side mPDF renderer used to be the dashboard's
  * only download, which is why customers saw a thinner, differently paginated
  * document than the one in their email.
  *
- * Print density is attempted first, through the same fail-closed helper every
- * paid email uses. Only a device that cannot allocate the print canvas falls
- * back to the documented last-resort density — same renderer, same HTML,
- * smaller raster. If both fail the caller reports it: there is no server PDF.
- *
- * @returns 'PRINT' for the exact email profile, 'REDUCED' when the last-resort
- *          density was needed.
+ * The bytes come from the same fail-closed helper every paid email uses, at
+ * the same print density: there is no lower-quality download path at all.
+ * If the device cannot capture at print density, the caller surfaces
+ * PDF_CAPTURE_ERROR — nothing lighter is ever downloaded.
  */
 export async function downloadPaidReportPdf(
   htmlContent: string,
   fileName: string
-): Promise<'PRINT' | 'REDUCED'> {
+): Promise<void> {
   if (!htmlContent) throw new Error('Nothing to render — the report HTML is empty.');
   try {
     // Identical profile, retry policy and quality gate as the emailed report.
     const pdfBase64 = await renderEmailPdfBase64(htmlContent, 'Report PDF');
     savePdfBase64AsFile(pdfBase64, fileName);
-    return 'PRINT';
   } catch (error) {
-    console.warn(
-      '[ASTRO SIVAM] Print-density report download failed on this device; ' +
-      'using the documented last-resort density (same renderer, same HTML).',
-      error
-    );
-  }
-  try {
-    await downloadHtmlPdf(htmlContent, fileName, DOWNLOAD_RENDER_OPTIONS_SAFE);
-  } catch (error) {
-    // Both densities failed; there is no server renderer left to fall back to.
-    console.error('Report download failed at every capture density:', error);
+    console.error('Print-density report download failed on this device; nothing was saved:', error);
     throw new Error(PDF_CAPTURE_ERROR);
   }
-  return 'REDUCED';
 }
 
 /**
@@ -900,8 +860,8 @@ export async function downloadPaidReportPdf(
  * preview iframe itself — the exact DOM nodes the visitor is looking at — at
  * print density, so the saved PDF cannot differ from what is on screen.
  *
- * Same retry policy as `downloadHtmlPdf`: the best density the device can
- * afford first, then the baseline density.
+ * Same retry policy as `downloadHtmlPdf`: the same print profile on every
+ * attempt, never a lighter capture.
  */
 export async function downloadPreviewPagesPdf(
   pages: HTMLElement[],
@@ -912,10 +872,9 @@ export async function downloadPreviewPagesPdf(
     throw new Error('The preview has no rendered report pages yet.');
   }
 
-  const attempts = downloadAttemptOptions(options);
-
+  const attempt = resolveRenderOptions(options);
   let lastError: any = null;
-  for (const attempt of attempts) {
+  for (let attemptNumber = 1; attemptNumber <= RENDER_ATTEMPTS; attemptNumber++) {
     try {
       const doc = await renderPageElementsToPdfDoc(pages, attempt);
       doc.save(fileName);

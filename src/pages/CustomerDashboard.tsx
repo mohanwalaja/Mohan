@@ -552,13 +552,12 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
       if (!reportHtml) {
         throw new Error('No report template exists for this report.');
       }
-      const quality = await downloadPaidReportPdf(reportHtml, fileName);
+      await downloadPaidReportPdf(reportHtml, fileName);
+      // There is only one quality: the file is the emailed document.
       setDownloadFeedback({
         orderId: order.id,
         type: 'success',
-        message: quality === 'PRINT'
-          ? 'Report downloaded — the same print-quality PDF that was emailed to you.'
-          : 'Report downloaded. This device could not render the full print resolution, so a slightly lighter copy was saved.'
+        message: 'Report downloaded — the same print-quality PDF that was emailed to you.'
       });
     } catch (renderError: any) {
       // The browser is the ONLY renderer now (the server-side mPDF path was

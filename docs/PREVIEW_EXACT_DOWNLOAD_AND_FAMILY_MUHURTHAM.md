@@ -82,18 +82,13 @@ the PDF cannot differ from the preview *by construction*:
 ```
 Download ─► 1. live preview DOM  ──► html2canvas ──► jsPDF A4 ──► save()
             2. (same HTML string, same font-safe pipeline)     ← if the frame is not readable
-            3. (server mPDF render)                            ← only if the device cannot capture canvas
 ```
 
-Both remaining paths inherit the font fix, so even the fallbacks are now
-font-correct; only step 3 (explicitly announced in the amber banner) still uses
-the thinner mPDF renderer.
-
-A device that runs out of canvas memory at the 3.2× print capture retries at
-1.8× (`downloadAttemptOptions()` — same renderer, same HTML, smaller raster,
-~173 dpi, **download only**) **before** the server renderer is considered.
-The email path has no such step: a capture below 300 dpi is never uploaded. Dropping density never
-changes how a page looks; changing engines does.
+There is no third step: the server-side mPDF renderer was removed in October
+2026, and there is no reduced-density retry either. Both paths use the same
+print profile (3.2× ≈ 307 dpi, JPEG 0.95, 2480 × 3508 px floor); a failed
+capture is retried at that same density and then reported. Public sample
+reports use exactly the same profile — there is no lighter sample setting.
 
 **Button label changed** to *"Download PDF (exactly this preview)"* so the
 guarantee is visible to the customer and the admin.
