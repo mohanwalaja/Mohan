@@ -82,8 +82,6 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
   } = useCart();
 
   const [paymentRef, setPaymentRef] = useState('');
-  const [whatsappDelivery, setWhatsappDelivery] = useState(false);
-  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successOrder, setSuccessOrder] = useState<Order | null>(null);
@@ -145,10 +143,7 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
 
     setIsSubmitting(true);
     try {
-      const finalPayload = {
-        ...inputPayload,
-        whatsappDelivery: whatsappDelivery ? whatsappNumber.trim() : undefined
-      };
+      const finalPayload = { ...inputPayload };
 
       const res = await api.placeOrder({
         serviceType,
@@ -606,29 +601,6 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
                   </div>
                 )}
 
-                {/* WhatsApp Delivery Addon */}
-                <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl space-y-2 text-xs">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={whatsappDelivery}
-                      onChange={e => setWhatsappDelivery(e.target.checked)}
-                      className="rounded border-white/20 text-amber-500 focus:ring-amber-400 w-4 h-4 cursor-pointer"
-                    />
-                    <span className="text-slate-300 font-medium">
-                      Also send PDF certificate to my WhatsApp
-                    </span>
-                  </label>
-                  {whatsappDelivery && (
-                    <input
-                      type="tel"
-                      value={whatsappNumber}
-                      onChange={e => setWhatsappNumber(e.target.value)}
-                      placeholder="WhatsApp Mobile Number with country code (+1... / +91... / +44...)"
-                      className="w-full px-3 py-2 bg-slate-900 border border-white/20 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
-                    />
-                  )}
-                </div>
               </div>
 
               {/* Submit Action Button */}

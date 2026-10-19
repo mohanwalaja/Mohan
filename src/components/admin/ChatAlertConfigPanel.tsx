@@ -133,7 +133,8 @@ export const ChatAlertConfigPanel: React.FC<ChatAlertConfigPanelProps> = ({ sett
             WhatsApp & Viber Order Alerts
           </h2>
           <p className="text-xs text-slate-500">
-            Send automatic WhatsApp / Viber notifications to customers when an order is confirmed and when it is completed.
+            Send automatic WhatsApp / Viber notifications when an order is confirmed and when it is completed.
+            Alerts go only to a number the customer verified with a one-time code in that app.
           </p>
         </div>
         <button
@@ -381,7 +382,7 @@ export const ChatAlertConfigPanel: React.FC<ChatAlertConfigPanelProps> = ({ sett
         <div className="mt-4 p-3 rounded-2xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 text-xs text-violet-800 dark:text-violet-300 leading-relaxed">
           <strong>Viber note:</strong> the direct Viber Bot API delivers to users who have interacted (subscribed) with your bot. To message any customer by phone number, use a Viber Business Messages partner and select the webhook provider.
           <br />
-          <strong>Report/invoice PDFs:</strong> customers can verify their number per app in their profile (dashboard). When an order is delivered, the report + invoice PDFs are also sent to verified apps (email remains official). The Bot API cannot accept file uploads, so bot-provider files are delivered as a Viber file message linking our signed 7-day media URL; webhook gateways receive the PDF bytes directly (base64). A WhatsApp verification code is always sent as free text, so Meta template mode does not hide it.
+          <strong>Verified numbers only:</strong> customers verify their number per app in their profile (Dashboard → WhatsApp &amp; Viber Order Alerts). An alert is sent only to a number with a completed OTP verification for that channel; the mobile entered at checkout is never used for chat alerts. <strong>Reports and invoices are never sent over WhatsApp/Viber</strong> — they are delivered by email only. A WhatsApp verification code is always sent as free text, so Meta template mode does not hide it.
         </div>
       </div>
 

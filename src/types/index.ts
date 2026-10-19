@@ -187,9 +187,9 @@ export const MAX_FAMILY_MEMBERS = 6;
  * repeat order for that person needs no form filling.
  */
 /**
- * Verified WhatsApp/Viber delivery contact: one saved number, verified
- * separately per app by OTP. Verified apps additionally receive the
- * delivered report + invoice PDFs (email remains the official delivery).
+ * Verified WhatsApp/Viber alert contact: one saved number, verified
+ * separately per app by OTP. Order-status alerts go only to verified apps;
+ * reports and invoices are delivered by email, never over chat.
  */
 export interface ChatDeliveryState {
   phone: string;

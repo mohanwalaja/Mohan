@@ -338,9 +338,6 @@ if ($finalStatus === 'COMPLETED') {
     }
     unset($alertOrder);
     AstroChatAlerts::sendOrderAlerts($pdo, 'order_completed', $matchedOrders);
-    // Additionally send the actual report + invoice PDFs to the customer's
-    // verified WhatsApp/Viber number (email remains the official delivery).
-    AstroChatAlerts::sendOrderDocuments($pdo, $matchedOrders);
 }
 
 sendResponse([
