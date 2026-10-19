@@ -11,7 +11,7 @@
         "id": "order-number-in-header",
         "strength": "authoritative",
         "pattern": "#?\\b(ORD-[A-Z0-9-]{3,28})\\b",
-        "where": "the page header of every report page, rendered by AstroMpdfReports::topHeader as <span class=\"header-order-ref\">#ORD-...</span>",
+        "where": "the page header of every report page, rendered by AstroReportViews::topHeader as <span class=\"header-order-ref\">#ORD-...</span>",
         "note": "ASCII only. This is the signal the design depends on, because it survives PDF text extraction even when the Tamil and Devanagari runs do not."
       },
       {
@@ -38,7 +38,7 @@
     "onFailure": "Say so politely and stop. Never explain a document that failed the check, and never reveal why in detail - do not tell an uploader which order numbers are valid.",
     "extractionPolicy": {
       "primary": "Extract text in PHP with smalot/pdfparser and read the order number out of it.",
-      "whyNotTrustIndicText": "mPDF embeds subset fonts. Glyph-to-Unicode mapping for Tamil and Devanagari runs frequently does not survive extraction, so extracted Indic text can come back garbled or empty. This could not be tested in the build sandbox because PHP is not installable there.",
+      "whyNotTrustIndicText": "Every delivered PDF is a rasterised browser capture (each page is a JPEG page image), so Tamil and Devanagari text has no extractable text layer at all. A docx/pdf text extractor returns nothing usable for an Indic report, and never the wording the customer received.",
       "consequence": "The design must not depend on Indic extraction succeeding. The PDF is treated as an OWNERSHIP TOKEN read for its ASCII order number; the content that gets explained is regenerated server-side from the order's saved inputs via AstroEngine::rebuildReportResultFromSavedInputs, which is already how official downloads are produced.",
       "fallbackIfExtractionFails": "Ask the customer to pick the order from their own dashboard order list instead of uploading. Never guess an order from a birth date."
     }

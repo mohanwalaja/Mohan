@@ -354,10 +354,9 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
    * The download must be the preview. Rendering `previewHtml` — the very string
    * the iframe above is showing — with the browser's html2canvas + jsPDF
    * pipeline produces a print-resolution PDF that is pixel-identical to the
-   * preview, instead of the separate (and visibly thinner) server-side render.
-   *
-   * The server renderers are kept purely as a fallback for devices that cannot
-   * capture the canvas (very low memory, blocked canvas APIs).
+   * preview. There is no server-side renderer to fall back to: a device that
+   * cannot capture the canvas is told, instead of silently receiving a
+   * different, visibly thinner document.
    */
   const handleDownload = async () => {
     setIsDownloading(true);
@@ -379,7 +378,6 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
     const {
       downloadHtmlPdf,
       downloadPreviewPagesPdf,
-      downloadFromServerUrl,
       SAMPLE_RENDER_OPTIONS
     } = await loadReportPdfRenderer();
     const downloadProfile = sampleMode ? SAMPLE_RENDER_OPTIONS : undefined;
@@ -405,49 +403,14 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
       //    rendered off-screen with the same html2canvas pipeline (now font-safe).
       await downloadHtmlPdf(previewHtml, previewFileName(), downloadProfile);
       setDownloadNote('');
-      return;
     } catch (e: any) {
-      console.error('Preview-exact download failed, falling back to the server renderer:', e);
+      // There is NO server-side renderer any more: rendering either succeeds in
+      // this browser or the visitor is told (rather than handed a lower-quality
+      // document they did not preview).
+      console.error('Preview-exact download failed on this device:', e);
       setDownloadNote(
-        'This device could not capture the high-resolution copy, so the server-rendered PDF was downloaded instead.'
+        'This device could not capture the PDF at print resolution. Please retry, or open the preview in a desktop browser.'
       );
-      try {
-        if (serviceType === 'INVOICE') {
-          if (familyOrders && familyOrders.length > 0) {
-            downloadFromServerUrl(`/api/admin/family-orders/${getFamilyGroupId(familyOrders)}/invoice-pdf`);
-          } else if (order) {
-            downloadFromServerUrl(`/api/admin/orders/${order.id}/invoice`);
-          }
-        } else if (order) {
-          downloadFromServerUrl(`/api/admin/orders/${order.id}/pdf?lang=${selectedLang}`);
-        } else if (effectiveResult) {
-          const res = await fetch('/api/services/export-preview-pdf', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              serviceType,
-              result: effectiveResult,
-              language: selectedLang,
-              inputPayload: order?.inputPayload
-            })
-          });
-          if (!res.ok) {
-            throw new Error('Failed to generate preview PDF from server');
-          }
-          const blob = await res.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = previewFileName();
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-        }
-      } catch (fallbackError) {
-        console.error('Server fallback download failed too:', fallbackError);
-        setDownloadNote('The PDF could not be generated. Please try again, or use a desktop browser.');
-      }
     } finally {
       setIsDownloading(false);
     }

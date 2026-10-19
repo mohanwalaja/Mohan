@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "generatedOn": "2026-10-09",
   "_purpose": "Local source-based astrologer rules. Each entry corresponds to a Jathagam life-area card and includes chart conditions, multilingual wording, practical guidance, and references.",
-  "_cardAnchors": "Card titles, order and house anchors were read from this repository: src/services/jathagamHtmlBuilder.ts buildJathagamLifeCards (titles at lines 459-533) and api/astrology/pdf_mpdf_reports.php $lifeCardsData (line 1489). The chat reuses the same titles so the chat and the PDF agree.",
+  "_cardAnchors": "Card titles, order and house anchors were read from this repository: src/services/jathagamHtmlBuilder.ts buildJathagamLifeCards (titles at lines 459-533) and api/astrology/report_views.php $lifeCardsData (line 1489). The chat reuses the same titles so the chat and the PDF agree.",
   "_sourceLevels": "A rule may cite a source only at the level recorded in sources.json. 'passage' means a verifiedPassages entry exists and the rule may be cited to a verse or page. 'book' means book-level only. 'chapter' is allowed only for EN-02, whose printed index was read.",
   "areas": [
     {

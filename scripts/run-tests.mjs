@@ -43,6 +43,11 @@ const testFiles = [
   // contract. A "performance" commit that lowers them to shave bytes would
   // still pass every other test in this suite.
   'tests/pdf-pipeline-integrity.test.ts',
+  // The other half of the same contract: the CUSTOMER's dashboard download
+  // must render the frozen snapshot at that same print density (the emailed
+  // document), with no server-side renderer left to substitute a thinner one.
+  // Also pins the profile copy the customer asked to remove.
+  'tests/customer-report-download-quality.test.ts',
   // Right after the render contract: the rendered PDFs must also REACH the
   // server. The admin "Approve / Send" routes once read their ~3 MB bodies
   // through config.php's 1 MiB getJsonBody() cap, which silently emptied them

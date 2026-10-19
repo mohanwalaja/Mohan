@@ -259,35 +259,8 @@ checkReport(strpos($tamilNotes['weekdayText'], 'செவ்வாய்க்�
 checkReport(trim((string) $tamilNotes['checksHeading']) !== '' && trim((string) $tamilNotes['checksText']) !== '',
     'The selection guide ships the "what was checked" heading and body in Tamil');
 
-$pdfOrder = [
-    'service_type' => 'MUHURTHAM',
-    'language' => 'en',
-    'order_number' => 'PDF-TEST',
-    'user_name' => 'PDF Regression'
-];
-if (AstroMpdfReports::isAvailable()) {
-    foreach (['en', 'ta', 'hi'] as $lang) {
-        $pdfOrder['language'] = $lang;
-        $pdf = AstroEngine::generateReportPdf($pdfOrder, $result);
-        checkReport(strpos($pdf, '%PDF-') === 0 && strpos(substr($pdf, -2048), '%%EOF') !== false,
-            "{$lang} mPDF returns a complete high-quality Muhurtham PDF");
-        if ($lang !== 'en') {
-            checkReport(preg_match('/\/BaseFont\s*\/[A-Za-z0-9+_-]*FreeSerif/', $pdf) === 1,
-                "{$lang} Muhurtham PDF embeds the compatible Indic font");
-        }
-        $pages = preg_match_all('/\/Type\s*\/Page\b/', $pdf);
-        checkReport($pages === 2, "{$lang} Muhurtham calendar has two physical pages (actual: {$pages})");
-    }
-} else {
-    $failedClosed = false;
-    try {
-        AstroEngine::generateReportPdf($pdfOrder, $result);
-    } catch (RuntimeException $error) {
-        $failedClosed = strpos($error->getMessage(), 'no fallback PDF was produced') !== false
-            || strpos($error->getMessage(), 'no lower-quality fallback is enabled') !== false;
-    }
-    checkReport($failedClosed, 'PHP report generation fails closed when mPDF is unavailable (no plain-PDF fallback)');
-}
+// PDFs are captured in the browser from generateMuhurthamHtml(); the server has
+// no renderer, so there is nothing to assert about a PHP-generated PDF here.
 
 // ---------------------------------------------------------------------------
 // Bride + groom are checked together for a WEDDING only. A second chart that

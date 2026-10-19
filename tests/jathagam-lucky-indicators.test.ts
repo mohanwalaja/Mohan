@@ -106,7 +106,7 @@ for (const lang of ['en', 'ta', 'hi'] as const) {
 console.log('[PASS] page 3 prints the lucky-indicator card in en / ta / hi');
 
 // 5. PHP mirror carries the same table
-const php = readFileSync(new URL('../api/astrology/pdf_mpdf_reports.php', import.meta.url), 'utf8');
+const php = readFileSync(new URL('../api/astrology/report_views.php', import.meta.url), 'utf8');
 assert.ok(php.includes('function resolveJathagamLuckyIndicators'), 'PHP resolver exists');
 assert.ok(php.includes('class="summary-card lucky"'), 'PHP page 3 prints the lucky card');
 for (const [, exp] of Object.entries(expectedTa)) {

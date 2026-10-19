@@ -144,5 +144,6 @@ needed. To verify, send one pending order from `/admin`. In the host's access lo
 - The browser's failure telemetry posts to `/api/services/client-error`, which has no PHP handler, so
   production keeps no application-level record of failed approvals. Web-server access logs are the
   evidence source.
-- Multi-person item sends still fall back to server-rendered PDFs when a browser PDF is absent. With the
-  body limit fixed, the browser PDFs now arrive, but the fallback policy itself is unchanged.
+- Multi-person item sends no longer fall back to server-rendered PDFs: the mPDF renderer was removed in
+  October 2026, so a missing browser PDF now fails the send with a 422 and a "render and send again"
+  message (the same fail-closed policy as single-order approval).

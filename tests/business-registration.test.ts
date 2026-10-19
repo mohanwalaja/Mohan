@@ -12,11 +12,11 @@
  * WHY THIS TEST EXECUTES THINGS
  * -----------------------------
  * "On the invoice" and "not on the invoice" are claims about the HTML that is
- * actually emitted, and the invoice is rendered by two runtimes (the browser
- * builder + the PHP mPDF renderer). The browser builder is EXECUTED here for
- * both layouts; the PHP template is executed by the matching PHP suite. A
- * template that retypes the number, drops it, or leaks the street address fails
- * here instead of reaching a customer's receipt.
+ * actually emitted, so the browser invoice builder is EXECUTED here for both
+ * layouts. The server no longer renders invoices (mPDF was retired in Oct 2026);
+ * tests/invoice-business-registration.test.php pins the PHP constant instead.
+ * A template that retypes the number, drops it, or leaks the street address
+ * fails here instead of reaching a customer's receipt.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -166,20 +166,21 @@ check('the invoice renderer never retypes the number or the address', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. The server-rendered (mPDF) invoice mirrors it exactly.
+// 3. There is no server-side invoice renderer; the PHP constant is the mirror.
 // ---------------------------------------------------------------------------
 
-check('the PHP invoice prints the SAME number and no address', () => {
-  const php = read('api/astrology/pdf_mpdf_invoice.php');
+check('the server-side invoice renderer is gone (invoices are browser-only)', () => {
   assert.ok(
-    php.includes('astro_business_registration_meta()'),
-    'both PHP invoice layouts must interpolate the shared helper'
+    !fs.existsSync(path.join(projectRoot, 'api/astrology/pdf_mpdf_invoice.php')),
+    'api/astrology/pdf_mpdf_invoice.php must stay deleted: PDFs are browser captures now'
   );
-  assert.ok(php.includes('astro_business_registration_sentence_html()'), 'the declaration must be shared too');
-  assert.ok(!php.includes(BUSINESS_INFO.registrationNumber), 'the PHP invoice must not retype the number');
-  assert.ok(!php.includes('Walajapet'), 'the PHP invoice must not print the office address');
-  assert.ok(!php.includes('632513'), 'the PHP invoice must not print the PIN');
-  assert.ok(!php.includes('ASV-FJ'), 'the stale placeholder must stay removed');
+  for (const route of [
+    'api/admin/index.php'
+  ]) {
+    const php = read(route);
+    assert.ok(!php.includes('generateInvoicePdf'), `${route} must not call a server invoice renderer`);
+    assert.ok(!php.includes('generateFamilyInvoicePdf'), `${route} must not call a server family invoice renderer`);
+  }
 });
 
 check('api/branding.php owns the same number for the PHP runtime', () => {
@@ -237,8 +238,8 @@ check('the number lives only in the data module, the PHP constant and the invoic
       }
       if (!TEXT_EXTENSIONS.has(path.extname(entry.name))) continue;
       const relative = path.relative(projectRoot, absolute).split(path.sep).join('/');
-      // Owners of the string: the TS module and its frontend renderer, and the
-      // PHP constant file that the mPDF invoice reads.
+      // Owners of the string: the TS module and its renderer, and the PHP
+      // constant file that any future PHP document reads.
       if (['src/data/businessInfo.ts', 'src/pages/ContactPage.tsx', 'api/branding.php'].includes(relative)) continue;
       fs.readFileSync(absolute, 'utf8').split('\n').forEach((line, index) => {
         if (line.includes(BUSINESS_INFO.registrationNumber)) offenders.push(`${relative}:${index + 1}`);

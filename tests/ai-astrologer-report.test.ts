@@ -309,7 +309,7 @@ check('every report type can be walked through section by section', () => {
 check('the ownership contract is stated and the design does not depend on Indic extraction', () => {
   assert.ok(kb.ownership.mustAllHold.length >= 4);
   const policy = kb.ownership.extractionPolicy;
-  assert.match(policy.whyNotTrustIndicText, /subset fonts/);
+  assert.match(policy.whyNotTrustIndicText, /rasterised browser capture/);
   assert.match(policy.consequence, /OWNERSHIP TOKEN/);
   assert.match(policy.consequence, /rebuildReportResultFromSavedInputs/);
   assert.match(policy.fallbackIfExtractionFails, /dashboard/);

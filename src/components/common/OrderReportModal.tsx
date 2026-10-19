@@ -337,9 +337,9 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
 
   /**
    * Downloads are rendered in this browser from the same report HTML the live
-   * PDF preview shows, so the file the customer saves matches the preview
-   * instead of the thinner server-side render. Both helpers fall back to the
-   * server PDF themselves if this device cannot capture the canvas.
+   * PDF preview shows, so the file the customer saves matches the preview.
+   * There is no server-side renderer to fall back to: a device that cannot
+   * capture the canvas is told, instead of silently downloading nothing.
    */
   const handleDownloadPdf = async (langToUse?: AppLanguage) => {
     const lang = langToUse || selectedLang;
@@ -348,6 +348,7 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
       await exportOrderReportPdf(order, lang, result);
     } catch (err: any) {
       console.error('PDF export failed:', err);
+      setEmailStatusMsg({ type: 'error', text: err?.message || 'The report could not be rendered at print quality. Please retry.' });
     } finally {
       setIsDownloading(false);
     }
@@ -379,6 +380,7 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
       }
     } catch (e: any) {
       console.error('Invoice download error:', e);
+      setEmailStatusMsg({ type: 'error', text: e?.message || 'The invoice could not be rendered at print quality. Please retry.' });
     } finally {
       setIsDownloadingInvoice(false);
     }

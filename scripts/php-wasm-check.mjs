@@ -38,12 +38,10 @@ const probePath = resolve(repoRoot, probeArg);
 /** Files mounted into the PHP filesystem: everything the report builder loads. */
 const MOUNT_FILES = [
   'api/branding.php',
-  'api/astrology/mpdf_fontconfig.php',
   'api/astrology/muhurtham_report_notes.php',
   'api/astrology/wedding_disclaimer_notes.php',
-  'api/astrology/pdf_mpdf_reports.php',
   'api/astrology/engine.php',
-  'api/astrology/pdf_mpdf_invoice.php',
+  'api/astrology/report_views.php',
   'tests/fixtures/jathagam-summary-parity.json'
 ];
 

@@ -503,8 +503,9 @@ export interface OrderItem {
   calculatedResult?: any;
   sentAt?: string | null;
   /** Frozen at order placement: the dashboard download renders this snapshot
-   *  exactly as ordered and never recalculates it. Date-only metadata is
-   *  exposed to the client; the snapshot body stays server-side. */
+   *  exactly as ordered and never recalculates it. Lists expose date-only
+   *  metadata; the owner-only report-snapshot route returns the body for the
+   *  one report being downloaded. */
   hasReportSnapshot?: boolean;
   reportSnapshotAt?: string | null;
 }

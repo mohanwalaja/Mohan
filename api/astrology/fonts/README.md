@@ -2,7 +2,7 @@
 
 Download these from Google Fonts (fonts.google.com) on your phone, unzip, and
 copy the `.ttf` files into this folder using these EXACT filenames
-(mpdf_fontconfig.php references them by these names):
+(the report HTML and the browser PDF capture reference them by these names):
 
 | Google Font                       | Weight(s) needed        | Save as                     |
 |-----------------------------------|--------------------------|------------------------------|
@@ -19,12 +19,8 @@ How to get them on Android (no computer needed):
 3. Use a file manager app (or Termux `unzip`) to extract the .zip.
 4. Move/rename the specific weight files into this folder to match the table exactly.
 
-Once all files are here, run from Termux in the project root:
-
-```
-composer install
-```
-
-This downloads mPDF into `vendor/`. Since BigRock shared hosting usually has
-no SSH/composer access, commit the `vendor/` folder to git (or zip it and
-upload via cPanel File Manager) so it deploys along with the PHP files.
+These fonts are served as static assets and loaded by the report HTML in the
+browser; nothing on the server renders a PDF any more (mPDF was removed in
+October 2026), so no Composer install is needed for them. Keep the files: the
+customer download, the emailed PDF and the admin preview all capture the same
+HTML, and removing a font would change every one of them.

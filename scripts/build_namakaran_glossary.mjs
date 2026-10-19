@@ -10,10 +10,10 @@
  *
  * Outputs:
  *   src/lib/astrology/namakaranMeaningData.ts    (browser preview + browser-side TypeScript)
- *   api/astrology/namakaran_meanings.php        (official PHP/mPDF report)
+ *   api/astrology/namakaran_meanings.php        (official PHP report HTML)
  *
  * The generated files carry the same content hash, so a test can prove the live
- * preview and the delivered mPDF report always localize a meaning identically.
+ * preview and the delivered report always localize a meaning identically.
  *
  * ---------------------------------------------------------------------------
  * VALIDATION RULES
@@ -132,7 +132,7 @@ function writeTs(rows, hash) {
  * The Tamil and Hindi text printed under every name on page 2 of the Vedic
  * Namakaran report, keyed by the English meaning of the name bank. The same
  * hash is written into api/astrology/namakaran_meanings.php so the live
- * preview, the browser-side TypeScript and the official mPDF report can be proven to show an
+ * preview, the browser-side TypeScript and the official report can be proven to show an
  * identical meaning for every name.
  */
 
@@ -170,7 +170,7 @@ function writePhp(rows, hash) {
  * Tamil and Hindi meanings for page 2 of the Vedic Namakaran report, keyed by
  * the English meaning of the name bank. Kept byte-for-byte in step with
  * src/lib/astrology/namakaranMeaningData.ts so the live preview and the official
- * mPDF report always localize a meaning identically.
+ * report always localizes a meaning identically.
  *
  * The bank deliberately keeps one short English meaning as its source value and
  * older orders only persisted that shape, so translations are resolved here at

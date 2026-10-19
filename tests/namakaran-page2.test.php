@@ -15,7 +15,7 @@ function checkNamakaran($condition, string $message): void {
 $letters = json_decode((string) file_get_contents(__DIR__ . '/../api/astrology/baby_nakshatra_letters.json'), true);
 checkNamakaran(is_array($letters) && count($letters) === 27, 'PHP delivery table still holds all 27 Nakshatras');
 
-/** Builds the minimal order/result pair the mPDF view needs. */
+/** Builds the minimal order/result pair the report view needs. */
 function namakaranFixture(array $row, string $gender, int $pada): array {
     $result = [
         'babyName' => 'Name Test',
@@ -121,7 +121,7 @@ checkNamakaran($boyNames !== $girlNames, 'PHP boy and girl sheets are different 
 checkNamakaran(count($shared) < count($boyNames) / 4, 'PHP boy and girl sheets share at most a few unisex names (shared: ' . implode(', ', array_slice($shared, 0, 5)) . ')');
 checkNamakaran(count($boyNames) > 0 && count($girlNames) > 0 && $boyNames !== $girlNames, 'PHP boy and girl sheets keep their gender-specific exact suggestions');
 
-// ── 3. The rendered mPDF HTML: page 1 certificate + page 2 name sheet ──────
+// ── 3. The rendered report HTML: page 1 certificate + page 2 name sheet ────
 foreach ([['en', 'en'], ['ta', 'ta'], ['hi', 'hi']] as [$lang]) {
     foreach (['M', 'F'] as $gender) {
         $row = $letters[23]; // Shatabhisha — one full star in every language
@@ -223,10 +223,6 @@ checkNamakaran($expectedDenseNames <= 64, 'PHP never exceeds four padas × two s
 checkNamakaran(preg_match('/\.sug-nm\s*\{\s*font-size:\s*14px/', $denseHtml) === 1, 'PHP keeps the exact-sound sheet at enlarged type');
 preg_match('/class="sug-cell" style="height:([0-9.]+)mm;"/', $denseHtml, $heightMatch);
 checkNamakaran(abs(floatval($heightMatch[1] ?? 0) * $expectedDenseRows - 186) < 0.1, 'PHP budgets the name area using actual rows, even when sparse');
-if (AstroMpdfReports::isAvailable()) {
-    $densePdf = AstroMpdfReports::convertHtmlToPdf($denseHtml, 'en');
-    checkNamakaran(preg_match_all('/\/Type\s*\/Page\b/', $densePdf) === 2, 'mPDF keeps the certificate and sparse exact-name sheet on exactly two pages');
-}
 
 // ── 5. The meaning under every name is a curated translation ───────────────
 // Page 2 must never fall back to word-by-word output for a shipped name: the
@@ -282,7 +278,7 @@ checkNamakaran($meaningMismatch === 0, "PHP prints the curated Tamil and Hindi m
 checkNamakaran($meaningLatin === 0, "No localized meaning line carries Latin text ({$meaningLatin})");
 
 // A legacy order cached the broken word-by-word text; the English meaning is
-// the source value, so the mPDF report must print the corrected translation.
+// the source value, so the report HTML must print the corrected translation.
 $legacyRow = $letters[23]; // Shatabhisha
 $legacyFixture = namakaranFixture($legacyRow, 'F', 2);
 $legacyFixture['result']['nameSuggestions'] = [[

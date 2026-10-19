@@ -663,7 +663,11 @@ if (!function_exists('astroSingleOrderClientDocs')) {
             $invoice = (string) $stagedDocs['invoice']['content'];
         }
 
-        $quality = 'SERVER_RENDER';
+        // `quality` describes how complete this staging call is. PREVIEW_EXACT
+        // is the only value that can be emailed: the browser-rendered upload IS
+        // the document, and a server-side renderer no longer exists to fill a
+        // gap (approval fails closed instead).
+        $quality = 'INCOMPLETE';
         if (is_string($report) && $report !== '' && is_string($invoice) && $invoice !== '') {
             $quality = 'PREVIEW_EXACT';
         } elseif ((is_string($report) && $report !== '') || (is_string($invoice) && $invoice !== '')) {

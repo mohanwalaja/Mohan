@@ -27,7 +27,7 @@ const restrictedInstructions = /mantra|manthra|chanting|chalisa|namah|japa|fasti
 const languages = ['en', 'ta', 'hi'] as const;
 const chart = calculatePrecisionHoroscope('Remedy Test', '2000-01-01', '12:00', 'Suva', -18.1416, 178.4419, 12, '', 'M');
 const phpEngine = readFileSync(new URL('../api/astrology/engine.php', import.meta.url), 'utf8');
-const phpReports = readFileSync(new URL('../api/astrology/pdf_mpdf_reports.php', import.meta.url), 'utf8');
+const phpReports = readFileSync(new URL('../api/astrology/report_views.php', import.meta.url), 'utf8');
 const builderSource = readFileSync(new URL('../src/services/jathagamHtmlBuilder.ts', import.meta.url), 'utf8');
 
 // ---------------------------------------------------------------------------
@@ -109,7 +109,7 @@ const removedMarkers = [
 ];
 const rendererSources: Array<[string, string]> = [
   ['src/services/jathagamHtmlBuilder.ts', builderSource],
-  ['api/astrology/pdf_mpdf_reports.php', phpReports]
+  ['api/astrology/report_views.php', phpReports]
 ];
 for (const [path, source] of rendererSources) {
   for (const marker of removedMarkers) {

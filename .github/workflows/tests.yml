@@ -28,7 +28,7 @@ jobs:
           ini-values: memory_limit=512M
           tools: composer
 
-      - name: Install mPDF for real three-language PDF checks
+      - name: Install PHP dependencies (Smalot PDF parser)
         run: |
           if [ -f composer.lock ]; then
             composer install --no-interaction --prefer-dist --no-progress
@@ -42,7 +42,5 @@ jobs:
             | xargs -0 -n1 -P4 php -l
 
       - name: Run PHP test suites
-        env:
-          ASTRO_REQUIRE_MPDF_TESTS: '1'
         run: bash scripts/run-php-tests.sh
 

@@ -173,7 +173,7 @@ if (!function_exists('astroApproveFamilyGroup')) {
         // Every family email must contain a complete set of browser-rendered
         // preview PDFs, whether the browser sent them inline or staged them.
         // Missing/invalid documents fail before the renderer or mailer can
-        // substitute an mPDF/server-rendered file.
+        // substitute a server-rendered file (there is no such renderer any more).
         $missingReportNumbers = [];
         foreach ($groupOrders as $qualityOrder) {
             if (!$pickClientReport($qualityOrder)) {
@@ -214,11 +214,10 @@ if (!function_exists('astroApproveFamilyGroup')) {
         $memberRowsHtml = '';
         $subtotal = 0.0;
         $generatedReports = 0;
-        // Keep quality telemetry for the API response. Strict validation above
-        // means every attachment below is preview-exact; serverReports stays 0.
+        // Quality telemetry for the API response. Strict validation above means
+        // every attachment below is preview-exact: there is no server-side
+        // renderer left to fall back to.
         $previewReports = 0;
-        $serverReports = 0;
-        $serverReportNumbers = [];
 
         foreach ($groupOrders as $idx => $o) {
             if (function_exists('set_time_limit')) {
@@ -522,18 +521,11 @@ if (!function_exists('astroApproveFamilyGroup')) {
             astroClearStagedFamilyDocs($groupId);
         }
 
-        // Compatibility telemetry values remain in the response type, but
-        // strict validation means a successful fulfillment is always exact.
-        $renderQuality = ($serverReports === 0 && $previewReports > 0)
-            ? 'PREVIEW_EXACT'
-            : ($previewReports > 0 ? 'MIXED' : 'SERVER_RENDER');
-        $invoiceQuality = !empty($invoiceFromPreview) ? 'PREVIEW_EXACT' : 'SERVER_RENDER';
+        // Strict validation above fails closed, so a successful fulfillment is
+        // always preview-exact - there is no server-side renderer any more.
+        $renderQuality = 'PREVIEW_EXACT';
+        $invoiceQuality = 'PREVIEW_EXACT';
         $qualityNote = '';
-        if ($serverReports > 0) {
-            $qualityNote = ' WARNING: ' . $serverReports . ' report(s) ('
-                . implode(', ', $serverReportNumbers)
-                . ') were rendered server-side because their preview-quality PDF never reached the server.';
-        }
 
         // ---------------------------------------------------------------------
         // PHASE 4 - Atomic update of the whole group
@@ -555,7 +547,7 @@ if (!function_exists('astroApproveFamilyGroup')) {
             . (!empty($mailResult['success'])
                 ? " and emailed {$generatedReports} reports + 1 consolidated invoice in {$totalParts} email part(s) (group marked COMPLETED)"
                 : " but email delivery FAILED or was only partially delivered - group kept in PROCESSING for retry")
-            . " | render quality: {$renderQuality} ({$previewReports} preview-exact / {$serverReports} server-rendered, invoice {$invoiceQuality})"
+            . " | render quality: {$renderQuality} ({$previewReports} preview-exact, invoice {$invoiceQuality})"
             . " | attachments: {$totalAttachmentMb} MB across {$totalParts} message(s), budget {$budgetMb} MB each"
             . ($oversizeNote !== '' ? ' |' . $oversizeNote : '')
             . ($stagedReportCount > 0 ? " | staged uploads used: {$stagedReportCount}" : '')
@@ -587,8 +579,6 @@ if (!function_exists('astroApproveFamilyGroup')) {
             'renderQuality' => $renderQuality,
             'invoiceQuality' => $invoiceQuality,
             'previewReports' => $previewReports,
-            'serverRenderedReports' => $serverReports,
-            'serverRenderedOrderNumbers' => $serverReportNumbers,
             'stagedReportsUsed' => $stagedReportCount,
             'inlineReportsUsed' => max(0, $inlineReportCount),
             'totalAttachmentBytes' => $totalAttachmentBytes,

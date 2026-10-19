@@ -6,11 +6,11 @@ import type { AppLanguage } from '../types';
  *
  * The copy lives in ONE place (`api/astrology/wedding_disclaimer_notes.json`)
  * so the browser preview, the html2canvas download, the Node download renderer
- * and the PHP/mPDF renderer print the same wording in the language the
+ * and the PHP report renderer print the same wording in the language the
  * customer ordered (English / Tamil / Hindi).
  *
  * Paragraphs may contain **bold** emphasis markers. Every renderer converts
- * them: HTML/mPDF use `<strong>`, while the Node download renderer draws bold
+ * them: HTML uses `<strong>`, while the Node download renderer draws bold
  * runs or strips the markers. Never pass a raw `**` string to a PDF surface.
  */
 

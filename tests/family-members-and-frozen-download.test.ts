@@ -136,20 +136,23 @@ check('dashboard: family tab, frozen download, honest wording', () => {
   const src = read('src/pages/CustomerDashboard.tsx');
   assert.match(src, /Family Members \(\{familyMembers\.length\}\/\{MAX_FAMILY_MEMBERS\}\)/);
   assert.match(src, /Download Report/);
-  assert.match(src, /frozen as ordered/);
-  assert.match(src, /downloadMyOrderReport/);
+  assert.match(src, /getMyOrderReportSnapshot/, 'the download renders the frozen snapshot at email quality');
+  assert.match(src, /downloadPaidReportPdf/);
+  assert.doesNotMatch(src, /frozen as ordered|your order language|never updates itself/,
+    'the customer asked for this profile wording to be removed');
   assert.match(src, /Order for \{member\.name\}/);
   assert.doesNotMatch(src, /Reports are not stored for download/);
   assert.doesNotMatch(src, /automatically reused across all your horoscope calculations/);
 });
 
-check('api client: family CRUD + frozen report download routes', () => {
+check('api client: family CRUD + the frozen snapshot source', () => {
   const src = read('src/services/api.ts');
   assert.match(src, /getFamilyMembers/);
   assert.match(src, /saveFamilyMember/);
   assert.match(src, /deleteFamilyMember/);
-  assert.match(src, /\/services\/orders\/\$\{encodeURIComponent\(orderId\)\}\/report-pdf/);
-  assert.match(src, /invoices are[\s\S]{0,40}email-only|invoice[\s\S]{0,60}email-only/i);
+  assert.match(src, /\/services\/orders\/\$\{encodeURIComponent\(orderId\)\}\/report-snapshot/);
+  assert.ok(!src.includes('/report-pdf'), 'no server PDF download may come back');
+  assert.ok(!src.includes('export-preview-pdf'), 'no server preview export may come back');
 });
 
 // -------------------------------------------------------------- backend ---
@@ -180,37 +183,36 @@ check('snapshot is frozen at creation in every order write path', () => {
   assert.match(config, /report_snapshot IS NULL OR report_snapshot = ''/, 'snapshot write is write-once');
 });
 
-check('download endpoint: owner-only, delivered-only, report-only, never recalculates', () => {
+check('the server PDF route is gone: the dashboard renders the snapshot in the browser', () => {
   const src = read('api/services/index.php');
-  const start = src.indexOf('// 6c. GET /api/services/orders/:id/report-pdf');
-  const end = src.indexOf('// 7. (Removed)');
-  assert.ok(start > 0 && end > start, 'frozen download block exists');
-  const block = src.slice(start, end);
-  assert.match(block, /requireAuth\(\$pdo\)/);
-  assert.match(block, /WHERE id = \? AND user_id = \?/, 'ownership enforced in the query');
-  assert.match(block, /\['COMPLETED', 'GENERATED'\]/, 'only delivered orders download');
-  assert.match(block, /report_status'\] \?\? ''\) !== 'SENT'/, 'per-person reports download only after delivery');
-  assert.match(block, /frozen_snapshot'\] = true/);
-  assert.match(block, /generateReportPdf\(\$orderArray, \$result\)/);
-  assert.match(block, /Content-Type: application\/pdf/);
-  for (const forbidden of ['calculateHoroscope(', 'calculateMatchmaking(', 'calculateBabyNaming(', 'calculateMuhurtham(', 'rebuildReportResultFromSavedInputs(', 'generateInvoicePdf', 'SET calculated_result']) {
-    assert.ok(!block.includes(forbidden), `download must never call ${forbidden}`);
+  // The removal note may name the retired path; what must not come back is the
+  // route wiring that streams a PDF (or the preview export that renders one).
+  assert.ok(!/preg_match\([^\n]*report-pdf/.test(src), 'no report-pdf route may come back');
+  assert.ok(!/preg_match\([^\n]*export-preview-pdf/.test(src), 'no preview export route may come back');
+  assert.ok(!src.includes('Content-Type: application/pdf'), 'the API must never stream a PDF');
+  assert.ok(!src.includes("'download-order-report'"), 'the legacy PDF download action must stay removed');
+  for (const legacy of [
+    'AstroEngine::generateReportPdf',
+    'AstroEngine::generateInvoicePdf',
+    'AstroEngine::generateFamilyInvoicePdf'
+  ]) {
+    assert.ok(!src.includes(legacy), `services must never call ${legacy}`);
+  }
+  const engine = read('api/astrology/engine.php');
+  for (const method of ['generateReportPdf', 'generateInvoicePdf', 'generateFamilyInvoicePdf', 'assertMpdfPdf']) {
+    assert.ok(!engine.includes(`function ${method}`), `engine.${method}() must stay deleted`);
   }
 });
 
-check('PDF engine: frozen renders bypass every recalculation path', () => {
-  const engine = read('api/astrology/engine.php');
-  assert.match(engine, /\$frozenSnapshot = !empty\(\$order\['frozen_snapshot'\]\)/);
-  assert.match(engine, /\$needsRebuild =\s*!\$frozenSnapshot &&/);
-  const views = read('api/astrology/pdf_mpdf_reports.php');
-  assert.match(views, /empty\(\$order\['frozen_snapshot'\]\) && class_exists\('AstroEngine'\) && !AstroEngine::isCurrentBabyNamingResult/,
-    'baby renderer recalc is skipped for frozen snapshots');
-  assert.match(views, /empty\(\$result\['months'\]\) && empty\(\$order\['frozen_snapshot'\]\)/,
-    'muhurtham renderer recalc is skipped for frozen snapshots');
+check('the report views render HTML only - no PDF renderer, no frozen flag', () => {
+  const views = read('api/astrology/report_views.php');
+  assert.ok(!views.includes('AstroMpdfReports'), 'the mPDF class must stay deleted');
+  assert.ok(!views.includes('frozen_snapshot'), 'the unused frozen flag must stay removed');
+  assert.match(views, /class AstroReportViews/);
 });
 
 check('every report prints its prepared date (frozen date, never download date)', () => {
-  const views = read('api/astrology/pdf_mpdf_reports.php');
+  const views = read('api/astrology/report_views.php');
   assert.match(views, /function preparedOnLabel/);
   assert.match(views, /Prepared on/, 'English prepared-on label');
   assert.match(views, /தயாரிக்கப்பட்ட நாள்/, 'Tamil prepared-on label');
@@ -234,10 +236,11 @@ check('migration + schema carry family_members and the snapshot columns', () => 
   assert.match(schema, /`report_snapshot` LONGTEXT NULL/);
 });
 
-check('my-orders exposes persons/items + snapshot metadata (never the snapshot JSON)', () => {
+check('my-orders exposes persons/items + snapshot metadata; the body is fetched per download', () => {
   const src = read('api/services/index.php');
   assert.match(src, /astro_attach_order_items\(\$pdo, \$orders\)/);
   assert.match(src, /'hasReportSnapshot' => !empty\(\$r\['report_snapshot'\]\) \|\| !empty\(\$r\['calculated_result'\]\)/);
+  assert.match(src, /report-snapshot/, 'the dedicated route returns ONE frozen body on demand');
   const items = read('api/admin/order_items.php');
   assert.match(items, /'hasReportSnapshot' => !empty\(\$row\['report_snapshot'\]\)/);
 });
@@ -262,7 +265,7 @@ if (!wasmInstalled) {
   const phpFile = path.join(root, 'tests', '_family_frozen_runtime.php');
   fs.writeFileSync(phpFile, `<?php
 require_once __DIR__ . '/../api/astrology/engine.php';
-require_once __DIR__ . '/../api/astrology/pdf_mpdf_reports.php';
+require_once __DIR__ . '/../api/astrology/report_views.php';
 function ok(bool $c, string $m): void {
     echo ($c ? "[PASS] " : "[FAIL] ") . $m . "\\n";
     if (!$c) { $GLOBALS['fails'] = ($GLOBALS['fails'] ?? 0) + 1; }
@@ -275,20 +278,15 @@ $birth = ['name' => 'Frozen Native', 'gender' => 'M', 'dob' => '1990-08-15', 'to
 $result = AstroEngine::calculateHoroscope($birth);
 $result['generatedAt'] = '2024-02-03 10:00:00';
 $order = ['service_type' => 'BIRTH_JATHAGAM', 'language' => 'en', 'order_number' => 'ORD-FROZEN1',
-  'user_name' => 'Frozen Native', 'input_payload' => $birth, 'frozen_snapshot' => true];
+  'user_name' => 'Frozen Native', 'input_payload' => $birth];
 $html = AstroReportViews::renderFullReportHtml($order, $result);
 ok(strpos($html, 'Prepared on: 03 Feb 2024') !== false, 'Jathagam header prints the frozen prepared date');
-$babyOrder = ['service_type' => 'BABY_NAMING', 'language' => 'en', 'order_number' => 'ORD-FROZEN2',
-  'user_name' => 'Parent', 'input_payload' => $birth, 'frozen_snapshot' => true];
-$threw = false;
-try { AstroReportViews::renderFullReportHtml($babyOrder, ['babyNamingAlgorithmVersion' => 1, 'generatedAt' => '2023-01-01 00:00:00']); }
-catch (Throwable $e) { $threw = true; }
-ok($threw, 'frozen legacy baby snapshot is rendered as frozen (no silent recalculation/upgrade)');
-$babyLive = $babyOrder; unset($babyLive['frozen_snapshot']);
+$babyOrder = ['service_type' => 'BABY_NAMING', 'language' => 'en', 'order_number' => 'ORD-PREVIEW2',
+  'user_name' => 'Parent', 'input_payload' => $birth];
 try {
-  $live = AstroReportViews::renderFullReportHtml($babyLive, ['babyNamingAlgorithmVersion' => 1, 'generatedAt' => '2023-01-01 00:00:00']);
-  ok(strpos($live, 'ORD-FROZEN2') !== false, 'non-frozen fulfilment renders keep recalculating as before');
-} catch (Throwable $e) { ok(false, 'non-frozen fulfilment renders keep recalculating as before'); }
+  $live = AstroReportViews::renderFullReportHtml($babyOrder, ['babyNamingAlgorithmVersion' => 1, 'generatedAt' => '2023-01-01 00:00:00']);
+  ok(strpos($live, 'ORD-PREVIEW2') !== false, 'the preview render still recalculates a legacy baby result');
+} catch (Throwable $e) { ok(false, 'the preview render still recalculates a legacy baby result'); }
 exit(($GLOBALS['fails'] ?? 0) > 0 ? 1 : 0);
 `);
   try {

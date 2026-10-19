@@ -55,8 +55,9 @@ function astro_order_to_client_array($r) {
         // Frozen download metadata (migration 016): true when the dashboard
         // may offer the report exactly as prepared on the order date (a
         // frozen snapshot or, for pre-migration rows, the stored
-        // calculated_result used as-is). The snapshot JSON itself is never
-        // sent to the client.
+        // calculated_result used as-is). This list carries metadata only;
+        // the owner-only report-snapshot route returns ONE frozen body on
+        // demand when the customer clicks Download.
         'hasReportSnapshot' => !empty($r['report_snapshot']) || !empty($r['calculated_result']),
         'reportSnapshotAt' => $r['report_snapshot_at'] ?? null,
         'adminNotes' => $r['admin_notes'] ?? null,
@@ -2229,23 +2230,31 @@ if (preg_match('#/services/reviews/?$#', $path) || in_array($action, ['reviews',
     jsonResponse(['success' => false, 'message' => 'Method not allowed'], 405);
 }
 
-// 6c. GET /api/services/orders/:id/report-pdf — the customer's FROZEN report
-// download (report only; the tax invoice stays email-only, as always).
-// This is deliberately NOT the direct-PDF route removed below: that route
-// would have served freshly generated files. This one serves only the
-// immutable snapshot frozen on the order date (migration 016), rendered
-// with NO recalculation of any kind, only to the signed-in owner of a
-// delivered order — so re-downloading can never refresh a report into a
-// new free one, and the "Prepared on" date printed on the report is the
-// frozen order date, never the download date.
-if ((preg_match('#/services/orders/([^/]+)/report-pdf/?$#', $path, $reportPdfMatch) || $action === 'download-order-report') && $method === 'GET') {
+// 6b2. GET /api/services/orders/:id/report-snapshot — the frozen report SOURCE
+// for the customer's own high-quality download.
+//
+// WHY THIS EXISTS
+// The customer dashboard renders the downloaded PDF in the browser with the
+// SAME preview-exact pipeline that produced the emailed document (same HTML
+// builders, same ~300 dpi capture), instead of the visibly thinner
+// server render this route used to stream. That capture needs the report
+// EXACTLY as prepared on the order date — and the order/list rows are not
+// that source, because
+// `calculated_result` is a fulfilment cache the admin may refresh. This route
+// returns the write-once snapshot (migration 016), or the stored
+// `calculated_result` for pre-migration rows, VERBATIM: owner-only,
+// delivered-only, one report at a time, with no recalculation and no writes.
+//
+// The list endpoints still never carry the snapshot body; it is fetched only
+// when the customer clicks Download, for the one report being downloaded.
+if ((preg_match('#/services/orders/([^/]+)/report-snapshot/?$#', $path, $reportSourceMatch) || $action === 'download-order-report-source') && $method === 'GET') {
     $user = requireAuth($pdo);
-    astro_rate_limit_enforce($pdo, 'report-download-user', (string)$user['id'], 20, 3600,
+    astro_rate_limit_enforce($pdo, 'report-source-user', (string)$user['id'], 30, 3600,
         'Too many report downloads. Please wait a while and try again.');
-    astro_rate_limit_enforce($pdo, 'report-download-ip', getClientIpAddress(), 40, 3600,
+    astro_rate_limit_enforce($pdo, 'report-source-ip', getClientIpAddress(), 60, 3600,
         'Too many report downloads from this network. Please wait a while and try again.');
 
-    $orderId = isset($reportPdfMatch[1]) ? urldecode((string)$reportPdfMatch[1]) : trim((string)($_GET['id'] ?? ($_GET['orderId'] ?? '')));
+    $orderId = isset($reportSourceMatch[1]) ? urldecode((string)$reportSourceMatch[1]) : trim((string)($_GET['id'] ?? ($_GET['orderId'] ?? '')));
     if ($orderId === '') {
         jsonResponse(['success' => false, 'message' => 'An order id is required.'], 400);
     }
@@ -2286,16 +2295,13 @@ if ((preg_match('#/services/orders/([^/]+)/report-pdf/?$#', $path, $reportPdfMat
             jsonResponse(['success' => false, 'message' => 'This report will be available for download once it is delivered.'], 409);
         }
         $sourceRow = $useItem;
-        $orderArray = astro_order_item_synthetic_order($orderRow, $useItem);
     } else {
         $sourceRow = $orderRow;
-        $orderArray = $orderRow;
     }
 
     // The frozen source: the snapshot written once at order creation.
     // Pre-migration rows fall back to their stored calculated_result,
-    // rendered AS-IS (also never recalculated, never re-stamped) — the
-    // snapshot column simply does not exist for them yet.
+    // rendered AS-IS (also never recalculated).
     $snapshotJson = null;
     $snapshotAt = null;
     if (!empty($sourceRow['report_snapshot'])) {
@@ -2315,127 +2321,35 @@ if ((preg_match('#/services/orders/([^/]+)/report-pdf/?$#', $path, $reportPdfMat
     // The date printed on the report ("Prepared on" / Issued On) is the
     // frozen preparation date — the snapshot's own timestamp when the
     // stored result lacks one — never the download date.
-    if (empty($result['generatedAt'])) {
-        $preparedSource = $snapshotAt ?: ($orderRow['created_at'] ?? null);
-        if ($preparedSource) {
-            $preparedTs = strtotime((string)$preparedSource);
-            if ($preparedTs !== false) {
-                $result['generatedAt'] = date('Y-m-d H:i:s', $preparedTs);
-            }
+    $preparedAt = $snapshotAt ?: ($orderRow['created_at'] ?? null);
+    if (empty($result['generatedAt']) && $preparedAt) {
+        $preparedTs = strtotime((string)$preparedAt);
+        if ($preparedTs !== false) {
+            $result['generatedAt'] = date('Y-m-d H:i:s', $preparedTs);
         }
     }
 
-    // frozen_snapshot tells the renderer to use $result verbatim: no
-    // engine rebuild, no renderer-side recalculation, and nothing writes
-    // calculated_result (or anything else) back to the database here.
-    $orderArray['frozen_snapshot'] = true;
-    try {
-        $pdf = AstroEngine::generateReportPdf($orderArray, $result);
-    } catch (Throwable $e) {
-        error_log('ASTRO SIVAM: frozen report download failed for order ' . $orderId . ': ' . $e->getMessage());
-        jsonResponse(['success' => false, 'message' => 'Your report could not be prepared for download right now. The copy emailed to you remains valid; please try again later.'], 500);
-    }
-
-    $personPart = '';
-    if ($useItem) {
-        $personStmt = $pdo->prepare("SELECT full_name FROM order_persons WHERE id = ? LIMIT 1");
-        $personStmt->execute([(int)($useItem['person_id'] ?? 0)]);
-        $personName = (string)($personStmt->fetchColumn() ?: '');
-        if ($personName !== '') {
-            $personPart = '_' . preg_replace('/[^A-Za-z0-9]+/', '_', $personName);
-        }
-    }
-    $fileName = 'ASTRO_SIVAM_Report_' . preg_replace('/[^A-Za-z0-9\-]+/', '_', (string)$orderRow['order_number']) . $personPart . '.pdf';
-
-    // Report only — this endpoint can never emit an invoice.
-    if (!headers_sent()) {
-        header('Content-Type: application/pdf');
-        header('Content-Disposition: attachment; filename="' . $fileName . '"');
-        header('Content-Length: ' . strlen($pdf));
-        header('Cache-Control: private, no-store');
-        header('X-Content-Type-Options: nosniff');
-    }
-    echo $pdf;
-    exit;
+    jsonResponse([
+        'success' => true,
+        // The frozen body is returned on demand, to the owner, for ONE
+        // delivered report. Nothing is recalculated and nothing is written.
+        'result' => $result,
+        'preparedAt' => $preparedAt,
+        'serviceType' => $useItem ? strtoupper((string)($useItem['service_code'] ?? '')) : (string)($orderRow['service_type'] ?? ''),
+        'language' => astro_normalize_report_language($useItem ? ($useItem['language'] ?? ($orderRow['language'] ?? 'en')) : ($orderRow['language'] ?? 'en')),
+        'itemId' => $useItem ? (int)$useItem['id'] : null
+    ]);
 }
 
-// 7. (Removed) Customer-facing GET /api/services/orders/:id/pdf & invoice-pdf endpoint.
-// Report/invoice PDFs are only generated server-side when emailing the customer
-// (see the resend-email / order-approval flow) and are never served directly over HTTP
-// to the customer-facing app. Do not re-add a public route that streams these PDFs.
-// The ONE exception is the owner-only frozen-snapshot download in 6c above:
-// it renders the immutable order-date snapshot without any recalculation,
-// so it can never become a way to obtain a fresh report without ordering.
-
-// 7b. POST /api/services/export-preview-pdf (Direct instant export of calculated preview results to official PDF via mPDF)
-// Kept public by owner decision (Oct 2026 audit): anonymous visitors must be
-// able to preview before paying. Hardened instead with a strict per-IP rate
-// limit and a diagonal PREVIEW watermark on every page (paid order PDFs sent
-// by email carry no watermark).
-if ((preg_match('#/services/export-preview-pdf/?$#', $path) || $action === 'export-preview-pdf') && $method === 'POST') {
-    // 10 exports / IP / hour: generous for genuine previews, tight for scraping.
-    astro_rate_limit_enforce(
-        $pdo,
-        'preview-pdf-ip',
-        getClientIpAddress(),
-        10,
-        3600,
-        'Too many preview exports. Please wait a while and try again.'
-    );
-    $body = getJsonBody();
-    $serviceType = $body['serviceType'] ?? 'BIRTH_JATHAGAM';
-    $result = $body['result'] ?? [];
-    $lang = astro_normalize_report_language($body['language'] ?? 'en');
-
-    if (empty($result)) {
-        jsonResponse(['success' => false, 'message' => 'Result payload is required.'], 400);
-    }
-
-    $dateStr = date('d M Y');
-    $fakeOrder = [
-        'service_type' => $serviceType,
-        'language' => $lang,
-        'order_number' => 'PREVIEW-' . strtoupper(astro_random_hex(6)),
-        'user_name' => $result['nativeName'] ?? ($result['devoteeName'] ?? ($body['inputPayload']['name'] ?? 'Valued User')),
-        'currency' => DEFAULT_CURRENCY,
-        'amount' => 0,
-        'input_payload' => $body['inputPayload'] ?? ($result['inputPayload'] ?? [])
-    ];
-
-    try {
-        if ($serviceType === 'MARRIAGE_COMPATIBILITY') {
-            $pdfContent = AstroEngine::generateReportPdf($fakeOrder, $result, 'PREVIEW');
-            $filename = "ASTRO_SIVAM_Matchmaking_Preview_{$lang}.pdf";
-        } elseif ($serviceType === 'BABY_NAMING') {
-            $pdfContent = AstroEngine::generateReportPdf($fakeOrder, $result, 'PREVIEW');
-            $filename = "ASTRO_SIVAM_BabyNaming_Preview_{$lang}.pdf";
-        } elseif ($serviceType === 'MUHURTHAM') {
-            $pdfContent = AstroEngine::generateReportPdf($fakeOrder, $result, 'PREVIEW');
-            $filename = "ASTRO_SIVAM_Muhurtham_Preview_{$lang}.pdf";
-        } else {
-            $pdfContent = AstroEngine::generateReportPdf($fakeOrder, $result, 'PREVIEW');
-            $filename = "ASTRO_SIVAM_Jathagam_3Page_Report_{$lang}.pdf";
-        }
-    } catch (\Throwable $e) {
-        // AstroEngine wraps renderer exceptions; retain the actual font/layout
-        // failure in server logs without exposing it or the result payload.
-        $cause = $e;
-        while ($cause->getPrevious() !== null) {
-            $cause = $cause->getPrevious();
-        }
-        error_log('Preview PDF generation failed [' . $lang . ']; no fallback PDF was produced: ' . $cause->getMessage());
-        jsonResponse([
-            'success' => false,
-            'message' => 'High-quality PDF generation is unavailable right now. No lower-quality PDF was produced; please retry later.'
-        ], 503);
-    }
-
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Content-Length: ' . strlen($pdfContent));
-    echo $pdfContent;
-    exit;
-}
+// 6c. (Removed) GET /api/services/orders/:id/report-pdf
+//
+//     There is no server-side PDF renderer any more (the mPDF path was
+//     retired in Oct 2026). The customer dashboard reads the frozen snapshot
+//     from 6b2 above and captures it in the browser with the SAME HTML
+//     builders and print profile that produced the emailed PDF, so the file
+//     the customer saves is the file they were sent. Do not re-add a route
+//     that streams a server-rendered report: it would be a lower-quality
+//     second renderer and a way to obtain a freshly calculated report.
 
 // 8. POST /api/services/contact
 if ((preg_match('#/services/contact/?$#', $path) || $action === 'contact') && $method === 'POST') {

@@ -289,7 +289,7 @@ if (preg_match('/admin\/orders\/([^\/]+)\/preview-html/', $path, $matches) && $m
     $order['calculated_result'] = json_encode($result, JSON_UNESCAPED_UNICODE);
 
     $order['language'] = astro_normalize_report_language($order['language'] ?? 'en');
-    require_once __DIR__ . '/../astrology/pdf_mpdf_reports.php';
+    require_once __DIR__ . '/../astrology/report_views.php';
     $html = AstroReportViews::renderFullReportHtml($order, $result);
 
     if (isset($_GET['format']) && $_GET['format'] === 'json') {
@@ -317,7 +317,7 @@ if (strpos($path, 'admin/preview-html') !== false && $method === 'POST') {
     $order['service_type'] = $order['service_type'] ?? $serviceType;
     $order['language'] = astro_normalize_report_language($order['language'] ?? $lang);
 
-    require_once __DIR__ . '/../astrology/pdf_mpdf_reports.php';
+    require_once __DIR__ . '/../astrology/report_views.php';
     $html = AstroReportViews::renderFullReportHtml($order, $result);
 
     if (isset($_GET['format']) && $_GET['format'] === 'raw') {
@@ -329,48 +329,13 @@ if (strpos($path, 'admin/preview-html') !== false && $method === 'POST') {
     }
 }
 
-// 1d. GET /api/admin/orders/:id/pdf & invoice-pdf & invoice (Direct download in admin)
-if (preg_match('/admin\/orders\/([^\/]+)\/(pdf|invoice-pdf|invoice)/', $path, $matches) && $method === 'GET') {
-    $orderId = $matches[1];
-    $docType = $matches[2];
-
-    $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ? LIMIT 1");
-    $stmt->execute([$orderId]);
-    $order = $stmt->fetch();
-
-    if (!$order) {
-        jsonResponse(['success' => false, 'message' => 'Order not found'], 404);
-    }
-
-    $lang = astro_normalize_report_language($_GET['lang'] ?? ($order['language'] ?? 'ta'));
-    $order['language'] = $lang;
-
-    try {
-        if ($docType === 'pdf') {
-            $result = AstroEngine::rebuildReportResultFromSavedInputs($order);
-            $refreshResult = $pdo->prepare("UPDATE orders SET calculated_result = ?, updated_at = NOW() WHERE id = ?");
-            $refreshResult->execute([json_encode($result, JSON_UNESCAPED_UNICODE), $orderId]);
-            $order['calculated_result'] = json_encode($result, JSON_UNESCAPED_UNICODE);
-            $pdfContent = AstroEngine::generateReportPdf($order, $result);
-            $filename = "ASTRO_SIVAM_Report_{$order['order_number']}_{$lang}.pdf";
-        } else {
-            $pdfContent = AstroEngine::generateInvoicePdf($order);
-            $filename = "ASTRO_SIVAM_Invoice_{$order['order_number']}.pdf";
-        }
-    } catch (\Throwable $e) {
-        error_log('Admin PDF generation failed; no fallback PDF was produced: ' . $e->getMessage());
-        jsonResponse([
-            'success' => false,
-            'message' => 'High-quality PDF generation is unavailable right now. No lower-quality PDF was produced; please retry later.'
-        ], 503);
-    }
-
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Content-Length: ' . strlen($pdfContent));
-    echo $pdfContent;
-    exit;
-}
+// 1d. (Removed) GET /api/admin/orders/:id/pdf & invoice-pdf & invoice
+//
+//     The server-side mPDF renderer was retired in Oct 2026. The admin panel
+//     captures every report and invoice in the browser from the SAME builders
+//     and print profile as the live preview, then stages the finished PDF (1e)
+//     for the approval/resend email. There is no lower-quality server render
+//     left to fall back to, on purpose.
 
 // 1e. POST /api/admin/orders/:id/stage-doc
 //     POST /api/admin/family-orders/:groupId/stage-doc
@@ -509,7 +474,7 @@ if (preg_match('/admin\/orders\/([^\/]+)\/approve/', $path, $matches) && $method
     }
 
     // Customer email fulfillment requires both browser-rendered PDFs. A missing
-    // or oversized payload is a hard failure, never a reason to substitute mPDF.
+    // or oversized payload is a hard failure - there is no server renderer to substitute.
     $stagedScope = 'order_' . $orderId;
     $stagedDocs = astroLoadStagedFamilyDocs($stagedScope);
     $clientDocs = astroSingleOrderClientDocs($body, $stagedDocs, $orderId, $order['order_number']);
@@ -1368,31 +1333,11 @@ if (preg_match('/family-orders\/([^\/]+)\/cancel/', $path, $matches) && $method 
     jsonResponse(['success' => true, 'message' => "Entire family package ({$cancelledMembers} of " . count($groupOrders) . " charts) has been cancelled successfully."]);
 }
 
-// 3h. GET /api/admin/family-orders/:groupId/invoice-pdf (consolidated invoice, admin-authenticated)
-if (preg_match('/family-orders\/([^\/]+)\/invoice-pdf/', $path, $matches) && $method === 'GET') {
-    $groupId = $matches[1];
-    $stmt = $pdo->prepare("SELECT * FROM orders WHERE group_id = ? ORDER BY created_at ASC");
-    $stmt->execute([$groupId]);
-    $groupOrders = $stmt->fetchAll();
-
-    if (empty($groupOrders)) {
-        jsonResponse(['success' => false, 'message' => 'Family order group not found'], 404);
-    }
-
-    try {
-        $pdfContent = AstroEngine::generateFamilyInvoicePdf($groupOrders, $groupId);
-    } catch (\Throwable $e) {
-        error_log('Family invoice generation failed; no fallback PDF was produced: ' . $e->getMessage());
-        jsonResponse(['success' => false, 'message' => 'High-quality family invoice generation is unavailable right now. No lower-quality PDF was produced; please retry later.'], 503);
-    }
-    $filename = "ASTRO_SIVAM_Family_Invoice_{$groupId}.pdf";
-
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Content-Length: ' . strlen($pdfContent));
-    echo $pdfContent;
-    exit;
-}
+// 3h. (Removed) GET /api/admin/family-orders/:groupId/invoice-pdf
+//
+//     The consolidated family invoice is rendered in the browser and staged
+//     with the rest of the bundle (1e); there is no server-side invoice
+//     renderer any more.
 
 // 4. GET & PUT /api/admin/settings
 if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {

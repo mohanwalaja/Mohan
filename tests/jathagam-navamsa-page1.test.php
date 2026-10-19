@@ -17,7 +17,7 @@
  *      the Lagna in the Navamsa chart for en, ta and hi, with no "unavailable" note.
  */
 require_once __DIR__ . '/../api/astrology/engine.php';
-require_once __DIR__ . '/../api/astrology/pdf_mpdf_reports.php';
+require_once __DIR__ . '/../api/astrology/report_views.php';
 
 function checkNavamsa(bool $condition, string $message): void
 {

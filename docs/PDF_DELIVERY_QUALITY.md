@@ -69,11 +69,11 @@ The client floor (`A4_PRINT_MIN_*`) and the server floor (`ASTRO_FAMILY_DOC_MIN_
 silently ships sub-300-dpi reports. Deploy the whole `dist.zip` (frontend + `api/`), then verify with one
 real order from `/admin`.
 
-## PHP server-side PDF exports
+## No server-side PDF renderer
 
-PHP server-side report and invoice exports use mPDF only. The former plain-PHP writer (`AstroPdfReports` / `AstroPdfWriter`) has been removed. If mPDF is missing or fails, the PHP endpoint returns an error and produces no substitute PDF. The separate jsPDF exporter is browser-side code; there is no Node.js PDF server or Node route in the production application.
+The mPDF renderer was removed in October 2026. `AstroMpdfReports`, `AstroMpdfInvoice`, `mpdf_fontconfig.php`, `api/check_mpdf.php` and every route that streamed a server-generated PDF (`/services/orders/:id/report-pdf`, `/services/export-preview-pdf`, `/admin/orders/:id/pdf`, `/admin/family-orders/:groupId/invoice-pdf`) are gone. PHP now produces **HTML only** (`api/astrology/report_views.php`, used by the admin preview routes and the parity tests); every PDF is captured in a browser from that same HTML. `composer.json` requires only `smalot/pdfparser`, a read-only parser used by the AI report importer.
 
-Deployments must install `mpdf/mpdf` under `public_html/vendor` before using PHP server-side export endpoints. Customer email delivery continues to require the validated browser-rendered documents described above.
+An admin approval/resend without browser-rendered report and invoice PDFs fails closed (no email is sent). A customer whose device cannot capture the print canvas is told, never handed a different document. `api/astrology/fonts/` is kept: the browser capture and the report HTML load those same Tamil/Hindi fonts.
 
 ## Verification
 

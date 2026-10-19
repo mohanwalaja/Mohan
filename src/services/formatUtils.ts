@@ -35,24 +35,15 @@ export function formatBirthPlace(birthPlace?: string | null, country?: string | 
  * endpoints.
  *
  * The admin panel renders every report in the browser at live-preview quality
- * and uploads it before the email is dispatched. When a document never reaches
- * the server, that member falls back to the server-side renderer, which is
- * visibly lower quality - the operator must be told instead of discovering it
- * from a customer complaint.
+ * and uploads it before the email is dispatched. There is no server-side
+ * renderer to fall back to any more: a document that never reaches the server
+ * fails the send closed, so a successful response is always preview-exact.
  */
 export function describeFamilyRenderQuality(res?: {
-  renderQuality?: 'PREVIEW_EXACT' | 'MIXED' | 'SERVER_RENDER';
-  serverRenderedReports?: number;
-  serverRenderedOrderNumbers?: string[];
+  renderQuality?: 'PREVIEW_EXACT';
 } | null): string {
-  if (!res || !res.renderQuality) return '';
-  if (res.renderQuality === 'PREVIEW_EXACT') {
-    return ' Every report was delivered in live-preview (high-resolution) quality.';
-  }
-  const fallbacks = res.serverRenderedReports ?? 0;
-  const numbers = (res.serverRenderedOrderNumbers || []).join(', ');
-  return ` ⚠️ ${fallbacks} report(s)${numbers ? ` (${numbers})` : ''} were rendered server-side at lower quality - ` +
-    'their preview PDF did not reach the server. Send the email again to retry.';
+  if (!res || res.renderQuality !== 'PREVIEW_EXACT') return '';
+  return ' Every report was delivered in live-preview (high-resolution) quality.';
 }
 
 /**

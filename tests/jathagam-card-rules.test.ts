@@ -447,7 +447,7 @@ check(
 // suite does. Every rule above must exist on both stacks.
 // ---------------------------------------------------------------------------
 {
-  const phpReport = readFileSync(new URL('../api/astrology/pdf_mpdf_reports.php', import.meta.url), 'utf8');
+  const phpReport = readFileSync(new URL('../api/astrology/report_views.php', import.meta.url), 'utf8');
   // The life-card code sits above the page-3 Short Summary banner. The banner is
   // the boundary because page 3 needs the engine's node convention (Rahu in
   // Viruchigam, Ketu in Rishabam), while the life-card tables must stay free of
@@ -584,7 +584,7 @@ check(
     'PHP 7. Life cards are content-sized: no forced row height on the card grid',
     !/table\.life-grid tr \{[^}]*height:/.test(phpReport)
       && !/td\.life-card \{[^}]*height:\s*[\d.]+mm/.test(phpReport)
-      && /mPDF grows a row to its[\s\S]{0,60}?tallest cell/.test(phpReport)
+      && /A table row grows to its[\s\S]{0,60}?tallest cell/.test(phpReport)
   );
 }
 

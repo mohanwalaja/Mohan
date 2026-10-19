@@ -462,28 +462,8 @@ checkWeddingVerdict(
     'The PHP report does not turn a missing verdict and score into a fabricated incompatibility'
 );
 
-$pdfOrder = [
-    'service_type' => 'MARRIAGE_COMPATIBILITY',
-    'language' => 'en',
-    'order_number' => 'WEDDING-PDF-TEST',
-    'user_name' => 'Wedding Test'
-];
-if (AstroMpdfReports::isAvailable()) {
-    $pdf = AstroEngine::generateReportPdf($pdfOrder, $badResult);
-    checkWeddingVerdict(
-        strpos($pdf, '%PDF-') === 0 && strpos(substr($pdf, -2048), '%%EOF') !== false,
-        'mPDF returns a complete Marriage Compatibility PDF'
-    );
-} else {
-    $failedClosed = false;
-    try {
-        AstroEngine::generateReportPdf($pdfOrder, $badResult);
-    } catch (RuntimeException $error) {
-        $failedClosed = strpos($error->getMessage(), 'no fallback PDF was produced') !== false
-            || strpos($error->getMessage(), 'no lower-quality fallback is enabled') !== false;
-    }
-    checkWeddingVerdict($failedClosed, 'PHP report generation fails closed when mPDF is unavailable');
-}
+// PDFs are captured in the browser from generateWeddingMatchingHtml(); the server
+// has no renderer, so there is nothing to assert about a PHP-generated PDF here.
 
 // ── Page 2: Marriage Matching disclaimer (all three order languages) ────────
 $disclaimerHtml = [
@@ -501,7 +481,7 @@ $expectedHeadings = [
 foreach ($disclaimerHtml as $lang => $html) {
     checkWeddingVerdict(
         strpos($html, '<pagebreak />') !== false,
-        "{$lang}: the mPDF report breaks to a second page"
+        "{$lang}: the report HTML breaks to a second page"
     );
     checkWeddingVerdict(
         strpos($html, 'disclaimer-panel') !== false && strpos($html, 'disclaimer-para') !== false,

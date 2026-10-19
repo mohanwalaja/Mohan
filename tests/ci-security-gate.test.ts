@@ -25,7 +25,8 @@ assert.deepEqual([...jobs.matchAll(/^  ([a-z][a-z0-9-]*):$/gm)].map(match => mat
 assert.match(workflow, /php-version: '8\.1'/);
 assert.match(workflow, /composer install --no-interaction --prefer-dist --no-progress/);
 assert.match(workflow, /find api tests -name '\*\.php'[\s\S]*?php -l/);
-assert.match(workflow, /ASTRO_REQUIRE_MPDF_TESTS: '1'/);
+assert.doesNotMatch(workflow, /ASTRO_REQUIRE_MPDF_TESTS|mpdf/i,
+  'the mPDF renderer is gone; the workflow must not install or require it');
 assert.match(workflow, /run: bash scripts\/run-php-tests\.sh/);
 assert.doesNotMatch(workflow, /\bnpm\b|\bnpx\b|playwright|vite build|dist\.zip/i);
 console.log('GitHub Actions contract passed: only the PHP test suite is configured.');

@@ -163,7 +163,7 @@ def _down(img: Image.Image, size: int) -> Image.Image:
 # the transparency are untouched.
 #
 # _palette() converts BACK to straight RGBA on purpose: the PNG must keep colour
-# type 6. mPDF and several mail clients render an indexed PNG (colour type 3)
+# type 6. several mail clients render an indexed PNG (colour type 3)
 # badly or not at all, and tests/full-suite.test.ts asserts byte 25 stays 6.
 LOGO_PALETTE_COLOURS = 128
 LOGO_ALPHA_LEVELS = 32

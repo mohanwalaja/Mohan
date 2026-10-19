@@ -544,9 +544,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     try {
       const items = order.items || [];
       await downloadHtmlPdf(buildOrderInvoiceHtmlForItems(order, items), orderInvoiceFileName(order));
-    } catch (e) {
-      console.warn('Direct order invoice export failed, falling back to the backend render:', e);
-      window.open(api.getAdminOrderInvoicePdfUrl(order.id), '_blank');
+    } catch (e: any) {
+      // No server renderer any more: report the failure instead of opening a
+      // lower-quality server PDF that no longer exists.
+      setErrorMessage(e?.message || 'The invoice could not be rendered at print quality on this device. Please retry.');
     } finally {
       stopProcessing(`inv-${order.id}`);
     }
@@ -556,9 +557,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     startProcessing(`pdf-${order.id}`);
     try {
       await exportOrderPdf(order);
-    } catch (e) {
-      console.warn('Direct PDF export error, falling back to backend download:', e);
-      window.open(api.getAdminOrderPdfUrl(order.id), '_blank');
+    } catch (e: any) {
+      setErrorMessage(e?.message || 'The report could not be rendered at print quality on this device. Please retry.');
     } finally {
       stopProcessing(`pdf-${order.id}`);
     }
@@ -568,9 +568,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     startProcessing(`inv-${order.id}`);
     try {
       await exportOrderInvoicePdf(order);
-    } catch (e) {
-      console.warn('Direct invoice export error, falling back to backend download:', e);
-      window.open(api.getAdminOrderInvoicePdfUrl(order.id), '_blank');
+    } catch (e: any) {
+      setErrorMessage(e?.message || 'The invoice could not be rendered at print quality on this device. Please retry.');
     } finally {
       stopProcessing(`inv-${order.id}`);
     }
@@ -825,8 +824,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     setErrorMessage('');
     try {
       setSuccessMessage(`⏳ Rendering ${count} preview-quality report(s) & the consolidated family tax invoice in this browser...`);
-      // A render or staging failure aborts the operation; the server is never
-      // asked to substitute its lower-quality PDF renderer.
+      // A render or staging failure aborts the operation; there is no
+      // server-side renderer left to substitute.
       const prepared = await buildFamilyPreviewPayload(memberOrders, groupId);
       const res = await api.approveFamilyOrder(groupId, prepared.payload);
       if (res.success) {
@@ -901,20 +900,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     startProcessing(`family-inv-${groupId}`);
     try {
       // High-quality consolidated family invoice rendered from the exact same
-      // HTML builder as the admin live preview (falls back to the server PDF).
-      if (memberOrders && memberOrders.length > 0) {
-        await exportFamilyInvoiceHtmlToPdf(memberOrders, groupId, `ASTRO_SIVAM_Family_Invoice_${groupId}.pdf`);
-      } else {
-        await api.downloadAdminFamilyInvoicePdf(groupId);
-      }
+      // HTML builder as the admin live preview. There is no server-side
+      // renderer to fall back to; a failure is reported, never downgraded.
+      await exportFamilyInvoiceHtmlToPdf(memberOrders, groupId, `ASTRO_SIVAM_Family_Invoice_${groupId}.pdf`);
     } catch (e: any) {
-      console.warn('High-quality family invoice export failed, trying server fallback:', e);
-      try {
-        await api.downloadAdminFamilyInvoicePdf(groupId);
-      } catch (err: any) {
-        console.warn('Direct PDF download error, opening link:', err);
-        window.open(api.getAdminFamilyInvoicePdfUrl(groupId), '_blank');
-      }
+      setErrorMessage(e?.message || 'The family invoice could not be rendered at print quality on this device. Please retry.');
     } finally {
       stopProcessing(`family-inv-${groupId}`);
     }

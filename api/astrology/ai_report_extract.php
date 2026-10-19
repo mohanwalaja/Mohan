@@ -20,10 +20,9 @@
  *
  * OWNERSHIP DESIGN (same reasoning as the TS file):
  * The uploaded PDF is an OWNERSHIP TOKEN, not the source of the explanation.
- * mPDF embeds subset fonts and glyph-to-Unicode mapping for Tamil and Devanagari
- * runs frequently does not survive extraction, so extracted Indic text can come
- * back garbled or empty. This gate therefore depends only on the ASCII order
- * number that AstroMpdfReports::topHeader prints on every page. The content that
+ * Every delivered PDF is a rasterised browser capture, so extracted Indic text
+ * cannot be read back at all. This gate therefore depends only on the ASCII
+ * order number printed inside the report header on every page. The content that
  * gets explained is regenerated from the order's saved inputs, which is already
  * how official downloads are produced.
  */

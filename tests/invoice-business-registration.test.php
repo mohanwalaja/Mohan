@@ -7,15 +7,14 @@
  * invoice and on the Contact page; the office address belongs on the Contact
  * page ONLY.
  *
- * The invoice is rendered twice — in the browser by
- * src/services/invoiceHtmlBuilder.ts (guarded by
- * tests/business-registration.test.ts) and here by mPDF — so this file EXECUTES
- * the PHP renderer and asserts the emitted HTML for BOTH the single-order
- * invoice and the consolidated family invoice. It also pins the source of truth:
- * api/branding.php owns the number, the templates interpolate the helper, and
- * neither the stale placeholder nor the street address may appear.
+ * Invoices are rendered ONLY in the browser now (src/services/invoiceHtmlBuilder.ts,
+ * guarded by tests/business-registration.test.ts). The server-side mPDF invoice
+ * was retired in Oct 2026, so this file pins what remains on the PHP side: the
+ * shared helpers in api/branding.php that any future document reads, and the
+ * fact that no PHP invoice renderer (or its duplicate copy of the number and
+ * address) comes back.
  */
-require_once __DIR__ . '/../api/astrology/pdf_mpdf_invoice.php';
+require_once __DIR__ . '/../api/branding.php';
 
 $fail = 0;
 $chk = function (string $label, bool $ok, string $detail = '') use (&$fail) {
@@ -41,68 +40,23 @@ $chk('the declaration sentence quotes the number and no street address',
     && strpos(astro_business_registration_sentence(), ASTRO_BUSINESS_REG_NO) !== false
     && strpos(astro_business_registration_sentence(), 'Walajapet') === false
     && strpos(astro_business_registration_sentence(), '632513') === false);
-$chk('the HTML variant escapes the ampersand for mPDF/HTML templates',
+$chk('the HTML variant escapes the ampersand for HTML templates',
     strpos(astro_business_registration_sentence_html(), '&amp;') !== false
     && strpos(astro_business_registration_sentence_html(), 'Micro, Small & Medium') === false);
 
-// ── 2. The templates must read the helper, never retype anything ─────────────
-$invoiceSource = file_get_contents(__DIR__ . '/../api/astrology/pdf_mpdf_invoice.php');
+// ── 2. No PHP invoice renderer (or duplicate copy) may come back ────────────
+require_once __DIR__ . '/../api/astrology/engine.php';
 $brandingSource = file_get_contents(__DIR__ . '/../api/branding.php');
-$chk('pdf_mpdf_invoice.php retypes neither the number nor the address',
-    strpos($invoiceSource, 'UDYAM-TN-35-0058124') === false
-    && strpos($invoiceSource, 'Walajapet') === false
-    && strpos($invoiceSource, '632513') === false);
 $chk('the PHP API carries no office address (Contact page only)',
     strpos($brandingSource, 'Walajapet') === false && strpos($brandingSource, '632513') === false);
+$chk('the server-side invoice renderer is gone',
+    !file_exists(__DIR__ . '/../api/astrology/pdf_mpdf_invoice.php')
+    && !class_exists('AstroMpdfInvoice'));
+$chk('the engine cannot generate an invoice PDF on the server',
+    !method_exists('AstroEngine', 'generateInvoicePdf')
+    && !method_exists('AstroEngine', 'generateFamilyInvoicePdf'));
 $chk('no stale regional business-registration placeholder survives',
-    strpos($invoiceSource, 'ASV-FJ') === false);
-
-// ── 3. The rendered documents ────────────────────────────────────────────────
-$order = [
-    'id' => 'ord-1',
-    'order_number' => 'REG-1001',
-    'user_name' => 'Client Name',
-    'user_email' => 'client@example.com',
-    'user_mobile' => '+91 98765 43210',
-    'country' => 'India',
-    'currency' => 'INR',
-    'amount' => 2500.0,
-    'service_type' => 'MARRIAGE_COMPATIBILITY',
-    'language' => 'en',
-    'payment_method' => 'GPAY',
-    'payment_reference' => 'REG-PAY-1',
-    'created_at' => '2026-10-02 09:00:00',
-];
-$second = array_merge($order, [
-    'id' => 'ord-2',
-    'order_number' => 'REG-1002',
-    'user_name' => 'Second Member',
-    'service_type' => 'BABY_NAMING',
-    'amount' => 1500.0,
-]);
-
-$docs = [
-    'single-order invoice' => AstroMpdfInvoice::buildHtml($order),
-    'consolidated family invoice' => AstroMpdfInvoice::buildFamilyHtml([$order, $second], 'FAM-REG-1'),
-];
-
-foreach ($docs as $label => $html) {
-    $chk("$label: header metadata carries the Udyam registration number",
-        strpos($html, astro_business_registration_meta()) !== false);
-    $chk("$label: declaration certifies the registered Indian entity",
-        strpos($html, astro_business_registration_sentence_html()) !== false);
-    $chk("$label: the country of registration is stated next to the number",
-        strpos($html, '(MSME, India)') !== false);
-    $chk("$label: never prints the office address or the PIN",
-        strpos($html, 'Walajapet') === false
-        && strpos($html, 'Kamakshi') === false
-        && strpos($html, 'Thiruttani') === false
-        && strpos($html, '632513') === false);
-    $chk("$label: no stale regional registration placeholder survives",
-        strpos($html, 'ASV-FJ') === false);
-    $chk("$label: still one A4 sheet (fill CSS stays valid)",
-        strpos($html, 'page-break-inside: avoid') !== false);
-}
+    strpos($brandingSource, 'ASV-FJ') === false);
 
 if ($fail) { fwrite(STDERR, "FAILURES: $fail\n"); exit(1); }
 echo "\nAll invoice business-registration checks passed.\n";

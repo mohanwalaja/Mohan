@@ -235,11 +235,11 @@ export interface FamilyFulfilResponse {
   success: boolean;
   message: string;
   orders?: Order[];
-  renderQuality?: 'PREVIEW_EXACT' | 'MIXED' | 'SERVER_RENDER';
-  invoiceQuality?: 'PREVIEW_EXACT' | 'SERVER_RENDER';
+  // Every document is a browser-rendered preview capture now: the server has
+  // no PDF renderer and approval fails closed when a document is missing.
+  renderQuality?: 'PREVIEW_EXACT';
+  invoiceQuality?: 'PREVIEW_EXACT';
   previewReports?: number;
-  serverRenderedReports?: number;
-  serverRenderedOrderNumbers?: string[];
   stagedReportsUsed?: number;
   memberCount?: number;
   emailPartCount?: number;
@@ -255,7 +255,7 @@ export interface OrderItemsSendResponse {
   orderStatus?: string;
   itemStatuses?: Array<{ id: number; reportStatus: string }>;
   emailPartCount?: number;
-  renderQuality?: 'PREVIEW_EXACT' | 'MIXED' | 'SERVER_RENDER';
+  renderQuality?: 'PREVIEW_EXACT';
   attachmentBytes?: number;
 }
 
@@ -1121,64 +1121,39 @@ export const api = {
 
 
   /**
-   * FROZEN REPORT DOWNLOAD (dashboard only, owner-only, report PDF only).
+   * The FROZEN report source for the dashboard's print-quality download.
    *
-   * The server renders the snapshot frozen at order placement
-   * (orders.report_snapshot / order_items.report_snapshot) exactly as
-   * prepared on the order date: it never recalculates, so a download a year
-   * later is the same report the customer paid for — never a free fresh
-   * report. The report itself prints that prepared date. Tax invoices stay
-   * email-only: there is deliberately no customer invoice download here.
+   * The dashboard renders the PDF in the browser with the same preview-exact
+   * pipeline (same HTML builders, same ~300 dpi capture) that produced the
+   * emailed document and the admin's approved preview. That renderer needs the
+   * report exactly as prepared on the order date, and the orders list does not
+   * carry it: `calculated_result` is a fulfilment cache the admin may refresh,
+   * while `report_snapshot` is written once at order creation. This fetches
+   * that snapshot body for ONE delivered report of the signed-in customer.
+   * The server never recalculates it.
    */
-  async downloadMyOrderReport(
+  async getMyOrderReportSnapshot(
     orderId: string,
-    options: { itemId?: number; fileName?: string } = {}
-  ): Promise<void> {
+    itemId?: number
+  ): Promise<{
+    success: boolean;
+    result: any;
+    preparedAt?: string | null;
+    language?: AppLanguage;
+    serviceType?: string;
+    itemId?: number | null;
+    message?: string;
+  }> {
     const apiBase = getApiBase();
-    const query = options.itemId ? `?itemId=${encodeURIComponent(String(options.itemId))}` : '';
-    const res = await apiFetch(`${apiBase}/services/orders/${encodeURIComponent(orderId)}/report-pdf${query}`);
-    if (!res.ok) {
-      const err = await safeJson(res).catch(() => null);
-      throw new Error(err?.message || 'This report is not available for download yet.');
+    const query = itemId ? `?itemId=${encodeURIComponent(String(itemId))}` : '';
+    const res = await apiFetch(
+      `${apiBase}/services/orders/${encodeURIComponent(orderId)}/report-snapshot${query}`
+    );
+    const data = await safeJson<any>(res);
+    if (!res.ok || !data?.success || !data?.result) {
+      throw new Error(data?.message || 'This report is not available for download yet.');
     }
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = options.fileName || `ASTRO_SIVAM_Report_${orderId}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  },
-
-  async downloadPreviewPdf(
-    serviceType: string,
-    result: any,
-    language: AppLanguage = 'en',
-    fileName = 'ASTRO_SIVAM_Preview_Report.pdf'
-  ) {
-    const res = await fetch(`${API_BASE}/services/export-preview-pdf`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader()
-      },
-      body: JSON.stringify({ serviceType, result, language })
-    });
-    if (!res.ok) {
-      const err = await safeJson(res);
-      throw new Error(err.message || 'Failed to export PDF');
-    }
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    return data;
   },
 
   // Admin APIs
@@ -1456,15 +1431,11 @@ export const api = {
     return safeJson(res);
   },
 
-  // NOTE: Customer-facing invoice downloads stay removed: only the frozen
-  // Report PDF is downloadable from the dashboard (downloadMyOrderReport
-  // above, rendered from the order-date snapshot). Tax invoices — single or
-  // family — are delivered only by email. Do not re-add functions pointing
-  // at services/family-orders/:groupId/invoice-pdf.
-
-  getAdminFamilyInvoicePdfUrl(groupId: string): string {
-    return `${API_BASE}/admin/family-orders/${encodeURIComponent(groupId)}/invoice-pdf`;
-  },
+  // NOTE: There are no PDF download endpoints left. The dashboard reads the
+  // frozen report snapshot and captures the PDF in the browser; the admin panel
+  // does the same for reports and invoices and UPLOADS the result for the
+  // email. Do not re-add a helper that fetches a server-rendered PDF: the
+  // server has no PDF renderer any more.
 
   // ---------------------------------------------------------------------
   // Multi-person orders: per-report Preview / Send
@@ -1522,72 +1493,6 @@ export const api = {
       body: JSON.stringify(payload || {})
     });
     return safeJson(res);
-  },
-
-  async downloadAdminFamilyInvoicePdf(groupId: string, fileName?: string) {
-    const fn = fileName || `ASTRO_SIVAM_Family_Invoice_${groupId}.pdf`;
-    const res = await fetch(`${API_BASE}/admin/family-orders/${encodeURIComponent(groupId)}/invoice-pdf`, {
-      headers: { ...getAuthHeader() }
-    });
-    if (!res.ok) {
-      const err = await safeJson(res);
-      throw new Error(err.message || 'Failed to download family invoice');
-    }
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fn;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  },
-
-  getAdminOrderPdfUrl(id: string, lang?: string): string {
-    return `${API_BASE}/admin/orders/${id}/pdf${lang ? `?lang=${lang}` : ''}`;
-  },
-
-  getAdminOrderInvoicePdfUrl(id: string): string {
-    return `${API_BASE}/admin/orders/${id}/invoice-pdf`;
-  },
-
-  async downloadAdminOrderPdf(id: string, fileName = 'ASTRO_SIVAM_Report.pdf') {
-    const res = await fetch(`${API_BASE}/admin/orders/${id}/pdf`, {
-      headers: { ...getAuthHeader() }
-    });
-    if (!res.ok) {
-      const err = await safeJson(res);
-      throw new Error(err.message || 'Failed to download Report PDF');
-    }
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  },
-
-  async downloadAdminOrderInvoicePdf(id: string, fileName = 'ASTRO_SIVAM_Invoice.pdf') {
-    const res = await fetch(`${API_BASE}/admin/orders/${id}/invoice-pdf`, {
-      headers: { ...getAuthHeader() }
-    });
-    if (!res.ok) {
-      const err = await safeJson(res);
-      throw new Error(err.message || 'Failed to download Invoice PDF');
-    }
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
   },
 
   async cancelOrder(id: string, reason = 'Cancelled by administrator or customer'): Promise<{ success: boolean; message: string; order?: Order }> {

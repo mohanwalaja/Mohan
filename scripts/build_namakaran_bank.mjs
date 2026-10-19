@@ -8,10 +8,10 @@
  *
  * Outputs:
  *   src/lib/astrology/namakaranNameBank.ts        (browser preview + browser-side TypeScript)
- *   api/astrology/namakaran_name_bank.php        (official PHP/mPDF report)
+ *   api/astrology/namakaran_name_bank.php        (official PHP report HTML)
  *
  * The two generated files carry the same content hash, so a test can prove the
- * live preview and the delivered mPDF report always show the same names.
+ * live preview and the delivered report always show the same names.
  *
  * ---------------------------------------------------------------------------
  * VALIDATION RULES
@@ -281,7 +281,7 @@ function writeTs(bank, hash, aksharaOrder) {
  * Content hash    : ${hash}
  *
  * The same hash is written into api/astrology/namakaran_name_bank.php so the
- * live preview, the browser-side TypeScript and the official mPDF report can be proven to
+ * live preview, the browser-side TypeScript and the official report can be proven to
  * show an identical name bank.
  */
 
@@ -345,7 +345,7 @@ function writePhp(bank, hash, aksharaOrder) {
  * Content hash    : ${hash}
  *
  * Kept byte-for-byte in step with src/lib/astrology/namakaranNameBank.ts so the
- * live preview and the official mPDF report always print the same names.
+ * live preview and the official report always print the same names.
  * Each entry is [name, meaning]; 'south' and 'north' are the two columns of
  * page 2 of the Vedic Namakaran report.
  */

@@ -3,7 +3,7 @@
  * ASTRO SIVAM - JSON 404 for unmatched /api routes.
  *
  * WHY THIS EXISTS: api/.htaccess ends with a catch-all rewrite. It used to point
- * at api/index.php, which was an mPDF font-test page - so a typo'd or stale API
+ * at api/index.php, which used to be a PDF font-test page - so a typo'd or stale API
  * path answered with a Tamil sample PDF (and could echo PHP warnings, because
  * that script enabled display_errors) instead of a machine-readable 404.
  *

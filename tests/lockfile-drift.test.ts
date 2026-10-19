@@ -124,20 +124,30 @@ check('package-lock.json describes this project and the same declared ranges', (
   );
 });
 
-check('composer.lock pins mpdf/mpdf when present', () => {
+check('composer.json carries no PDF renderer; composer.lock matches it', () => {
   const composerJson = path.join(projectRoot, 'composer.json');
   if (!fs.existsSync(composerJson)) {
     console.log('    (composer.json absent — skipped)');
     return;
   }
+  const manifest = readJson('composer.json');
+  const required = Object.keys(manifest.require ?? {});
+  assert.ok(!required.includes('mpdf/mpdf'),
+    'mpdf/mpdf must stay out of composer.json: PDFs are rendered in the browser');
+  assert.ok(required.includes('smalot/pdfparser'), 'the AI report importer still parses uploaded PDFs');
+
+  // A lockfile that still pins the deleted renderer would install it again.
   const lockPath = path.join(projectRoot, 'composer.lock');
   if (!fs.existsSync(lockPath)) {
-    console.log('    (composer.lock absent — skipped)');
+    console.log('    (composer.lock absent — nothing to compare)');
     return;
   }
   const lock = readJson('composer.lock');
   const names = (lock.packages ?? []).map((p: any) => p.name);
-  assert.ok(names.includes('mpdf/mpdf'), 'composer.lock does not pin mpdf/mpdf');
+  assert.ok(!names.includes('mpdf/mpdf'), 'composer.lock must not pin the removed mpdf/mpdf');
+  for (const name of required.filter((r: string) => r !== 'php')) {
+    assert.ok(names.includes(name), `composer.lock does not pin ${name}`);
+  }
 });
 
 console.log(`\nLockfile agreement passed (${passed} checks).`);

@@ -2,7 +2,7 @@
  * ASTRO SIVAM — Birth Jathagam page 3 (Short Summary): planet classification.
  *
  * ONE named rule for the browser HTML/jsPDF renderers and the PHP report
- * (`api/astrology/pdf_mpdf_reports.php`). They must print the SAME supportive /
+ * (`api/astrology/report_views.php`). They must print the SAME supportive /
  * needs-care lists for the same chart, so the browser rule lives here once and
  * the PHP report mirrors it statement-for-statement (see
  * `jathagamPlanetSummaryLists()` and the parity fixture

@@ -1,20 +1,19 @@
 <?php
 require_once __DIR__ . '/../branding.php';
 /**
- * ASTRO SIVAM - Server-side Report HTML Views & mPDF Exporter (Single-Source Architecture)
+ * ASTRO SIVAM - Server-side Report HTML Views
  *
- * Single-Source Architecture:
- * 1. AstroReportViews produces the 100% exact full HTML document string for all 4 services
- *    (Birth Jathagam 3-pages, Marriage Compatibility 1-page, Baby Naming 2-pages, Subha Muhurtham calendar) across English, Tamil, and Hindi.
- * 2. AstroMpdfReports::convertHtmlToPdf takes that exact HTML string and renders a high-definition PDF with mPDF.
+ * AstroReportViews produces the exact full HTML document string for all 4
+ * services (Birth Jathagam 3 pages, Marriage Compatibility, Baby Naming,
+ * Subha Muhurtham calendar) in English, Tamil and Hindi.
+ *
+ * There is NO server-side PDF renderer any more. This HTML feeds:
+ *   - the admin preview routes (GET/POST /api/admin/preview-html), and
+ *   - the PHP parity tests against the TypeScript builders.
+ * Every customer-facing PDF is captured in the browser from the same shared
+ * builders, at print density (see src/services/jathagamPdfExporter.ts).
  */
 
-// Load Composer autoloader (mPDF and dependencies in public_html/vendor/)
-if (is_file(__DIR__ . '/../../vendor/autoload.php')) {
-    require_once __DIR__ . '/../../vendor/autoload.php';
-}
-
-require_once __DIR__ . '/mpdf_fontconfig.php';
 require_once __DIR__ . '/muhurtham_report_notes.php';
 require_once __DIR__ . '/wedding_disclaimer_notes.php';
 
@@ -560,7 +559,7 @@ class AstroReportViews {
         }
     }
 
-    /** Shared CSS matching browser preview design and mPDF engine */
+    /** Shared CSS matching the browser preview design */
     public static function sharedCss($lang): string {
         $fontFam = ($lang === 'ta')
             ? 'notosanstamil, nototamil, balootamil, notosans, sans-serif'
@@ -659,7 +658,7 @@ class AstroReportViews {
     .dosha-desc { font-size: 8.5px; color: #2b1d14; line-height: 1.4; margin-top: 0.6mm; }
 
     /* Page 2 Life Cards Grid.
-       Item 7: every card is sized to its own content. mPDF grows a row to its
+       Item 7: every card is sized to its own content. A table row grows to its
        tallest cell, so no row height is ever forced here — that is the PHP
        equivalent of the browser report's `grid-auto-rows: auto` + content-sized
        fitter. Shorter cards simply end early instead of being stretched. */
@@ -709,11 +708,10 @@ CSS;
 
     /**
      * "Prepared on" stamp for a report. The date is the one stored in the
-     * calculation result (generatedAt) — for a frozen dashboard download
-     * that is the original order-date snapshot time, so a re-download
-     * years later still shows when the report was actually prepared and
-     * never looks freshly prepared. Empty when the result carries no date
-     * (no stamp rather than a wrong "today" stamp).
+     * calculation result (generatedAt) — for a stored snapshot that is the
+     * original order-date time, so a preview never looks freshly prepared.
+     * Empty when the result carries no date (no stamp rather than a wrong
+     * "today" stamp).
      */
     public static function preparedOnLabel($result, string $lang): string {
         $raw = is_array($result) ? trim((string) ($result['generatedAt'] ?? '')) : '';
@@ -740,9 +738,8 @@ CSS;
         $preparedHtml = trim($preparedLabel) !== '' ? '<span class="header-order-ref">' . self::e($preparedLabel) . '</span>' : '';
 
         // Root-relative URL on purpose: this same HTML string is served to a
-        // browser by the admin "preview HTML" route (a raw server path can never
-        // be loaded by a browser) AND is converted to PDF by convertHtmlToPdf(),
-        // which rewrites it to a verified absolute filesystem path.
+        // browser by the admin "preview HTML" route, so a raw server path could
+        // never be loaded.
         $logoSrc = astro_logo_url();
         $logoTag = '<img src="' . $logoSrc . '" class="header-logo" alt="ASTRO SIVAM" />';
 
@@ -811,8 +808,8 @@ HTML;
         $chandraRasiInfo = $chandraRasiNum !== null ? ($rasiNamesByNumber[$chandraRasiNum] ?? null) : null;
 
         $orderNumber = $order['order_number'] ?? $order['orderNumber'] ?? 'ORD-JATHAGAM';
-        // Printed on every page header: when this report was prepared. For
-        // a frozen snapshot download this stays the original order date.
+        // Printed on every page header: when this report was prepared. A
+        // stored snapshot keeps its original order date.
         $preparedLabel = self::preparedOnLabel($result, $lang);
         $name = self::e($result['devoteeName'] ?? $result['nativeName'] ?? ($order['user_name'] ?? 'User'));
         $dob = self::e(self::birthDate($result['dob'] ?? '', 'N/A'));
@@ -1703,7 +1700,7 @@ HTML;
         // come from the Navagraha reference data (deity / weekday / charity) plus
         // the additive lamp-oil and mantra fields. Everything is drawn from the
         // computed chart; nothing is hardcoded, and the page is laid out in
-        // tables only, because mPDF has no flexbox or grid.
+        // tables only, because print renderers have no flexbox or grid.
         $summary = self::classifyJathagamPlanetsForSummary($result, $lang);
         $summaryTexts = self::jathagamSummaryText($lang);
         $summaryText = $summaryTexts['text'];
@@ -1871,16 +1868,16 @@ HTML;
     }
 
     /**
-     * Page-3-only styles for the Birth Jathagam Short Summary (mPDF).
+     * Page-3-only styles for the Birth Jathagam Short Summary.
      *
-     * mPDF has no flexbox or grid, so the summary is laid out in tables, and
+     * Print renderers have no flexbox or grid, so the summary is laid out in tables, and
      * every rule stays local to #birth-summary-sheet so the other reports and
      * pages 1-2 are untouched. Text never drops below 10.5px - the readability
      * floor shared with the HTML builder and the jsPDF renderer - and that
      * floor includes the table's muted header line, so all three renderers
      * agree on the smallest size the Short Summary is allowed to use.
      *
-     * Type sizes stay at the proven 3-page budget: mPDF cannot measure leftover
+     * Type sizes stay at the proven 3-page budget: a print renderer cannot measure leftover
      * space the way fitJathagamSummaryText does in the browser, and enlarging
      * here spills a fourth physical page (Tamil/Hindi wrap). Compact mode
      * (5 to 9 flagged grahas) keeps the same 10.5px floor.
@@ -2110,9 +2107,9 @@ CSS;
     /**
      * Render one bulleted list for the Navagraha guidance panel.
      *
-     * mPDF has only partial support for CSS list markers, so the bullet is
+     * Print renderers have only partial CSS list-marker support, so the bullet is
      * emitted as a literal character inside a plain block element - that way
-     * the browser preview and the mPDF output look identical.
+     * the browser preview and the printed page look identical.
      *
      * @param array<int, array{0: string, 1: string}> $items [heading, text] pairs
      */
@@ -3440,7 +3437,7 @@ HTML;
 
         // ---------------------------------------------------------------------
         // Page 2 - Marriage Matching disclaimer, in the language the order was
-        // placed in. Shared copy so the mPDF email, the admin preview and the
+        // placed in. Shared copy so the email, the admin preview and the
         // browser export always print exactly the same wording.
         // ---------------------------------------------------------------------
         $disclaimer = WeddingDisclaimerNotes::build($lang);
@@ -3526,7 +3523,7 @@ HTML;
     //   page 2: calendar rows that overflowed (upper half) + the calculation
     //             system guide (lower half)
     // Mirrors src/services/muhurthamHtmlBuilder.ts so the browser preview,
-    // the admin preview and the emailed mPDF are byte-identical.
+    // the admin preview and the emailed PDF are byte-identical.
     // =====================================================================
     public static function generateMuhurthamHtml($order, $result): string {
         $lang = astro_report_normalize_language($order['language'] ?? 'en');
@@ -3536,9 +3533,7 @@ HTML;
         if (!is_array($result)) {
             $result = [];
         }
-        // Frozen snapshot downloads render $result exactly as frozen on the
-        // order date — the recalculation below never runs for them.
-        if (empty($result['months']) && empty($order['frozen_snapshot']) && class_exists('AstroEngine')) {
+        if (empty($result['months']) && class_exists('AstroEngine')) {
             $input = $order['input_payload'] ?? [];
             if (!is_array($input)) {
                 $input = json_decode((string) $input, true) ?: [];
@@ -3942,7 +3937,7 @@ HTML;
                 . '<div style="text-align:center; padding:12mm 4mm; color:#64748b; font-weight:bold;">✓ All ' . $totalRecommendedDates . ' recommended dates are listed on page 1.</div>';
         }
 
-        // A table-cell height is a minimum in mPDF, unlike unsupported
+        // A table-cell height is a minimum in print renderers, unlike unsupported
         // min-height on divs. 6mm page margin + 6mm sheet padding + 104mm
         // upper content + 3mm guide margin puts the guide at 119mm on A4; that
         // leaves room for the three-paragraph explanation plus the
@@ -4219,11 +4214,9 @@ HTML;
 
         // A stored report created before the 108-pada fix must never be
         // rendered with Ashwini's Chu/Che/Cho/La fallback. Recalculate it
-        // from the original birth details before generating a preview/PDF.
-        // FROZEN SNAPSHOT downloads (order['frozen_snapshot']) are the one
-        // exception: the customer bought the report as prepared on the
-        // order date, so it is rendered exactly as frozen, never upgraded.
-        if (empty($order['frozen_snapshot']) && class_exists('AstroEngine') && !AstroEngine::isCurrentBabyNamingResult($result)) {
+        // from the original birth details before generating a preview.
+        // (This HTML is preview/parity only: no PDF is rendered from it.)
+        if (class_exists('AstroEngine') && !AstroEngine::isCurrentBabyNamingResult($result)) {
             $input = $order['input_payload'] ?? [];
             if (!is_array($input)) {
                 $input = json_decode((string) $input, true) ?: [];
@@ -4420,7 +4413,7 @@ HTML;
         $suggestionNameSize = $totalNameRows > 28 ? 11.5 : ($totalNameRows > 22 ? 12.5 : 14);
         $suggestionMeaningSize = $totalNameRows > 22 ? 8.5 : 9.5;
 
-        // ── mPDF-safe scoped styles for the redesigned certificate ──
+        // ── Print-safe scoped styles for the redesigned certificate ──
         $babyCss = <<<CSS
     body { background: #ffffff; color: #2d241c; }
     .bn-frame { border: 1.2px solid #b3862e; padding: 5mm 6mm 4mm; background: #fdfaf4; }
@@ -4474,7 +4467,7 @@ HTML;
     .bn-footer-bar b { color: #7a2129; letter-spacing: 0.8px; }
     .bn-doc-hint { font-size: 7.2px; color: #5c5044; margin-top: 1.4mm; line-height: 1.35; }
 
-    /* ── Page 2: South & North Indian name suggestions (mPDF tables) ── */
+    /* ── Page 2: South & North Indian name suggestions (table layout) ── */
     .bn-sug-title-band { padding: 1.8mm 3mm; margin: 2mm 0; }
     table.sug-cols { width: 100%; border-collapse: separate; border-spacing: 2.4mm 0; margin-top: 1mm; }
     td.sug-col { width: 50%; vertical-align: top; border: 1px solid #e5d9c5; padding: 1.6mm 1.8mm 2mm; background: #fffdf9; }
@@ -4701,275 +4694,5 @@ HTML;
             . $body . self::footerBand($lang)
             . $suggestionsPage
             . '</body></html>';
-    }
-}
-
-class AstroMpdfReports {
-
-    public static function isAvailable(): bool {
-        if (class_exists('\Mpdf\Mpdf')) {
-            return true;
-        }
-        return function_exists('astroEnsureMpdfAutoload') ? astroEnsureMpdfAutoload() : false;
-    }
-
-    /**
-     * mPDF 8.x cannot shape the shipped modern Noto Indic fonts: Tamil uses
-     * MarkGlyphSets and Devanagari also uses GSUB lookup type 5 / format 3.
-     * Its bundled FreeSerif supports both scripts with OTL enabled. This is
-     * still an embedded, shaped Unicode vector font, not a degraded PDF path.
-     * Browser previews retain their Noto fonts; only mPDF uses this stack.
-     */
-    public static function pdfFontStack(string $lang): string {
-        return astro_report_normalize_language($lang) === 'en'
-            ? 'notosans, cinzel, sans-serif'
-            : 'freeserif';
-    }
-
-    /** Converts the report HTML to PDF, retaining all content and Indic shaping.
-     * $watermark (e.g. 'PREVIEW') is rendered diagonally on every page when set. */
-    public static function convertHtmlToPdf(string $html, string $lang = 'ta', string $watermark = ''): string {
-        $lang = astro_report_normalize_language($lang);
-        $fontDir = function_exists('astroMpdfFontDir') ? astroMpdfFontDir() : __DIR__ . '/fonts';
-        if (!is_dir($fontDir)) {
-            $fontDir = __DIR__ . '/fonts';
-        }
-        $fontDirs = [];
-        $fontData = [];
-
-        if (class_exists('\Mpdf\Config\ConfigVariables')) {
-            $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
-            $fontDirs = $defaultConfig['fontDir'] ?? [];
-        }
-        if (class_exists('\Mpdf\Config\FontVariables')) {
-            $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
-            $fontData = $defaultFontConfig['fontdata'] ?? [];
-        }
-
-        // Register custom TrueType fonts from api/astrology/fonts/ with OTL and Kashida for Indic scripts
-        $customFontData = function_exists('astroMpdfFontData') ? astroMpdfFontData() : [
-            'nototamil' => [
-                'R' => 'NotoSansTamil-Regular.ttf',
-                'M' => 'NotoSansTamil-Medium.ttf',
-                'SB' => 'NotoSansTamil-SemiBold.ttf',
-                'B' => 'NotoSansTamil-Bold.ttf',
-                'useOTL' => 0xFF,
-                'useKashida' => 75,
-            ],
-            'notodevanagari' => [
-                'R' => 'NotoSansDevanagari-Regular.ttf',
-                'M' => 'NotoSansDevanagari-Medium.ttf',
-                'SB' => 'NotoSansDevanagari-SemiBold.ttf',
-                'B' => 'NotoSansDevanagari-Bold.ttf',
-                'useOTL' => 0xFF,
-                'useKashida' => 75,
-            ],
-            'notosanstamil' => [
-                'R' => 'NotoSansTamil-Regular.ttf',
-                'M' => 'NotoSansTamil-Medium.ttf',
-                'SB' => 'NotoSansTamil-SemiBold.ttf',
-                'B' => 'NotoSansTamil-Bold.ttf',
-                'useOTL' => 0xFF,
-                'useKashida' => 75,
-            ],
-            'notosansdevanagari' => [
-                'R' => 'NotoSansDevanagari-Regular.ttf',
-                'M' => 'NotoSansDevanagari-Medium.ttf',
-                'SB' => 'NotoSansDevanagari-SemiBold.ttf',
-                'B' => 'NotoSansDevanagari-Bold.ttf',
-                'useOTL' => 0xFF,
-                'useKashida' => 75,
-            ],
-            'notosans' => [
-                'R' => 'NotoSans-Regular.ttf',
-                'M' => 'NotoSans-Medium.ttf',
-                'SB' => 'NotoSans-SemiBold.ttf',
-                'B' => 'NotoSans-Bold.ttf',
-            ],
-            'balootamil' => [
-                'R' => 'BalooThambi2-SemiBold.ttf',
-                'B' => 'BalooThambi2-Bold.ttf',
-                'useOTL' => 0xFF,
-                'useKashida' => 75,
-            ],
-            'cinzel' => [
-                'R' => 'Cinzel-SemiBold.ttf',
-                'B' => 'Cinzel-Bold.ttf',
-            ],
-            'yatraone' => [
-                'R' => 'YatraOne-Regular.ttf',
-                'useOTL' => 0xFF,
-                'useKashida' => 75,
-            ],
-        ];
-
-        // Filter out missing font files defensively to prevent mPDF throw exceptions
-        $registeredFonts = [];
-        foreach ($customFontData as $fontKey => $fontDef) {
-            $validDef = [];
-            foreach ($fontDef as $key => $val) {
-                if (in_array($key, ['R', 'B', 'I', 'BI', 'M', 'SB'])) {
-                    if (is_file($fontDir . '/' . $val)) {
-                        $validDef[$key] = $val;
-                    }
-                } else {
-                    $validDef[$key] = $val;
-                }
-            }
-            if (isset($validDef['R'])) {
-                $registeredFonts[$fontKey] = $validDef;
-            }
-        }
-
-        // mPDF ignores CSS !important and inline Baby Naming name styles can
-        // still select a Noto alias. Map those aliases as well as the default
-        // to a compatible font, without changing the HTML served to browsers.
-        // FreeSerif's regular face covers Tamil; its bold/italic faces do not.
-        // Leaving only R lets mPDF synthesize emphasis without losing glyphs.
-        if (isset($fontData['freeserif'])) {
-            unset($fontData['freeserif']['B'], $fontData['freeserif']['I'], $fontData['freeserif']['BI']);
-            foreach (['notosanstamil', 'nototamil', 'balootamil', 'notosansdevanagari', 'notodevanagari'] as $family) {
-                $registeredFonts[$family] = $fontData['freeserif'];
-            }
-        }
-
-        // Absolute Path Image Resolution for mPDF
-        $docRoot = !empty($_SERVER['DOCUMENT_ROOT']) ? rtrim($_SERVER['DOCUMENT_ROOT'], '/') : '';
-        if (empty($docRoot)) {
-            $docRoot = realpath(__DIR__ . '/../../public') ?: realpath(__DIR__ . '/../..');
-        }
-
-        if (!empty($docRoot)) {
-            $html = str_replace('src="/', 'src="' . $docRoot . '/', $html);
-        }
-
-        // Convert logo image paths to verified absolute filesystem paths for reliable rendering
-        // astro_logo_path() probes every deployment layout, including the copy
-        // bundled inside /api/assets that is always deployed with the PHP API.
-        // Previously only repo-relative paths were checked, so on cPanel (where
-        // the logo lives in public_html/ and __DIR__/../../public does not
-        // exist) this stayed null and mPDF fell back to fetching the logo over
-        // HTTP - which usually fails, producing report PDFs with no logo.
-        $validLogoPath = astro_logo_path();
-
-        $logoPattern = '/src=["\'][^"\']*(astrosivam_logo\.(?:jpg|jpeg|png))["\']/i';
-        if ($validLogoPath !== '') {
-            $html = preg_replace($logoPattern, 'src="' . $validLogoPath . '"', $html);
-        } else {
-            // Last resort: point at the public URL so mPDF at least has a
-            // chance to fetch it, instead of pointing at a doc-root path that
-            // does not exist and rendering an empty box.
-            $html = preg_replace($logoPattern, 'src="' . astro_logo_absolute_url() . '"', $html);
-        }
-
-        // Set the compatible font before constructing mPDF: it loads/shapes
-        // default_font immediately, before a later CSS override could help.
-        $fontStack = self::pdfFontStack($lang);
-        $defaultFont = $lang === 'en' ? 'notosans' : 'freeserif';
-
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'margin_left' => 5,
-            'margin_right' => 5,
-            'margin_top' => 5,
-            'margin_bottom' => 5,
-            'tempDir' => function_exists('astroMpdfTempDir') ? astroMpdfTempDir() : sys_get_temp_dir(),
-            'autoScriptToLang' => true,
-            'autoLangToFont' => true,
-            'useSubstitutions' => true,
-            'fontDir' => !empty($fontDirs) ? array_merge($fontDirs, [$fontDir]) : [$fontDir],
-            'fontdata' => $fontData + $registeredFonts,
-            'default_font' => $defaultFont,
-        ]);
-
-        // Inject mandatory PDF styling into the <head> of HTML string before passing to WriteHTML
-        $injectedPdfStyle = '<style>
-            * {
-                box-sizing: border-box;
-            }
-            body, table, td, th, div, p, span, h1, h2, h3, h4, h5, h6, b, strong, i, em, li, ul {
-                font-family: ' . $fontStack . ' !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-            body {
-                background-color: #fffdf9 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            .report-page-break {
-                page-break-after: always;
-            }
-            .report-card, .rasi-chart-table, .dosha-section, .dosha-card, .life-card, .panel, .sheet, table, table.rasi-table, table.details-grid, table.data-table, table.life-grid {
-                page-break-inside: avoid;
-            }
-            .sheet {
-                background-color: #fdfaf6 !important;
-                border: 1.5px solid #c9962c !important;
-                page-break-inside: avoid;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            /* The summary sheet is a fixed third page: its spacing is owned by
-               the shared stylesheet so the HTML preview and the PDF agree, and
-               it must never grow (the one-A4 contract) - margin-bottom stays at
-               zero here, and the cards keep their breaks inside themselves. */
-            #birth-summary-sheet {
-                margin-bottom: 0;
-            }
-            #birth-summary-sheet .summary-card,
-            #birth-summary-sheet .summary-reassurance {
-                page-break-inside: avoid;
-            }
-            .header-table {
-                page-break-inside: avoid;
-            }
-            img, .header-logo {
-                image-rendering: -webkit-optimize-contrast;
-                max-width: 100%;
-            }
-            .rasi-grid, .rasi-cell, .rasi-cell-corner, .rasi-center, .panel, .badge, .status-pill, .footer, .header-table, .data-table, .data-table th, .data-table td,
-            .summary-card, .summary-planet, .summary-cell, .summary-reassurance, .summary-care th {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            table {
-                border-collapse: collapse;
-            }
-        </style>';
-
-        if (stripos($html, '</head>') !== false) {
-            $html = str_ireplace('</head>', $injectedPdfStyle . '</head>', $html);
-        } else {
-            $html = $injectedPdfStyle . $html;
-        }
-
-        $mpdf->WriteHTML($html);
-        if (trim($watermark) !== '') {
-            // Diagonal watermark on every page (free previews only; paid
-            // email PDFs are generated without it).
-            $mpdf->SetWatermarkText($watermark);
-            $mpdf->showWatermarkText = true;
-            $mpdf->watermark_font = 'DejaVuSansCondensed';
-            $mpdf->watermarkTextAlpha = 0.12;
-        }
-        return $mpdf->Output('', 'S');
-    }
-
-    public static function generateBirthJathagamPdf($order, $result): string {
-        $html = AstroReportViews::generateBirthJathagamHtml($order, $result);
-        return self::convertHtmlToPdf($html, $order['language'] ?? 'ta');
-    }
-
-    public static function generateWeddingMatchingPdf($order, $result): string {
-        $html = AstroReportViews::generateWeddingMatchingHtml($order, $result);
-        return self::convertHtmlToPdf($html, $order['language'] ?? 'ta');
-    }
-
-    public static function generateBabyNamingPdf($order, $result): string {
-        $html = AstroReportViews::generateBabyNamingHtml($order, $result);
-        return self::convertHtmlToPdf($html, $order['language'] ?? 'ta');
     }
 }

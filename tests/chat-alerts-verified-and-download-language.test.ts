@@ -35,21 +35,30 @@ const check = (name: string, fn: () => void) => checks.push([name, fn]);
 // ------------------------------------------------------- download rule ---
 check('download renders only the ordered language, only on click', () => {
   const services = read('api/services/index.php');
-  const start = services.indexOf('// 6c. GET /api/services/orders/:id/report-pdf');
-  const end = services.indexOf('// 7. (Removed)');
-  assert.ok(start > 0 && end > start, 'frozen download block exists');
+  // The report-pdf route is gone: the dashboard reads the frozen snapshot and
+  // renders it in the browser. The snapshot route must never accept a language
+  // override either, so the printed report keeps the ordered language.
+  const start = services.indexOf('// 6b2. GET /api/services/orders/:id/report-snapshot');
+  const end = services.indexOf('// 6c. (Removed)');
+  assert.ok(start > 0 && end > start, 'frozen snapshot source exists');
   const block = services.slice(start, end);
   assert.ok(!block.includes("$_GET['language']") && !block.includes('$_GET["language"]'),
     'a language parameter must never switch the download language');
   assert.ok(!block.includes("$_GET['lang']"), 'no lang override either');
+  assert.ok(!/preg_match\([^\n]*report-pdf/.test(services), 'no server PDF route may come back');
+  assert.ok(!services.includes('Content-Type: application/pdf'), 'the API never streams a PDF');
   const api = read('src/services/api.ts');
-  const fnStart = api.indexOf('async downloadMyOrderReport');
-  const fn = api.slice(fnStart, fnStart + 1200);
-  assert.ok(!/language/.test(fn.split('fileName')[0]), 'client sends no language choice for downloads');
+  const fnStart = api.indexOf('async getMyOrderReportSnapshot');
+  const fn = api.slice(fnStart, api.indexOf('\n  },', fnStart) + 4);
+  // The response TYPE names the ordered language; the REQUEST must not send a
+  // language choice, so the frozen report keeps the language it was bought in.
+  const request = fn.slice(fn.indexOf('> {'));
+  assert.ok(!/lang(?:uage)?\s*[:=]/.test(request), 'client sends no language choice for downloads');
   const dashboard = read('src/pages/CustomerDashboard.tsx');
-  assert.match(dashboard, /your order language/, 'dashboard states the ordered-language rule');
-  assert.match(dashboard, /reportLanguageName\(order\.language\)/);
+  assert.match(dashboard, /reportLanguageName\(order\.language\)/, 'the ordered language is still shown');
   assert.match(dashboard, /reportLanguageName\(item\.language\)/, 'each person downloads in their own ordered language');
+  assert.doesNotMatch(dashboard, /your order language|frozen as ordered|never updates itself/,
+    'the customer asked for the old profile wording to be removed');
 });
 
 // ------------------------------------------------------------ endpoints ---

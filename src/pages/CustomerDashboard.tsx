@@ -31,7 +31,15 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { normalizeReportLanguage } from '../services/reportLanguage';
-import { generateOrderPdfsBase64, prepareFamilyFulfilPayload, deliverOrderPdfPayload } from '../services/jathagamPdfExporter';
+import {
+  buildOrderReportHtml,
+  deliverOrderPdfPayload,
+  downloadPaidReportPdf,
+  generateOrderPdfsBase64,
+  PDF_CAPTURE_ERROR,
+  mergeOrderPayloadIntoResult,
+  prepareFamilyFulfilPayload
+} from '../services/jathagamPdfExporter';
 import { Order, OrderItem, BirthProfile, CustomerReview, ReviewEligibleOrder, FamilyMember, FamilyRelation, MAX_FAMILY_MEMBERS, ChatDeliveryState } from '../types';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
 import { BirthDateField, BirthTimeField, BirthTimeZoneNotice } from '../components/common/BirthDateTimeFields';
@@ -497,30 +505,73 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   };
 
   /**
-   * Downloads the FROZEN report: the server renders the snapshot saved on
-   * the order date and never recalculates it, so this file is always the
-   * report as prepared on that date — printed on the report itself.
+   * Downloads the FROZEN report at the same print quality as the emailed copy.
+   *
+   * The dashboard fetches the immutable snapshot (never the mutable
+   * calculated_result), rebuilds the report with the shared HTML builders and
+   * captures it at the email profile (300 dpi, JPEG 0.95) — the exact pipeline
+   * that produced the customer's emailed PDF and the admin's approved preview.
+   * There is no server-side renderer to fall back to, so a device that cannot
+   * capture the canvas is told plainly instead of being handed a thinner file.
    */
   const handleDownloadReport = async (order: Order, item?: OrderItem) => {
     const key = item ? `${order.id}:${item.id}` : order.id;
     setDownloadingKey(key);
     setDownloadFeedback(null);
+    const personPart = item?.personName ? `_${item.personName.replace(/[^a-zA-Z0-9]+/g, '_')}` : '';
+    const fileName = `ASTRO_SIVAM_Report_${order.orderNumber}${personPart}.pdf`;
+    const language = normalizeReportLanguage(item?.language || order.language);
     try {
-      const personPart = item?.personName ? `_${item.personName.replace(/[^a-zA-Z0-9]+/g, '_')}` : '';
-      await api.downloadMyOrderReport(order.id, {
-        itemId: item?.id,
-        fileName: `ASTRO_SIVAM_Report_${order.orderNumber}${personPart}.pdf`
-      });
+      // The frozen snapshot body is fetched only when Download is clicked and
+      // only for the signed-in owner — the orders list never carries it.
+      const frozen = await api.getMyOrderReportSnapshot(order.id, item?.id);
+      // One-chart view of the item, exactly like the admin preview and the
+      // email render build it. Kept local so the dashboard never pulls the
+      // order-items module (and its invoice builders) into this route chunk.
+      const chartOrder: Order = item
+        ? {
+            ...order,
+            serviceType: item.serviceCode,
+            language,
+            inputPayload: item.inputPayload || {},
+            calculatedResult: item.calculatedResult,
+            amount: item.unitPrice
+          }
+        : { ...order, language };
+      const result = { ...(frozen.result || {}) };
+      // A legacy snapshot without its own stamp still prints the frozen
+      // preparation date, never today's date.
+      if (!result.generatedAt && frozen.preparedAt) {
+        result.generatedAt = frozen.preparedAt;
+      }
+      const reportHtml = buildOrderReportHtml(
+        chartOrder,
+        mergeOrderPayloadIntoResult(chartOrder, result),
+        language
+      );
+      if (!reportHtml) {
+        throw new Error('No report template exists for this report.');
+      }
+      const quality = await downloadPaidReportPdf(reportHtml, fileName);
       setDownloadFeedback({
         orderId: order.id,
         type: 'success',
-        message: 'Report downloaded — exactly as prepared on the order date shown on the report.'
+        message: quality === 'PRINT'
+          ? 'Report downloaded — the same print-quality PDF that was emailed to you.'
+          : 'Report downloaded. This device could not render the full print resolution, so a slightly lighter copy was saved.'
       });
-    } catch (err: any) {
+    } catch (renderError: any) {
+      // The browser is the ONLY renderer now (the server-side mPDF path was
+      // removed). Never download a freshly generated substitute: surface the
+      // concrete reason — the report is not available yet, or this device could
+      // not capture the print-resolution canvas.
+      const message = renderError?.message || '';
       setDownloadFeedback({
         orderId: order.id,
         type: 'error',
-        message: err?.message || 'This report is not available for download yet.'
+        message: message === PDF_CAPTURE_ERROR
+          ? 'This device could not render the report at print quality. Please retry on a desktop browser — your emailed copy remains valid.'
+          : message || 'This report is not available for download yet.'
       });
     } finally {
       setDownloadingKey('');
@@ -1261,7 +1312,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                     <span className="text-slate-400"> — {itemService}</span>
                                     {itemPrepared && (
                                       <span className="block text-[11px] text-slate-500">
-                                        Prepared on {itemPrepared} • {reportLanguageName(item.language)} (your order language) • frozen as ordered
+                                        Prepared on {itemPrepared} • {reportLanguageName(item.language)}
                                       </span>
                                     )}
                                   </div>
@@ -1292,7 +1343,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <span className="text-[11px] text-slate-500">
                               {formatPreparedDate(order.reportSnapshotAt || order.createdAt) && (
-                                <>Prepared on {formatPreparedDate(order.reportSnapshotAt || order.createdAt)} • {reportLanguageName(order.language)} (your order language) • frozen as ordered — this download never updates itself.</>
+                                <>Prepared on {formatPreparedDate(order.reportSnapshotAt || order.createdAt)} • {reportLanguageName(order.language)}</>
                               )}
                             </span>
                             <button
