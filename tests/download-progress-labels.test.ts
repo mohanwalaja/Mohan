@@ -40,6 +40,7 @@ function check(name: string, fn: () => void) {
 const dashboard = read('src/pages/CustomerDashboard.tsx');
 const previewModal = read('src/components/common/LivePdfPreviewModal.tsx');
 const orderModal = read('src/components/common/OrderReportModal.tsx');
+const sampleButton = read('src/components/common/SampleReportButton.tsx');
 
 console.log('--- DOWNLOAD PROGRESS LABELS ---');
 
@@ -75,6 +76,13 @@ check('the preview / sample-preview button says "Downloading…"', () => {
       `the preview must not describe the download as "${old}"`
     );
   }
+});
+
+check('all public sample buttons say "Downloading" while the sample loads', () => {
+  assert.match(sampleButton, /loadingLabel = 'Downloading sample…'/);
+  assert.match(sampleButton, /Downloading the sample viewer…/);
+  assert.match(sampleButton, /aria-label="Downloading sample report"/);
+  assert.doesNotMatch(sampleButton, /Preparing sample|Preparing the sample viewer/);
 });
 
 check('the sample preview progress banner says it is downloading', () => {

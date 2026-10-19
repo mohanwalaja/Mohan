@@ -18,10 +18,12 @@
  *    the fixed details above; the bride is a second hard-coded sample person
  *    (15 June 1998, 6:30 AM, Chennai) so the porutham table shows a realistic
  *    spread of results. She is also fixed — never a user choice.
- * 3. Samples are calculated by the SAME engines the paid reports use
- *    (`/api/services/calculate-preview`, i.e. the PHP astrology API),
- *    and rendered by the SAME HTML builders the PDF pipeline uses, so a sample
- *    can never drift away from the real report format.
+ * 3. Birth, marriage and baby-naming samples use the same server-backed
+ *    calculation API as paid previews. Muhurtham's six-month scan is already
+ *    produced by the canonical client scanner used by its service form, so its
+ *    public sample renders that scan locally instead of depending on a remote
+ *    preview endpoint to validate it. All four use the same report builders as
+ *    the PDF pipeline, so the sample cannot drift from the real report format.
  * 4. Every sample page carries a light "SAMPLE" watermark so a sample PDF can
  *    never be mistaken for a paid report.
  *
@@ -185,6 +187,17 @@ function sampleCacheKey(serviceType: SampleServiceType, payload: Record<string, 
  * Calculates the fixed sample result for a service with the real astrology
  * service (Node or PHP — whichever the deployment is running).
  */
+function hasCompleteMuhurthamSample(result: any, payload: Record<string, any>): boolean {
+  return Boolean(
+    result && typeof result === 'object' &&
+    Number(result.muhurthamAlgorithmVersion) === MUHURTHAM_ALGORITHM_VERSION &&
+    result.selectedMonth === payload.selectedMonth &&
+    Array.isArray(result.months) && result.months.length === 6 &&
+    result.months.every((month: any) => Array.isArray(month?.days)) &&
+    Array.isArray(result.persons) && result.persons.length >= 1
+  );
+}
+
 export async function calculateSampleResult(
   serviceType: SampleServiceType,
   options?: { force?: boolean }
@@ -193,6 +206,21 @@ export async function calculateSampleResult(
   const cacheKey = sampleCacheKey(serviceType, payload);
   if (!options?.force && sampleResultCache.has(cacheKey)) {
     return sampleResultCache.get(cacheKey);
+  }
+
+  // The Muhurtham sample already includes its complete, versioned six-month
+  // scan from the shared client scanner. The PHP preview endpoint only
+  // validates/normalizes that scan; requiring a live round-trip here meant a
+  // server-version mismatch could hide an otherwise complete public sample.
+  // Render this fixed sample directly from the exact scan used by the page.
+  if (serviceType === 'MUHURTHAM') {
+    const { calculateLocalAstrology } = await import('./localAstrology');
+    const result = calculateLocalAstrology(serviceType, payload);
+    if (!hasCompleteMuhurthamSample(result, payload)) {
+      throw new Error('The Subha Muhurtham sample calendar could not be loaded. Please try again.');
+    }
+    sampleResultCache.set(cacheKey, result);
+    return result;
   }
 
   try {
@@ -205,7 +233,7 @@ export async function calculateSampleResult(
     console.warn('[ASTRO SIVAM] Remote sample calculation unavailable, falling back to client-side engine:', apiError);
   }
 
-  // Resilient fallback: compute using the high-precision client-side astrology engine
+  // Resilient fallback: compute using the high-precision client-side astrology engine.
   const { calculateLocalAstrology } = await import('./localAstrology');
   const result = calculateLocalAstrology(serviceType, payload);
   if (!result) {

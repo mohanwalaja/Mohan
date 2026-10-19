@@ -48,21 +48,20 @@ interface SavedPersonPickerProps {
 }
 
 /**
- * "Who is this report for?" — the ONLY way saved birth details enter an
- * order form. The default is always "Enter new details" (a blank form);
- * the account holder's own profile and every saved family member are one
- * explicit tap away, which then fills the whole form with no typing.
+ * Saved details are offered only when the customer has at least one saved
+ * person. Empty accounts see a clean, blank form instead of an empty-state
+ * prompt; the separate opt-in save control lives at the bottom of the form.
  */
 export const SavedPersonPicker: React.FC<SavedPersonPickerProps> = ({
   value,
   onPick,
-  label = 'Who is this report for?',
+  label = 'Use saved birth details',
   theme = 'dark'
 }) => {
   const { user } = useAuth();
   const people = useSavedPeople();
 
-  if (!user) return null;
+  if (!user || people.length === 0) return null;
 
   const isDark = theme === 'dark';
   const shell = isDark
@@ -84,40 +83,32 @@ export const SavedPersonPicker: React.FC<SavedPersonPickerProps> = ({
         <span>{label}</span>
       </div>
 
-      {people.length === 0 ? (
-        <p className={`text-[11px] leading-relaxed ${hintClass}`}>
-          No saved birth details yet. Enter the details below — you can save family
-          members in <strong>Dashboard → Family Members</strong> and pick them here
-          next time with no form filling.
-        </p>
-      ) : (
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => onPick(null, '')}
+          className={`px-3 py-2 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${value === '' ? chipActive : chipBase}`}
+          aria-pressed={value === ''}
+        >
+          <PenLine className="w-3.5 h-3.5" />
+          <span>Enter new details</span>
+        </button>
+        {people.map(person => (
           <button
+            key={person.key}
             type="button"
-            onClick={() => onPick(null, '')}
-            className={`px-3 py-2 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${value === '' ? chipActive : chipBase}`}
-            aria-pressed={value === ''}
+            onClick={() => onPick(person, person.key)}
+            className={`px-3 py-2 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${value === person.key ? chipActive : chipBase}`}
+            aria-pressed={value === person.key}
+            title={`${person.name} • ${person.dob} • ${person.birthPlace}`}
           >
-            <PenLine className="w-3.5 h-3.5" />
-            <span>Enter new details</span>
+            <UserRound className="w-3.5 h-3.5" />
+            <span>
+              {person.source === 'self' ? `Myself — ${person.name}` : `${person.name} (${person.relationLabel})`}
+            </span>
           </button>
-          {people.map(person => (
-            <button
-              key={person.key}
-              type="button"
-              onClick={() => onPick(person, person.key)}
-              className={`px-3 py-2 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${value === person.key ? chipActive : chipBase}`}
-              aria-pressed={value === person.key}
-              title={`${person.name} • ${person.dob} • ${person.birthPlace}`}
-            >
-              <UserRound className="w-3.5 h-3.5" />
-              <span>
-                {person.source === 'self' ? `Myself — ${person.name}` : `${person.name} (${person.relationLabel})`}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
       {value !== '' && (
         <p className={`text-[11px] ${hintClass}`}>
           Details filled from the saved profile. You can still correct any field —

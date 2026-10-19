@@ -36,6 +36,7 @@ import { BirthDateField, BirthTimeField, BirthTimeZoneNotice, MonthField } from 
 import { isoToDisplayDob, parseFlexibleDob, parseFlexibleTob } from '../utils/dateTimeInput';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
+  FAMILY_RELATION_OPTIONS,
   isValidBirthTime,
   isValidIsoBirthDate,
   isVerifiedBirthLocation,
@@ -46,6 +47,8 @@ import {
   type SavedPerson
 } from '../utils/birthDetails';
 import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
+import { SaveBirthDetailsOption } from '../components/common/SaveBirthDetailsOption';
+import { saveBirthDetailsForNextTime } from '../services/saveBirthDetails';
 
 const EVENT_ORDER = [
   'wedding', 'engagement', 'griha_pravesam', 'house_purchase', 'house_construction', 'land_purchase',
@@ -92,11 +95,14 @@ const defaultTargetMonth = () => {
 };
 
 export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> = ({ onNavigate }) => {
-  const { user, settings } = useAuth();
+  const { user, settings, saveFamilyMember, updateBirthProfile } = useAuth();
   const { paymentMethod, setPaymentMethod, addItem, openCart, items: cartItems } = useCart();
   const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>('en');
   const [selectedMonth, setSelectedMonth] = useState(defaultTargetMonth);
   const [selectedEvent, setSelectedEvent] = useState<MuhurthamEventKey>('wedding');
+  const [saveAsProfile, setSaveAsProfile] = useState(false);
+  const [saveMainRelation, setSaveMainRelation] = useState('OTHER');
+  const [savePartnerRelation, setSavePartnerRelation] = useState('SPOUSE');
   // Blank by default: the signed-in user's own details are never taken
   // silently — they (or a family member) fill in only when explicitly picked.
   const [name, setName] = useState('');
@@ -132,6 +138,8 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
   const [pickedKey, setPickedKey] = useState('');
   const [partnerPickedKey, setPartnerPickedKey] = useState('');
   const savedPeople = useSavedPeople();
+  const pickedPerson = savedPeople.find(person => person.key === pickedKey) || null;
+  const pickedPartner = savedPeople.find(person => person.key === partnerPickedKey) || null;
 
   const applyTobFields = (
     tob24: string,
@@ -148,6 +156,7 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
   };
 
   const handlePickPerson = (person: SavedPerson | null, key: string) => {
+    setSaveAsProfile(false);
     setPickedKey(key);
     if (person) {
       setName(person.name);
@@ -167,6 +176,7 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
   };
 
   const handlePickPartner = (person: SavedPerson | null, key: string) => {
+    setSaveAsProfile(false);
     setPartnerPickedKey(key);
     if (person) {
       setPartnerName(person.name);
@@ -404,6 +414,67 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
     };
   };
 
+  const persistMuhurthamBirthDetails = (
+    includePrimarySelf = true,
+    includePartnerSelf = true
+  ) => {
+    if (!saveAsProfile || !user) return;
+
+    const effectiveDob = resolveCurrentDob();
+    const effectiveTob = resolveCurrentTob();
+    const primaryTimezone = birthPlace
+      ? resolveLocationTimezone(
+          effectiveDob,
+          effectiveTob,
+          birthPlace.latitude,
+          birthPlace.longitude,
+          birthPlace.timezoneOffsetHours,
+          birthPlace.timeZoneId
+        )
+      : null;
+
+    if (birthPlace && (pickedPerson?.source !== 'self' || includePrimarySelf)) {
+      void saveBirthDetailsForNextTime({
+        saveFamilyMember,
+        updateBirthProfile,
+        selectedPerson: pickedPerson,
+        relation: saveMainRelation as any,
+        name,
+        dob: effectiveDob,
+        tob: effectiveTob,
+        location: birthPlace,
+        timezoneOffsetHours: primaryTimezone?.timezoneOffsetHours,
+        gender: pickedPerson?.gender || 'M'
+      });
+    }
+
+    const hasCompletePartner = checksBothCharts && hasPartnerDetails() && !partnerErrors();
+    if (!hasCompletePartner || !partnerBirthPlace || (pickedPartner?.source === 'self' && !includePartnerSelf)) return;
+
+    const partnerDobIso = resolvePartnerDob();
+    const partnerTob24 = resolvePartnerTob();
+    const partnerTimezone = resolveLocationTimezone(
+      partnerDobIso,
+      partnerTob24,
+      partnerBirthPlace.latitude,
+      partnerBirthPlace.longitude,
+      partnerBirthPlace.timezoneOffsetHours,
+      partnerBirthPlace.timeZoneId
+    );
+    void saveBirthDetailsForNextTime({
+      saveFamilyMember,
+      updateBirthProfile,
+      selectedPerson: pickedPartner,
+      relation: savePartnerRelation as any,
+      name: partnerName,
+      dob: partnerDobIso,
+      tob: partnerTob24,
+      location: partnerBirthPlace,
+      timezoneOffsetHours: partnerTimezone.timezoneOffsetHours,
+      gender: pickedPartner?.gender || 'F'
+    });
+  };
+
   /**
    * Builds the family-tray line for this Subha Muhurtham report.
    *
@@ -496,6 +567,12 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
       return;
     }
 
+    // Opted-in family/profile saves happen when the report is added to the
+    // tray, because tray checkout does not edit saved people. Consent applies
+    // to this report only, so require it again for a later report.
+    persistMuhurthamBirthDetails();
+    setSaveAsProfile(false);
+
     const reachedFamilyLimit = cartItems.length + 1 >= MAX_FAMILY_ORDER_ITEMS;
     setTraySuccessMessage(
       reachedFamilyLimit
@@ -560,9 +637,11 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
             months: scan.months,
             persons: scan.persons
           }
-        }
+        },
+        saveAsProfile: saveAsProfile && pickedPerson?.source === 'self'
       });
       if (response.success && response.order) {
+        persistMuhurthamBirthDetails(false, true);
         setSuccessOrder(response.order);
       } else {
         setError(response.message || 'We could not submit your request. Please try again.');
@@ -654,7 +733,7 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
                 <SavedPersonPicker
                   value={pickedKey}
                   onPick={handlePickPerson}
-                  label={checksBothCharts ? 'Who is the groom (first person)?' : 'Who is this Muhurtham for?'}
+                  label={checksBothCharts ? 'Use saved birth details for the groom' : 'Use saved birth details for this report'}
                 />
                 <div className="space-y-4">
                   <PersonNameField
@@ -788,7 +867,7 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
                   <SavedPersonPicker
                     value={partnerPickedKey}
                     onPick={handlePickPartner}
-                    label="Who is the bride?"
+                    label="Use saved birth details for the bride"
                   />
                   <div className="space-y-4">
                     <PersonNameField
@@ -873,6 +952,47 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
 
               {/* Streamlined Checkout Action Section */}
               <section className="border-t border-white/10 pt-5 space-y-4">
+                {user && (
+                  <SaveBirthDetailsOption
+                    id="muhurtham-save-details"
+                    checked={saveAsProfile}
+                    onChange={setSaveAsProfile}
+                    label="Save these birth details for next time"
+                    helperText="Optional. Selected people are updated; new details are added to Family Members."
+                  >
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {!pickedPerson && (
+                        <select
+                          value={saveMainRelation}
+                          onChange={event => setSaveMainRelation(event.target.value)}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 cursor-pointer"
+                          aria-label="Relationship for the first person"
+                        >
+                          {FAMILY_RELATION_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>
+                              First person: {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {checksBothCharts && hasPartnerDetails() && !partnerErrors() && !pickedPartner && (
+                        <select
+                          value={savePartnerRelation}
+                          onChange={event => setSavePartnerRelation(event.target.value)}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 cursor-pointer"
+                          aria-label="Relationship for the bride"
+                        >
+                          {FAMILY_RELATION_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>
+                              Bride: {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </SaveBirthDetailsOption>
+                )}
+
                 {traySuccessMessage && (
                   <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-400/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200" role="status">
                     <div className="flex items-center gap-2">
@@ -1063,7 +1183,9 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
               persons: checkoutScan?.persons || []
             }
           }}
+          saveAsProfile={saveAsProfile && pickedPerson?.source === 'self'}
           onSuccess={ord => {
+            persistMuhurthamBirthDetails(false, true);
             setSuccessOrder(ord);
             setShowCheckoutModal(false);
           }}

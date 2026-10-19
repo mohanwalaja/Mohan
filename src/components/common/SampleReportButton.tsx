@@ -23,11 +23,11 @@ function SamplePreviewLoading() {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
       <div
         role="status"
-        aria-label="Loading sample report"
+        aria-label="Downloading sample report"
         className="flex flex-col items-center gap-3 rounded-3xl border border-slate-700 bg-slate-900 px-8 py-6 shadow-2xl"
       >
         <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
-        <p className="text-xs font-bold text-slate-200">Preparing the sample viewer…</p>
+        <p className="text-xs font-bold text-slate-200">Downloading the sample viewer…</p>
       </div>
     </div>
   );
@@ -61,7 +61,7 @@ export const SampleReportButton: React.FC<SampleReportButtonProps> = ({
   language = 'en',
   className,
   label = 'View Sample Report (PDF)',
-  loadingLabel = 'Preparing sample…',
+  loadingLabel = 'Downloading sample…',
   helperText
 }) => {
   const [isOpen, setIsOpen] = useState(false);
