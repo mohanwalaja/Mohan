@@ -3866,7 +3866,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Mobile</th>
                   <th className="px-4 py-3">Role</th>
-                  <th className="px-4 py-3">Saved Birth Profile</th>
+                  <th className="px-4 py-3">Own Birth Details</th>
                   <th className="px-4 py-3">Joined Date</th>
                 </tr>
               </thead>

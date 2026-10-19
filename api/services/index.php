@@ -725,11 +725,16 @@ if (preg_match('#/services/family-members/?$#', $path)
                 }
             }
         } else {
-            // Maximum 6 saved family members per customer.
+            // Maximum 6 saved people per customer IN TOTAL: the account
+            // holder's own birth profile counts as one of the six, so there is
+            // no seventh slot for a separate "saved birth profile".
             $count = $pdo->prepare("SELECT COUNT(*) FROM family_members WHERE user_id = ?");
             $count->execute([$user['id']]);
-            if ((int)$count->fetchColumn() >= 6) {
-                jsonResponse(['success' => false, 'message' => 'You can save up to 6 family members. Please remove one before adding another.'], 400);
+            $ownProfile = $pdo->prepare("SELECT COUNT(*) FROM birth_profiles WHERE user_id = ?");
+            $ownProfile->execute([$user['id']]);
+            $savedPeople = (int)$count->fetchColumn() + (int)$ownProfile->fetchColumn();
+            if ($savedPeople >= 6) {
+                jsonResponse(['success' => false, 'message' => 'You can save up to 6 people including yourself. Please remove one before adding another.'], 400);
             }
             $memberId = astro_random_id('fm_');
             $stmt = $pdo->prepare("INSERT INTO family_members (id, user_id, name, relation, dob, tob, birth_place, country, latitude, longitude, timezone_offset_hours, gender, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");

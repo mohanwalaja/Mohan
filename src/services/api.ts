@@ -675,7 +675,7 @@ export const api = {
     return safeJson(res);
   },
 
-  // Saved family members (up to MAX_FAMILY_MEMBERS besides the own profile).
+  // Saved people (up to MAX_FAMILY_MEMBERS, the account holder included).
   // Managed in the dashboard; order forms only fill one in when the customer
   // explicitly picks that person — forms always start blank otherwise.
   async getFamilyMembers(): Promise<{ success: boolean; members: FamilyMember[]; message?: string }> {

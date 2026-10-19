@@ -64,7 +64,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
           </p>
         </div>
         <p className="text-xs text-slate-500">
-          Access your saved birth profile, Vedic astrology orders, and verified PDF reports.
+          Access your saved birth details, Vedic astrology orders, and verified PDF reports.
         </p>
       </div>
 

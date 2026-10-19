@@ -25,7 +25,8 @@ import {
   Plus,
   Trash2,
   MessageCircle,
-  Phone
+  Phone,
+  ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -72,11 +73,20 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   // The name saved in the website profile is authoritative — never a stale
   // name or one with a "(Google)" tag attached.
   const displayName = user ? resolveDisplayName(birthProfile?.name, user.name, user.email) : 'User';
+  // The account holder counts as ONE of the MAX_FAMILY_MEMBERS saved people:
+  // there is no separate saved birth profile any more.
+  const savedPeopleCount = familyMembers.length + (birthProfile ? 1 : 0);
+  // Legacy accounts may hold 6 family members + their own profile (the old
+  // rule allowed 6 BESIDES the profile). Show the capped count, never "7/6".
+  const savedPeopleDisplay = Math.min(savedPeopleCount, MAX_FAMILY_MEMBERS);
   const savedBirthLocation = locationFromBirthProfile(birthProfile);
   
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'profile' | 'family'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'family'>('orders');
+  // Account-alert settings live in the dashboard header now (the separate
+  // "Saved Birth Profile" tab is gone — you are the first saved person).
+  const [alertsOpen, setAlertsOpen] = useState(false);
   // Source-based astrologer entry point. `aiChatOrder` is null for a general chat, or the
   // order whose report the customer wants explained.
   const [aiChatOpen, setAiChatOpen] = useState(false);
@@ -397,8 +407,21 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
   const handleAddFamilyMember = () => {
     resetFamilyForm();
+    setIsEditingProfile(false);
     setFamilySaveSuccess('');
     setFamilyFormOpen(true);
+  };
+
+  /**
+   * Edit the account holder's own birth details. There is no separate profile
+   * tab: you are the first of the six saved people in the Family Members tab.
+   */
+  const startEditingSelf = () => {
+    setProfileSaveError('');
+    setProfileSaveSuccess(false);
+    setFamilyFormOpen(false);
+    resetFamilyForm();
+    setIsEditingProfile(true);
   };
 
   const handleEditFamilyMember = (member: FamilyMember) => {
@@ -671,7 +694,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   const seo = (
     <SEO
       title="Customer Order Dashboard | ASTRO SIVAM"
-      description="Track your astrology orders, email-delivery status, and saved birth profile."
+      description="Track your astrology orders, email-delivery status, and saved family birth details."
       noindex={true}
     />
   );
@@ -725,6 +748,81 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   // The chat speaks the language the customer selected for the report they
   // are asking about; a chat opened without a report follows the site picker.
   const aiLanguage = aiChatOrder ? normalizeReportLanguage(aiChatOrder.language) : appLanguage;
+
+  /**
+   * The account holder's own birth details. There is no separate "Saved Birth
+   * Profile" tab any more: you are the FIRST of the six saved people in the
+   * Family Members tab, and this form edits that card in place.
+   */
+  const renderSelfBirthForm = () => (
+        <form onSubmit={handleSaveProfile} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <PersonNameField
+              id="profile-user-name"
+              label="User full name"
+              value={pName}
+              onChange={setPName}
+              placeholder="Your full name"
+              size="sm"
+            />
+
+            <div>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                Gender:
+              </label>
+              <select
+                value={pGender}
+                onChange={e => setPGender(e.target.value as 'M' | 'F')}
+                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
+              >
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <BirthDateField
+              label="Date of Birth"
+              size="sm"
+              value={pDob}
+              onChange={setPDob}
+            />
+
+            <BirthTimeField
+              label="Exact Birth Time"
+              size="sm"
+              value={pTob}
+              onChange={setPTob}
+            />
+          </div>
+
+          <GooglePlacesPicker
+            value={pLocation || undefined}
+            onChange={setPLocation}
+            label="Birth Place (Google Maps)"
+          />
+          <BirthTimeZoneNotice resolution={profileTimezone} date={pDob} time={pTob} />
+
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={isSavingProfile}
+              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{isSavingProfile ? 'Saving...' : 'Save Birth Details'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEditingProfile(false)}
+              className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -797,6 +895,186 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
         </div>
       </div>
 
+      {/* Account alerts — account header area. One saved number, verified
+          per app; alerts go only to a verified number and reports/invoices
+          are never sent over chat. */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+        <button
+          type="button"
+          onClick={() => setAlertsOpen(v => !v)}
+          aria-expanded={alertsOpen}
+          className="w-full flex items-center justify-between gap-3 px-5 py-3.5 text-left cursor-pointer"
+        >
+          <span className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+            <MessageCircle className="w-4 h-4 text-emerald-500" />
+            WhatsApp &amp; Viber Order Alerts
+          </span>
+          <span className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+            {chatDelivery?.whatsappVerified || chatDelivery?.viberVerified
+              ? `${[chatDelivery?.whatsappVerified ? 'WhatsApp' : '', chatDelivery?.viberVerified ? 'Viber' : ''].filter(Boolean).join(' + ')} verified`
+              : chatDelivery?.phone ? 'Number saved — not verified' : 'No alert number saved'}
+            <ChevronDown className={`w-4 h-4 transition-transform ${alertsOpen ? 'rotate-180' : ''}`} />
+          </span>
+        </button>
+        {alertsOpen && (
+          <div className="border-t border-slate-100 dark:border-slate-800 px-5 py-4 space-y-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Get an alert on WhatsApp or Viber when your order is confirmed and when it is completed.
+              Save your number and verify it with the one-time code we send in that app — alerts are
+              sent <strong>only to a verified number</strong>. Reports and tax invoices are always
+              delivered by <strong>email</strong>; PDFs are never sent over chat. Each app is verified
+              separately.
+            </p>
+      <div className="space-y-4">
+
+        {chatFeedback && (
+          <div
+            role="status"
+            className={`p-3 rounded-xl border flex items-start gap-2 text-xs ${
+              chatFeedback.type === 'success'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+            }`}
+          >
+            {chatFeedback.type === 'success'
+              ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+            <span>{chatFeedback.message}</span>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1" htmlFor="chat-delivery-phone">
+              Mobile number (with country code):
+            </label>
+            <div className="relative">
+              <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                id="chat-delivery-phone"
+                type="tel"
+                value={chatPhoneInput}
+                onChange={e => setChatPhoneInput(e.target.value)}
+                placeholder="+91 98765 43210"
+                className="w-full pl-9 pr-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex items-end gap-2">
+            <button
+              type="button"
+              onClick={handleSaveChatNumber}
+              disabled={chatBusy}
+              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
+            >
+              {chatBusy ? 'Saving...' : 'Save Number'}
+            </button>
+            {chatDelivery?.phone && (
+              <button
+                type="button"
+                onClick={handleRemoveChatNumber}
+                disabled={chatBusy}
+                className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+
+        {chatDelivery?.phone ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {([
+              { channel: 'whatsapp' as const, label: 'WhatsApp', verified: chatDelivery.whatsappVerified, available: chatDelivery.whatsappAvailable },
+              { channel: 'viber' as const, label: 'Viber', verified: chatDelivery.viberVerified, available: chatDelivery.viberAvailable }
+            ]).map(app => (
+              <div key={app.channel} className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-sm text-slate-900 dark:text-white">{app.label}</span>
+                  {app.verified ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                      <ShieldCheck className="w-3 h-3" /> Verified
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/30">
+                      Not verified
+                    </span>
+                  )}
+                </div>
+
+                {!app.verified && (
+                  <>
+                    {chatOtpChannel === app.channel ? (
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block" htmlFor={`chat-otp-${app.channel}`}>
+                          Enter the 6-digit code sent to {chatDelivery.phone} on {app.label}:
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            id={`chat-otp-${app.channel}`}
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            maxLength={6}
+                            value={chatOtpCode}
+                            onChange={e => setChatOtpCode(e.target.value.replace(/\D/g, ''))}
+                            placeholder="123456"
+                            className="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm tracking-[0.3em]"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleConfirmChatOtp}
+                            disabled={chatBusy || chatOtpCode.length !== 6}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            Confirm
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRequestChatOtp(app.channel)}
+                          disabled={chatBusy}
+                          className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer disabled:opacity-50"
+                        >
+                          Resend code
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleRequestChatOtp(app.channel)}
+                        disabled={chatBusy || !app.available}
+                        className="w-full px-4 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Verify on {app.label}</span>
+                      </button>
+                    )}
+                    {!app.available && (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                        {app.label} alerts are not switched on yet — the button will work once they are enabled. Your reports will keep arriving by email.
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {app.verified && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Order status alerts (confirmed / completed) will be sent to {chatDelivery.phone} on {app.label}. Reports and invoices arrive by email.
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Save your number first, then verify it on WhatsApp and/or Viber to receive order status alerts. Changing the number later requires verifying the new number again.
+          </p>
+        )}
+      </div>
+          </div>
+        )}
+      </div>
+
       {/* Tabs */}
       <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
         <button
@@ -812,18 +1090,6 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
         </button>
 
         <button
-          onClick={() => setActiveTab('profile')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'profile'
-              ? 'bg-amber-500 text-slate-950 shadow-sm'
-              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
-          }`}
-        >
-          <User className="w-3.5 h-3.5" />
-          <span>Saved Birth Profile</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab('family')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === 'family'
@@ -832,7 +1098,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           }`}
         >
           <Users className="w-3.5 h-3.5" />
-          <span>Family Members ({familyMembers.length}/{MAX_FAMILY_MEMBERS})</span>
+          <span>Family Members ({savedPeopleDisplay}/{MAX_FAMILY_MEMBERS})</span>
         </button>
 
         <div className="ml-auto">
@@ -1400,321 +1666,6 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
         </div>
       )}
 
-      {/* Tab 2: Saved Birth Profile View */}
-      {activeTab === 'profile' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-          
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                My Saved Birth Profile
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Order forms always start blank. These details are filled in only when you explicitly pick &quot;Myself&quot; on an order form — they are never taken automatically.
-              </p>
-            </div>
-
-            {!isEditingProfile && (
-              <button
-                onClick={() => {
-                  setProfileSaveError('');
-                  setIsEditingProfile(true);
-                }}
-                className="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-                <span>Edit Details</span>
-              </button>
-            )}
-          </div>
-
-          {profileSaveSuccess && (
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>Birth Profile successfully updated and saved!</span>
-            </div>
-          )}
-
-          {profileSaveError && (
-            <div role="alert" className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{profileSaveError}</span>
-            </div>
-          )}
-
-          {!birthProfile && !isEditingProfile && (
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/70 text-amber-800 dark:text-amber-200 rounded-xl text-xs leading-relaxed">
-              No saved birth profile yet. Add your birth details once, then pick &quot;Myself&quot; on any order form to fill them in with one tap.
-            </div>
-          )}
-
-          {isEditingProfile ? (
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <PersonNameField
-                  id="profile-user-name"
-                  label="User full name"
-                  value={pName}
-                  onChange={setPName}
-                  placeholder="Your full name"
-                  size="sm"
-                />
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    Gender:
-                  </label>
-                  <select
-                    value={pGender}
-                    onChange={e => setPGender(e.target.value as 'M' | 'F')}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                  >
-                    <option value="M">Male</option>
-                    <option value="F">Female</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <BirthDateField
-                  label="Date of Birth"
-                  size="sm"
-                  value={pDob}
-                  onChange={setPDob}
-                />
-
-                <BirthTimeField
-                  label="Exact Birth Time"
-                  size="sm"
-                  value={pTob}
-                  onChange={setPTob}
-                />
-              </div>
-
-              <GooglePlacesPicker
-                value={pLocation || undefined}
-                onChange={setPLocation}
-                label="Birth Place (Google Maps)"
-              />
-              <BirthTimeZoneNotice resolution={profileTimezone} date={pDob} time={pTob} />
-
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={isSavingProfile}
-                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>{isSavingProfile ? 'Saving...' : 'Save Birth Details'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingProfile(false)}
-                  className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <div className="text-[11px] text-slate-400">User Name</div>
-                <div className="font-bold text-slate-900 dark:text-white mt-1 text-sm">{birthProfile?.name || 'Not set'}</div>
-              </div>
-
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <div className="text-[11px] text-slate-400">Date & Time of Birth</div>
-                <div className="font-bold text-slate-900 dark:text-white mt-1">
-                  {birthProfile?.dob || 'Not set'}{birthProfile?.tob ? ` at ${birthProfile.tob}` : ''}
-                </div>
-              </div>
-
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <div className="text-[11px] text-slate-400">Birth Location</div>
-                <div className="font-bold text-slate-900 dark:text-white mt-1">
-                  {birthProfile?.birthPlace || 'Not set'}{birthProfile?.country ? `, ${birthProfile.country}` : ''}
-                </div>
-              </div>
-
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <div className="text-[11px] text-slate-400">Coordinates & Timezone</div>
-                <div className="font-bold text-slate-900 dark:text-white mt-1">
-                  {savedBirthLocation
-                    ? `${savedBirthLocation.latitude.toFixed(2)}°, ${savedBirthLocation.longitude.toFixed(2)}° (UTC${savedBirthLocation.timezoneOffsetHours >= 0 ? '+' : ''}${savedBirthLocation.timezoneOffsetHours.toFixed(1)})`
-                    : 'Select this saved place again to verify its coordinates and timezone'}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* WhatsApp & Viber alerts (inside the profile tab): one saved
-          number, verified per app; alerts only go to verified numbers and
-          reports/invoices are never sent over chat. */}
-      {activeTab === 'profile' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
-          <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <MessageCircle className="w-4.5 h-4.5 text-emerald-500" />
-              WhatsApp &amp; Viber Order Alerts
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
-              Get an alert on WhatsApp or Viber when your order is confirmed and when it is completed.
-              Save your number and verify it with the one-time code we send in that app — alerts are
-              sent <strong>only to a verified number</strong>. Reports and tax invoices are always
-              delivered by <strong>email</strong>; PDFs are never sent over chat. Each app is verified
-              separately.
-            </p>
-          </div>
-
-          {chatFeedback && (
-            <div
-              role="status"
-              className={`p-3 rounded-xl border flex items-start gap-2 text-xs ${
-                chatFeedback.type === 'success'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
-                  : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
-              }`}
-            >
-              {chatFeedback.type === 'success'
-                ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-                : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
-              <span>{chatFeedback.message}</span>
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1" htmlFor="chat-delivery-phone">
-                Mobile number (with country code):
-              </label>
-              <div className="relative">
-                <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  id="chat-delivery-phone"
-                  type="tel"
-                  value={chatPhoneInput}
-                  onChange={e => setChatPhoneInput(e.target.value)}
-                  placeholder="+91 98765 43210"
-                  className="w-full pl-9 pr-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm"
-                />
-              </div>
-            </div>
-            <div className="flex items-end gap-2">
-              <button
-                type="button"
-                onClick={handleSaveChatNumber}
-                disabled={chatBusy}
-                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
-              >
-                {chatBusy ? 'Saving...' : 'Save Number'}
-              </button>
-              {chatDelivery?.phone && (
-                <button
-                  type="button"
-                  onClick={handleRemoveChatNumber}
-                  disabled={chatBusy}
-                  className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          </div>
-
-          {chatDelivery?.phone ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {([
-                { channel: 'whatsapp' as const, label: 'WhatsApp', verified: chatDelivery.whatsappVerified, available: chatDelivery.whatsappAvailable },
-                { channel: 'viber' as const, label: 'Viber', verified: chatDelivery.viberVerified, available: chatDelivery.viberAvailable }
-              ]).map(app => (
-                <div key={app.channel} className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-900 dark:text-white">{app.label}</span>
-                    {app.verified ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                        <ShieldCheck className="w-3 h-3" /> Verified
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/30">
-                        Not verified
-                      </span>
-                    )}
-                  </div>
-
-                  {!app.verified && (
-                    <>
-                      {chatOtpChannel === app.channel ? (
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block" htmlFor={`chat-otp-${app.channel}`}>
-                            Enter the 6-digit code sent to {chatDelivery.phone} on {app.label}:
-                          </label>
-                          <div className="flex gap-2">
-                            <input
-                              id={`chat-otp-${app.channel}`}
-                              inputMode="numeric"
-                              autoComplete="one-time-code"
-                              maxLength={6}
-                              value={chatOtpCode}
-                              onChange={e => setChatOtpCode(e.target.value.replace(/\D/g, ''))}
-                              placeholder="123456"
-                              className="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm tracking-[0.3em]"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleConfirmChatOtp}
-                              disabled={chatBusy || chatOtpCode.length !== 6}
-                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition-all cursor-pointer disabled:opacity-50"
-                            >
-                              Confirm
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRequestChatOtp(app.channel)}
-                            disabled={chatBusy}
-                            className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer disabled:opacity-50"
-                          >
-                            Resend code
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleRequestChatOtp(app.channel)}
-                          disabled={chatBusy || !app.available}
-                          className="w-full px-4 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Verify on {app.label}</span>
-                        </button>
-                      )}
-                      {!app.available && (
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                          {app.label} alerts are not switched on yet — the button will work once they are enabled. Your reports will keep arriving by email.
-                        </p>
-                      )}
-                    </>
-                  )}
-
-                  {app.verified && (
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Order status alerts (confirmed / completed) will be sent to {chatDelivery.phone} on {app.label}. Reports and invoices arrive by email.
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Save your number first, then verify it on WhatsApp and/or Viber to receive order status alerts. Changing the number later requires verifying the new number again.
-            </p>
-          )}
-        </div>
-      )}
-
       {/* Tab 3: Family Members — saved birth details (max {MAX_FAMILY_MEMBERS}).
           Picked explicitly on order forms; never auto-filled. */}
       {activeTab === 'family' && (
@@ -1725,12 +1676,13 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 Saved Family Members
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed">
-                Save birth details for up to {MAX_FAMILY_MEMBERS} family members once. On any order form,
-                pick their name and the form fills itself — no typing. Order forms otherwise always
-                start blank; nobody&apos;s details are taken automatically.
+                You plus up to {MAX_FAMILY_MEMBERS - 1} family members — {MAX_FAMILY_MEMBERS} saved people in total,
+                yourself included. Save the birth details once, then pick a name on any order form and it fills
+                itself — no typing. Order forms otherwise always start blank; nobody&apos;s details are taken
+                automatically.
               </p>
             </div>
-            {!familyFormOpen && familyMembers.length < MAX_FAMILY_MEMBERS && (
+            {!familyFormOpen && !isEditingProfile && savedPeopleCount < MAX_FAMILY_MEMBERS && (
               <button
                 onClick={handleAddFamilyMember}
                 className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -1752,6 +1704,35 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
             <div role="alert" className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{familySaveError}</span>
+            </div>
+          )}
+
+          {profileSaveSuccess && !isEditingProfile && (
+            <div role="status" className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Your birth details were updated.</span>
+            </div>
+          )}
+
+          {isEditingProfile && (
+            <div className="rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/50 dark:bg-amber-950/20 p-4 space-y-3" data-saved-person-form="self">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">My Birth Details</h4>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingProfile(false)}
+                  className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:underline cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+              {profileSaveError && (
+                <div role="alert" className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{profileSaveError}</span>
+                </div>
+              )}
+              {renderSelfBirthForm()}
             </div>
           )}
 
@@ -1853,13 +1834,62 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 </button>
               </div>
             </form>
-          ) : familyMembers.length === 0 ? (
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/70 text-amber-800 dark:text-amber-200 rounded-xl text-xs leading-relaxed">
-              No family members saved yet. Add your spouse, children, parents or siblings once —
-              future orders for them then need no form filling at all.
-            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* YOU are the first of the six saved people — there is no
+                  separate saved birth profile anywhere. */}
+              <div
+                className="p-4 bg-amber-50/60 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-900/60 space-y-3"
+                data-saved-person="self"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">
+                      {birthProfile?.name || displayName || 'Myself'}
+                    </div>
+                    <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                      Myself (you)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={startEditingSelf}
+                    className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    title="Edit my birth details"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {birthProfile ? (
+                  <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                    <div>
+                      <span className="text-slate-400">Born:</span>{' '}
+                      <strong>{birthProfile.dob}</strong>
+                      {birthProfile.tob ? <> at <strong>{birthProfile.tob}</strong></> : null}
+                      {' '}({birthProfile.gender === 'F' ? 'Female' : 'Male'})
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Place:</span>{' '}
+                      <strong>{birthProfile.birthPlace}{birthProfile.country ? `, ${birthProfile.country}` : ''}</strong>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Add your own birth details once — you count as one of the {MAX_FAMILY_MEMBERS} saved people.
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={birthProfile ? () => handleOrderFor('self') : startEditingSelf}
+                  className="w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {birthProfile ? <Compass className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                  <span>{birthProfile ? 'Order for Myself' : 'Add My Birth Details'}</span>
+                </button>
+              </div>
+
               {familyMembers.map(member => (
                 <div
                   key={member.id}
@@ -1920,9 +1950,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
             </div>
           )}
 
-          {!familyFormOpen && familyMembers.length >= MAX_FAMILY_MEMBERS && (
+          {!familyFormOpen && !isEditingProfile && savedPeopleCount >= MAX_FAMILY_MEMBERS && (
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              You have saved the maximum of {MAX_FAMILY_MEMBERS} family members. Remove one to add another.
+              You have saved the maximum of {MAX_FAMILY_MEMBERS} people (yourself included). Remove one to add another.
             </p>
           )}
         </div>

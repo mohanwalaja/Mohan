@@ -178,7 +178,7 @@ export type FamilyRelation =
   | 'FRIEND'
   | 'OTHER';
 
-/** Maximum family members one account may save (besides its own profile). */
+/** Maximum saved people per account — the account holder counts as one of the six. */
 export const MAX_FAMILY_MEMBERS = 6;
 
 /**

@@ -134,7 +134,7 @@ check('multi-person checkout cards offer saved people but start blank', () => {
 
 check('dashboard: family tab, frozen download, honest wording', () => {
   const src = read('src/pages/CustomerDashboard.tsx');
-  assert.match(src, /Family Members \(\{familyMembers\.length\}\/\{MAX_FAMILY_MEMBERS\}\)/);
+  assert.match(src, /Family Members \(\{savedPeopleDisplay\}\/\{MAX_FAMILY_MEMBERS\}\)/);
   assert.match(src, /Download Report/);
   assert.match(src, /getMyOrderReportSnapshot/, 'the download renders the frozen snapshot at email quality');
   assert.match(src, /downloadPaidReportPdf/);
@@ -153,6 +153,49 @@ check('api client: family CRUD + the frozen snapshot source', () => {
   assert.match(src, /\/services\/orders\/\$\{encodeURIComponent\(orderId\)\}\/report-snapshot/);
   assert.ok(!src.includes('/report-pdf'), 'no server PDF download may come back');
   assert.ok(!src.includes('export-preview-pdf'), 'no server preview export may come back');
+});
+
+check('Saved Birth Profile tab is gone; you are the first of the six saved people', () => {
+  const src = read('src/pages/CustomerDashboard.tsx');
+  // No separate tab and no separate wording for a saved profile.
+  assert.doesNotMatch(src, /<span>Saved Birth Profile<\/span>/, 'the Saved Birth Profile tab must stay removed');
+  assert.doesNotMatch(src, /activeTab === 'profile'/, 'there is no profile tab state any more');
+  assert.doesNotMatch(src, /My Saved Birth Profile/, 'the removed profile heading must not return');
+  // The account holder is a card INSIDE the family tab, and counts toward 6.
+  assert.match(src, /data-saved-person="self"/, 'the account holder must be the first saved-person card');
+  assert.match(src, /Myself \(you\)/);
+  assert.match(src, /const savedPeopleCount = familyMembers\.length \+ \(birthProfile \? 1 : 0\);/,
+    'the account holder must count as one of the six');
+  assert.match(src, /Math\.min\(savedPeopleCount, MAX_FAMILY_MEMBERS\)/,
+    'a legacy 6-members-plus-profile account must display as 6/6, never 7/6');
+  assert.match(src, /You plus up to \{MAX_FAMILY_MEMBERS - 1\} family members/,
+    'the family copy must state that you are included in the six');
+  // The self card can be edited and ordered for, from the family tab.
+  assert.match(src, /startEditingSelf/);
+  assert.match(src, /Order for Myself/);
+});
+
+check('the account-alert settings live in the dashboard header, not a profile tab', () => {
+  const src = read('src/pages/CustomerDashboard.tsx');
+  const header = src.indexOf('Account alerts — account header area');
+  const tabs = src.indexOf('{/* Tabs */}');
+  assert.ok(header > 0 && tabs > header, 'the alert settings card must sit above the tab bar');
+  const alertBlock = src.slice(header, tabs);
+  assert.match(alertBlock, /WhatsApp &amp; Viber Order Alerts/);
+  assert.match(alertBlock, /alertsOpen/);
+  assert.doesNotMatch(alertBlock, /activeTab ===/, 'the alerts must not be gated behind a tab');
+  // The number/OTP handlers are unchanged.
+  assert.match(alertBlock, /handleSaveChatNumber/);
+  assert.match(alertBlock, /handleConfirmChatOtp/);
+});
+
+check('the server counts the account holder toward the same six-person cap', () => {
+  const src = read('api/services/index.php');
+  assert.match(src, /SELECT COUNT\(\*\) FROM birth_profiles WHERE user_id = \?/,
+    'the family cap must include the account holder');
+  assert.match(src, /\$savedPeople = \(int\)\$count->fetchColumn\(\) \+ \(int\)\$ownProfile->fetchColumn\(\);/);
+  assert.match(src, />= 6/);
+  assert.match(src, /including yourself/);
 });
 
 // -------------------------------------------------------------- backend ---

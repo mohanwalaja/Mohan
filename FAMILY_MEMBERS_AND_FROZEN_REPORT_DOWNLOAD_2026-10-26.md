@@ -8,9 +8,10 @@ Customer requests implemented together:
    checkout) now starts **blank** with a "Who is this report for?" picker:
    *Enter new details* (default), *Myself*, or any saved family member.
    Picking someone fills the form; nothing is ever filled silently.
-2. **Family members' birth details can be saved in the profile** (new
-   "Family Members" tab in the dashboard, **maximum 6** besides the
-   customer's own profile), so future orders need no form filling.
+2. **Saved birth details live in one place: the Family Members tab** (new
+   tab in the dashboard, **maximum 6 people in total, the customer included** —
+   there is no separate saved birth profile), so future orders need no form
+   filling.
    "Order for <name>" on a member card hands that one explicit pick to
    the order form (one-time `sessionStorage` hint, consumed once).
 3. **Delivered reports can be downloaded from the dashboard — frozen.**
