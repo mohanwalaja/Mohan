@@ -655,6 +655,10 @@ if (preg_match('/admin\/orders\/([^\/]+)\/approve/', $path, $matches) && $method
     if ($finalStatus === 'COMPLETED') {
         $order['status'] = $finalStatus;
         AstroChatAlerts::sendOrderAlerts($pdo, 'order_completed', [$order]);
+        // Additionally send the actual report + invoice PDFs to the
+        // customer's verified WhatsApp/Viber number (email above remains
+        // the official delivery; strictly best-effort).
+        AstroChatAlerts::sendOrderDocuments($pdo, [$order]);
     }
 
     jsonResponse([

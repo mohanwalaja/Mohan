@@ -52,18 +52,20 @@ import {
   isValidBirthTime,
   isValidIsoBirthDate,
   isVerifiedBirthLocation,
-  locationFromBirthProfile,
+  locationFromSavedPerson,
   normalizeBirthDate,
   normalizeBirthTime,
-  normalizePersonName
+  normalizePersonName,
+  type SavedPerson
 } from '../utils/birthDetails';
+import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
 
 interface MarriageCompatibilityPageProps {
   onNavigate: (route: string) => void;
 }
 
 export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps> = ({ onNavigate }) => {
-  const { user, birthProfile, settings } = useAuth();
+  const { user, settings } = useAuth();
   const { language: currentAppLang } = useLanguage();
   const {
     addItem,
@@ -203,24 +205,49 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
     setP2Dob('');
     setP2Tob('');
     setP2Location(null);
+    setP2PickedKey('');
 
     openCart();
   };
 
-  // Auto-fill Person 1 from saved birth details without replacing active edits.
-  useEffect(() => {
-    if (birthProfile) {
-      if (!manuallyEditedPerson1.current.name) {
-        setP1Name(normalizePersonName(birthProfile.name) || normalizePersonName(user?.name || ''));
-      }
-      if (!manuallyEditedPerson1.current.dob) setP1Dob(normalizeBirthDate(birthProfile.dob));
-      if (!manuallyEditedPerson1.current.tob) setP1Tob(normalizeBirthTime(birthProfile.tob));
-      if (!manuallyEditedPerson1.current.role) setP1Role(birthProfile.gender === 'F' ? 'bride' : 'groom');
-      if (!manuallyEditedPerson1.current.location) setP1Location(locationFromBirthProfile(birthProfile));
-    } else if (user && !manuallyEditedPerson1.current.name) {
-      setP1Name(normalizePersonName(user.name));
+  // Saved-person pickers: BOTH people start blank. The signed-in user's own
+  // details are never auto-filled into Person 1 — a saved profile or family
+  // member fills a card only when the customer explicitly picks them.
+  const [p1PickedKey, setP1PickedKey] = useState('');
+  const [p2PickedKey, setP2PickedKey] = useState('');
+  const savedPeople = useSavedPeople();
+
+  const handlePickPerson1 = (person: SavedPerson | null, key: string) => {
+    setP1PickedKey(key);
+    if (person) {
+      setP1Name(person.name);
+      setP1Dob(normalizeBirthDate(person.dob));
+      setP1Tob(normalizeBirthTime(person.tob));
+      setP1Role(person.gender === 'F' ? 'bride' : 'groom');
+      setP1Location(locationFromSavedPerson(person));
+    } else {
+      setP1Name('');
+      setP1Dob('');
+      setP1Tob('');
+      setP1Location(null);
     }
-  }, [birthProfile, user]);
+  };
+
+  const handlePickPerson2 = (person: SavedPerson | null, key: string) => {
+    setP2PickedKey(key);
+    if (person) {
+      setP2Name(person.name);
+      setP2Dob(normalizeBirthDate(person.dob));
+      setP2Tob(normalizeBirthTime(person.tob));
+      setP2Location(locationFromSavedPerson(person));
+    } else {
+      setP2Name('');
+      setP2Dob('');
+      setP2Tob('');
+      setP2Location(null);
+    }
+  };
+  useDashboardOrderFor(savedPeople, person => handlePickPerson1(person, person.key));
 
   const getBrideAndGroomPayloads = () => {
     const p1Place = p1Location?.placeName || '';
@@ -448,10 +475,10 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
                     <Sparkles className="w-4 h-4 text-pink-500 shrink-0" />
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">
-                        Sign in for Automatic Horoscope Saving
+                        Sign in to Use Saved Birth Details
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Sign in with Google to auto-fill your saved birth profile and track match orders.
+                        Sign in with Google to pick saved profiles or family members for either person and track match orders.
                       </p>
                     </div>
                   </div>
@@ -472,8 +499,13 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
                 </div>
               )}
 
-              {/* PERSON 1: Customer Saved Profile */}
+              {/* PERSON 1: blank by default — pick a saved person explicitly. */}
               <div className="service-form-section space-y-4 p-5 sm:p-6">
+                <SavedPersonPicker
+                  value={p1PickedKey}
+                  onPick={handlePickPerson1}
+                  label="Who is Person 1?"
+                />
                 <div className="flex items-center justify-between border-b border-white/10 pb-3 flex-wrap gap-2">
                   <div className="flex items-center gap-2.5 text-xs font-bold text-slate-100 uppercase tracking-wider">
                     <span className="w-7 h-7 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 text-xs font-black flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">1</span>
@@ -559,8 +591,13 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
                 <BirthTimeZoneNotice resolution={p1TimezonePreview} date={p1Dob} time={p1Tob} theme="dark" />
               </div>
 
-              {/* PERSON 2: Partner Birth Particulars */}
+              {/* PERSON 2: Partner Birth Particulars (also pickable). */}
               <div className="service-form-section space-y-4 p-5 sm:p-6">
+                <SavedPersonPicker
+                  value={p2PickedKey}
+                  onPick={handlePickPerson2}
+                  label="Who is Person 2?"
+                />
                 <div className="flex items-center justify-between border-b border-pink-500/25 pb-3">
                   <div className="flex items-center gap-2.5 text-xs font-bold text-pink-200 uppercase tracking-wider">
                     <span className="w-7 h-7 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white text-xs font-black flex items-center justify-center shrink-0 shadow-md shadow-pink-500/20">2</span>

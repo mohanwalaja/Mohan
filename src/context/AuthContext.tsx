@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { User, CustomerBirthProfile, SystemSettings } from '../types';
+import { User, CustomerBirthProfile, FamilyMember, SystemSettings } from '../types';
 import { api, getAuthToken, setAuthToken, clearAuthToken } from '../services/api';
 import { cleanDisplayName, providerFallbackName, resolveDisplayName } from '../utils/displayName';
 
@@ -21,6 +21,12 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
   refreshSettings: () => Promise<void>;
   updateBirthProfile: (profile: Partial<CustomerBirthProfile>) => Promise<{ success: boolean; message?: string }>;
+  /** Saved family members (max 6). Never auto-filled into an order form:
+   *  forms start blank and only fill a person the customer explicitly picks. */
+  familyMembers: FamilyMember[];
+  refreshFamilyMembers: () => Promise<void>;
+  saveFamilyMember: (member: Partial<FamilyMember> & { name: string }) => Promise<{ success: boolean; message?: string }>;
+  deleteFamilyMember: (id: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -39,7 +45,11 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   refreshProfile: async () => {},
   refreshSettings: async () => {},
-  updateBirthProfile: async () => ({ success: false })
+  updateBirthProfile: async () => ({ success: false }),
+  familyMembers: [],
+  refreshFamilyMembers: async () => {},
+  saveFamilyMember: async () => ({ success: false }),
+  deleteFamilyMember: async () => ({ success: false })
 });
 
 const SETTINGS_CACHE_KEY = 'astrosivam_settings';
@@ -74,6 +84,28 @@ const normalizeBirthProfile = (value: any): CustomerBirthProfile | null => {
   };
 };
 
+/** Family members share the birth-profile shape plus id + relation. */
+const normalizeFamilyMember = (value: any): FamilyMember | null => {
+  const base = normalizeBirthProfile(value);
+  if (!base || !value) return null;
+  const id = String(value.id ?? '');
+  if (!id) return null;
+  const relations = ['SPOUSE', 'SON', 'DAUGHTER', 'FATHER', 'MOTHER', 'BROTHER', 'SISTER', 'CHILD', 'RELATIVE', 'FRIEND', 'OTHER'];
+  const relation = String(value.relation ?? 'OTHER').toUpperCase();
+  return {
+    ...base,
+    id,
+    relation: (relations.includes(relation) ? relation : 'OTHER') as FamilyMember['relation'],
+    timeZoneId: value.timeZoneId ?? value.time_zone_id ?? undefined,
+    createdAt: value.createdAt ?? value.created_at ?? undefined
+  };
+};
+
+const normalizeFamilyMembers = (value: any): FamilyMember[] =>
+  Array.isArray(value)
+    ? value.map(normalizeFamilyMember).filter((member): member is FamilyMember => member !== null)
+    : [];
+
 /**
  * Normalizes a user at the auth boundary: the shown name is always the plain
  * name saved in the website profile — never a "(Google)" tag, never a
@@ -98,6 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(next);
   };
   const [birthProfile, setBirthProfile] = useState<CustomerBirthProfile | null>(null);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [settings, setSettings] = useState<SystemSettings | null>(() => {
     try {
       const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
@@ -161,6 +194,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Failed to refresh profile', e);
     }
   };
+
+  const refreshFamilyMembers = async () => {
+    try {
+      const res = await api.getFamilyMembers();
+      if (res.success) {
+        setFamilyMembers(normalizeFamilyMembers(res.members));
+      }
+    } catch (e) {
+      // Family members are optional everywhere: an older API deployment
+      // without the endpoints simply offers no saved family members.
+      console.error('Failed to refresh family members', e);
+    }
+  };
+
+  // Saved family members follow the signed-in customer (loaded with the
+  // session, refreshed after login/logout by the callers below).
+  useEffect(() => {
+    if (user?.id) {
+      refreshFamilyMembers();
+    } else {
+      setFamilyMembers([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const initAuth = async () => {
     setIsLoading(true);
@@ -302,6 +359,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: false, message: res.message || 'Failed to update profile' };
   };
 
+  const saveFamilyMember = async (member: Partial<FamilyMember> & { name: string }) => {
+    const res = await api.saveFamilyMember(member);
+    if (res.success) {
+      if (res.members) {
+        setFamilyMembers(normalizeFamilyMembers(res.members));
+      } else if (res.member) {
+        const saved = normalizeFamilyMember(res.member);
+        if (saved) {
+          setFamilyMembers(prev => {
+            const rest = prev.filter(existing => existing.id !== saved.id);
+            return [...rest, saved];
+          });
+        }
+      } else {
+        await refreshFamilyMembers();
+      }
+      return { success: true, message: res.message };
+    }
+    return { success: false, message: res.message || 'Failed to save family member' };
+  };
+
+  const deleteFamilyMember = async (id: string) => {
+    const res = await api.deleteFamilyMember(id);
+    if (res.success) {
+      setFamilyMembers(prev =>
+        res.members ? normalizeFamilyMembers(res.members) : prev.filter(member => member.id !== id)
+      );
+      return { success: true, message: res.message };
+    }
+    return { success: false, message: res.message || 'Failed to delete family member' };
+  };
+
   // The backend's persisted role is the only source of administrator status.
   const isAdmin = user?.role === 'admin';
 
@@ -323,7 +412,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         refreshProfile,
         refreshSettings,
-        updateBirthProfile
+        updateBirthProfile,
+        familyMembers,
+        refreshFamilyMembers,
+        saveFamilyMember,
+        deleteFamilyMember
       }}
     >
       {children}

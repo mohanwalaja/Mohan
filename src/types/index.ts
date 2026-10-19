@@ -164,6 +164,59 @@ export interface CustomerBirthProfile {
 
 export type BirthProfile = CustomerBirthProfile;
 
+/** How a saved family member is related to the account holder. */
+export type FamilyRelation =
+  | 'SPOUSE'
+  | 'SON'
+  | 'DAUGHTER'
+  | 'FATHER'
+  | 'MOTHER'
+  | 'BROTHER'
+  | 'SISTER'
+  | 'CHILD'
+  | 'RELATIVE'
+  | 'FRIEND'
+  | 'OTHER';
+
+/** Maximum family members one account may save (besides its own profile). */
+export const MAX_FAMILY_MEMBERS = 6;
+
+/**
+ * One saved family member's birth details. Saved once in the dashboard and
+ * explicitly picked on an order form — never auto-filled by default — so a
+ * repeat order for that person needs no form filling.
+ */
+/**
+ * Verified WhatsApp/Viber delivery contact: one saved number, verified
+ * separately per app by OTP. Verified apps additionally receive the
+ * delivered report + invoice PDFs (email remains the official delivery).
+ */
+export interface ChatDeliveryState {
+  phone: string;
+  whatsappVerified: boolean;
+  viberVerified: boolean;
+  whatsappAvailable: boolean;
+  viberAvailable: boolean;
+}
+
+export interface FamilyMember {
+  id: string;
+  userId: string;
+  name: string;
+  relation: FamilyRelation;
+  dob: string; // YYYY-MM-DD
+  tob: string; // HH:mm
+  birthPlace: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  timezoneOffsetHours: number;
+  timeZoneId?: string;
+  gender: 'M' | 'F';
+  createdAt?: string;
+  updatedAt: string;
+}
+
 export interface EmailConfig {
   senderName: string;
   senderEmail: string;
@@ -449,6 +502,11 @@ export interface OrderItem {
   inputPayload: Record<string, any>;
   calculatedResult?: any;
   sentAt?: string | null;
+  /** Frozen at order placement: the dashboard download renders this snapshot
+   *  exactly as ordered and never recalculates it. Date-only metadata is
+   *  exposed to the client; the snapshot body stays server-side. */
+  hasReportSnapshot?: boolean;
+  reportSnapshotAt?: string | null;
 }
 
 export interface Order {
@@ -475,6 +533,12 @@ export interface Order {
   emailLastStatusMessage?: string;
   inputPayload: Record<string, any>;
   calculatedResult?: any;
+  /** Frozen report snapshot metadata (body stays server-side): the dashboard
+   *  "Download Report" renders the report exactly as prepared on
+   *  `reportSnapshotAt` (the order date) and never recalculates it, so a
+   *  download a year later is the same report the customer paid for. */
+  hasReportSnapshot?: boolean;
+  reportSnapshotAt?: string | null;
   hasPdf: boolean;
   hasInvoice?: boolean;
   adminNotes?: string;

@@ -77,6 +77,11 @@ function astro_order_item_to_client(array $row, array $personsById = []): array
         'language' => astro_normalize_report_language($row['language'] ?? 'en'),
         'inputPayload' => astro_order_item_decode($row['input_payload'] ?? null) ?: [],
         'calculatedResult' => astro_order_item_decode($row['calculated_result'] ?? null),
+        // Frozen download metadata (migration 016): a frozen snapshot or,
+        // for pre-migration rows, the stored calculated_result (used
+        // as-is, never recalculated). Never the snapshot JSON itself.
+        'hasReportSnapshot' => !empty($row['report_snapshot']) || !empty($row['calculated_result']),
+        'reportSnapshotAt' => $row['report_snapshot_at'] ?? null,
         'sentAt' => $row['sent_at'] ?? null,
     ];
 }
@@ -540,6 +545,9 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
             $alertOrder = $order;
             $alertOrder['status'] = 'COMPLETED';
             AstroChatAlerts::sendOrderAlerts($pdo, 'order_completed', [$alertOrder]);
+            // Additionally send the actual report + invoice PDFs to the
+            // customer's verified WhatsApp/Viber number (best-effort).
+            AstroChatAlerts::sendOrderDocuments($pdo, [$alertOrder]);
         } catch (Throwable $e) {
             // Alerts never block delivery.
         }

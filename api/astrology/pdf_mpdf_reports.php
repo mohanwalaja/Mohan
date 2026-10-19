@@ -707,7 +707,24 @@ class AstroReportViews {
 CSS;
     }
 
-    public static function topHeader(string $title, string $subtitle, string $orderNumber, int $page, int $total, string $lang, string $meta = '', bool $slashPageLabel = false): string {
+    /**
+     * "Prepared on" stamp for a report. The date is the one stored in the
+     * calculation result (generatedAt) — for a frozen dashboard download
+     * that is the original order-date snapshot time, so a re-download
+     * years later still shows when the report was actually prepared and
+     * never looks freshly prepared. Empty when the result carries no date
+     * (no stamp rather than a wrong "today" stamp).
+     */
+    public static function preparedOnLabel($result, string $lang): string {
+        $raw = is_array($result) ? trim((string) ($result['generatedAt'] ?? '')) : '';
+        if ($raw === '') return '';
+        $ts = strtotime($raw);
+        if ($ts === false) return '';
+        $label = $lang === 'ta' ? 'தயாரிக்கப்பட்ட நாள்' : ($lang === 'hi' ? 'तैयार तिथि' : 'Prepared on');
+        return $label . ': ' . date('d M Y', $ts);
+    }
+
+    public static function topHeader(string $title, string $subtitle, string $orderNumber, int $page, int $total, string $lang, string $meta = '', bool $slashPageLabel = false, string $preparedLabel = ''): string {
         // $slashPageLabel: the Birth Jathagam states "Page x / 3" (the form the
         // change request asks for). The other reports keep their existing
         // "Page x of y" wording, so this stays opt-in.
@@ -718,6 +735,9 @@ CSS;
         $pageStr = ($lang === 'ta') ? "பக்கம் {$page} / {$total}" : (($lang === 'hi') ? "पृष्ठ {$page} / {$total}" : ($slashPageLabel ? "Page {$page} / {$total}" : "Page {$page} of {$total}"));
         $metaHtml = trim($meta) !== '' ? '<div class="header-extra">' . self::e($meta) . '</div>' : '';
         $orderHtml = trim($orderNumber) !== '' ? '<span class="header-order-ref">#' . $o . '</span>' : '';
+        // The prepared date rides on the existing reference line, so
+        // fixed-height report pages do not move.
+        $preparedHtml = trim($preparedLabel) !== '' ? '<span class="header-order-ref">' . self::e($preparedLabel) . '</span>' : '';
 
         // Root-relative URL on purpose: this same HTML string is served to a
         // browser by the admin "preview HTML" route (a raw server path can never
@@ -733,7 +753,7 @@ CSS;
   <div class="header-sub">{$s}</div>
   <div class="header-contact">astrosivam.com &bull; admin@astrosivam.com</div>
   {$metaHtml}
-  <div class="header-reference"><span class="header-page-tag">{$pageStr}</span>{$orderHtml}</div>
+  <div class="header-reference"><span class="header-page-tag">{$pageStr}</span>{$orderHtml}{$preparedHtml}</div>
 </div>
 <table class="modern-divider"><tr>
   <td style="width:17%;background:#edd1d9;"></td><td style="width:16%;background:#cf8e9f;"></td>
@@ -791,6 +811,9 @@ HTML;
         $chandraRasiInfo = $chandraRasiNum !== null ? ($rasiNamesByNumber[$chandraRasiNum] ?? null) : null;
 
         $orderNumber = $order['order_number'] ?? $order['orderNumber'] ?? 'ORD-JATHAGAM';
+        // Printed on every page header: when this report was prepared. For
+        // a frozen snapshot download this stays the original order date.
+        $preparedLabel = self::preparedOnLabel($result, $lang);
         $name = self::e($result['devoteeName'] ?? $result['nativeName'] ?? ($order['user_name'] ?? 'User'));
         $dob = self::e(self::birthDate($result['dob'] ?? '', 'N/A'));
         $tob = self::e($result['tob'] ?? 'N/A');
@@ -1214,7 +1237,7 @@ HTML;
             $doshaCardsHtml .= '</table>';
         }
 
-        $page1Html = self::topHeader('ASTRO SIVAM', $p1Sub, $orderNumber, 1, self::JATHAGAM_PAGE_TOTAL, $lang, '', true);
+        $page1Html = self::topHeader('ASTRO SIVAM', $p1Sub, $orderNumber, 1, self::JATHAGAM_PAGE_TOTAL, $lang, '', true, $preparedLabel);
         $page1Html .= <<<HTML
 <div class="panel">
   <div class="panel-title">{$panelDevoteeTitle}</div>
@@ -1670,7 +1693,7 @@ HTML;
         }
         $lifeCardsHtml .= '</table>';
 
-        $page2Html = self::topHeader('ASTRO SIVAM', $p2Sub, $orderNumber, 2, self::JATHAGAM_PAGE_TOTAL, $lang, '', true);
+        $page2Html = self::topHeader('ASTRO SIVAM', $p2Sub, $orderNumber, 2, self::JATHAGAM_PAGE_TOTAL, $lang, '', true, $preparedLabel);
         $page2Html .= '<div class="life-disclaimer">' . self::e($lifeDisclaimer) . '</div>' . $lifeCardsHtml;
 
         // ---------------- PAGE 3: Short Summary (one A4, always) ----------------
@@ -1789,7 +1812,7 @@ HTML;
             }
         )));
 
-        $page3Html = self::topHeader('ASTRO SIVAM', $summaryText['subtitle'], $orderNumber, 3, self::JATHAGAM_PAGE_TOTAL, $lang, '', true);
+        $page3Html = self::topHeader('ASTRO SIVAM', $summaryText['subtitle'], $orderNumber, 3, self::JATHAGAM_PAGE_TOTAL, $lang, '', true, $preparedLabel);
         $page3Html .= '<div class="summary-card">'
             . '<div class="summary-card-title">' . self::e($summaryText['detailsTitle']) . '</div>'
             . $summaryDetailsHtml . '</div>';
@@ -3513,7 +3536,9 @@ HTML;
         if (!is_array($result)) {
             $result = [];
         }
-        if (empty($result['months']) && class_exists('AstroEngine')) {
+        // Frozen snapshot downloads render $result exactly as frozen on the
+        // order date — the recalculation below never runs for them.
+        if (empty($result['months']) && empty($order['frozen_snapshot']) && class_exists('AstroEngine')) {
             $input = $order['input_payload'] ?? [];
             if (!is_array($input)) {
                 $input = json_decode((string) $input, true) ?: [];
@@ -4195,7 +4220,10 @@ HTML;
         // A stored report created before the 108-pada fix must never be
         // rendered with Ashwini's Chu/Che/Cho/La fallback. Recalculate it
         // from the original birth details before generating a preview/PDF.
-        if (class_exists('AstroEngine') && !AstroEngine::isCurrentBabyNamingResult($result)) {
+        // FROZEN SNAPSHOT downloads (order['frozen_snapshot']) are the one
+        // exception: the customer bought the report as prepared on the
+        // order date, so it is rendered exactly as frozen, never upgraded.
+        if (empty($order['frozen_snapshot']) && class_exists('AstroEngine') && !AstroEngine::isCurrentBabyNamingResult($result)) {
             $input = $order['input_payload'] ?? [];
             if (!is_array($input)) {
                 $input = json_decode((string) $input, true) ?: [];

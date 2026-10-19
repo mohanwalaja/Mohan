@@ -21,6 +21,12 @@ import {
 } from '../../services/multiPersonOrder';
 import { formatMoney } from '../../services/pricing';
 import rulesData from '../../lib/muhurtham/rules.json';
+import { useAuth } from '../../context/AuthContext';
+import {
+  buildSavedPeople,
+  locationFromSavedPerson,
+  type SavedPerson
+} from '../../utils/birthDetails';
 
 /**
  * PERSON-CARD CHECKOUT
@@ -94,6 +100,29 @@ export const MultiPersonCheckout: React.FC<MultiPersonCheckoutProps> = ({
   const labels = multiPersonLabels(language);
   const canAdd = people.length < MULTI_PERSON_MAX_PEOPLE;
   const canRemove = people.length > 1;
+
+  // Saved people an explicit pick can fill a card from. Cards still start
+  // blank — nothing is auto-filled from the account profile here either.
+  const { user, birthProfile, familyMembers } = useAuth();
+  const savedPeople = React.useMemo(
+    () => buildSavedPeople(birthProfile, familyMembers),
+    [birthProfile, familyMembers]
+  );
+  const fillPersonFromSaved = (key: string, person: SavedPerson) => {
+    const location = locationFromSavedPerson(person);
+    updatePerson(key, {
+      name: person.name,
+      gender: person.gender,
+      dob: person.dob,
+      tob: person.tob,
+      place: location?.placeName || person.birthPlace,
+      country: location?.country || person.country,
+      latitude: location ? location.latitude : person.latitude,
+      longitude: location ? location.longitude : person.longitude,
+      timezoneOffsetHours: location ? location.timezoneOffsetHours : person.timezoneOffsetHours,
+      timeZoneId: location?.timeZoneId || person.timeZoneId || ''
+    });
+  };
 
   const updatePerson = (key: string, patch: Partial<PersonDraft>) => {
     onChange(people.map(person => (person.key === key ? { ...person, ...patch } : person)));
@@ -226,6 +255,36 @@ export const MultiPersonCheckout: React.FC<MultiPersonCheckoutProps> = ({
                 </button>
               </div>
             </div>
+
+            {user && savedPeople.length > 0 && (
+              <div>
+                <label
+                  className="block text-[11px] font-semibold text-slate-400 mb-1.5"
+                  htmlFor={`multi-person-saved-${person.key}`}
+                >
+                  Fill from saved details (optional)
+                </label>
+                <select
+                  id={`multi-person-saved-${person.key}`}
+                  value=""
+                  disabled={disabled}
+                  onChange={e => {
+                    const picked = savedPeople.find(candidate => candidate.key === e.target.value);
+                    if (picked) fillPersonFromSaved(person.key, picked);
+                  }}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 cursor-pointer"
+                >
+                  <option value="">Select a saved person to fill this card…</option>
+                  {savedPeople.map(candidate => (
+                    <option key={candidate.key} value={candidate.key}>
+                      {candidate.source === 'self'
+                        ? `Myself — ${candidate.name}`
+                        : `${candidate.name} (${candidate.relationLabel})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">

@@ -380,6 +380,8 @@ export const ChatAlertConfigPanel: React.FC<ChatAlertConfigPanelProps> = ({ sett
 
         <div className="mt-4 p-3 rounded-2xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 text-xs text-violet-800 dark:text-violet-300 leading-relaxed">
           <strong>Viber note:</strong> the direct Viber Bot API delivers to users who have interacted (subscribed) with your bot. To message any customer by phone number, use a Viber Business Messages partner and select the webhook provider.
+          <br />
+          <strong>Report/invoice PDFs:</strong> customers can verify their number per app in their profile (dashboard). When an order is delivered, the report + invoice PDFs are also sent to verified apps (email remains official). The Bot API cannot accept file uploads, so bot-provider files are delivered as a Viber file message linking our signed 7-day media URL; webhook gateways receive the PDF bytes directly (base64). A WhatsApp verification code is always sent as free text, so Meta template mode does not hide it.
         </div>
       </div>
 

@@ -103,6 +103,150 @@ export const locationFromBirthProfile = (profile?: {
   return isVerifiedBirthLocation(location) ? location : null;
 };
 
+/* ------------------------------------------------------------------------ */
+/* Saved people: the account holder + saved family members.                  */
+/*                                                                           */
+/* Order forms start BLANK. A saved person is only ever filled into a form   */
+/* when the customer explicitly picks them (SavedPersonPicker), so an order  */
+/* for a child can never silently reuse — or overwrite — the holder's own    */
+/* birth details.                                                            */
+/* ------------------------------------------------------------------------ */
+
+export type SavedPersonSource = 'self' | 'family';
+
+export interface SavedPerson {
+  /** Stable picker key: 'self' or the family member id. */
+  key: string;
+  source: SavedPersonSource;
+  /** Family member id (empty for the account holder). */
+  id: string;
+  name: string;
+  /** Relation value for family members ('SPOUSE', …); 'SELF' for the holder. */
+  relation: string;
+  /** Relation label for family members ('Spouse', 'Son', …); 'Myself' for self. */
+  relationLabel: string;
+  dob: string;
+  tob: string;
+  birthPlace: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  timezoneOffsetHours: number;
+  timeZoneId?: string;
+  gender: 'M' | 'F';
+}
+
+export const FAMILY_RELATION_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'SPOUSE', label: 'Spouse' },
+  { value: 'SON', label: 'Son' },
+  { value: 'DAUGHTER', label: 'Daughter' },
+  { value: 'FATHER', label: 'Father' },
+  { value: 'MOTHER', label: 'Mother' },
+  { value: 'BROTHER', label: 'Brother' },
+  { value: 'SISTER', label: 'Sister' },
+  { value: 'CHILD', label: 'Child' },
+  { value: 'RELATIVE', label: 'Relative' },
+  { value: 'FRIEND', label: 'Friend' },
+  { value: 'OTHER', label: 'Other' }
+];
+
+export const familyRelationLabel = (relation?: string | null): string =>
+  FAMILY_RELATION_OPTIONS.find(option => option.value === String(relation || '').toUpperCase())?.label || 'Family';
+
+interface SavedPersonLike {
+  name?: string | null;
+  dob?: string | null;
+  tob?: string | null;
+  birthPlace?: string | null;
+  country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  timezoneOffsetHours?: number | null;
+  timeZoneId?: string | null;
+  gender?: string | null;
+}
+
+const toSavedPerson = (
+  key: string,
+  source: SavedPersonSource,
+  id: string,
+  relation: string,
+  relationLabel: string,
+  person: SavedPersonLike
+): SavedPerson => ({
+  key,
+  source,
+  id,
+  relation,
+  name: normalizePersonName(String(person.name ?? '')),
+  relationLabel,
+  dob: normalizeBirthDate(String(person.dob ?? '')),
+  tob: normalizeBirthTime(String(person.tob ?? '')),
+  birthPlace: String(person.birthPlace ?? '').trim(),
+  country: String(person.country ?? ''),
+  latitude: Number(person.latitude),
+  longitude: Number(person.longitude),
+  timezoneOffsetHours: Number(person.timezoneOffsetHours),
+  timeZoneId: person.timeZoneId || undefined,
+  gender: person.gender === 'F' ? 'F' : 'M'
+});
+
+/** The account holder as a pickable saved person, or null when unsaved. */
+export const selfAsSavedPerson = (profile?: SavedPersonLike | null): SavedPerson | null =>
+  profile && String(profile.birthPlace ?? '').trim()
+    ? toSavedPerson('self', 'self', '', 'SELF', 'Myself', profile)
+    : null;
+
+/** A saved family member as a pickable saved person. */
+export const familyMemberAsSavedPerson = (member: SavedPersonLike & { id: string; relation?: string | null }): SavedPerson =>
+  toSavedPerson(
+    member.id,
+    'family',
+    member.id,
+    String(member.relation || 'OTHER').toUpperCase(),
+    familyRelationLabel(member.relation),
+    member
+  );
+
+/** Everyone an order form may offer: the holder first, then family members. */
+export const buildSavedPeople = (
+  profile: SavedPersonLike | null | undefined,
+  members: Array<SavedPersonLike & { id: string; relation?: string | null }>
+): SavedPerson[] => {
+  const people: SavedPerson[] = [];
+  const self = selfAsSavedPerson(profile);
+  if (self) people.push(self);
+  for (const member of members || []) people.push(familyMemberAsSavedPerson(member));
+  return people;
+};
+
+/** LocationData for a picked saved person (verified the same way as profiles). */
+export const locationFromSavedPerson = (person?: SavedPerson | null): LocationData | null =>
+  person ? locationFromBirthProfile(person) : null;
+
+/* Dashboard → order page hand-off: "Order for <name>" in the dashboard is an
+ * explicit customer choice, so the destination form may start with that one
+ * person picked. A plain visit (no hand-off) always starts blank. */
+const ORDER_FOR_STORAGE_KEY = 'astrosivam.orderFor';
+
+export const setPendingOrderFor = (personKey: string): void => {
+  try {
+    sessionStorage.setItem(ORDER_FOR_STORAGE_KEY, personKey);
+  } catch {
+    /* private mode: the form simply starts blank */
+  }
+};
+
+export const consumePendingOrderFor = (): string => {
+  try {
+    const key = sessionStorage.getItem(ORDER_FOR_STORAGE_KEY) || '';
+    sessionStorage.removeItem(ORDER_FOR_STORAGE_KEY);
+    return key;
+  } catch {
+    return '';
+  }
+};
+
 /** Normalize a YYYY-MM-DD profile value without letting malformed input through. */
 export const normalizeIsoBirthDate = (value: string): string => {
   const normalized = normalizeBirthDate(value);

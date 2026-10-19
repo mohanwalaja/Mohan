@@ -48,8 +48,52 @@ CREATE TABLE IF NOT EXISTS `birth_profiles` (
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3. Orders Table
-CREATE TABLE IF NOT EXISTS `orders` (
+-- 2b. Saved Family Members Table (up to 6 per customer; see
+-- api/migrations/016_family_members_and_report_snapshot.sql). Order forms
+-- start blank and fill in only the member the customer explicitly picks.
+CREATE TABLE IF NOT EXISTS `family_members` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `user_id` VARCHAR(64) NOT NULL,
+  `name` VARCHAR(191) NOT NULL,
+  `relation` ENUM('SPOUSE', 'SON', 'DAUGHTER', 'FATHER', 'MOTHER', 'BROTHER', 'SISTER', 'CHILD', 'RELATIVE', 'FRIEND', 'OTHER') NOT NULL DEFAULT 'OTHER',
+  `dob` VARCHAR(32) NOT NULL,
+  `tob` VARCHAR(32) NOT NULL,
+  `birth_place` VARCHAR(255) NOT NULL,
+  `country` VARCHAR(100) NOT NULL DEFAULT '',
+  `latitude` DECIMAL(10, 6) NOT NULL DEFAULT 0.000000,
+  `longitude` DECIMAL(10, 6) NOT NULL DEFAULT 0.000000,
+  `timezone_offset_hours` DECIMAL(5, 2) NOT NULL DEFAULT 5.50,
+  `gender` ENUM('M', 'F') NOT NULL DEFAULT 'M',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_family_members_user_id` (`user_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2c. Verified WhatsApp/Viber delivery contacts (migration 017): one
+-- saved number per customer, verified per app by OTP; delivered orders
+-- also send report + invoice PDFs to verified apps (email stays primary).
+CREATE TABLE IF NOT EXISTS `user_chat_contacts` (
+  `user_id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `phone_e164` VARCHAR(32) NOT NULL,
+  `whatsapp_verified_at` DATETIME NULL,
+  `viber_verified_at` DATETIME NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `chat_number_otps` (
+  `user_id` VARCHAR(64) NOT NULL,
+  `channel` ENUM('whatsapp','viber') NOT NULL,
+  `phone_e164` VARCHAR(32) NOT NULL,
+  `otp_hash` VARCHAR(128) NOT NULL,
+  `expires_at` DATETIME NOT NULL,
+  `attempts` INT NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`, `channel`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. Orders TableCREATE TABLE IF NOT EXISTS `orders` (
   `id` VARCHAR(64) NOT NULL PRIMARY KEY,
   `order_number` VARCHAR(32) NOT NULL UNIQUE,
   `group_id` VARCHAR(64) NULL,
@@ -75,6 +119,11 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `email_last_status_message` TEXT NULL,
   `input_payload` LONGTEXT NOT NULL,
   `calculated_result` LONGTEXT NULL,
+  -- Frozen download snapshot (migration 016): written once at order
+  -- creation from the calculated result and NEVER updated, so the
+  -- dashboard download is always the report as prepared on the order date.
+  `report_snapshot` LONGTEXT NULL,
+  `report_snapshot_at` DATETIME NULL,
   `has_pdf` TINYINT(1) NOT NULL DEFAULT 0,
   `has_invoice` TINYINT(1) NOT NULL DEFAULT 0,
   `admin_notes` TEXT NULL,

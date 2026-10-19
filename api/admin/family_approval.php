@@ -569,6 +569,10 @@ if (!function_exists('astroApproveFamilyGroup')) {
             }
             unset($alertGroupOrder);
             AstroChatAlerts::sendOrderAlerts($pdo, 'order_completed', $groupOrders);
+            // Additionally send the actual report + invoice PDFs to the
+            // customer's verified WhatsApp/Viber number (email remains
+            // the official delivery; strictly best-effort).
+            AstroChatAlerts::sendOrderDocuments($pdo, $groupOrders);
         }
 
         return [

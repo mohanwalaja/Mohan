@@ -4156,12 +4156,22 @@ class AstroEngine {
         $serviceType = $order['service_type'] ?? 'BIRTH_JATHAGAM';
         $explicitResultProvided = $result !== null;
 
+        // FROZEN SNAPSHOT RENDER (customer dashboard re-download): when the
+        // caller marks the order as a frozen snapshot and supplies the
+        // snapshot result, the PDF is rendered from that result EXACTLY as
+        // prepared on the order date — no rebuild, no "is current" upgrade,
+        // and the printed Prepared/Issued date stays the frozen one. This
+        // is what stops a downloaded report from ever refreshing itself
+        // into a new free report; it is used ONLY by the owner-only
+        // snapshot download endpoint, never by fulfilment.
+        $frozenSnapshot = !empty($order['frozen_snapshot']) && $explicitResultProvided && is_array($result) && !empty($result);
+
         // Official order downloads are rebuilt from the saved service inputs;
         // a cached calculated_result is never authoritative. Explicit preview
         // results remain supported only when they are complete and current.
-        $needsRebuild = !$explicitResultProvided || !$result
+        $needsRebuild = !$frozenSnapshot && (!$explicitResultProvided || !$result
             || ($serviceType === 'BABY_NAMING' && !self::isCurrentBabyNamingResult($result))
-            || ($serviceType === 'MUHURTHAM' && !self::isCurrentMuhurthamResult($result));
+            || ($serviceType === 'MUHURTHAM' && !self::isCurrentMuhurthamResult($result)));
         if ($needsRebuild) {
             $result = self::rebuildReportResultFromSavedInputs($order);
         }

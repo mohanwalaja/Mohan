@@ -51,21 +51,24 @@ import { BIRTH_JATHAGAM_FAQ_ITEMS } from '../data/serviceFaqs';
 import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
+  FAMILY_RELATION_OPTIONS,
   isValidBirthTime,
   isValidIsoBirthDate,
   isVerifiedBirthLocation,
-  locationFromBirthProfile,
+  locationFromSavedPerson,
   normalizeBirthDate,
   normalizeBirthTime,
-  normalizePersonName
+  normalizePersonName,
+  type SavedPerson
 } from '../utils/birthDetails';
+import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
 
 interface BirthJathagamPageProps {
   onNavigate: (route: string) => void;
 }
 
 export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate }) => {
-  const { user, birthProfile, settings, updateBirthProfile } = useAuth();
+  const { user, settings, saveFamilyMember } = useAuth();
   const { language: currentAppLang } = useLanguage();
   const {
     addItem,
@@ -108,6 +111,64 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
 
   const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>('en');
   const [saveAsProfile, setSaveAsProfile] = useState(false);
+  // Saved-person picker: the form starts BLANK. Nothing is filled from the
+  // account profile by default — details only appear when the customer
+  // explicitly picks "Myself" or a saved family member (or arrives via the
+  // dashboard's "Order for <name>" button, which is the same explicit pick).
+  const [pickedKey, setPickedKey] = useState('');
+  const [pickedPerson, setPickedPerson] = useState<SavedPerson | null>(null);
+  const [saveRelation, setSaveRelation] = useState('OTHER');
+  const savedPeople = useSavedPeople();
+
+  const handlePickPerson = (person: SavedPerson | null, key: string) => {
+    setPickedKey(key);
+    setPickedPerson(person);
+    if (person) {
+      setName(person.name);
+      setDob(normalizeBirthDate(person.dob));
+      setTob(normalizeBirthTime(person.tob));
+      setGender(person.gender);
+      setLocation(locationFromSavedPerson(person));
+    } else {
+      setName('');
+      setDob('');
+      setTob('');
+      setGender('M');
+      setLocation(null);
+    }
+  };
+  useDashboardOrderFor(savedPeople, person => handlePickPerson(person, person.key));
+
+  /**
+   * Persists the save-checkbox choice to the RIGHT record: the holder's own
+   * profile is saved server-side with the order (saveAsProfile), so here we
+   * only handle a picked family member (update) or new details (create).
+   * Ordering for family can therefore never overwrite the holder's profile.
+   */
+  const persistFamilySave = async () => {
+    if (!saveAsProfile || !user || !location) return;
+    if (pickedPerson?.source === 'self') return;
+    const details = {
+      name: normalizePersonName(name),
+      dob,
+      tob,
+      birthPlace: location.placeName,
+      country: location.country || '',
+      latitude: Number(location.latitude),
+      longitude: Number(location.longitude),
+      timezoneOffsetHours: locationTimezone?.timezoneOffsetHours ?? Number(location.timezoneOffsetHours),
+      gender
+    };
+    try {
+      if (pickedPerson?.source === 'family') {
+        await saveFamilyMember({ ...details, id: pickedPerson.id, relation: pickedPerson.relation as any });
+      } else {
+        await saveFamilyMember({ ...details, relation: saveRelation as any });
+      }
+    } catch {
+      /* saving is a convenience; the order itself is unaffected */
+    }
+  };
 
   // Payment state for Paid Mode
   const [paymentRef, setPaymentRef] = useState('');
@@ -177,13 +238,19 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
       prices,
       unitPrice,
       currency: chargeCurrency,
-      saveAsProfile
+      // The server saves the HOLDER's profile only when the holder was the
+      // picked person; family saves are persisted separately below.
+      saveAsProfile: saveAsProfile && pickedPerson?.source === 'self'
     });
     if (!addedItemId) {
       setErrorMessage(`Family Tray is limited to ${MAX_FAMILY_ORDER_ITEMS} reports. Remove a report before adding another.`);
       setTraySuccessMessage('');
       return;
     }
+
+    // Save-to-family was requested and the details are validated: persist now
+    // (the tray checkout itself never touches saved profiles).
+    void persistFamilySave();
 
     const addedDevotee = devoteeName;
     const reachedFamilyLimit = cartItems.length + 1 >= MAX_FAMILY_ORDER_ITEMS;
@@ -196,25 +263,16 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
     setName('');
     setDob('');
     setTob('');
+    setPickedKey('');
+    setPickedPerson(null);
 
     // Automatically open family tray so user sees their bundle
     openCart();
   };
 
-  // Pre-fill saved details without replacing anything the visitor has started entering.
-  useEffect(() => {
-    if (birthProfile) {
-      if (!manuallyEditedFields.current.name) {
-        setName(normalizePersonName(birthProfile.name) || normalizePersonName(user?.name || ''));
-      }
-      if (!manuallyEditedFields.current.dob) setDob(normalizeBirthDate(birthProfile.dob));
-      if (!manuallyEditedFields.current.tob) setTob(normalizeBirthTime(birthProfile.tob));
-      if (!manuallyEditedFields.current.gender) setGender(birthProfile.gender);
-      if (!manuallyEditedFields.current.location) setLocation(locationFromBirthProfile(birthProfile));
-    } else if (user && !manuallyEditedFields.current.name) {
-      setName(normalizePersonName(user.name));
-    }
-  }, [birthProfile, user]);
+  // NOTE: no auto-fill effect — this form must never silently take the
+  // signed-in user's own birth details. Saved details enter only through
+  // the explicit SavedPersonPicker above (handlePickPerson).
 
   const executeOrderSubmission = async () => {
     const validationMessage = validateBirthForm();
@@ -257,10 +315,11 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
         paymentReference: orderWillBeFree ? undefined : paymentRef,
         paymentIntentId: orderWillBeFree ? undefined : paymentIntentId || undefined,
         inputPayload: payload,
-        saveAsProfile
+        saveAsProfile: saveAsProfile && pickedPerson?.source === 'self'
       });
 
       if (res.success && res.order) {
+        void persistFamilySave();
         setOrderSuccess(res.order);
       } else {
         setErrorMessage(res.message || 'Failed to submit order');
@@ -376,10 +435,10 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
                     <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">
-                        Sign in for Automatic Chart Saving
+                        Sign in to Use Saved Birth Details
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Sign in with Google to auto-save your birth profile and track orders.
+                        Sign in with Google to pick your saved profile or family members and track orders.
                       </p>
                     </div>
                   </div>
@@ -393,17 +452,9 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
                 </div>
               )}
 
-              {/* Profile auto-fill banner */}
-              {birthProfile && (
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between text-xs">
-                  <span className="text-amber-800 dark:text-amber-300 font-medium">
-                    ✓ Saved Birth Profile loaded for <strong>{birthProfile.name}</strong>
-                  </span>
-                  <span className="text-[11px] text-amber-700 dark:text-amber-400">
-                    Auto-filled
-                  </span>
-                </div>
-              )}
+              {/* Who is this report for? Blank by default; a saved profile or
+                  family member fills the form only when explicitly picked. */}
+              <SavedPersonPicker value={pickedKey} onPick={handlePickPerson} />
 
               {errorMessage && (
                 <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
@@ -560,19 +611,42 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
 
               {/* 3. Streamlined Checkout Action Section */}
               <div className="space-y-4 pt-4 border-t border-white/10">
-                {/* Profile Save checkbox */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="saveProfileCheck"
-                    checked={saveAsProfile}
-                    onChange={e => setSaveAsProfile(e.target.checked)}
-                    className="rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-400 w-4 h-4 cursor-pointer"
-                  />
-                  <label htmlFor="saveProfileCheck" className="text-xs text-slate-400 cursor-pointer">
-                    Save birth details to my profile for 1-click reuse across services.
-                  </label>
-                </div>
+                {/* Save checkbox: writes to the record the customer picked —
+                    own profile, that family member, or a new family member. */}
+                {user && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="saveProfileCheck"
+                        checked={saveAsProfile}
+                        onChange={e => setSaveAsProfile(e.target.checked)}
+                        className="rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-400 w-4 h-4 cursor-pointer"
+                      />
+                      <label htmlFor="saveProfileCheck" className="text-xs text-slate-400 cursor-pointer">
+                        {pickedPerson?.source === 'self'
+                          ? 'Update my saved birth profile with these details.'
+                          : pickedPerson?.source === 'family'
+                            ? `Update ${pickedPerson.name}'s saved family details with any corrections.`
+                            : 'Save these birth details as a family member for 1-click ordering next time.'}
+                      </label>
+                    </div>
+                    {saveAsProfile && !pickedPerson && (
+                      <select
+                        value={saveRelation}
+                        onChange={e => setSaveRelation(e.target.value)}
+                        className="ml-6 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 cursor-pointer"
+                        aria-label="Relation of this person"
+                      >
+                        {FAMILY_RELATION_OPTIONS.map(option => (
+                          <option key={option.value} value={option.value}>
+                            Relation: {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
 
                 {/* Tray Success Message Banner */}
                 {traySuccessMessage && (
@@ -770,8 +844,9 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
           timeZoneId: locationTimezone?.timeZoneId ?? location?.timeZoneId,
           gender
         }}
-        saveAsProfile={saveAsProfile}
+        saveAsProfile={saveAsProfile && pickedPerson?.source === 'self'}
         onSuccess={ord => {
+          void persistFamilySave();
           setOrderSuccess(ord);
           setShowCheckoutModal(false);
         }}

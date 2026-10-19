@@ -39,11 +39,13 @@ import {
   isValidBirthTime,
   isValidIsoBirthDate,
   isVerifiedBirthLocation,
-  locationFromBirthProfile,
+  locationFromSavedPerson,
   normalizeBirthDate,
   normalizeBirthTime,
-  normalizePersonName
+  normalizePersonName,
+  type SavedPerson
 } from '../utils/birthDetails';
+import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
 
 const EVENT_ORDER = [
   'wedding', 'engagement', 'griha_pravesam', 'house_purchase', 'house_construction', 'land_purchase',
@@ -90,14 +92,14 @@ const defaultTargetMonth = () => {
 };
 
 export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> = ({ onNavigate }) => {
-  const { user, birthProfile, settings } = useAuth();
+  const { user, settings } = useAuth();
   const { paymentMethod, setPaymentMethod, addItem, openCart, items: cartItems } = useCart();
   const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>('en');
   const [selectedMonth, setSelectedMonth] = useState(defaultTargetMonth);
   const [selectedEvent, setSelectedEvent] = useState<MuhurthamEventKey>('wedding');
-  const [name, setName] = useState(
-    normalizePersonName(birthProfile?.name || '') || normalizePersonName(user?.name || '')
-  );
+  // Blank by default: the signed-in user's own details are never taken
+  // silently — they (or a family member) fill in only when explicitly picked.
+  const [name, setName] = useState('');
   const [dob, setDob] = useState('');
   const [dobText, setDobText] = useState('');
   const [tob, setTob] = useState('');
@@ -126,32 +128,63 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [traySuccessMessage, setTraySuccessMessage] = useState('');
 
-  useEffect(() => {
-    if (birthProfile) {
-      if (!manuallyEditedFields.current.name) {
-        setName(normalizePersonName(birthProfile.name) || normalizePersonName(user?.name || ''));
-      }
-      const profileDob = normalizeBirthDate(birthProfile.dob);
-      if (profileDob && !manuallyEditedFields.current.dob) {
-        setDob(profileDob);
-        setDobText(isoToDisplayDob(profileDob));
-      }
-      const profileTob = normalizeBirthTime(birthProfile.tob);
-      if (profileTob && !manuallyEditedFields.current.tob) {
-        const parsed = parseFlexibleTob(profileTob, 'AM', { allowHourOnly: true });
-        setTob(profileTob);
-        if (parsed) {
-          setTobText(parsed.display12);
-          setTobPeriod(parsed.period);
-        }
-      }
-      if (birthProfile.birthPlace && !manuallyEditedFields.current.birthPlace) {
-        setBirthPlace(locationFromBirthProfile(birthProfile));
-      }
-    } else if (user?.name && !manuallyEditedFields.current.name) {
-      setName(normalizePersonName(user.name));
+  // Saved-person pickers (explicit only — no auto-fill effect anywhere here).
+  const [pickedKey, setPickedKey] = useState('');
+  const [partnerPickedKey, setPartnerPickedKey] = useState('');
+  const savedPeople = useSavedPeople();
+
+  const applyTobFields = (
+    tob24: string,
+    setTobValue: (v: string) => void,
+    setText: (v: string) => void,
+    setPeriod: (v: 'AM' | 'PM') => void
+  ) => {
+    const parsed = parseFlexibleTob(tob24, 'AM', { allowHourOnly: true });
+    setTobValue(tob24);
+    if (parsed) {
+      setText(parsed.display12);
+      setPeriod(parsed.period);
     }
-  }, [birthProfile, user]);
+  };
+
+  const handlePickPerson = (person: SavedPerson | null, key: string) => {
+    setPickedKey(key);
+    if (person) {
+      setName(person.name);
+      const isoDob = normalizeBirthDate(person.dob);
+      setDob(isoDob);
+      setDobText(isoToDisplayDob(isoDob));
+      applyTobFields(normalizeBirthTime(person.tob), setTob, setTobText, setTobPeriod);
+      setBirthPlace(locationFromSavedPerson(person));
+    } else {
+      setName('');
+      setDob('');
+      setDobText('');
+      setTob('');
+      setTobText('');
+      setBirthPlace(null);
+    }
+  };
+
+  const handlePickPartner = (person: SavedPerson | null, key: string) => {
+    setPartnerPickedKey(key);
+    if (person) {
+      setPartnerName(person.name);
+      const isoDob = normalizeBirthDate(person.dob);
+      setPartnerDob(isoDob);
+      setPartnerDobText(isoToDisplayDob(isoDob));
+      applyTobFields(normalizeBirthTime(person.tob), setPartnerTob, setPartnerTobText, setPartnerTobPeriod);
+      setPartnerBirthPlace(locationFromSavedPerson(person));
+    } else {
+      setPartnerName('');
+      setPartnerDob('');
+      setPartnerDobText('');
+      setPartnerTob('');
+      setPartnerTobText('');
+      setPartnerBirthPlace(null);
+    }
+  };
+  useDashboardOrderFor(savedPeople, person => handlePickPerson(person, person.key));
 
   const isAdmin = user?.role === 'admin';
   const isFreeBeta = settings?.serviceMode === 'FREE_BETA' && settings?.betaFreeChartAvailable !== false;
@@ -618,6 +651,11 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
                     {checksBothCharts ? 'Groom (First Person) Birth Particulars & Ceremony' : 'User Birth Particulars & Ceremony'}
                   </h2>
                 </div>
+                <SavedPersonPicker
+                  value={pickedKey}
+                  onPick={handlePickPerson}
+                  label={checksBothCharts ? 'Who is the groom (first person)?' : 'Who is this Muhurtham for?'}
+                />
                 <div className="space-y-4">
                   <PersonNameField
                     id="muhurtham-name"
@@ -747,6 +785,11 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
                     the bride and the groom on every candidate date. If this block is left empty, the report will clearly state that
                     only one person's details were used.
                   </p>
+                  <SavedPersonPicker
+                    value={partnerPickedKey}
+                    onPick={handlePickPartner}
+                    label="Who is the bride?"
+                  />
                   <div className="space-y-4">
                     <PersonNameField
                       id="muhurtham-bride-name"
