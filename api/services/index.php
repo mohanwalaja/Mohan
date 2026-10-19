@@ -52,6 +52,13 @@ function astro_order_to_client_array($r) {
         'calculatedResult' => json_decode((string)($r['calculated_result'] ?? ''), true) ?: null,
         'hasPdf' => (bool)($r['has_pdf'] ?? 0),
         'hasInvoice' => (bool)($r['has_invoice'] ?? 0),
+        // Frozen download metadata (migration 016): true when the dashboard
+        // may offer the report exactly as prepared on the order date (a
+        // frozen snapshot or, for pre-migration rows, the stored
+        // calculated_result used as-is). The snapshot JSON itself is never
+        // sent to the client.
+        'hasReportSnapshot' => !empty($r['report_snapshot']) || !empty($r['calculated_result']),
+        'reportSnapshotAt' => $r['report_snapshot_at'] ?? null,
         'adminNotes' => $r['admin_notes'] ?? null,
         'refundStatus' => $r['refund_status'] ?? null,
         'refundReason' => $r['refund_reason'] ?? null,
@@ -589,6 +596,147 @@ if (preg_match('#/services/profile/?$#', $path) || $action === 'profile' || $act
         } catch (Exception $e) {}
 
         jsonResponse(['success' => true, 'message' => 'Profile saved successfully', 'profile' => $profile]);
+    }
+}
+
+// 3b. Saved family members (profile feature): a customer can save birth
+// details for up to 6 family members so future orders need no form filling.
+// Order forms still start blank — a saved person is filled in only when the
+// customer explicitly picks them there. These rows are never used to
+// overwrite the customer's own birth_profiles row.
+function astro_family_members_table_ready($pdo) {
+    static $ready = false;
+    if ($ready) return;
+    $ready = true;
+    try {
+        // CREATE is deliberately kept for first-boot tables (see migration
+        // 016 header); web requests never ALTER.
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `family_members` (
+            `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+            `user_id` VARCHAR(64) NOT NULL,
+            `name` VARCHAR(191) NOT NULL,
+            `relation` ENUM('SPOUSE','SON','DAUGHTER','FATHER','MOTHER','BROTHER','SISTER','CHILD','RELATIVE','FRIEND','OTHER') NOT NULL DEFAULT 'OTHER',
+            `dob` VARCHAR(32) NOT NULL,
+            `tob` VARCHAR(32) NOT NULL,
+            `birth_place` VARCHAR(255) NOT NULL,
+            `country` VARCHAR(100) NOT NULL DEFAULT '',
+            `latitude` DECIMAL(10,6) NOT NULL DEFAULT 0.000000,
+            `longitude` DECIMAL(10,6) NOT NULL DEFAULT 0.000000,
+            `timezone_offset_hours` DECIMAL(5,2) NOT NULL DEFAULT 5.50,
+            `gender` ENUM('M','F') NOT NULL DEFAULT 'M',
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX `idx_family_members_user_id` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    } catch (Throwable $e) {
+        error_log('ASTRO SIVAM: family_members table could not be ensured (run api/migrations/016_family_members_and_report_snapshot.sql): ' . $e->getMessage());
+    }
+}
+
+function astro_family_member_out($row) {
+    if (!$row) return null;
+    return [
+        'id' => (string)$row['id'],
+        'name' => (string)$row['name'],
+        'relation' => strtoupper((string)($row['relation'] ?? 'OTHER')),
+        'dob' => (string)$row['dob'],
+        'tob' => (string)$row['tob'],
+        'birthPlace' => (string)$row['birth_place'],
+        'country' => (string)($row['country'] ?? ''),
+        'latitude' => (float)$row['latitude'],
+        'longitude' => (float)$row['longitude'],
+        'timezoneOffsetHours' => (float)$row['timezone_offset_hours'],
+        'gender' => (($row['gender'] ?? 'M') === 'F') ? 'F' : 'M',
+        'createdAt' => $row['created_at'] ?? null,
+        'updatedAt' => $row['updated_at'] ?? null
+    ];
+}
+
+function astro_family_members_out($pdo, $userId) {
+    $stmt = $pdo->prepare("SELECT * FROM family_members WHERE user_id = ? ORDER BY created_at ASC, id ASC");
+    $stmt->execute([$userId]);
+    return array_values(array_map('astro_family_member_out', $stmt->fetchAll() ?: []));
+}
+
+if (preg_match('#/services/family-members/?$#', $path)
+    || preg_match('#/services/family-member-save/?$#', $path)
+    || preg_match('#/services/family-member-delete/?$#', $path)
+    || in_array($action, ['family-members', 'family-member-save', 'family-member-delete'], true)) {
+    $user = requireAuth($pdo);
+    astro_family_members_table_ready($pdo);
+    $isSave = $action === 'family-member-save' || preg_match('#/services/family-member-save/?$#', $path) || $method === 'POST';
+    $isDelete = $action === 'family-member-delete' || preg_match('#/services/family-member-delete/?$#', $path) || $method === 'DELETE';
+
+    if ($method === 'GET' && !$isSave && !$isDelete) {
+        jsonResponse(['success' => true, 'members' => astro_family_members_out($pdo, $user['id'])]);
+    } elseif ($isDelete) {
+        $body = getJsonBody();
+        $memberId = trim((string)($_GET['id'] ?? ($body['id'] ?? '')));
+        if ($memberId === '') {
+            jsonResponse(['success' => false, 'message' => 'A family member id is required.'], 400);
+        }
+        // Owner-scoped delete: another customer's member id matches nothing.
+        $stmt = $pdo->prepare("DELETE FROM family_members WHERE id = ? AND user_id = ?");
+        $stmt->execute([$memberId, $user['id']]);
+        if ($stmt->rowCount() < 1) {
+            jsonResponse(['success' => false, 'message' => 'That family member was not found in your profile.'], 404);
+        }
+        jsonResponse(['success' => true, 'message' => 'Family member removed.', 'members' => astro_family_members_out($pdo, $user['id'])]);
+    } elseif ($isSave) {
+        $body = getJsonBody();
+        $birthProblem = AstroEngine::describeBirthDetailsProblem($body);
+        if ($birthProblem !== null) {
+            jsonResponse(['success' => false, 'message' => 'A valid past birth date, birth time, birth place, coordinates and time zone are required to save a family member. ' . $birthProblem], 400);
+        }
+        $name = trim((string)($body['name'] ?? ''));
+        if ($name === '') {
+            jsonResponse(['success' => false, 'message' => 'Please enter the family member\'s full name.'], 400);
+        }
+        $relation = strtoupper(trim((string)($body['relation'] ?? 'OTHER')));
+        if (!in_array($relation, ['SPOUSE', 'SON', 'DAUGHTER', 'FATHER', 'MOTHER', 'BROTHER', 'SISTER', 'CHILD', 'RELATIVE', 'FRIEND', 'OTHER'], true)) {
+            $relation = 'OTHER';
+        }
+        $gender = (($body['gender'] ?? 'M') === 'F') ? 'F' : 'M';
+        $memberId = trim((string)($body['id'] ?? ''));
+        $values = [
+            $name,
+            $relation,
+            trim((string)($body['dob'] ?? '')),
+            AstroEngine::normalizeBirthTime($body['tob'] ?? ''),
+            trim((string)($body['birthPlace'] ?? ($body['birth_place'] ?? ''))),
+            trim((string)($body['country'] ?? '')),
+            (float)($body['latitude'] ?? 0),
+            (float)($body['longitude'] ?? 0),
+            (float)($body['timezoneOffsetHours'] ?? ($body['timezone_offset_hours'] ?? 5.5)),
+            $gender
+        ];
+        if ($memberId !== '') {
+            // Update only the caller's own member.
+            $stmt = $pdo->prepare("UPDATE family_members SET name = ?, relation = ?, dob = ?, tob = ?, birth_place = ?, country = ?, latitude = ?, longitude = ?, timezone_offset_hours = ?, gender = ?, updated_at = NOW() WHERE id = ? AND user_id = ?");
+            $stmt->execute([...$values, $memberId, $user['id']]);
+            if ($stmt->rowCount() < 1) {
+                // Either not theirs, or nothing changed — confirm ownership
+                // before claiming success so a foreign id still 404s.
+                $own = $pdo->prepare("SELECT id FROM family_members WHERE id = ? AND user_id = ? LIMIT 1");
+                $own->execute([$memberId, $user['id']]);
+                if (!$own->fetch()) {
+                    jsonResponse(['success' => false, 'message' => 'That family member was not found in your profile.'], 404);
+                }
+            }
+        } else {
+            // Maximum 6 saved family members per customer.
+            $count = $pdo->prepare("SELECT COUNT(*) FROM family_members WHERE user_id = ?");
+            $count->execute([$user['id']]);
+            if ((int)$count->fetchColumn() >= 6) {
+                jsonResponse(['success' => false, 'message' => 'You can save up to 6 family members. Please remove one before adding another.'], 400);
+            }
+            $memberId = astro_random_id('fm_');
+            $stmt = $pdo->prepare("INSERT INTO family_members (id, user_id, name, relation, dob, tob, birth_place, country, latitude, longitude, timezone_offset_hours, gender, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
+            $stmt->execute([$memberId, $user['id'], ...$values]);
+        }
+        $saved = $pdo->prepare("SELECT * FROM family_members WHERE id = ? AND user_id = ? LIMIT 1");
+        $saved->execute([$memberId, $user['id']]);
+        jsonResponse(['success' => true, 'message' => 'Family member saved successfully', 'member' => astro_family_member_out($saved->fetch()), 'members' => astro_family_members_out($pdo, $user['id'])]);
     }
 }
 
@@ -1451,6 +1599,10 @@ if ($method === 'POST' && (
             ]);
         }
 
+        // Freeze this order's report snapshot (write-once): the dashboard
+        // download renders from it forever and never recalculates.
+        astro_write_report_snapshot($pdo, 'orders', $orderId, json_encode($calculatedResult, JSON_UNESCAPED_UNICODE));
+
         // Keep the family bundle ordered (chart 1, 2, 3...) for the admin panel
         try {
             $ordUpd = $pdo->prepare("UPDATE orders SET group_order_index = ? WHERE id = ?");
@@ -1767,17 +1919,23 @@ if ($method === 'POST' && (
         jsonResponse(['success' => false, 'message' => 'Online payment verification failed. Please complete checkout again.'], 400);
     }
 
-    // Save as birth profile if requested or if user has no birth profile yet
+    // Save as the customer's own birth profile ONLY when they explicitly
+    // asked for it: the order form sends saveAsProfile only when "Myself"
+    // was picked (or the customer ticked save-to-my-profile). An order must
+    // never silently create or overwrite the account birth profile with
+    // the ordered person's details — previously `($saveAsProfile || true)`
+    // made every order do exactly that, so ordering for a spouse or child
+    // replaced the customer's own saved profile.
     $bpTarget = $inputPayload;
     if (!empty($inputPayload['bride']) && is_array($inputPayload['bride'])) {
         $bpTarget = ($user['gender'] ?? 'M') === 'F' ? $inputPayload['bride'] : ($inputPayload['groom'] ?? $inputPayload['bride']);
     }
-    if (($saveAsProfile || true) && !empty($bpTarget['dob']) && !empty($bpTarget['birthPlace'])) {
+    if ($saveAsProfile && !empty($bpTarget['dob']) && !empty($bpTarget['birthPlace'])) {
         $bpCheck = $pdo->prepare("SELECT id FROM birth_profiles WHERE user_id = ? LIMIT 1");
         $bpCheck->execute([$user['id']]);
         $hasExistingBp = (bool)$bpCheck->fetch();
 
-        if ($saveAsProfile || !$hasExistingBp) {
+        {
             if ($hasExistingBp) {
                 $bpUpd = $pdo->prepare("UPDATE birth_profiles SET name=?, dob=?, tob=?, birth_place=?, country=?, latitude=?, longitude=?, timezone_offset_hours=?, gender=?, updated_at=NOW() WHERE user_id=?");
                 $bpUpd->execute([
@@ -1879,6 +2037,10 @@ if ($method === 'POST' && (
         $clientIp
     ]);
 
+    // Freeze this order's report snapshot (write-once): the dashboard
+    // download renders from it forever and never recalculates.
+    astro_write_report_snapshot($pdo, 'orders', $orderId, json_encode($calculatedResult, JSON_UNESCAPED_UNICODE));
+
     if ($capturedIntent) {
         $consume = $pdo->prepare("UPDATE payment_intents SET status = 'CONSUMED', order_id = ?, updated_at = NOW() WHERE id = ? AND user_id = ? AND status = 'CAPTURED' AND amount = ? AND currency = ? AND order_id IS NULL");
         $consume->execute([$orderId, $capturedIntent['id'], $user['id'], $amount, $currency]);
@@ -1971,6 +2133,11 @@ if ((preg_match('#/services/my-orders/?$#', $path) || $action === 'my-orders' ||
     // look different from the same order fetched a moment later.
     $orders = array_map('astro_order_to_client_array', $rows);
 
+    // Multi-person orders carry their people + per-person reports so the
+    // dashboard can offer each frozen report download separately.
+    require_once __DIR__ . '/../admin/order_items.php';
+    $orders = astro_attach_order_items($pdo, $orders);
+
     jsonResponse(['success' => true, 'orders' => $orders]);
 }
 
@@ -2000,10 +2167,143 @@ if (preg_match('#/services/reviews/?$#', $path) || in_array($action, ['reviews',
     jsonResponse(['success' => false, 'message' => 'Method not allowed'], 405);
 }
 
+// 6c. GET /api/services/orders/:id/report-pdf — the customer's FROZEN report
+// download (report only; the tax invoice stays email-only, as always).
+// This is deliberately NOT the direct-PDF route removed below: that route
+// would have served freshly generated files. This one serves only the
+// immutable snapshot frozen on the order date (migration 016), rendered
+// with NO recalculation of any kind, only to the signed-in owner of a
+// delivered order — so re-downloading can never refresh a report into a
+// new free one, and the "Prepared on" date printed on the report is the
+// frozen order date, never the download date.
+if ((preg_match('#/services/orders/([^/]+)/report-pdf/?$#', $path, $reportPdfMatch) || $action === 'download-order-report') && $method === 'GET') {
+    $user = requireAuth($pdo);
+    astro_rate_limit_enforce($pdo, 'report-download-user', (string)$user['id'], 20, 3600,
+        'Too many report downloads. Please wait a while and try again.');
+    astro_rate_limit_enforce($pdo, 'report-download-ip', getClientIpAddress(), 40, 3600,
+        'Too many report downloads from this network. Please wait a while and try again.');
+
+    $orderId = isset($reportPdfMatch[1]) ? urldecode((string)$reportPdfMatch[1]) : trim((string)($_GET['id'] ?? ($_GET['orderId'] ?? '')));
+    if ($orderId === '') {
+        jsonResponse(['success' => false, 'message' => 'An order id is required.'], 400);
+    }
+
+    // Owner-only: somebody else's order id is indistinguishable from a
+    // missing one (no existence leak, no IDOR).
+    $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ? AND user_id = ? LIMIT 1");
+    $stmt->execute([$orderId, $user['id']]);
+    $orderRow = $stmt->fetch();
+    if (!$orderRow) {
+        jsonResponse(['success' => false, 'message' => 'Order not found.'], 404);
+    }
+    if (!in_array((string)$orderRow['status'], ['COMPLETED', 'GENERATED'], true) || empty($orderRow['has_pdf'])) {
+        jsonResponse(['success' => false, 'message' => 'Your report download will be available here once your order is delivered.'], 409);
+    }
+
+    require_once __DIR__ . '/../admin/order_items.php';
+
+    $itemId = isset($_GET['itemId']) ? (int)$_GET['itemId'] : 0;
+    $items = astro_order_items_all($pdo, $orderId);
+    $useItem = null;
+    if ($itemId > 0) {
+        foreach ($items as $candidate) {
+            if ((int)$candidate['id'] === $itemId) { $useItem = $candidate; break; }
+        }
+        if (!$useItem) {
+            jsonResponse(['success' => false, 'message' => 'Report not found in this order.'], 404);
+        }
+    } elseif (!empty($items)) {
+        foreach ($items as $candidate) {
+            if ((string)($candidate['report_status'] ?? '') === 'SENT') { $useItem = $candidate; break; }
+        }
+        $useItem = $useItem ?: $items[0];
+    }
+
+    if ($useItem) {
+        if ((string)($useItem['report_status'] ?? '') !== 'SENT') {
+            jsonResponse(['success' => false, 'message' => 'This report will be available for download once it is delivered.'], 409);
+        }
+        $sourceRow = $useItem;
+        $orderArray = astro_order_item_synthetic_order($orderRow, $useItem);
+    } else {
+        $sourceRow = $orderRow;
+        $orderArray = $orderRow;
+    }
+
+    // The frozen source: the snapshot written once at order creation.
+    // Pre-migration rows fall back to their stored calculated_result,
+    // rendered AS-IS (also never recalculated, never re-stamped) — the
+    // snapshot column simply does not exist for them yet.
+    $snapshotJson = null;
+    $snapshotAt = null;
+    if (!empty($sourceRow['report_snapshot'])) {
+        $snapshotJson = (string)$sourceRow['report_snapshot'];
+        $snapshotAt = $sourceRow['report_snapshot_at'] ?? null;
+    } elseif (!empty($sourceRow['calculated_result'])) {
+        $snapshotJson = (string)$sourceRow['calculated_result'];
+    }
+    if ($snapshotJson === null) {
+        jsonResponse(['success' => false, 'message' => 'This report predates dashboard downloads. Please use the PDF copy emailed to you, or contact support.'], 409);
+    }
+    $result = json_decode($snapshotJson, true);
+    if (!is_array($result) || empty($result)) {
+        jsonResponse(['success' => false, 'message' => 'This report could not be prepared for download. Please use the PDF copy emailed to you.'], 409);
+    }
+
+    // The date printed on the report ("Prepared on" / Issued On) is the
+    // frozen preparation date — the snapshot's own timestamp when the
+    // stored result lacks one — never the download date.
+    if (empty($result['generatedAt'])) {
+        $preparedSource = $snapshotAt ?: ($orderRow['created_at'] ?? null);
+        if ($preparedSource) {
+            $preparedTs = strtotime((string)$preparedSource);
+            if ($preparedTs !== false) {
+                $result['generatedAt'] = date('Y-m-d H:i:s', $preparedTs);
+            }
+        }
+    }
+
+    // frozen_snapshot tells the renderer to use $result verbatim: no
+    // engine rebuild, no renderer-side recalculation, and nothing writes
+    // calculated_result (or anything else) back to the database here.
+    $orderArray['frozen_snapshot'] = true;
+    try {
+        $pdf = AstroEngine::generateReportPdf($orderArray, $result);
+    } catch (Throwable $e) {
+        error_log('ASTRO SIVAM: frozen report download failed for order ' . $orderId . ': ' . $e->getMessage());
+        jsonResponse(['success' => false, 'message' => 'Your report could not be prepared for download right now. The copy emailed to you remains valid; please try again later.'], 500);
+    }
+
+    $personPart = '';
+    if ($useItem) {
+        $personStmt = $pdo->prepare("SELECT full_name FROM order_persons WHERE id = ? LIMIT 1");
+        $personStmt->execute([(int)($useItem['person_id'] ?? 0)]);
+        $personName = (string)($personStmt->fetchColumn() ?: '');
+        if ($personName !== '') {
+            $personPart = '_' . preg_replace('/[^A-Za-z0-9]+/', '_', $personName);
+        }
+    }
+    $fileName = 'ASTRO_SIVAM_Report_' . preg_replace('/[^A-Za-z0-9\-]+/', '_', (string)$orderRow['order_number']) . $personPart . '.pdf';
+
+    // Report only — this endpoint can never emit an invoice.
+    if (!headers_sent()) {
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Content-Length: ' . strlen($pdf));
+        header('Cache-Control: private, no-store');
+        header('X-Content-Type-Options: nosniff');
+    }
+    echo $pdf;
+    exit;
+}
+
 // 7. (Removed) Customer-facing GET /api/services/orders/:id/pdf & invoice-pdf endpoint.
 // Report/invoice PDFs are only generated server-side when emailing the customer
 // (see the resend-email / order-approval flow) and are never served directly over HTTP
 // to the customer-facing app. Do not re-add a public route that streams these PDFs.
+// The ONE exception is the owner-only frozen-snapshot download in 6c above:
+// it renders the immutable order-date snapshot without any recalculation,
+// so it can never become a way to obtain a fresh report without ordering.
 
 // 7b. POST /api/services/export-preview-pdf (Direct instant export of calculated preview results to official PDF via mPDF)
 // Kept public by owner decision (Oct 2026 audit): anonymous visitors must be

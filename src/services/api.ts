@@ -1,4 +1,4 @@
-import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus } from '../types';
+import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, FamilyMember, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus } from '../types';
 
 export function getApiBase(): string {
   // Always default to relative '/api' in browser contexts.
@@ -675,6 +675,63 @@ export const api = {
     return safeJson(res);
   },
 
+  // Saved family members (up to MAX_FAMILY_MEMBERS besides the own profile).
+  // Managed in the dashboard; order forms only fill one in when the customer
+  // explicitly picks that person — forms always start blank otherwise.
+  async getFamilyMembers(): Promise<{ success: boolean; members: FamilyMember[]; message?: string }> {
+    const apiBase = getApiBase();
+    try {
+      const res = await apiFetch(`${apiBase}/services/family-members`);
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) {
+        return { success: Boolean(resData.success), members: resData.members || [], message: resData.message };
+      }
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=family-members`);
+    const resData = await safeJson(res);
+    return { success: Boolean(resData.success), members: resData.members || [], message: resData.message };
+  },
+
+  async saveFamilyMember(
+    member: Partial<FamilyMember> & { name: string }
+  ): Promise<{ success: boolean; member?: FamilyMember; members?: FamilyMember[]; message?: string }> {
+    const apiBase = getApiBase();
+    const isUpdate = Boolean(member.id);
+    const url = isUpdate
+      ? `${apiBase}/services/family-members/${encodeURIComponent(String(member.id))}`
+      : `${apiBase}/services/family-members`;
+    try {
+      const res = await apiFetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(member)
+      });
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) return resData;
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=family-member-save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(member)
+    });
+    return safeJson(res);
+  },
+
+  async deleteFamilyMember(id: string): Promise<{ success: boolean; members?: FamilyMember[]; message?: string }> {
+    const apiBase = getApiBase();
+    try {
+      const res = await apiFetch(`${apiBase}/services/family-members/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) return resData;
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=family-member-delete&id=${encodeURIComponent(id)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    return safeJson(res);
+  },
+
   // Calculations Preview
   async calculatePreview(serviceType: ServiceType, payload: Record<string, any>): Promise<{ success: boolean; result?: any; message?: string }> {
     const apiBase = getApiBase();
@@ -977,11 +1034,37 @@ export const api = {
   },
 
 
-  // NOTE: Customer-facing getOrderPdfUrl / getPdfDownloadUrl / getOrderInvoicePdfUrl /
-  // downloadOrderPdf / downloadOrderInvoicePdf were intentionally removed. Reports and
-  // tax invoices are delivered to customers only by email (see requestCustomerEmailResend
-  // above) and must never be viewable or downloadable directly on the website. Do not
-  // re-add functions pointing at services/orders/:id/pdf or /invoice-pdf.
+  /**
+   * FROZEN REPORT DOWNLOAD (dashboard only, owner-only, report PDF only).
+   *
+   * The server renders the snapshot frozen at order placement
+   * (orders.report_snapshot / order_items.report_snapshot) exactly as
+   * prepared on the order date: it never recalculates, so a download a year
+   * later is the same report the customer paid for — never a free fresh
+   * report. The report itself prints that prepared date. Tax invoices stay
+   * email-only: there is deliberately no customer invoice download here.
+   */
+  async downloadMyOrderReport(
+    orderId: string,
+    options: { itemId?: number; fileName?: string } = {}
+  ): Promise<void> {
+    const apiBase = getApiBase();
+    const query = options.itemId ? `?itemId=${encodeURIComponent(String(options.itemId))}` : '';
+    const res = await apiFetch(`${apiBase}/services/orders/${encodeURIComponent(orderId)}/report-pdf${query}`);
+    if (!res.ok) {
+      const err = await safeJson(res).catch(() => null);
+      throw new Error(err?.message || 'This report is not available for download yet.');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = options.fileName || `ASTRO_SIVAM_Report_${orderId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
 
   async downloadPreviewPdf(
     serviceType: string,
@@ -1287,11 +1370,11 @@ export const api = {
     return safeJson(res);
   },
 
-  // NOTE: Customer-facing getFamilyInvoicePdfUrl / downloadFamilyInvoicePdf were
-  // intentionally removed for the same reason as the single-order equivalents:
-  // reports and invoices are delivered to customers only by email, never
-  // viewable/downloadable directly on the site. Do not re-add functions
-  // pointing at services/family-orders/:groupId/invoice-pdf.
+  // NOTE: Customer-facing invoice downloads stay removed: only the frozen
+  // Report PDF is downloadable from the dashboard (downloadMyOrderReport
+  // above, rendered from the order-date snapshot). Tax invoices — single or
+  // family — are delivered only by email. Do not re-add functions pointing
+  // at services/family-orders/:groupId/invoice-pdf.
 
   getAdminFamilyInvoicePdfUrl(groupId: string): string {
     return `${API_BASE}/admin/family-orders/${encodeURIComponent(groupId)}/invoice-pdf`;

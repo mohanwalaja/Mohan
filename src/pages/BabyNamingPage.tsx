@@ -54,8 +54,13 @@ import {
   isValidBirthTime,
   isValidIsoBirthDate,
   isVerifiedBirthLocation,
-  normalizePersonName
+  locationFromSavedPerson,
+  normalizeBirthDate,
+  normalizeBirthTime,
+  normalizePersonName,
+  type SavedPerson
 } from '../utils/birthDetails';
+import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
 
 interface BabyNamingPageProps {
   onNavigate: (route: string) => void;
@@ -101,6 +106,28 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
         location.timezoneOffsetHours, location.timeZoneId
       )
     : null;
+
+  // Saved-person picker: blank by default; picking a saved child/family
+  // member fills the baby particulars explicitly (e.g. a saved newborn).
+  const [pickedKey, setPickedKey] = useState('');
+  const savedPeople = useSavedPeople();
+  const handlePickPerson = (person: SavedPerson | null, key: string) => {
+    setPickedKey(key);
+    if (person) {
+      setBabyName(person.name);
+      setDob(normalizeBirthDate(person.dob));
+      setTob(normalizeBirthTime(person.tob));
+      setGender(person.gender);
+      setLocation(locationFromSavedPerson(person));
+    } else {
+      setBabyName('');
+      setDob('');
+      setTob('');
+      setGender('M');
+      setLocation(null);
+    }
+  };
+  useDashboardOrderFor(savedPeople, person => handlePickPerson(person, person.key));
 
   const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>('en');
   const [paymentRef, setPaymentRef] = useState('');
@@ -187,6 +214,7 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
     setBabyName('');
     setDob('');
     setTob('');
+    setPickedKey('');
 
     openCart();
   };
@@ -354,7 +382,7 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
                         Sign in for Quick Baby Naming Certificate
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Sign in with Google to auto-save your birth profile and track your orders.
+                        Sign in with Google to pick saved birth details and track your orders.
                       </p>
                     </div>
                   </div>
@@ -377,6 +405,11 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
 
               {/* Baby Particulars */}
               <div className="service-form-section space-y-4 p-5 sm:p-6">
+                <SavedPersonPicker
+                  value={pickedKey}
+                  onPick={handlePickPerson}
+                  label="Is this baby already saved in your family?"
+                />
                 <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
                   <span className="w-7 h-7 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950 text-xs font-black flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">1</span>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-100">

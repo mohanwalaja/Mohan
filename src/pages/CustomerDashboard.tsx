@@ -19,14 +19,18 @@ import {
   X,
   ShieldCheck,
   Check,
-  RotateCcw
+  RotateCcw,
+  Download,
+  Users,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { normalizeReportLanguage } from '../services/reportLanguage';
 import { generateOrderPdfsBase64, prepareFamilyFulfilPayload, deliverOrderPdfPayload } from '../services/jathagamPdfExporter';
-import { Order, BirthProfile, CustomerReview, ReviewEligibleOrder } from '../types';
+import { Order, OrderItem, BirthProfile, CustomerReview, ReviewEligibleOrder, FamilyMember, FamilyRelation, MAX_FAMILY_MEMBERS } from '../types';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
 import { BirthDateField, BirthTimeField, BirthTimeZoneNotice } from '../components/common/BirthDateTimeFields';
 import { PersonNameField } from '../components/common/PersonNameField';
@@ -40,13 +44,16 @@ import { defaultReviewDisplayName } from '../services/reviews';
 import { captureReviewInvite, clearReviewInvite, resolveReviewInvite } from '../services/reviewInvite';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
+  FAMILY_RELATION_OPTIONS,
+  familyRelationLabel,
   isValidBirthTime,
   isValidIsoBirthDate,
   isVerifiedBirthLocation,
   locationFromBirthProfile,
   normalizeBirthDate,
   normalizeBirthTime,
-  normalizePersonName
+  normalizePersonName,
+  setPendingOrderFor
 } from '../utils/birthDetails';
 
 interface CustomerDashboardProps {
@@ -54,7 +61,10 @@ interface CustomerDashboardProps {
 }
 
 export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate }) => {
-  const { user, isAdmin, birthProfile, updateBirthProfile, refreshProfile } = useAuth();
+  const {
+    user, isAdmin, birthProfile, updateBirthProfile, refreshProfile,
+    familyMembers, saveFamilyMember, deleteFamilyMember, refreshFamilyMembers
+  } = useAuth();
   const { language: appLanguage } = useLanguage();
   // The name saved in the website profile is authoritative — never a stale
   // name or one with a "(Google)" tag attached.
@@ -63,7 +73,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
-  const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'profile' | 'family'>('orders');
   // Source-based astrologer entry point. `aiChatOrder` is null for a general chat, or the
   // order whose report the customer wants explained.
   const [aiChatOpen, setAiChatOpen] = useState(false);
@@ -87,6 +97,31 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Family Members State (saved birth details for up to MAX_FAMILY_MEMBERS
+  // people; order forms fill one in only when explicitly picked there).
+  const [familyFormOpen, setFamilyFormOpen] = useState(false);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [fName, setFName] = useState('');
+  const [fRelation, setFRelation] = useState<FamilyRelation>('OTHER');
+  const [fDob, setFDob] = useState('');
+  const [fTob, setFTob] = useState('');
+  const [fGender, setFGender] = useState<'M' | 'F'>('M');
+  const [fLocation, setFLocation] = useState<LocationData | null>(null);
+  const familyTimezone = fLocation
+    ? resolveLocationTimezone(
+        fDob, fTob, fLocation.latitude, fLocation.longitude,
+        fLocation.timezoneOffsetHours, fLocation.timeZoneId
+      )
+    : null;
+  const [familySaveError, setFamilySaveError] = useState('');
+  const [familySaveSuccess, setFamilySaveSuccess] = useState('');
+  const [isSavingFamily, setIsSavingFamily] = useState(false);
+  const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
+
+  // Frozen report download state (keyed per order / per order item).
+  const [downloadingKey, setDownloadingKey] = useState('');
+  const [downloadFeedback, setDownloadFeedback] = useState<{ orderId: string; type: 'success' | 'error'; message: string } | null>(null);
 
   // Email Resend / Update Modal State
   const [resendOrder, setResendOrder] = useState<Order | null>(null);
@@ -143,6 +178,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
     fetchOrders();
     if (user) {
       refreshProfile();
+      refreshFamilyMembers();
     }
     setReviewInvite(captureReviewInvite());
   }, []);
@@ -236,6 +272,146 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
       setProfileSaveError(err?.message || 'Could not save your birth profile. Please try again.');
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const resetFamilyForm = () => {
+    setEditingMemberId(null);
+    setFName('');
+    setFRelation('OTHER');
+    setFDob('');
+    setFTob('');
+    setFGender('M');
+    setFLocation(null);
+    setFamilySaveError('');
+  };
+
+  const handleAddFamilyMember = () => {
+    resetFamilyForm();
+    setFamilySaveSuccess('');
+    setFamilyFormOpen(true);
+  };
+
+  const handleEditFamilyMember = (member: FamilyMember) => {
+    setEditingMemberId(member.id);
+    setFName(normalizePersonName(member.name));
+    setFRelation(member.relation);
+    setFDob(normalizeBirthDate(member.dob));
+    setFTob(normalizeBirthTime(member.tob));
+    setFGender(member.gender === 'F' ? 'F' : 'M');
+    setFLocation(locationFromBirthProfile(member));
+    setFamilySaveError('');
+    setFamilySaveSuccess('');
+    setFamilyFormOpen(true);
+  };
+
+  const handleSaveFamilyMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!normalizePersonName(fName)) {
+      setFamilySaveError('Please enter the family member\'s full name.');
+      return;
+    }
+    if (!fDob || !isValidIsoBirthDate(fDob)) {
+      setFamilySaveError('Please enter a valid date of birth that is not in the future.');
+      return;
+    }
+    if (!fTob || !isValidBirthTime(fTob)) {
+      setFamilySaveError('Please enter a valid birth time.');
+      return;
+    }
+    if (!isVerifiedBirthLocation(fLocation)) {
+      setFamilySaveError('Please search for and select the birth place so its coordinates and timezone can be saved.');
+      return;
+    }
+    setIsSavingFamily(true);
+    setFamilySaveError('');
+    setFamilySaveSuccess('');
+    try {
+      const result = await saveFamilyMember({
+        ...(editingMemberId ? { id: editingMemberId } : {}),
+        name: normalizePersonName(fName),
+        relation: fRelation,
+        dob: fDob,
+        tob: fTob,
+        birthPlace: fLocation.placeName,
+        country: fLocation.country,
+        latitude: Number(fLocation.latitude),
+        longitude: Number(fLocation.longitude),
+        timezoneOffsetHours: familyTimezone?.timezoneOffsetHours ?? Number(fLocation.timezoneOffsetHours),
+        timeZoneId: familyTimezone?.timeZoneId ?? fLocation.timeZoneId,
+        gender: fGender
+      });
+      if (result.success) {
+        setFamilySaveSuccess(editingMemberId ? 'Family member updated.' : 'Family member saved. They can now be picked on any order form — no form filling next time.');
+        setFamilyFormOpen(false);
+        resetFamilyForm();
+        setTimeout(() => setFamilySaveSuccess(''), 5000);
+      } else {
+        setFamilySaveError(result.message || 'Could not save this family member. Please try again.');
+      }
+    } catch (err: any) {
+      setFamilySaveError(err?.message || 'Could not save this family member. Please try again.');
+    } finally {
+      setIsSavingFamily(false);
+    }
+  };
+
+  const handleDeleteFamilyMember = async (member: FamilyMember) => {
+    if (!window.confirm(`Remove ${member.name} (${familyRelationLabel(member.relation)}) from your saved family members? Past orders are not affected.`)) {
+      return;
+    }
+    setDeletingMemberId(member.id);
+    try {
+      const result = await deleteFamilyMember(member.id);
+      if (!result.success) {
+        setFamilySaveError(result.message || 'Could not remove this family member.');
+      }
+    } finally {
+      setDeletingMemberId(null);
+    }
+  };
+
+  /** "Order for <name>": an explicit pick handed to the order form. */
+  const handleOrderFor = (personKey: string) => {
+    setPendingOrderFor(personKey);
+    onNavigate('birth-jathagam');
+  };
+
+  const formatPreparedDate = (value?: string | null): string => {
+    if (!value) return '';
+    const date = new Date(String(value).replace(' ', 'T'));
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  /**
+   * Downloads the FROZEN report: the server renders the snapshot saved on
+   * the order date and never recalculates it, so this file is always the
+   * report as prepared on that date — printed on the report itself.
+   */
+  const handleDownloadReport = async (order: Order, item?: OrderItem) => {
+    const key = item ? `${order.id}:${item.id}` : order.id;
+    setDownloadingKey(key);
+    setDownloadFeedback(null);
+    try {
+      const personPart = item?.personName ? `_${item.personName.replace(/[^a-zA-Z0-9]+/g, '_')}` : '';
+      await api.downloadMyOrderReport(order.id, {
+        itemId: item?.id,
+        fileName: `ASTRO_SIVAM_Report_${order.orderNumber}${personPart}.pdf`
+      });
+      setDownloadFeedback({
+        orderId: order.id,
+        type: 'success',
+        message: 'Report downloaded — exactly as prepared on the order date shown on the report.'
+      });
+    } catch (err: any) {
+      setDownloadFeedback({
+        orderId: order.id,
+        type: 'error',
+        message: err?.message || 'This report is not available for download yet.'
+      });
+    } finally {
+      setDownloadingKey('');
     }
   };
 
@@ -476,6 +652,18 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           <span>Saved Birth Profile</span>
         </button>
 
+        <button
+          onClick={() => setActiveTab('family')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === 'family'
+              ? 'bg-amber-500 text-slate-950 shadow-sm'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span>Family Members ({familyMembers.length}/{MAX_FAMILY_MEMBERS})</span>
+        </button>
+
         <div className="ml-auto">
           <button
             onClick={() => { fetchOrders(); fetchMyReviews(); }}
@@ -509,7 +697,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                   Once your order is approved by the ASTRO SIVAM Administrator, your certified <strong>Astrological Report PDF</strong> and official <strong>Tax Invoice Bill PDF</strong> are attached directly and emailed from <strong>admin@astrosivam.com</strong>.
                 </p>
                 <p className="text-slate-400 leading-relaxed text-[11.5px]">
-                  Reports are not stored for download in this dashboard. The dashboard shows your order and email-delivery status only. <strong>Check your Spam/Junk folder</strong> if the message is not in your inbox; if delivery failed, update your address and use the <strong>&quot;Resend to Email&quot;</strong> button below.
+                  Delivered orders also offer a <strong>Download Report</strong> button below: it downloads the report <strong>exactly as prepared on your order date</strong> (that date is printed on the report). The downloaded report never recalculates or updates itself — a fresh report for a new period needs a new order. Tax invoices are sent by email only. <strong>Check your Spam/Junk folder</strong> if the email is not in your inbox; if delivery failed, update your address and use the <strong>&quot;Resend to Email&quot;</strong> button below.
                 </p>
               </div>
             </div>
@@ -934,6 +1122,96 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
                     </div>
 
+                    {/* Frozen report download (delivered orders only): the file
+                        is rendered from the snapshot prepared on the order
+                        date and never recalculates. Report only — the tax
+                        invoice stays email-only. */}
+                    {isCompleted && order.hasPdf && (
+                      <div className="pt-1 space-y-2" data-frozen-download={order.id}>
+                        {(order.items?.length || 0) > 0 ? (
+                          <div className="space-y-2">
+                            {(order.items || []).map(item => {
+                              const itemPrepared = formatPreparedDate(item.reportSnapshotAt || order.reportSnapshotAt || order.createdAt);
+                              const itemReady = item.reportStatus === 'SENT' && item.hasReportSnapshot !== false;
+                              const itemService = item.serviceCode === 'BIRTH_JATHAGAM'
+                                ? 'Birth Jathagam'
+                                : item.serviceCode === 'MARRIAGE_COMPATIBILITY'
+                                  ? 'Wedding Matching'
+                                  : item.serviceCode === 'BABY_NAMING'
+                                    ? 'Baby Naming'
+                                    : item.serviceCode === 'MUHURTHAM'
+                                      ? 'Subha Muhurtham'
+                                      : String(item.serviceCode).replace(/_/g, ' ');
+                              return (
+                                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-950/50 border border-slate-800/60 rounded-xl px-3.5 py-2.5">
+                                  <div className="text-[11.5px] text-slate-300">
+                                    <span className="font-bold text-white">{item.personName || 'Report'}</span>
+                                    <span className="text-slate-400"> — {itemService}</span>
+                                    {itemPrepared && (
+                                      <span className="block text-[11px] text-slate-500">
+                                        Prepared on {itemPrepared} • frozen as ordered
+                                      </span>
+                                    )}
+                                  </div>
+                                  {itemReady ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDownloadReport(order, item)}
+                                      disabled={downloadingKey === `${order.id}:${item.id}`}
+                                      className="shrink-0 px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-slate-700 disabled:opacity-50"
+                                    >
+                                      <Download className="w-3.5 h-3.5" />
+                                      <span>{downloadingKey === `${order.id}:${item.id}` ? 'Preparing…' : 'Download Report'}</span>
+                                    </button>
+                                  ) : (
+                                    <span className="text-[11px] text-slate-500">
+                                      {item.reportStatus === 'SENT' ? 'Download unavailable for this report — please use the emailed copy.' : 'Available after delivery.'}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : order.hasReportSnapshot === false ? (
+                          <p className="text-[11px] text-slate-500">
+                            Report download is unavailable for this order — please use the PDF copy emailed to you.
+                          </p>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <span className="text-[11px] text-slate-500">
+                              {formatPreparedDate(order.reportSnapshotAt || order.createdAt) && (
+                                <>Prepared on {formatPreparedDate(order.reportSnapshotAt || order.createdAt)} • frozen as ordered — this download never updates itself.</>
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadReport(order)}
+                              disabled={downloadingKey === order.id}
+                              className="shrink-0 px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-slate-700 disabled:opacity-50"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>{downloadingKey === order.id ? 'Preparing…' : 'Download Report'}</span>
+                            </button>
+                          </div>
+                        )}
+                        {downloadFeedback?.orderId === order.id && (
+                          <div
+                            role="status"
+                            className={`p-3 rounded-xl border flex items-start gap-2 text-[11.5px] ${
+                              downloadFeedback.type === 'success'
+                                ? 'bg-emerald-950/50 border-emerald-800 text-emerald-300'
+                                : 'bg-rose-950/50 border-rose-800 text-rose-300'
+                            }`}
+                          >
+                            {downloadFeedback.type === 'success'
+                              ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                              : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+                            <span>{downloadFeedback.message}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Verified review — paid, delivered orders only (server-decided). */}
                     {reviewEligibility && (
                       <OrderReviewStrip
@@ -958,10 +1236,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                One-Time Saved Birth Profile
+                My Saved Birth Profile
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                These birth coordinates are automatically reused across all your horoscope calculations.
+                Order forms always start blank. These details are filled in only when you explicitly pick &quot;Myself&quot; on an order form — they are never taken automatically.
               </p>
             </div>
 
@@ -995,7 +1273,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
           {!birthProfile && !isEditingProfile && (
             <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/70 text-amber-800 dark:text-amber-200 rounded-xl text-xs leading-relaxed">
-              No saved birth profile yet. Add your birth details once and they can be reused for future astrology services.
+              No saved birth profile yet. Add your birth details once, then pick &quot;Myself&quot; on any order form to fill them in with one tap.
             </div>
           )}
 
@@ -1097,6 +1375,219 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 </div>
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 3: Family Members — saved birth details (max {MAX_FAMILY_MEMBERS}).
+          Picked explicitly on order forms; never auto-filled. */}
+      {activeTab === 'family' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Saved Family Members
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed">
+                Save birth details for up to {MAX_FAMILY_MEMBERS} family members once. On any order form,
+                pick their name and the form fills itself — no typing. Order forms otherwise always
+                start blank; nobody&apos;s details are taken automatically.
+              </p>
+            </div>
+            {!familyFormOpen && familyMembers.length < MAX_FAMILY_MEMBERS && (
+              <button
+                onClick={handleAddFamilyMember}
+                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Family Member</span>
+              </button>
+            )}
+          </div>
+
+          {familySaveSuccess && (
+            <div role="status" className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{familySaveSuccess}</span>
+            </div>
+          )}
+
+          {familySaveError && !familyFormOpen && (
+            <div role="alert" className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{familySaveError}</span>
+            </div>
+          )}
+
+          {familyFormOpen ? (
+            <form onSubmit={handleSaveFamilyMember} className="space-y-4">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                {editingMemberId ? 'Edit Family Member' : 'Add Family Member'}
+              </h4>
+
+              {familySaveError && (
+                <div role="alert" className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{familySaveError}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <PersonNameField
+                  id="family-member-name"
+                  label="Full name"
+                  value={fName}
+                  onChange={setFName}
+                  placeholder="Family member's full name"
+                  size="sm"
+                />
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1" htmlFor="family-member-relation">
+                    Relation:
+                  </label>
+                  <select
+                    id="family-member-relation"
+                    value={fRelation}
+                    onChange={e => setFRelation(e.target.value as FamilyRelation)}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
+                  >
+                    {FAMILY_RELATION_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1" htmlFor="family-member-gender">
+                    Gender:
+                  </label>
+                  <select
+                    id="family-member-gender"
+                    value={fGender}
+                    onChange={e => setFGender(e.target.value as 'M' | 'F')}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
+                  >
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <BirthDateField
+                  label="Date of Birth"
+                  size="sm"
+                  value={fDob}
+                  onChange={setFDob}
+                />
+
+                <BirthTimeField
+                  label="Exact Birth Time"
+                  size="sm"
+                  value={fTob}
+                  onChange={setFTob}
+                />
+              </div>
+
+              <GooglePlacesPicker
+                value={fLocation || undefined}
+                onChange={setFLocation}
+                label="Birth Place (Google Maps)"
+              />
+              <BirthTimeZoneNotice resolution={familyTimezone} date={fDob} time={fTob} />
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={isSavingFamily}
+                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{isSavingFamily ? 'Saving...' : editingMemberId ? 'Save Changes' : 'Save Family Member'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setFamilyFormOpen(false); resetFamilyForm(); }}
+                  className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : familyMembers.length === 0 ? (
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/70 text-amber-800 dark:text-amber-200 rounded-xl text-xs leading-relaxed">
+              No family members saved yet. Add your spouse, children, parents or siblings once —
+              future orders for them then need no form filling at all.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {familyMembers.map(member => (
+                <div
+                  key={member.id}
+                  className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3"
+                  data-family-member={member.id}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-bold text-slate-900 dark:text-white text-sm">{member.name}</div>
+                      <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                        {familyRelationLabel(member.relation)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleEditFamilyMember(member)}
+                        className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        title={`Edit ${member.name}`}
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteFamilyMember(member)}
+                        disabled={deletingMemberId === member.id}
+                        className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-50"
+                        title={`Remove ${member.name}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                    <div>
+                      <span className="text-slate-400">Born:</span>{' '}
+                      <strong>{member.dob}</strong>
+                      {member.tob ? <> at <strong>{member.tob}</strong></> : null}
+                      {' '}({member.gender === 'F' ? 'Female' : 'Male'})
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Place:</span>{' '}
+                      <strong>{member.birthPlace}{member.country ? `, ${member.country}` : ''}</strong>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOrderFor(member.id)}
+                    className="w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Compass className="w-3.5 h-3.5" />
+                    <span>Order for {member.name}</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!familyFormOpen && familyMembers.length >= MAX_FAMILY_MEMBERS && (
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              You have saved the maximum of {MAX_FAMILY_MEMBERS} family members. Remove one to add another.
+            </p>
           )}
         </div>
       )}

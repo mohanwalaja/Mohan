@@ -334,6 +334,54 @@ function astro_random_hex($charCount) {
     return substr(bin2hex(random_bytes((int)ceil($charCount / 2))), 0, $charCount);
 }
 
+/**
+ * Column names of a table, cached per process. Used for the frozen-report
+ * snapshot columns (migration 016): a database that has not run the
+ * migration yet must keep placing orders exactly as before — the snapshot
+ * is simply not written, and the customer download falls back to the
+ * stored calculated_result (still frozen, still never recalculated).
+ */
+function astro_table_columns($pdo, $table) {
+    static $cache = [];
+    $table = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$table);
+    if (isset($cache[$table])) return $cache[$table];
+    try {
+        $cache[$table] = $pdo->query("SHOW COLUMNS FROM `{$table}`")->fetchAll(PDO::FETCH_COLUMN, 0) ?: [];
+    } catch (Throwable $e) {
+        $cache[$table] = [];
+    }
+    return $cache[$table];
+}
+
+/** True when the frozen-report snapshot columns exist on orders/order_items. */
+function astro_report_snapshot_supported($pdo, $table) {
+    $columns = astro_table_columns($pdo, $table);
+    return in_array('report_snapshot', $columns, true) && in_array('report_snapshot_at', $columns, true);
+}
+
+/**
+ * Freeze a report snapshot at order creation (migration 016). The snapshot
+ * is the calculation result exactly as prepared for this order; the
+ * customer download renders from it and never recalculates, so a report
+ * can never silently refresh itself into a new free report. WRITE-ONCE:
+ * the UPDATE only lands while the snapshot is still empty, and admin
+ * preview/send flows never call this. No-ops until migration 016 adds the
+ * columns — the download then falls back to the stored calculated_result.
+ */
+function astro_write_report_snapshot($pdo, $table, $id, $snapshotJson) {
+    if (!in_array($table, ['orders', 'order_items'], true)) return;
+    if (!astro_report_snapshot_supported($pdo, $table)) return;
+    if (!is_string($snapshotJson)) return;
+    $trimmed = trim($snapshotJson);
+    if ($trimmed === '' || $trimmed === 'null' || $trimmed === '{}' || $trimmed === '[]') return;
+    try {
+        $stmt = $pdo->prepare("UPDATE `{$table}` SET report_snapshot = ?, report_snapshot_at = NOW() WHERE id = ? AND (report_snapshot IS NULL OR report_snapshot = '')");
+        $stmt->execute([$snapshotJson, $id]);
+    } catch (Throwable $e) {
+        error_log('ASTRO SIVAM: report snapshot could not be frozen for ' . $table . '/' . $id . ': ' . $e->getMessage());
+    }
+}
+
 // 7. Authentication Helper (PHP Session or signed bearer token in headers only)
 //
 // H3 (2026-10): the signed bearer token is ALSO delivered as an httpOnly,

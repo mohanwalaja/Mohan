@@ -1201,10 +1201,28 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
    * never a literal repeated per page, and it sits on the existing footer line
    * so pages 1 and 2 keep exactly the height they had.
    */
+  /**
+   * "Prepared on" stamp: the date this report was prepared (the order date
+   * for a paid report). It comes from the calculation result itself, so a
+   * frozen snapshot downloaded years later still prints its original
+   * prepared date — the report can never look freshly prepared. Live
+   * previews, whose result was just calculated, print today's date.
+   */
+  const preparedOnLabel = isTa ? 'தயாரிக்கப்பட்ட நாள்' : isHi ? 'तैयार तिथि' : 'Prepared on';
+  const preparedDate = (() => {
+    const raw = (result as any)?.generatedAt;
+    if (!raw) return '';
+    const parsed = new Date(String(raw).replace(' ', 'T'));
+    if (isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  })();
+  const preparedStamp = preparedDate
+    ? ` <span class="footer-prepared">• ${escapeHtml(preparedOnLabel)}: ${escapeHtml(preparedDate)}</span>`
+    : '';
   const footerHtmlFor = (pageNumber: number) => `
     <div class="footer">
       <div class="brand-title">${brandTitle}</div>
-      <div class="brand-sub">${brandSubtitle} <span class="footer-page">${escapeHtml(jathagamPageLabel(pageNumber, lang))}</span></div>
+      <div class="brand-sub">${brandSubtitle} <span class="footer-page">${escapeHtml(jathagamPageLabel(pageNumber, lang))}</span>${preparedStamp}</div>
     </div>
   `;
 
@@ -1751,6 +1769,7 @@ ${REPORT_FONT_LINK_TAG}
     page-break-inside: avoid;
   }
   .footer .footer-page { color: #7a1230; font-weight: 800; white-space: nowrap; }
+  .footer .footer-prepared { color: #7a1230; font-weight: 700; white-space: nowrap; }
 
   /* Page 3 second half: the complete Navagraha reference. Compact enough to
      keep all nine grahas on the sheet, and every suggestion is universal

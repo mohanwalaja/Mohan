@@ -143,7 +143,14 @@ const testFiles = [
   'tests/lockfile-drift.test.ts',
   // USD is the base price; INR is always auto-calculated (Services page,
   // admin panel, checkout and the PHP order/payment checks).
-  'tests/usd-base-pricing.test.ts'
+  'tests/usd-base-pricing.test.ts',
+  // Saved family members + frozen report download: order forms must start
+  // blank (explicit picker, never silent auto-fill), up to 6 family
+  // members are saveable, and a dashboard re-download must render the
+  // immutable order-date snapshot ("Prepared on" = the frozen date) with
+  // zero recalculation. Includes real PHP renderer execution under
+  // PHP-WASM when installed.
+  'tests/family-members-and-frozen-download.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 

@@ -1,0 +1,98 @@
+# Saved family members, no silent auto-fill, frozen report downloads (2026-10-26)
+
+Customer requests implemented together:
+
+1. **Order forms no longer take the signed-in customer's own birth details
+   by default.** Every order form (Birth Jathagam, Marriage Compatibility,
+   Subha Muhurtham, Baby Naming, and each person card in the multi-person
+   checkout) now starts **blank** with a "Who is this report for?" picker:
+   *Enter new details* (default), *Myself*, or any saved family member.
+   Picking someone fills the form; nothing is ever filled silently.
+2. **Family members' birth details can be saved in the profile** (new
+   "Family Members" tab in the dashboard, **maximum 6** besides the
+   customer's own profile), so future orders need no form filling.
+   "Order for <name>" on a member card hands that one explicit pick to
+   the order form (one-time `sessionStorage` hint, consumed once).
+3. **Delivered reports can be downloaded from the dashboard — frozen.**
+   The download renders the immutable snapshot frozen on the order date
+   and can never recalculate: it always produces the report as ordered,
+   never a refreshed one. Report **only** — the tax invoice stays
+   email-only, as before.
+4. **Reports mention the date of prepared.** Every report prints its
+   prepared date, and for a frozen download that is the original order
+   date — never the re-download date. Birth Jathagam gains the stamp it
+   was missing (PHP page headers + the TS builder footer); Wedding
+   Matching, Muhurtham and Baby Naming already printed an issued date,
+   which is now frozen-safe (it comes from the snapshot).
+
+## The always-overwrite bug that had to die first
+
+`api/services/index.php` saved the *ordered person's* birth details over
+the customer's own `birth_profiles` row on **every** order:
+
+```php
+if (($saveAsProfile || true) && ...) { ... }
+```
+
+So ordering for a spouse quietly replaced the customer's own profile
+(and the next order then auto-filled *those* details). Now the profile
+is written only when the client explicitly sends `saveAsProfile`, which
+the Birth Jathagam form does only when **"Myself"** was picked (or the
+customer ticked the save box for themselves). Picked family members are
+updated through the family API; new people can be saved as family from
+the form with a relation. No order can touch `birth_profiles` otherwise.
+
+## Frozen snapshot design
+
+- `api/migrations/016_family_members_and_report_snapshot.sql` adds the
+  `family_members` table and `report_snapshot` / `report_snapshot_at`
+  on `orders` and `order_items`, then one-time backfills by **copying**
+  the stored `calculated_result` (never recalculating history).
+  `api/schema.sql` carries the same for fresh installs. The family table
+  is also created at runtime (`CREATE TABLE IF NOT EXISTS`, the project
+  convention for first-boot tables); snapshot columns are migration-only
+  and the code verifies them (`astro_table_columns`), degrading to the
+  stored `calculated_result` — still frozen, still never recalculated —
+  until the migration runs.
+- `astro_write_report_snapshot()` (api/config.php) writes the snapshot
+  **once at order creation** in all three write paths (single order,
+  legacy multi-order, multi-person header + items) and only while the
+  snapshot is still empty. Admin preview/send never call it, so later
+  recalculations for fulfilment can never thaw a frozen report.
+- `GET /api/services/orders/:id/report-pdf` (optional `?itemId=`):
+  owner-only (`WHERE id = ? AND user_id = ?`, foreign ids look missing),
+  delivered orders only (`COMPLETED`/`GENERATED` + `has_pdf`, per-item
+  `SENT`), rate-limited, report-only. It renders with
+  `order['frozen_snapshot'] = true`, which makes
+  `AstroEngine::generateReportPdf` skip its rebuild/upgrade logic and
+  the baby/muhurtham renderers skip their recalculation paths. Nothing
+  in the endpoint writes any result column. This is not the removed
+  direct-PDF route: that served freshly generated files; this serves
+  only the frozen snapshot.
+- Prepared date = the snapshot's `generatedAt` (filled from
+  `report_snapshot_at`, else the order's `created_at`, when a legacy
+  stored result lacks one). It is rendered into the Birth Jathagam page
+  headers (`Prepared on: 05 Feb 2026` / தயாரிக்கப்பட்ட நாள் / तैयार तिथि,
+  on the existing reference line so fixed page heights do not move), the
+  TS Jathagam footer, and the dashboard shows "Prepared on <date> •
+  frozen as ordered" next to each download. Live previews keep today's
+  date because their result was just calculated.
+
+## Verification
+
+- `tests/family-members-and-frozen-download.test.ts` (registered in
+  `scripts/run-tests.mjs`): pure saved-people logic, the client/server
+  relation-enum match, per-file wiring contracts (no auto-fill remnants,
+  picker present, save-gating, owner scoping, 6-member cap, snapshot
+  write-once, forbidden recalculation calls in the download block,
+  migration/schema parity), plus real PHP renderer execution under
+  PHP-WASM when installed — a frozen legacy baby snapshot renders as
+  frozen (fails closed instead of recalculating) while the same input
+  without the frozen flag still recalculates for fulfilment, and the
+  Jathagam header prints the frozen 2024 prepared date.
+- `npx tsc --noEmit`, `npm test`, `npm run build` all pass.
+
+Deployment note: run migration 016 on production (it is idempotent-safe
+to skip only in the sense that nothing breaks without it — family saving
+works immediately, downloads use stored results — but the true
+snapshots and the history freeze need it applied once).

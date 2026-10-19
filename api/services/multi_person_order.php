@@ -359,6 +359,10 @@ function astro_ensure_multi_person_tables($pdo): void
             `language` VARCHAR(16) NOT NULL DEFAULT 'en',
             `input_payload` LONGTEXT NULL,
             `calculated_result` LONGTEXT NULL,
+            -- Frozen download snapshot (migration 016): written once at
+            -- order creation, never updated afterwards.
+            `report_snapshot` LONGTEXT NULL,
+            `report_snapshot_at` DATETIME NULL,
             `sent_at` DATETIME NULL,
             `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -774,6 +778,12 @@ function astro_create_multi_person_order($pdo, array $user, array $body): void
             $clientIp
         ]);
 
+        // Freeze the header snapshot too (single-person orders render from
+        // the header): write-once, never recalculated afterwards.
+        if ($headerResult) {
+            astro_write_report_snapshot($pdo, 'orders', $orderId, json_encode($headerResult, JSON_UNESCAPED_UNICODE));
+        }
+
         // 6b. People.
         $insertPerson = $pdo->prepare(
             "INSERT INTO order_persons (order_id, seq, full_name, gender, dob, tob, place, country, lat, lon, tz, created_at)
@@ -828,6 +838,12 @@ function astro_create_multi_person_order($pdo, array $user, array $body): void
                 $result ? json_encode($result, JSON_UNESCAPED_UNICODE) : null,
             ]);
             $itemId = (int)$pdo->lastInsertId();
+
+            // Freeze this item's report snapshot (write-once): the
+            // per-person dashboard download renders from it forever.
+            if ($result) {
+                astro_write_report_snapshot($pdo, 'order_items', $itemId, json_encode($result, JSON_UNESCAPED_UNICODE));
+            }
 
             $createdItems[] = [
                 'id' => $itemId,
