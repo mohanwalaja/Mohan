@@ -183,7 +183,7 @@ check('snapshot is frozen at creation in every order write path', () => {
 check('download endpoint: owner-only, delivered-only, report-only, never recalculates', () => {
   const src = read('api/services/index.php');
   const start = src.indexOf('// 6c. GET /api/services/orders/:id/report-pdf');
-  const end = src.indexOf('// 7. (Removed)');
+  const end = src.indexOf('// 6d. GET /api/services/chat-media');
   assert.ok(start > 0 && end > start, 'frozen download block exists');
   const block = src.slice(start, end);
   assert.match(block, /requireAuth\(\$pdo\)/);

@@ -1,4 +1,4 @@
-import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, FamilyMember, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus } from '../types';
+import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, FamilyMember, ChatDeliveryState, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus } from '../types';
 
 export function getApiBase(): string {
   // Always default to relative '/api' in browser contexts.
@@ -728,6 +728,92 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })
+    });
+    return safeJson(res);
+  },
+
+  // WhatsApp & Viber delivery contact: one saved number, verified per app
+  // by a one-time code sent in that app. Verified apps additionally receive
+  // the delivered report + invoice PDFs; email remains the official delivery.
+  async getChatDelivery(): Promise<{ success: boolean; chatDelivery?: ChatDeliveryState; message?: string }> {
+    const apiBase = getApiBase();
+    try {
+      const res = await apiFetch(`${apiBase}/services/chat-delivery`);
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) return resData;
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=chat-delivery`);
+    return safeJson(res);
+  },
+
+  async saveChatDeliveryNumber(phone: string): Promise<{ success: boolean; chatDelivery?: ChatDeliveryState; message?: string }> {
+    const apiBase = getApiBase();
+    try {
+      const res = await apiFetch(`${apiBase}/services/chat-delivery-number`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) return resData;
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=chat-delivery-number`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+    return safeJson(res);
+  },
+
+  async removeChatDelivery(): Promise<{ success: boolean; chatDelivery?: ChatDeliveryState; message?: string }> {
+    const apiBase = getApiBase();
+    try {
+      const res = await apiFetch(`${apiBase}/services/chat-delivery-number`, { method: 'DELETE' });
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) return resData;
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=chat-delivery-number`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ remove: true })
+    });
+    return safeJson(res);
+  },
+
+  async requestChatDeliveryOtp(channel: 'whatsapp' | 'viber'): Promise<{ success: boolean; message?: string }> {
+    const apiBase = getApiBase();
+    try {
+      const res = await apiFetch(`${apiBase}/services/chat-delivery-verify-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel })
+      });
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) return resData;
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=chat-delivery-verify-request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel })
+    });
+    return safeJson(res);
+  },
+
+  async confirmChatDeliveryOtp(channel: 'whatsapp' | 'viber', otp: string): Promise<{ success: boolean; chatDelivery?: ChatDeliveryState; message?: string }> {
+    const apiBase = getApiBase();
+    try {
+      const res = await apiFetch(`${apiBase}/services/chat-delivery-verify-confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel, otp })
+      });
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) return resData;
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=chat-delivery-verify-confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel, otp })
     });
     return safeJson(res);
   },

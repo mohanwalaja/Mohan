@@ -186,6 +186,19 @@ export const MAX_FAMILY_MEMBERS = 6;
  * explicitly picked on an order form — never auto-filled by default — so a
  * repeat order for that person needs no form filling.
  */
+/**
+ * Verified WhatsApp/Viber delivery contact: one saved number, verified
+ * separately per app by OTP. Verified apps additionally receive the
+ * delivered report + invoice PDFs (email remains the official delivery).
+ */
+export interface ChatDeliveryState {
+  phone: string;
+  whatsappVerified: boolean;
+  viberVerified: boolean;
+  whatsappAvailable: boolean;
+  viberAvailable: boolean;
+}
+
 export interface FamilyMember {
   id: string;
   userId: string;

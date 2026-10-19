@@ -740,6 +740,67 @@ if (preg_match('#/services/family-members/?$#', $path)
     }
 }
 
+// 3c. WhatsApp & Viber delivery contacts (profile feature): the customer
+// saves ONE mobile number and verifies it per app with a one-time code
+// sent in that app. Verified apps additionally receive the delivered
+// report + invoice PDFs (email remains the official delivery channel).
+//   GET    /services/chat-delivery                 -> state (no credentials)
+//   POST   /services/chat-delivery-number          -> save/replace number
+//   DELETE /services/chat-delivery-number          -> remove number
+//   POST   /services/chat-delivery-verify-request  -> send OTP in the app
+//   POST   /services/chat-delivery-verify-confirm  -> check OTP
+if (preg_match('#/services/chat-delivery(-number|-verify-request|-verify-confirm)?/?$#', $path)
+    || in_array($action, ['chat-delivery', 'chat-delivery-number', 'chat-delivery-verify-request', 'chat-delivery-verify-confirm'], true)) {
+    $user = requireAuth($pdo);
+
+    if ($method === 'GET') {
+        jsonResponse(['success' => true, 'chatDelivery' => AstroChatAlerts::chatContactState($pdo, (string)$user['id'])]);
+    }
+
+    $body = getJsonBody();
+
+    if ($method === 'DELETE' || ($action === 'chat-delivery-number' && !empty($body['remove']))) {
+        AstroChatAlerts::removeChatContact($pdo, (string)$user['id']);
+        jsonResponse(['success' => true, 'message' => 'Chat delivery number removed.', 'chatDelivery' => AstroChatAlerts::chatContactState($pdo, (string)$user['id'])]);
+    }
+
+    $isNumberSave = $action === 'chat-delivery-number' || (bool)preg_match('#/services/chat-delivery-number/?$#', $path)
+        || ($method === 'POST' && array_key_exists('phone', $body) && $action !== 'chat-delivery-verify-request' && $action !== 'chat-delivery-verify-confirm');
+    if ($isNumberSave) {
+        astro_rate_limit_enforce($pdo, 'chat-number-user', (string)$user['id'], 20, 3600,
+            'Too many number changes. Please wait a while and try again.');
+        $result = AstroChatAlerts::saveChatContactNumber($pdo, (string)$user['id'], (string)($body['phone'] ?? ''), $user['country'] ?? null);
+        jsonResponse([
+            'success' => (bool)($result['success'] ?? false),
+            'message' => (string)($result['message'] ?? ''),
+            'chatDelivery' => $result['state'] ?? AstroChatAlerts::chatContactState($pdo, (string)$user['id'])
+        ], !empty($result['success']) ? 200 : 400);
+    }
+
+    $channel = strtolower(trim((string)($body['channel'] ?? '')));
+    if ($action === 'chat-delivery-verify-request' || (bool)preg_match('#/services/chat-delivery-verify-request/?$#', $path)) {
+        astro_rate_limit_enforce($pdo, 'chat-otp-request-user', (string)$user['id'], 6, 3600,
+            'Too many verification codes requested. Please wait a while and try again.');
+        astro_rate_limit_enforce($pdo, 'chat-otp-request-ip', getClientIpAddress(), 20, 3600,
+            'Too many verification codes requested from this network. Please wait a while and try again.');
+        $result = AstroChatAlerts::requestChatOtp($pdo, (string)$user['id'], $channel);
+        jsonResponse(['success' => (bool)($result['success'] ?? false), 'message' => (string)($result['message'] ?? '')], !empty($result['success']) ? 200 : 400);
+    }
+
+    if ($action === 'chat-delivery-verify-confirm' || (bool)preg_match('#/services/chat-delivery-verify-confirm/?$#', $path)) {
+        astro_rate_limit_enforce($pdo, 'chat-otp-confirm-user', (string)$user['id'], 30, 3600,
+            'Too many verification attempts. Please wait a while and try again.');
+        $result = AstroChatAlerts::confirmChatOtp($pdo, (string)$user['id'], $channel, (string)($body['otp'] ?? ''));
+        jsonResponse([
+            'success' => (bool)($result['success'] ?? false),
+            'message' => (string)($result['message'] ?? ''),
+            'chatDelivery' => $result['state'] ?? AstroChatAlerts::chatContactState($pdo, (string)$user['id'])
+        ], !empty($result['success']) ? 200 : 400);
+    }
+
+    jsonResponse(['success' => false, 'message' => 'Unsupported chat delivery request.'], 400);
+}
+
 // 4. POST /api/services/calculate-preview
 if ((preg_match('#/services/calculate-preview/?$#', $path) || $action === 'calculate-preview') && $method === 'POST') {
     // The calculator runs the full ephemeris; keep it to 20/minute per network.
@@ -2294,6 +2355,86 @@ if ((preg_match('#/services/orders/([^/]+)/report-pdf/?$#', $path, $reportPdfMat
         header('X-Content-Type-Options: nosniff');
     }
     echo $pdf;
+    exit;
+}
+
+// 6d. GET /api/services/chat-media/:token — the hosted file behind a Viber
+// Bot "file" message (the official Viber API cannot accept uploads, only
+// links). The token is HMAC-signed, scoped to ONE order document, and
+// expires after 7 days; the signature is the credential, so no session is
+// required. Reports render from the same frozen order-date snapshot as
+// the dashboard download (never recalculated). This is not a general
+// download route: it serves only document kinds named inside a signed
+// token minted while delivering to the customer's own verified Viber.
+if ((preg_match('#/services/chat-media/([^/]+)/?$#', $path, $chatMediaMatch)) && $method === 'GET') {
+    astro_rate_limit_enforce($pdo, 'chat-media-ip', getClientIpAddress(), 60, 3600,
+        'Too many file requests from this network. Please wait a while and try again.');
+    $media = AstroChatAlerts::verifySignedMediaToken(urldecode((string)$chatMediaMatch[1]));
+    if (!$media) {
+        jsonResponse(['success' => false, 'message' => 'This file link has expired or is invalid. Your PDFs were also emailed to you.'], 403);
+    }
+    $mediaStmt = $pdo->prepare("SELECT * FROM orders WHERE id = ? LIMIT 1");
+    $mediaStmt->execute([(string)$media['oid']]);
+    $mediaOrder = $mediaStmt->fetch();
+    if (!$mediaOrder) {
+        jsonResponse(['success' => false, 'message' => 'File not found.'], 404);
+    }
+
+    if (($media['kind'] ?? 'report') === 'invoice') {
+        try {
+            $mediaPdf = AstroEngine::generateInvoicePdf($mediaOrder);
+        } catch (Throwable $e) {
+            error_log('ASTRO SIVAM: chat media invoice failed for ' . $mediaOrder['order_number'] . ': ' . $e->getMessage());
+            jsonResponse(['success' => false, 'message' => 'This file could not be prepared. Your invoice PDF was also emailed to you.'], 500);
+        }
+        $mediaName = 'ASTRO_SIVAM_Invoice_' . preg_replace('/[^A-Za-z0-9\-]+/', '_', (string)$mediaOrder['order_number']) . '.pdf';
+    } else {
+        require_once __DIR__ . '/../admin/order_items.php';
+        $mediaItemId = (int)($media['item'] ?? 0);
+        if ($mediaItemId > 0) {
+            $mediaItem = astro_order_item_find($pdo, (string)$mediaOrder['id'], $mediaItemId);
+            if (!$mediaItem) {
+                jsonResponse(['success' => false, 'message' => 'File not found.'], 404);
+            }
+            $mediaSource = $mediaItem;
+            $mediaOrderArray = astro_order_item_synthetic_order($mediaOrder, $mediaItem);
+        } else {
+            $mediaSource = $mediaOrder;
+            $mediaOrderArray = $mediaOrder;
+        }
+        // Same frozen source as the dashboard download: snapshot first,
+        // stored calculated_result as-is, never recalculated.
+        $mediaJson = !empty($mediaSource['report_snapshot'])
+            ? (string)$mediaSource['report_snapshot']
+            : (!empty($mediaSource['calculated_result']) ? (string)$mediaSource['calculated_result'] : null);
+        $mediaResult = $mediaJson !== null ? json_decode($mediaJson, true) : null;
+        if (!is_array($mediaResult) || empty($mediaResult)) {
+            jsonResponse(['success' => false, 'message' => 'This file is no longer available here. Your report PDF was also emailed to you.'], 410);
+        }
+        if (empty($mediaResult['generatedAt'])) {
+            $mediaPrepared = ($mediaSource['report_snapshot_at'] ?? null) ?: ($mediaOrder['created_at'] ?? null);
+            if ($mediaPrepared && ($mediaTs = strtotime((string)$mediaPrepared)) !== false) {
+                $mediaResult['generatedAt'] = date('Y-m-d H:i:s', $mediaTs);
+            }
+        }
+        $mediaOrderArray['frozen_snapshot'] = true;
+        try {
+            $mediaPdf = AstroEngine::generateReportPdf($mediaOrderArray, $mediaResult);
+        } catch (Throwable $e) {
+            error_log('ASTRO SIVAM: chat media report failed for ' . $mediaOrder['order_number'] . ': ' . $e->getMessage());
+            jsonResponse(['success' => false, 'message' => 'This file could not be prepared. Your report PDF was also emailed to you.'], 500);
+        }
+        $mediaName = 'ASTRO_SIVAM_Report_' . preg_replace('/[^A-Za-z0-9\-]+/', '_', (string)$mediaOrder['order_number']) . '.pdf';
+    }
+
+    if (!headers_sent()) {
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $mediaName . '"');
+        header('Content-Length: ' . strlen($mediaPdf));
+        header('Cache-Control: private, no-store');
+        header('X-Content-Type-Options: nosniff');
+    }
+    echo $mediaPdf;
     exit;
 }
 

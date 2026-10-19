@@ -23,14 +23,16 @@ import {
   Download,
   Users,
   Plus,
-  Trash2
+  Trash2,
+  MessageCircle,
+  Phone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { normalizeReportLanguage } from '../services/reportLanguage';
 import { generateOrderPdfsBase64, prepareFamilyFulfilPayload, deliverOrderPdfPayload } from '../services/jathagamPdfExporter';
-import { Order, OrderItem, BirthProfile, CustomerReview, ReviewEligibleOrder, FamilyMember, FamilyRelation, MAX_FAMILY_MEMBERS } from '../types';
+import { Order, OrderItem, BirthProfile, CustomerReview, ReviewEligibleOrder, FamilyMember, FamilyRelation, MAX_FAMILY_MEMBERS, ChatDeliveryState } from '../types';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
 import { BirthDateField, BirthTimeField, BirthTimeZoneNotice } from '../components/common/BirthDateTimeFields';
 import { PersonNameField } from '../components/common/PersonNameField';
@@ -122,6 +124,112 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   // Frozen report download state (keyed per order / per order item).
   const [downloadingKey, setDownloadingKey] = useState('');
   const [downloadFeedback, setDownloadFeedback] = useState<{ orderId: string; type: 'success' | 'error'; message: string } | null>(null);
+
+  // WhatsApp & Viber delivery state: one saved number, verified per app.
+  const [chatDelivery, setChatDelivery] = useState<ChatDeliveryState | null>(null);
+  const [chatPhoneInput, setChatPhoneInput] = useState('');
+  const [chatOtpChannel, setChatOtpChannel] = useState<'whatsapp' | 'viber' | null>(null);
+  const [chatOtpCode, setChatOtpCode] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatFeedback, setChatFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const loadChatDelivery = async () => {
+    try {
+      const result = await api.getChatDelivery();
+      if (result.success && result.chatDelivery) {
+        setChatDelivery(result.chatDelivery);
+        setChatPhoneInput(result.chatDelivery.phone || '');
+      }
+    } catch {
+      /* panel simply stays in its default state */
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadChatDelivery();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const handleSaveChatNumber = async () => {
+    if (!chatPhoneInput.trim()) {
+      setChatFeedback({ type: 'error', message: 'Please enter your mobile number with country code (for example +91 98765 43210).' });
+      return;
+    }
+    setChatBusy(true);
+    setChatFeedback(null);
+    try {
+      const result = await api.saveChatDeliveryNumber(chatPhoneInput.trim());
+      if (result.chatDelivery) setChatDelivery(result.chatDelivery);
+      setChatFeedback({
+        type: result.success ? 'success' : 'error',
+        message: result.message || (result.success ? 'Number saved.' : 'Could not save the number.')
+      });
+    } catch (err: any) {
+      setChatFeedback({ type: 'error', message: err?.message || 'Could not save the number.' });
+    } finally {
+      setChatBusy(false);
+    }
+  };
+
+  const handleRemoveChatNumber = async () => {
+    if (!window.confirm('Remove your WhatsApp/Viber delivery number? Future reports will be delivered by email only.')) return;
+    setChatBusy(true);
+    setChatFeedback(null);
+    try {
+      const result = await api.removeChatDelivery();
+      if (result.chatDelivery) {
+        setChatDelivery(result.chatDelivery);
+        setChatPhoneInput('');
+      }
+      setChatOtpChannel(null);
+      setChatFeedback({ type: result.success ? 'success' : 'error', message: result.message || 'Number removed.' });
+    } catch (err: any) {
+      setChatFeedback({ type: 'error', message: err?.message || 'Could not remove the number.' });
+    } finally {
+      setChatBusy(false);
+    }
+  };
+
+  const handleRequestChatOtp = async (channel: 'whatsapp' | 'viber') => {
+    setChatBusy(true);
+    setChatFeedback(null);
+    try {
+      const result = await api.requestChatDeliveryOtp(channel);
+      if (result.success) setChatOtpChannel(channel);
+      setChatFeedback({
+        type: result.success ? 'success' : 'error',
+        message: result.message || (result.success ? 'Code sent.' : 'Could not send the code.')
+      });
+    } catch (err: any) {
+      setChatFeedback({ type: 'error', message: err?.message || 'Could not send the code.' });
+    } finally {
+      setChatBusy(false);
+    }
+  };
+
+  const handleConfirmChatOtp = async () => {
+    if (!chatOtpChannel) return;
+    setChatBusy(true);
+    setChatFeedback(null);
+    try {
+      const result = await api.confirmChatDeliveryOtp(chatOtpChannel, chatOtpCode);
+      if (result.chatDelivery) setChatDelivery(result.chatDelivery);
+      if (result.success) {
+        setChatOtpChannel(null);
+        setChatOtpCode('');
+      }
+      setChatFeedback({
+        type: result.success ? 'success' : 'error',
+        message: result.message || (result.success ? 'Verified.' : 'That code did not match.')
+      });
+    } catch (err: any) {
+      setChatFeedback({ type: 'error', message: err?.message || 'That code did not match.' });
+    } finally {
+      setChatBusy(false);
+    }
+  };
 
   // Email Resend / Update Modal State
   const [resendOrder, setResendOrder] = useState<Order | null>(null);
@@ -376,6 +484,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
     setPendingOrderFor(personKey);
     onNavigate('birth-jathagam');
   };
+
+  /** Reports download ONLY in the language chosen when ordering. */
+  const reportLanguageName = (code?: string | null): string =>
+    code === 'ta' ? 'Tamil' : code === 'hi' ? 'Hindi' : 'English';
 
   const formatPreparedDate = (value?: string | null): string => {
     if (!value) return '';
@@ -1149,7 +1261,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                     <span className="text-slate-400"> — {itemService}</span>
                                     {itemPrepared && (
                                       <span className="block text-[11px] text-slate-500">
-                                        Prepared on {itemPrepared} • frozen as ordered
+                                        Prepared on {itemPrepared} • {reportLanguageName(item.language)} (your order language) • frozen as ordered
                                       </span>
                                     )}
                                   </div>
@@ -1180,7 +1292,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <span className="text-[11px] text-slate-500">
                               {formatPreparedDate(order.reportSnapshotAt || order.createdAt) && (
-                                <>Prepared on {formatPreparedDate(order.reportSnapshotAt || order.createdAt)} • frozen as ordered — this download never updates itself.</>
+                                <>Prepared on {formatPreparedDate(order.reportSnapshotAt || order.createdAt)} • {reportLanguageName(order.language)} (your order language) • frozen as ordered — this download never updates itself.</>
                               )}
                             </span>
                             <button
@@ -1375,6 +1487,169 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 </div>
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* WhatsApp & Viber delivery (inside the profile tab): one saved
+          number, verified per app; verified apps also receive the PDFs. */}
+      {activeTab === 'profile' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <MessageCircle className="w-4.5 h-4.5 text-emerald-500" />
+              WhatsApp &amp; Viber Delivery
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
+              Also receive your report and tax invoice PDFs on WhatsApp or Viber. Save your number,
+              verify it with the one-time code we send in that app, and every delivered order will
+              send the same PDF files there <strong>in addition to email</strong> (email remains the
+              official delivery). Each app is verified separately.
+            </p>
+          </div>
+
+          {chatFeedback && (
+            <div
+              role="status"
+              className={`p-3 rounded-xl border flex items-start gap-2 text-xs ${
+                chatFeedback.type === 'success'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+              }`}
+            >
+              {chatFeedback.type === 'success'
+                ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+              <span>{chatFeedback.message}</span>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1" htmlFor="chat-delivery-phone">
+                Mobile number (with country code):
+              </label>
+              <div className="relative">
+                <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  id="chat-delivery-phone"
+                  type="tel"
+                  value={chatPhoneInput}
+                  onChange={e => setChatPhoneInput(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className="w-full pl-9 pr-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex items-end gap-2">
+              <button
+                type="button"
+                onClick={handleSaveChatNumber}
+                disabled={chatBusy}
+                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
+              >
+                {chatBusy ? 'Saving...' : 'Save Number'}
+              </button>
+              {chatDelivery?.phone && (
+                <button
+                  type="button"
+                  onClick={handleRemoveChatNumber}
+                  disabled={chatBusy}
+                  className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+
+          {chatDelivery?.phone ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {([
+                { channel: 'whatsapp' as const, label: 'WhatsApp', verified: chatDelivery.whatsappVerified, available: chatDelivery.whatsappAvailable },
+                { channel: 'viber' as const, label: 'Viber', verified: chatDelivery.viberVerified, available: chatDelivery.viberAvailable }
+              ]).map(app => (
+                <div key={app.channel} className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-slate-900 dark:text-white">{app.label}</span>
+                    {app.verified ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                        <ShieldCheck className="w-3 h-3" /> Verified
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/30">
+                        Not verified
+                      </span>
+                    )}
+                  </div>
+
+                  {!app.verified && (
+                    <>
+                      {chatOtpChannel === app.channel ? (
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block" htmlFor={`chat-otp-${app.channel}`}>
+                            Enter the 6-digit code sent to {chatDelivery.phone} on {app.label}:
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              id={`chat-otp-${app.channel}`}
+                              inputMode="numeric"
+                              autoComplete="one-time-code"
+                              maxLength={6}
+                              value={chatOtpCode}
+                              onChange={e => setChatOtpCode(e.target.value.replace(/\D/g, ''))}
+                              placeholder="123456"
+                              className="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm tracking-[0.3em]"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleConfirmChatOtp}
+                              disabled={chatBusy || chatOtpCode.length !== 6}
+                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                            >
+                              Confirm
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRequestChatOtp(app.channel)}
+                            disabled={chatBusy}
+                            className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer disabled:opacity-50"
+                          >
+                            Resend code
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleRequestChatOtp(app.channel)}
+                          disabled={chatBusy || !app.available}
+                          className="w-full px-4 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Verify on {app.label}</span>
+                        </button>
+                      )}
+                      {!app.available && (
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                          {app.label} delivery is not switched on yet — the button will work once it is enabled. Your reports will keep arriving by email.
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  {app.verified && (
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Report + invoice PDFs will also be sent to {chatDelivery.phone} on {app.label} when an order is delivered.
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Save your number first, then verify it on WhatsApp and/or Viber. Changing the number later requires verifying the new number again.
+            </p>
           )}
         </div>
       )}

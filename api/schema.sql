@@ -70,8 +70,30 @@ CREATE TABLE IF NOT EXISTS `family_members` (
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3. Orders Table
-CREATE TABLE IF NOT EXISTS `orders` (
+-- 2c. Verified WhatsApp/Viber delivery contacts (migration 017): one
+-- saved number per customer, verified per app by OTP; delivered orders
+-- also send report + invoice PDFs to verified apps (email stays primary).
+CREATE TABLE IF NOT EXISTS `user_chat_contacts` (
+  `user_id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `phone_e164` VARCHAR(32) NOT NULL,
+  `whatsapp_verified_at` DATETIME NULL,
+  `viber_verified_at` DATETIME NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `chat_number_otps` (
+  `user_id` VARCHAR(64) NOT NULL,
+  `channel` ENUM('whatsapp','viber') NOT NULL,
+  `phone_e164` VARCHAR(32) NOT NULL,
+  `otp_hash` VARCHAR(128) NOT NULL,
+  `expires_at` DATETIME NOT NULL,
+  `attempts` INT NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`, `channel`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. Orders TableCREATE TABLE IF NOT EXISTS `orders` (
   `id` VARCHAR(64) NOT NULL PRIMARY KEY,
   `order_number` VARCHAR(32) NOT NULL UNIQUE,
   `group_id` VARCHAR(64) NULL,
