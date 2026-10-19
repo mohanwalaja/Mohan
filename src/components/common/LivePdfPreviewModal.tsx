@@ -361,12 +361,13 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
   const handleDownload = async () => {
     setIsDownloading(true);
     /**
-     * ONE quality everywhere: samples, the admin preview download and the paid
-     * documents are all captured at the same print density (3.2× ≈ 307 dpi,
-     * JPEG 0.95). No caller passes a lighter profile, because none exists.
+     * Paid documents and the admin preview keep the print density (3.2× ≈ 307
+     * dpi, JPEG 0.95). Public samples are the one documented exception: the
+     * owner allows them 40% below print (1.92× ≈ 184 dpi), still JPEG 0.95, so
+     * a phone can allocate the canvas. No paid path can request it.
      */
     setDownloadNote(sampleMode
-      ? 'Preparing the sample report at print resolution — this takes a few seconds…'
+      ? 'Preparing the sample report — this takes a few seconds…'
       : 'Preparing the report you see above at print resolution — this takes a few seconds…');
     // Deferred renderer (see loadReportPdfRenderer): opening a report — the
     // public samples included — no longer downloads jspdf/html2canvas; the
@@ -374,8 +375,12 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
     // instant, and the note above is already on screen while it arrives.
     const {
       downloadHtmlPdf,
-      downloadPreviewPagesPdf
+      downloadPreviewPagesPdf,
+      SAMPLE_RENDER_OPTIONS
     } = await loadReportPdfRenderer();
+    // Samples only: 40% below the print density. Paid downloads pass nothing,
+    // so they always resolve to the full print profile.
+    const downloadProfile = sampleMode ? SAMPLE_RENDER_OPTIONS : undefined;
     try {
       if (!previewHtml) {
         throw new Error('The preview has no content to render yet.');
@@ -387,7 +392,7 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
       const livePages = getLivePreviewPages();
       if (livePages.length > 0) {
         try {
-          await downloadPreviewPagesPdf(livePages, previewFileName());
+          await downloadPreviewPagesPdf(livePages, previewFileName(), downloadProfile);
           setDownloadNote('');
           return;
         } catch (liveError: any) {
@@ -396,7 +401,7 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
       }
       // 2. Equivalent fallback: the very same HTML string the iframe is showing,
       //    rendered off-screen with the same html2canvas pipeline (now font-safe).
-      await downloadHtmlPdf(previewHtml, previewFileName());
+      await downloadHtmlPdf(previewHtml, previewFileName(), downloadProfile);
       setDownloadNote('');
     } catch (e: any) {
       // There is NO server-side renderer any more: rendering either succeeds in
@@ -404,7 +409,7 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
       // document they did not preview).
       console.error('Preview-exact download failed on this device:', e);
       setDownloadNote(
-        'This device could not capture the PDF at print resolution. Please retry, or open the preview in a desktop browser.'
+        'This device could not capture the PDF at the required resolution. Please retry, or open the preview in a desktop browser.'
       );
     } finally {
       setIsDownloading(false);
@@ -593,7 +598,9 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
               title="Downloads exactly what this preview shows — same fonts, same layout, print resolution"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{isDownloading ? 'Rendering print-quality PDF…' : 'Download PDF (exactly this preview)'}</span>
+              <span>{isDownloading
+                ? (sampleMode ? 'Rendering sample PDF…' : 'Rendering print-quality PDF…')
+                : 'Download PDF (exactly this preview)'}</span>
             </button>
 
             {/* Close Button */}

@@ -16,7 +16,8 @@
  * shave a few hundred kilobytes — which is exactly the failure this file pins
  * down:
  *
- *   * the ONE render profile and its exact values,
+ *   * the one print profile, the single 40%-lighter sample profile, and the
+ *     clamp that keeps every other path on the print profile,
  *   * the email path picking the HIGH-quality profile (never a lighter one),
  *   * the byte-level quality gate running before anything is staged or mailed,
  *   * the server refusing to substitute a server-rendered PDF,
@@ -80,19 +81,20 @@ check('the desktop download profile matches the email profile', () => {
   assert.match(body, /jpegQuality:\s*0\.95/);
 });
 
-check('there is no lighter profile anywhere: one quality for the whole site', () => {
-  // The old mobile branch (2.5×), the reduced download ladder (1.8×) and the
-  // lighter sample profile (2×) are all gone. A device that cannot allocate the
-  // print canvas is told; it never receives a sub-300-dpi document.
+check('the only lighter profile is the public sample: exactly 40% below print', () => {
+  // Owner's rule: paid reports, invoices, admin preview and dashboard downloads
+  // stay at the 300 dpi print contract; public samples may be 40% lighter.
   assert.doesNotMatch(exporter, /DOWNLOAD_RENDER_OPTIONS_MOBILE/, 'no reduced mobile profile may come back');
   assert.doesNotMatch(exporter, /deviceMemory|navigator\.userAgent/, 'a device sniff must not lower report quality');
-  assert.doesNotMatch(exporter, /DOWNLOAD_RENDER_OPTIONS_SAFE/, 'the reduced download density must stay deleted');
-  assert.doesNotMatch(exporter, /SAMPLE_RENDER_OPTIONS/, 'samples must not have their own lighter profile');
-  assert.doesNotMatch(exporter, /scale:\s*(?:1|2|2\.[0-9])(?:\.\d+)?\s*[,}]/, 'no capture profile may sit below the print scale');
+  assert.doesNotMatch(exporter, /DOWNLOAD_RENDER_OPTIONS_SAFE/, 'the un-bounded reduced download density must stay deleted');
   assert.match(exporter, /export const PDF_RENDER_OPTIONS: HtmlPdfRenderOptions = EMAIL_RENDER_OPTIONS;/,
     'the public PDF profile must literally be the print-density email profile');
-  assert.match(exporter, /THERE IS ONLY ONE PDF QUALITY: THIS ONE\./i,
-    'the one-quality rule must stay documented');
+  assert.match(exporter, /export const SAMPLE_QUALITY_REDUCTION = 0\.4;/,
+    'samples may be reduced by exactly 40%, never more');
+  assert.match(exporter, /scale: Number\(\(PRINT_CAPTURE_SCALE \* \(1 - SAMPLE_QUALITY_REDUCTION\)\)\.toFixed\(2\)\)/,
+    'the sample scale must be derived from the print scale, not a loose literal');
+  assert.match(exporter, /jpegQuality: 0\.95/,
+    'the sample keeps the print JPEG quality — only resolution is reduced');
 });
 
 check('the API enforces the same 300 dpi floor, independently of the client', () => {
@@ -104,24 +106,34 @@ check('the API enforces the same 300 dpi floor, independently of the client', ()
     'the rejection message must quote the enforced floor, not a stale number');
 });
 
-check('every retry is the SAME print density, never a lighter one', () => {
+check('every retry uses the SAME requested density, never a lower rung', () => {
   assert.match(exporter, /const RENDER_ATTEMPTS = 2;/, 'a transient capture failure gets exactly one retry');
   const html = exporter.slice(exporter.indexOf('export async function downloadHtmlPdf'));
-  assert.match(html.slice(0, 1200), /const attempt = resolveRenderOptions\(options\);/);
+  assert.match(html.slice(0, 1200), /const attempt = resolveDownloadRenderOptions\(options\);/);
   assert.match(exporter.slice(exporter.indexOf('export async function downloadPreviewPagesPdf')).slice(0, 1200),
-    /const attempt = resolveRenderOptions\(options\);/);
+    /const attempt = resolveDownloadRenderOptions\(options\);/);
   assert.match(livePdfPreview, /await downloadHtmlPdf\(/, 'the download button must use the shared capture');
   assert.doesNotMatch(exporter, /downloadAttemptOptions/, 'the lower-density ladder must stay deleted');
 });
 
-check('a caller can only add the pixel floors, never lower scale or JPEG quality', () => {
-  const resolver = exporter.slice(
-    exporter.indexOf('function resolveRenderOptions'),
+check('paid renders are clamped to print; downloads sit between sample and print', () => {
+  const printResolver = exporter.slice(
+    exporter.indexOf('function resolvePrintRenderOptions'),
+    exporter.indexOf('function resolveDownloadRenderOptions')
+  );
+  assert.match(printResolver, /\.\.\.PDF_RENDER_OPTIONS/, 'the print profile is the paid base');
+  assert.doesNotMatch(printResolver, /scale:|jpegQuality:/,
+    'no caller option may lower a paid render');
+
+  const downloadResolver = exporter.slice(
+    exporter.indexOf('function resolveDownloadRenderOptions'),
     exporter.indexOf('let _renderQueue')
   );
-  assert.match(resolver, /\.\.\.PDF_RENDER_OPTIONS/, 'the print profile is the base');
-  assert.match(resolver, /minimumCaptureWidthPx: options\?\.minimumCaptureWidthPx \?\? PDF_RENDER_OPTIONS\.minimumCaptureWidthPx/);
-  assert.doesNotMatch(resolver, /scale:|jpegQuality:/, 'options must not be able to override scale or quality');
+  assert.match(downloadResolver,
+    /Math\.min\(Math\.max\(requestedScale, sampleScale\), printScale\)/,
+    'a download capture must never go below the sample floor or above print');
+  assert.match(downloadResolver, /if \(scale >= printScale\)/,
+    'the 300 dpi pixel floor applies only to the print profile');
 });
 
 check('the email path renders with the HIGH-quality profile', () => {
@@ -148,8 +160,8 @@ check('every PAID render goes through the one print-density email render', () =>
   // future edit could quietly reintroduce a lighter capture on one path.
   const helper = exporter.slice(exporter.indexOf('export async function renderEmailPdfBase64'));
   const helperBody = helper.slice(0, helper.indexOf('\n}' ));
-  assert.match(helperBody, /const renderOptions = options \? resolveRenderOptions\(options\) : highQualityEmailRenderOptions\(\);/,
-    'the helper must default to the print profile and can never lower it');
+  assert.match(helperBody, /const renderOptions = options \? resolvePrintRenderOptions\(options\) : highQualityEmailRenderOptions\(\);/,
+    'the email helper must always resolve to the print profile');
   assert.match(helperBody, /await generatePdfBase64FromHtml\(htmlContent, renderOptions\)/,
     'the helper must render at that same profile on every attempt');
   assert.doesNotMatch(helperBody, /DOWNLOAD_RENDER_OPTIONS_SAFE|SAMPLE_RENDER_OPTIONS|2\.5|1\.8/,
@@ -235,13 +247,12 @@ check('the staging API also validates quality server-side', () => {
   assert.match(familyDocs, /astroFamilyDocsIsPreviewQualityPdf/);
 });
 
-check('public samples are captured at the same print profile as paid documents', () => {
-  // The owner's requirement: samples, admin preview, emails and downloads all
-  // render at the live-preview quality — no marketing-only lighter profile.
-  assert.doesNotMatch(livePdfPreview, /SAMPLE_RENDER_OPTIONS|downloadProfile/,
-    'the preview modal must not pick a lighter profile for samples');
-  assert.match(livePdfPreview, /downloadPreviewPagesPdf\(livePages, previewFileName\(\)\)/);
-  assert.match(livePdfPreview, /downloadHtmlPdf\(previewHtml, previewFileName\(\)\)/);
+check('public samples use the 40%-lighter profile, and only there', () => {
+  // The owner allowed public samples 40% below print; every other consumer
+  // must stay on the print profile.
+  assert.match(livePdfPreview, /const downloadProfile = sampleMode \? SAMPLE_RENDER_OPTIONS : undefined;/);
+  assert.match(livePdfPreview, /downloadPreviewPagesPdf\(livePages, previewFileName\(\), downloadProfile\)/);
+  assert.match(livePdfPreview, /downloadHtmlPdf\(previewHtml, previewFileName\(\), downloadProfile\)/);
   for (const consumer of ['src/pages/AdminPortal.tsx', 'src/pages/CustomerDashboard.tsx', 'src/components/common/OrderReportModal.tsx']) {
     assert.doesNotMatch(read(consumer), /SAMPLE_RENDER_OPTIONS/, `${consumer} must never pick a sample profile`);
   }
@@ -253,7 +264,7 @@ check('a sample can never reach the email pipeline', () => {
   assert.match(read('src/components/common/SampleReportButton.tsx'), /sampleMode\s*$/m, 'the public sample button must set sampleMode');
   assert.doesNotMatch(read('src/components/common/SampleReportButton.tsx'), /order=/, 'a sample button must never pass an order');
   // And the sample profile is not referenced by any staging/email helper.
-  for (const fn of ['generateOrderPdfsBase64', 'stageFamilyOrderPdfs', 'deliverOrderPdfPayload', 'highQualityEmailRenderOptions']) {
+  for (const fn of ['generateOrderPdfsBase64', 'stageFamilyOrderPdfs', 'deliverOrderPdfPayload', 'highQualityEmailRenderOptions', 'resolvePrintRenderOptions']) {
     const body = exporter.slice(exporter.indexOf(`function ${fn}`));
     assert.doesNotMatch(body.slice(0, 600), /SAMPLE_RENDER_OPTIONS/, `${fn} must not use the sample profile`);
   }

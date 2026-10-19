@@ -88,7 +88,8 @@ There is no third step: the server-side mPDF renderer was removed in October
 2026, and there is no reduced-density retry either. Both paths use the same
 print profile (3.2× ≈ 307 dpi, JPEG 0.95, 2480 × 3508 px floor); a failed
 capture is retried at that same density and then reported. Public sample
-reports use exactly the same profile — there is no lighter sample setting.
+reports are the one exception the owner allows: 40% below print density
+(1.92× ≈ 184 dpi, same JPEG 0.95), and only from sample mode.
 
 **Button label changed** to *"Download PDF (exactly this preview)"* so the
 guarantee is visible to the customer and the admin.

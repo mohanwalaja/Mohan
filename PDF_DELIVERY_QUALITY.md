@@ -5,7 +5,8 @@ Paid customers receive the report and invoice rendered from the same browser HTM
 ## Customer approval and resend emails
 
 - Single-order and family report/invoice PDFs are rendered in the browser from the shared report and invoice HTML builders with `html2canvas` + `jsPDF`.
-- Every document — paid reports, invoices and public **samples** alike — is captured at 3.2× scale (A4 print density) with JPEG quality 0.95. Every A4 page must be at least **2480 × 3508 pixels** (300 dpi); a capture that misses either dimension is retried and then fails before upload/email. The email path never falls back to a lighter download-only capture.
+- Every **paid** document is captured at 3.2× scale (A4 print density) with JPEG quality 0.95. Every A4 page must be at least **2480 × 3508 pixels** (300 dpi); a capture that misses either dimension is retried and then fails before upload/email. The email path never falls back to a lighter download-only capture.
+- Public **sample** reports are the one exception: 40% below print density (1.92× ≈ 184 dpi) at the same JPEG 0.95, reachable only from sample mode.
 - The PHP API validates each uploaded PDF's header and EOF marker, page count, and embedded raster resolution before staging or mail dispatch. Missing, low-resolution, vector-only, truncated, or oversized documents are rejected.
 - Every report and invoice must pass before approval/resend. If a capture or upload fails, the action returns an error and **no email is sent**.
 

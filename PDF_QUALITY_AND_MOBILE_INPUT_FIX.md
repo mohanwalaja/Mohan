@@ -42,11 +42,13 @@ previewHtml ──► html2canvas (scale 3 desktop / 2.5 phone) ──► JPEG 0
                         so a popup blocker cannot swallow the fallback
 ```
 
-Capture density is no longer chosen per device: every document — paid report,
-invoice, admin preview and public sample — is captured at 300 dpi (scale 3.2,
-JPEG 0.95) on every device. The old 2.5× phone profile, the 1.8× download retry
-and the server-rendered fallback are all gone; a failed capture is retried at
-the same density and then reported. See `docs/PDF_DELIVERY_QUALITY.md`.
+Capture density is no longer chosen per device: every paid document — report,
+invoice, admin preview and dashboard download — is captured at 300 dpi
+(scale 3.2, JPEG 0.95) on every device. Public samples are the one allowed
+exception, at 40% below print density (1.92× ≈ 184 dpi, same JPEG 0.95). The
+old 2.5× phone profile, the 1.8× download retry and the server-rendered
+fallback are all gone; a failed capture is retried at the same density and then
+reported. See `docs/PDF_DELIVERY_QUALITY.md`.
 
 ### Where it is wired
 

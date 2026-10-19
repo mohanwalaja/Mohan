@@ -154,33 +154,76 @@ export const DOWNLOAD_RENDER_OPTIONS: HtmlPdfRenderOptions = {
 };
 
 /**
- * ON THE WHOLE SITE, THERE IS ONLY ONE PDF QUALITY: THIS ONE.
+ * PAID QUALITY IS THE CONTRACT; THE PUBLIC SAMPLE IS THE ONE DOCUMENTED
+ * EXCEPTION.
  *
- * The emailed report + invoice, the admin preview download, the family bundle,
- * the customer dashboard download and the public sample reports are all
- * captured with the SAME profile (3.2× ≈ 307 dpi, JPEG 0.95, A4 2480 × 3508 px
- * floor). There is deliberately NO lighter sample profile and NO reduced-density
- * retry any more: a device that cannot allocate the print canvas is told, and
- * nothing is downloaded or emailed at a lower quality. Reviews of this file
- * should treat the numbers above as a contract — see
- * tests/pdf-pipeline-integrity.test.ts.
+ * The emailed report + invoice, the admin preview download, the family bundle
+ * and the customer dashboard download are all captured at this print profile
+ * (3.2× ≈ 307 dpi, JPEG 0.95, A4 2480 × 3508 px floor). Nothing may lower them:
+ * there is no reduced-density retry ladder any more.
+ *
+ * PUBLIC SAMPLE REPORTS are fixed marketing documents that carry no order and
+ * are usually opened on a phone, so the owner allows one lighter profile:
+ * 40% below the print capture density (3.2 × 0.6 = 1.92× ≈ 184 dpi, same JPEG
+ * 0.95). It is reachable ONLY from the sample branch of LivePdfPreviewModal;
+ * every paid/admin/email path resolves to the print profile above.
+ *
+ * Treat these numbers as a contract — see tests/pdf-pipeline-integrity.test.ts.
  */
 export const PDF_RENDER_OPTIONS: HtmlPdfRenderOptions = EMAIL_RENDER_OPTIONS;
+
+/** Public samples may be at most 40% below the paid print density. */
+export const SAMPLE_QUALITY_REDUCTION = 0.4;
+
+/** The ONE lighter profile in the app: public samples, 40% below print. */
+export const SAMPLE_RENDER_OPTIONS: HtmlPdfRenderOptions = {
+  // 3.2 × (1 − 0.4) = 1.92× ≈ 184 dpi on A4.
+  scale: Number((PRINT_CAPTURE_SCALE * (1 - SAMPLE_QUALITY_REDUCTION)).toFixed(2)),
+  // Compression does not change resolution: samples keep the print JPEG quality.
+  jpegQuality: 0.95
+};
 
 /** Two attempts at the SAME density: enough for transient canvas pressure. */
 const RENDER_ATTEMPTS = 2;
 
 /**
- * The one profile a render may use. `options` can only ever ADD the email-only
- * pixel floors; it can never lower the scale or the JPEG quality, so no caller
- * can request a lighter capture.
+ * Paid / admin / email renders: always the print profile with the 300 dpi
+ * floors. Nothing a caller passes can lower the scale or the JPEG quality.
  */
-function resolveRenderOptions(options?: HtmlPdfRenderOptions): HtmlPdfRenderOptions {
+function resolvePrintRenderOptions(options?: HtmlPdfRenderOptions): HtmlPdfRenderOptions {
   return {
     ...PDF_RENDER_OPTIONS,
     minimumCaptureWidthPx: options?.minimumCaptureWidthPx ?? PDF_RENDER_OPTIONS.minimumCaptureWidthPx,
     minimumCaptureHeightPx: options?.minimumCaptureHeightPx ?? PDF_RENDER_OPTIONS.minimumCaptureHeightPx
   };
+}
+
+/**
+ * Download captures (paid and sample). The requested profile is clamped to the
+ * two documented densities — never above print, never below the 40%-lighter
+ * sample profile. The 300 dpi pixel floor is attached only when the capture is
+ * the print profile, so the intentional sample raster is not rejected by the
+ * email quality gate.
+ */
+function resolveDownloadRenderOptions(options?: HtmlPdfRenderOptions): HtmlPdfRenderOptions {
+  const printScale = PDF_RENDER_OPTIONS.scale ?? PRINT_CAPTURE_SCALE;
+  const sampleScale = SAMPLE_RENDER_OPTIONS.scale ?? printScale;
+  const requestedScale = options?.scale ?? printScale;
+  const scale = Math.min(Math.max(requestedScale, sampleScale), printScale);
+  const resolved: HtmlPdfRenderOptions = {
+    scale,
+    jpegQuality: Math.max(
+      options?.jpegQuality ?? PDF_RENDER_OPTIONS.jpegQuality ?? 0.95,
+      SAMPLE_RENDER_OPTIONS.jpegQuality ?? 0.95
+    )
+  };
+  if (scale >= printScale) {
+    resolved.minimumCaptureWidthPx =
+      options?.minimumCaptureWidthPx ?? PDF_RENDER_OPTIONS.minimumCaptureWidthPx;
+    resolved.minimumCaptureHeightPx =
+      options?.minimumCaptureHeightPx ?? PDF_RENDER_OPTIONS.minimumCaptureHeightPx;
+  }
+  return resolved;
 }
 
 /**
@@ -382,7 +425,7 @@ export async function renderPageElementsToPdfDoc(
   if (!pages || pages.length === 0) {
     throw new Error('No report pages available to render.');
   }
-  const resolved = resolveRenderOptions(options);
+  const resolved = resolveDownloadRenderOptions(options);
   const captureScale = resolved.scale ?? PRINT_CAPTURE_SCALE;
   const jpegQuality = resolved.jpegQuality ?? 0.95;
 
@@ -426,7 +469,7 @@ export async function renderHtmlToPdfDoc(
   htmlContent: string,
   options?: HtmlPdfRenderOptions
 ): Promise<jsPDF> {
-  const resolved = resolveRenderOptions(options);
+  const resolved = resolveDownloadRenderOptions(options);
   const captureScale = resolved.scale ?? PRINT_CAPTURE_SCALE;
   const jpegQuality = resolved.jpegQuality ?? 0.95;
 
@@ -648,7 +691,7 @@ export async function renderEmailPdfBase64(
   label: string,
   options?: HtmlPdfRenderOptions
 ): Promise<string> {
-  const renderOptions = options ? resolveRenderOptions(options) : highQualityEmailRenderOptions();
+  const renderOptions = options ? resolvePrintRenderOptions(options) : highQualityEmailRenderOptions();
   const maxAttempts = 2;
   let lastError: unknown = null;
 
@@ -783,7 +826,7 @@ export async function downloadHtmlPdf(
 ): Promise<void> {
   if (!htmlContent) throw new Error('Nothing to render — the report HTML is empty.');
 
-  const attempt = resolveRenderOptions(options);
+  const attempt = resolveDownloadRenderOptions(options);
   let lastError: any = null;
   for (let attemptNumber = 1; attemptNumber <= RENDER_ATTEMPTS; attemptNumber++) {
     try {
@@ -872,7 +915,7 @@ export async function downloadPreviewPagesPdf(
     throw new Error('The preview has no rendered report pages yet.');
   }
 
-  const attempt = resolveRenderOptions(options);
+  const attempt = resolveDownloadRenderOptions(options);
   let lastError: any = null;
   for (let attemptNumber = 1; attemptNumber <= RENDER_ATTEMPTS; attemptNumber++) {
     try {

@@ -25,10 +25,11 @@ Jathagam, Marriage Compatibility and Baby Naming.
 
 Each button opens the **same live PDF preview modal the real reports use**
 (page-by-page preview, English / Tamil / Hindi switch, zoom, and
-*"Download PDF (exactly this preview)"*). The download is a real, print-quality
-A4 PDF of the sample, captured at the same 300 dpi profile as a paid report
-(3.2× ≈ 307 dpi, JPEG 0.95, 2480 × 3508 px floor) — samples have no lighter
-quality setting of their own.
+*"Download PDF (exactly this preview)"*). The download is a real,
+high-resolution A4 PDF of the sample, captured 40% below the paid print density
+(1.92× ≈ 184 dpi, JPEG 0.95) so a phone can allocate the canvas. Samples are
+the only place that lighter profile can be used; every paid download, email
+and admin preview stays at the 300 dpi print profile.
 
 No sign-in is required — the samples are public, which is the whole point: a
 visitor can judge the report before paying.

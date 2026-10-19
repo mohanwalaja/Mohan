@@ -48,10 +48,11 @@ previewHtml ──► html2canvas (scale 3.2 on every device) ──► JPEG 0.9
 
 Capture density *was* chosen per device here (`navigator.deviceMemory` / a phone-sized
 viewport → 2.5×, otherwise 3×). That device split is gone, and so is the 2.5×/1.8×
-retry: every document — paid report, invoice, admin preview and public sample — is
-captured at 300 dpi (scale 3.2) on every device. See the note at the top of this
-document and `docs/PDF_DELIVERY_QUALITY.md`. **Compression changes, resolution never
-does.**
+retry: every paid document — report, invoice, admin preview and dashboard
+download — is captured at 300 dpi (scale 3.2) on every device. Public samples
+are the one allowed exception, at 40% below print density (1.92× ≈ 184 dpi,
+same JPEG 0.95). See the note at the top of this document and
+`docs/PDF_DELIVERY_QUALITY.md`. **Compression changes, resolution never does.**
 
 ### Where it is wired
 
