@@ -6,7 +6,7 @@
  * Content hash    : c15e1c5ff9dec371
  *
  * The same hash is written into api/astrology/namakaran_name_bank.php so the
- * live preview, the browser-side TypeScript and the official mPDF report can be proven to
+ * live preview, the browser-side TypeScript and the official report can be proven to
  * show an identical name bank.
  */
 

@@ -4,13 +4,12 @@
  * 100% Standalone - No external node or python dependencies required
  */
 
-// Load Composer autoloader (mPDF and dependencies in public_html/vendor/)
+// Load Composer autoloader (Smalot PDF parser used by the AI report importer).
 if (is_file(__DIR__ . '/../../vendor/autoload.php')) {
     require_once __DIR__ . '/../../vendor/autoload.php';
 }
 
-require_once __DIR__ . '/mpdf_fontconfig.php';
-require_once __DIR__ . '/pdf_mpdf_reports.php';
+require_once __DIR__ . '/report_views.php';
 require_once __DIR__ . '/namakaran_meanings.php';
 require_once __DIR__ . '/namakaran_meaning_localizer.php';
 
@@ -3401,8 +3400,8 @@ class AstroEngine {
      * The curated 1366-name Namakaran bank (page 2 of the report), generated
      * from data/namakaran_name_bank.tsv by scripts/build_namakaran_bank.mjs.
      * The TypeScript twin of this file is src/lib/astrology/namakaranNameBank.ts
-     * and both carry the same content hash, so the live preview and the mPDF
-     * report can never drift apart.
+     * and both carry the same content hash, so the live preview and the
+     * emailed report can never drift apart.
      */
     private static function getNamakaranNameBank() {
         static $bank = null;
@@ -4107,17 +4106,6 @@ class AstroEngine {
         return $out;
     }
 
-    /** Reject incomplete output instead of returning a questionable server PDF. */
-    private static function assertMpdfPdf($pdf, string $documentLabel): string {
-        if (!is_string($pdf)
-            || strlen($pdf) <= 512
-            || strpos(substr($pdf, 0, 1024), '%PDF-') === false
-            || strpos(substr($pdf, -2048), '%%EOF') === false) {
-            throw new \RuntimeException("mPDF returned an incomplete {$documentLabel} PDF.");
-        }
-        return $pdf;
-    }
-
     /** Rebuild one official result from an order's saved service input payload. */
     public static function rebuildReportResultFromSavedInputs($order) {
         if (!is_array($order)) {
@@ -4143,108 +4131,5 @@ class AstroEngine {
             return self::calculateMuhurtham($input);
         }
         throw new \RuntimeException('Unsupported report service type; no report was generated.');
-    }
-
-    /**
-     * Generate the full astrological report PDF.
-     *  - BIRTH_JATHAGAM: Exactly 3 full pages with South Indian chart, planetary positions,
-     *    doshas, life predictions across 6 domains, and certified remedies.
-     *  - MARRIAGE_COMPATIBILITY: Exactly 1 full page with 10-Poruthams table and verdict.
-     *  - BABY_NAMING: Exactly 1 full page with star syllables and recommended names.
-     */
-    public static function generateReportPdf($order, $result = null, $watermark = '') {
-        $serviceType = $order['service_type'] ?? 'BIRTH_JATHAGAM';
-        $explicitResultProvided = $result !== null;
-
-        // FROZEN SNAPSHOT RENDER (customer dashboard re-download): when the
-        // caller marks the order as a frozen snapshot and supplies the
-        // snapshot result, the PDF is rendered from that result EXACTLY as
-        // prepared on the order date — no rebuild, no "is current" upgrade,
-        // and the printed Prepared/Issued date stays the frozen one. This
-        // is what stops a downloaded report from ever refreshing itself
-        // into a new free report; it is used ONLY by the owner-only
-        // snapshot download endpoint, never by fulfilment.
-        $frozenSnapshot = !empty($order['frozen_snapshot']) && $explicitResultProvided && is_array($result) && !empty($result);
-
-        // Official order downloads are rebuilt from the saved service inputs;
-        // a cached calculated_result is never authoritative. Explicit preview
-        // results remain supported only when they are complete and current.
-        $needsRebuild = !$frozenSnapshot && (!$explicitResultProvided || !$result
-            || ($serviceType === 'BABY_NAMING' && !self::isCurrentBabyNamingResult($result))
-            || ($serviceType === 'MUHURTHAM' && !self::isCurrentMuhurthamResult($result)));
-        if ($needsRebuild) {
-            $result = self::rebuildReportResultFromSavedInputs($order);
-        }
-
-        // Single-Source HTML Architecture:
-        // 1. Generate the exact full HTML preview string matching admin preview & email
-        require_once __DIR__ . '/mpdf_fontconfig.php';
-        require_once __DIR__ . '/pdf_mpdf_reports.php';
-
-        if (function_exists('astroEnsureMpdfAutoload')) {
-            astroEnsureMpdfAutoload();
-        }
-
-        $htmlPreview = AstroReportViews::renderFullReportHtml($order, $result);
-
-        // 2. Convert that exact HTML string to high-definition PDF using mPDF.
-        // The plain-PHP writer was retired: never return a degraded substitute.
-        if (!AstroMpdfReports::isAvailable()) {
-            throw new \RuntimeException('mPDF is required for server report PDFs; no lower-quality fallback is enabled.');
-        }
-        try {
-            $lang = astro_report_normalize_language($order['language'] ?? 'ta');
-            return self::assertMpdfPdf(
-                AstroMpdfReports::convertHtmlToPdf($htmlPreview, $lang, (string)$watermark),
-                'report'
-            );
-        } catch (\Throwable $e) {
-            error_log('mPDF report generation failed; no fallback PDF was produced: ' . $e->getMessage());
-            throw new \RuntimeException('High-quality report PDF generation failed; no fallback PDF was produced.', 0, $e);
-        }
-    }
-
-    public static function generateInvoicePdf($order) {
-        require_once __DIR__ . '/mpdf_fontconfig.php';
-        require_once __DIR__ . '/pdf_mpdf_invoice.php';
-
-        if (function_exists('astroEnsureMpdfAutoload')) {
-            astroEnsureMpdfAutoload();
-        }
-
-        if (!AstroMpdfInvoice::isAvailable()) {
-            throw new \RuntimeException('mPDF is required for server invoices; no lower-quality fallback is enabled.');
-        }
-        try {
-            return self::assertMpdfPdf(AstroMpdfInvoice::generateInvoicePdf($order), 'invoice');
-        } catch (\Throwable $e) {
-            error_log('mPDF invoice generation failed; no fallback PDF was produced: ' . $e->getMessage());
-            throw new \RuntimeException('High-quality invoice PDF generation failed; no fallback PDF was produced.', 0, $e);
-        }
-    }
-
-    /**
-     * Generates the single consolidated invoice PDF for a whole family order
-     * group (multiple charts, one payment, one delivery). Requires mPDF and
-     * fails closed if the library is unavailable or returns invalid output.
-     * $orders must be a non-empty array of order rows sharing the same group_id.
-     */
-    public static function generateFamilyInvoicePdf(array $orders, string $groupId) {
-        if (empty($orders)) {
-            throw new \InvalidArgumentException('generateFamilyInvoicePdf requires at least one order.');
-        }
-
-        require_once __DIR__ . '/mpdf_fontconfig.php';
-        require_once __DIR__ . '/pdf_mpdf_invoice.php';
-
-        if (function_exists('astroEnsureMpdfAutoload')) {
-            astroEnsureMpdfAutoload();
-        }
-
-        if (!AstroMpdfInvoice::isAvailable()) {
-            throw new \RuntimeException('mPDF is not available on this server, so a consolidated family invoice cannot be generated.');
-        }
-
-        return self::assertMpdfPdf(AstroMpdfInvoice::generateFamilyInvoicePdf($orders, $groupId), 'family invoice');
     }
 }

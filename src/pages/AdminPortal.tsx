@@ -62,18 +62,12 @@ import { Order, OrderItem, AppSettings, AdminStats, TeamMember, ContactMessage, 
 import { OrderReportModal } from '../components/common/OrderReportModal';
 import { LivePdfPreviewModal } from '../components/common/LivePdfPreviewModal';
 import { AdminLogin } from '../components/admin/AdminLogin';
-import {
-  exportOrderPdf,
-  exportOrderInvoicePdf,
-  generateOrderPdfsBase64,
-  exportFamilyInvoiceHtmlToPdf,
-  prepareFamilyFulfilPayload,
-  deliverOrderPdfPayload,
-  FamilyRenderProgress,
-  FamilyStagingResult,
-  downloadHtmlPdf,
-  orderInvoiceFileName
-} from '../services/jathagamPdfExporter';
+// The PDF engine (jspdf + html2canvas, ~780 KB) is DEFERRED: every function
+// below awaits loadPdfEngine() inside the click that actually renders a PDF, so
+// opening the admin portal downloads no PDF code at all. Only the progress /
+// staging TYPES are imported statically — they vanish at build time.
+import type { FamilyRenderProgress, FamilyStagingResult } from '../services/jathagamPdfExporter';
+import { loadPdfEngine } from '../services/pdfEngine';
 import {
   buildOrderInvoiceHtmlForItems,
   getOrCalculateResult,
@@ -377,6 +371,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       if (!order) throw new Error('The order is no longer available. Refresh the admin list and retry.');
 
       let res;
+      const { prepareFamilyFulfilPayload, generateOrderPdfsBase64, deliverOrderPdfPayload } =
+        await loadPdfEngine();
       if (order.groupId) {
         const groupOrders = orders.filter(candidate => candidate.groupId === order.groupId);
         const prepared = await prepareFamilyFulfilPayload(groupOrders, order.groupId);
@@ -543,10 +539,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     startProcessing(`inv-${order.id}`);
     try {
       const items = order.items || [];
+      const { downloadHtmlPdf, orderInvoiceFileName } = await loadPdfEngine();
       await downloadHtmlPdf(buildOrderInvoiceHtmlForItems(order, items), orderInvoiceFileName(order));
-    } catch (e) {
-      console.warn('Direct order invoice export failed, falling back to the backend render:', e);
-      window.open(api.getAdminOrderInvoicePdfUrl(order.id), '_blank');
+    } catch (e: any) {
+      // No server renderer any more: report the failure instead of opening a
+      // lower-quality server PDF that no longer exists.
+      setErrorMessage(e?.message || 'The invoice could not be rendered at print quality on this device. Please retry.');
     } finally {
       stopProcessing(`inv-${order.id}`);
     }
@@ -555,10 +553,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
   const handleDownloadReport = async (order: Order) => {
     startProcessing(`pdf-${order.id}`);
     try {
+      const { exportOrderPdf } = await loadPdfEngine();
       await exportOrderPdf(order);
-    } catch (e) {
-      console.warn('Direct PDF export error, falling back to backend download:', e);
-      window.open(api.getAdminOrderPdfUrl(order.id), '_blank');
+    } catch (e: any) {
+      setErrorMessage(e?.message || 'The report could not be rendered at print quality on this device. Please retry.');
     } finally {
       stopProcessing(`pdf-${order.id}`);
     }
@@ -567,10 +565,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
   const handleDownloadInvoice = async (order: Order) => {
     startProcessing(`inv-${order.id}`);
     try {
+      const { exportOrderInvoicePdf } = await loadPdfEngine();
       await exportOrderInvoicePdf(order);
-    } catch (e) {
-      console.warn('Direct invoice export error, falling back to backend download:', e);
-      window.open(api.getAdminOrderInvoicePdfUrl(order.id), '_blank');
+    } catch (e: any) {
+      setErrorMessage(e?.message || 'The invoice could not be rendered at print quality on this device. Please retry.');
     } finally {
       stopProcessing(`inv-${order.id}`);
     }
@@ -587,6 +585,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     startProcessing(`email-${order.id}`);
     try {
       setSuccessMessage(`⏳ Preparing preview-quality report & invoice for Order #${order.orderNumber}...`);
+      const { generateOrderPdfsBase64, deliverOrderPdfPayload } = await loadPdfEngine();
 
       let res;
       let fulfilledOrderIds = [order.id];
@@ -744,6 +743,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
         try {
           const language = order.language || 'ta';
+          const { generateOrderPdfsBase64, deliverOrderPdfPayload } = await loadPdfEngine();
           const pdfs = await generateOrderPdfsBase64(order, language);
           const payload = await deliverOrderPdfPayload(order, { ...pdfs, language });
           const res = await api.approveOrder(order.id, payload);
@@ -790,6 +790,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     groupId: string,
     preferredLang?: string
   ): Promise<{ payload: any; staging: FamilyStagingResult }> => {
+    const { prepareFamilyFulfilPayload } = await loadPdfEngine();
     const onProgress = (progress: FamilyRenderProgress) => {
       setFamilyRenderProgress({ groupId, ...progress });
       setSuccessMessage(`⏳ ${progress.message}`);
@@ -825,8 +826,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     setErrorMessage('');
     try {
       setSuccessMessage(`⏳ Rendering ${count} preview-quality report(s) & the consolidated family tax invoice in this browser...`);
-      // A render or staging failure aborts the operation; the server is never
-      // asked to substitute its lower-quality PDF renderer.
+      // A render or staging failure aborts the operation; there is no
+      // server-side renderer left to substitute.
       const prepared = await buildFamilyPreviewPayload(memberOrders, groupId);
       const res = await api.approveFamilyOrder(groupId, prepared.payload);
       if (res.success) {
@@ -901,20 +902,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     startProcessing(`family-inv-${groupId}`);
     try {
       // High-quality consolidated family invoice rendered from the exact same
-      // HTML builder as the admin live preview (falls back to the server PDF).
-      if (memberOrders && memberOrders.length > 0) {
-        await exportFamilyInvoiceHtmlToPdf(memberOrders, groupId, `ASTRO_SIVAM_Family_Invoice_${groupId}.pdf`);
-      } else {
-        await api.downloadAdminFamilyInvoicePdf(groupId);
-      }
+      // HTML builder as the admin live preview. There is no server-side
+      // renderer to fall back to; a failure is reported, never downgraded.
+      const { exportFamilyInvoiceHtmlToPdf } = await loadPdfEngine();
+      await exportFamilyInvoiceHtmlToPdf(memberOrders, groupId, `ASTRO_SIVAM_Family_Invoice_${groupId}.pdf`);
     } catch (e: any) {
-      console.warn('High-quality family invoice export failed, trying server fallback:', e);
-      try {
-        await api.downloadAdminFamilyInvoicePdf(groupId);
-      } catch (err: any) {
-        console.warn('Direct PDF download error, opening link:', err);
-        window.open(api.getAdminFamilyInvoicePdfUrl(groupId), '_blank');
-      }
+      setErrorMessage(e?.message || 'The family invoice could not be rendered at print quality on this device. Please retry.');
     } finally {
       stopProcessing(`family-inv-${groupId}`);
     }
@@ -3873,7 +3866,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Mobile</th>
                   <th className="px-4 py-3">Role</th>
-                  <th className="px-4 py-3">Saved Birth Profile</th>
+                  <th className="px-4 py-3">Own Birth Details</th>
                   <th className="px-4 py-3">Joined Date</th>
                 </tr>
               </thead>

@@ -36,7 +36,7 @@ subsystem degrades its own line instead of blanking the report.
 | `storage` | `api/storage` writable, support-document count/size |
 | `backups` | the `last-backup.json` marker: age, size, and **whether `api/storage` was included** |
 | `logging` | `log_errors` on, `display_errors` off, the destination, and the log's size/age |
-| `runtime` | PHP version, `memory_limit`, `post_max_size`, `upload_max_filesize`, `max_execution_time`, mPDF/vendor present |
+| `runtime` | PHP version, `memory_limit`, `post_max_size`, `upload_max_filesize`, `max_execution_time` (no PDF renderer is expected) |
 | `disk` | free space (degraded under 500 MB), best effort |
 
 **No secret is ever returned.** The endpoint reports `checkout` /

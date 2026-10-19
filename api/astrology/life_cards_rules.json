@@ -4,7 +4,7 @@
   "generatedOn": "2026-10-09",
   "_purpose": "THE SINGLE SOURCE OF TRUTH for the eight page-2 life-area predictions of the Birth Jathagam. Page 2 of the report and the AI Astrologer chat both compute from this file. Neither keeps a private copy of the logic.",
   "_whyHere": "This repo already shares JSON between the TypeScript builders and the PHP engine - see api/astrology/rajju.json, read by src/lib/astrology/matchmaking.ts and babynames.ts. This file follows the same pattern so PHP 8.0 can json_decode it without a Node build step.",
-  "_extractedFrom": "The constants and the verdict rule below were read out of src/services/jathagamHtmlBuilder.ts buildJathagamLifeCards (lines 122, 192-193, 256-262) and its PHP mirror api/astrology/pdf_mpdf_reports.php $lifeCardsData (line 1489). They are recorded here verbatim so the extraction can be checked against the code, not trusted.",
+  "_extractedFrom": "The constants and the verdict rule below were read out of src/services/jathagamHtmlBuilder.ts buildJathagamLifeCards (lines 122, 192-193, 256-262) and its PHP mirror api/astrology/report_views.php $lifeCardsData (line 1489). They are recorded here verbatim so the extraction can be checked against the code, not trusted.",
   "constants": {
     "maleficConjunctionOrbDeg": 10,
     "dusthanaHouses": [

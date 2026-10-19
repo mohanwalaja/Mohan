@@ -17,7 +17,7 @@ In your previous export, the old version of `/api/astrology/engine.php` was stil
 5. [Initialize the Database & Provision an Administrator](#-step-5-initialize-the-database--provision-an-administrator)
 6. [Setting Environment Variables on cPanel](#-step-5b-setting-environment-variables-on-cpanel)
 7. [Testing the 100% Vedic Jathagam PDF](#-step-6-testing-the-100-vedic-jathagam-pdf)
-8. [Installing the mPDF PDF Engine](#-step-6b-installing-the-mpdf-pdf-engine-public_htmlvendor)
+8. [Installing PHP Dependencies](#-step-6b-installing-php-dependencies-public_htmlvendor)
 9. [Email Deliverability (Spam Prevention)](#-step-7-email-deliverability-spam-prevention)
 10. [Setting Up Facebook Customer Login](#-step-8-setting-up-1-click-facebook-customer-login)
 11. [Setting Up Google Sign-In](#-step-9-setting-up-1-click-google-sign-in)
@@ -179,7 +179,6 @@ is only *active* when its variable is present.
 | `FAMILY_EMAIL_MAX_ATTACHMENT_MB` | optional custom per-email cap; code default is 25 MiB | `FAMILY_EMAIL_MAX_ATTACHMENT_BYTES`, else 25 MiB |
 | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE_NAME` | WhatsApp order alerts | alerts stay off |
 | `VIBER_AUTH_TOKEN`, `VIBER_SENDER_NAME` | Viber order alerts | alerts stay off |
-| `ASTROSIVAM_DIAGNOSTICS` | enables `/api/check_mpdf.php` (prints server paths) | page answers 404 |
 | `AI_ASTROLOGER_DAILY_LIMIT` | customer questions per rolling 24 h (admins unlimited) | `20`; local chat replies need no provider key or model settings |
 
 The application uses a 25 MiB email budget by default, so no email-budget `SetEnv` line is needed. To use this default on an existing deployment, remove any explicit `FAMILY_EMAIL_MAX_ATTACHMENT_MB` or `FAMILY_EMAIL_MAX_ATTACHMENT_BYTES` setting from the hosting environment or `api/.htaccess`; explicit host settings take precedence over the code default. Keep any custom value at or below your SMTP provider's message-size limit.
@@ -242,34 +241,33 @@ credentials (`checkout` / `webhookVerification` booleans, no secret values), and
 
 ---
 
-## 🧩 Step 6b: Installing the mPDF PDF Engine (`public_html/vendor`)
+## 🧩 Step 6b: Installing PHP Dependencies (`public_html/vendor`)
 
-`dist.zip` deliberately does **not** contain Composer's `vendor/` folder (it is
-~60 MB of library + fonts), so the PHP PDF engine must be installed once per
-host after the first upload. Without it, server-side PDF export endpoints fail
-closed and return no PDF. The retired plain-PHP writer is not available as a
-fallback; customer email fulfillment separately requires validated high-
-resolution browser-rendered report and invoice PDFs. See the
-[PDF delivery quality contract](PDF_DELIVERY_QUALITY.md) for the exact checks.
+There is **no server-side PDF renderer any more** (mPDF was removed in October
+2026). Every report and invoice PDF is captured in the browser from the shared
+HTML, then uploaded for the email; `api/astrology/report_views.php` produces the
+HTML only. See the [PDF delivery quality contract](PDF_DELIVERY_QUALITY.md).
 
-`api/astrology/engine.php` loads the library from
-`public_html/vendor/autoload.php`, so the path must be exactly that.
+`dist.zip` still does **not** contain Composer's `vendor/` folder, but the only
+required package now is the PDF *reader* used by the AI astrologer's report
+importer. Without it the AI explanation of an uploaded PDF is unavailable; the
+report and invoice emails are unaffected.
 
 **Option A — cPanel Terminal (preferred, PHP 8.0+):**
 
 ```sh
 cd public_html
-composer require mpdf/mpdf
+composer require smalot/pdfparser
 ```
 
-**Option B — upload a vendor package:** upload a `vendor.zip` containing mPDF
-into `public_html/`, then extract it so that
+**Option B — upload a vendor package:** upload a `vendor.zip` containing
+`smalot/pdfparser` into `public_html/`, then extract it so that
 `public_html/vendor/autoload.php` exists.
 
-**Verify:** set `ASTROSIVAM_DIAGNOSTICS=1` (see Step 5b), open
-`https://yourdomain.com/api/check_mpdf.php`, and confirm mPDF is loaded and the
-Tamil/Hindi fonts are listed. Then remove the flag so the diagnostic page goes
-back to answering 404.
+**If the host still has the old mPDF install**, delete
+`public_html/vendor/mpdf` (and its `setasign` dependencies) on the next
+deployment — nothing loads it, and it only consumes quota. No diagnostic page
+exists any more.
 
 `vendor/` lives outside the deployed zip, so it survives later re-deployments.
 

@@ -6,16 +6,7 @@ import { RasiChartSvg } from './RasiChartSvg';
 import { LivePdfPreviewModal } from './LivePdfPreviewModal';
 import { getGunam } from '../../services/gunamData';
 import { api } from '../../services/api';
-import {
-  exportInvoiceHtmlToPdf,
-  exportFamilyInvoiceHtmlToPdf,
-  exportOrderReportPdf,
-  generateOrderPdfsBase64,
-  prepareFamilyFulfilPayload,
-  deliverOrderPdfPayload,
-  downloadHtmlPdf,
-  orderInvoiceFileName
-} from '../../services/jathagamPdfExporter';
+import { loadPdfEngine } from '../../services/pdfEngine';
 import { buildOrderInvoiceHtmlForItems, orderItemAsOrder, prepareOrderItemPdfs } from '../../services/orderItems';
 import { describeFamilyRenderQuality } from '../../services/formatUtils';
 import { normalizeReportLanguage } from '../../services/reportLanguage';
@@ -188,6 +179,10 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
       text: 'Preparing the preview-exact report & tax invoice for delivery…'
     });
     try {
+      // The PDF engine is fetched HERE — on the Send click — so merely opening
+      // this modal downloads no PDF code.
+      const { prepareFamilyFulfilPayload, generateOrderPdfsBase64, deliverOrderPdfPayload } =
+        await loadPdfEngine();
       // FAMILY BUNDLE: prepare every preview-quality report and invoice before
       // calling the fulfillment API. A render/upload failure must stop delivery.
       const isFamilyBundle = !!(order.groupId && familyOrders && familyOrders.length > 0);
@@ -337,17 +332,19 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
 
   /**
    * Downloads are rendered in this browser from the same report HTML the live
-   * PDF preview shows, so the file the customer saves matches the preview
-   * instead of the thinner server-side render. Both helpers fall back to the
-   * server PDF themselves if this device cannot capture the canvas.
+   * PDF preview shows, so the file the customer saves matches the preview.
+   * There is no server-side renderer to fall back to: a device that cannot
+   * capture the canvas is told, instead of silently downloading nothing.
    */
   const handleDownloadPdf = async (langToUse?: AppLanguage) => {
     const lang = langToUse || selectedLang;
     setIsDownloading(true);
     try {
+      const { exportOrderReportPdf } = await loadPdfEngine();
       await exportOrderReportPdf(order, lang, result);
     } catch (err: any) {
       console.error('PDF export failed:', err);
+      setEmailStatusMsg({ type: 'error', text: err?.message || 'The report could not be rendered at print quality. Please retry.' });
     } finally {
       setIsDownloading(false);
     }
@@ -356,6 +353,12 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
   const handleDownloadInvoice = async () => {
     setIsDownloadingInvoice(true);
     try {
+      const {
+        downloadHtmlPdf,
+        orderInvoiceFileName,
+        exportFamilyInvoiceHtmlToPdf,
+        exportInvoiceHtmlToPdf
+      } = await loadPdfEngine();
       if (orderItemSend) {
         // One invoice per ORDER - the customer paid one total.
         const header = orderItemSend.header;
@@ -379,6 +382,7 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
       }
     } catch (e: any) {
       console.error('Invoice download error:', e);
+      setEmailStatusMsg({ type: 'error', text: e?.message || 'The invoice could not be rendered at print quality. Please retry.' });
     } finally {
       setIsDownloadingInvoice(false);
     }
@@ -500,7 +504,7 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
               title={`Download PDF Report in ${selectedLang === 'ta' ? 'Tamil' : selectedLang === 'hi' ? 'Hindi' : 'English'}`}
             >
               <Download className="w-3.5 h-3.5" />
-              {isDownloading ? 'Preparing PDF...' : `Download ${selectedLang === 'ta' ? 'Tamil' : selectedLang === 'hi' ? 'Hindi' : 'English'} PDF`}
+              {isDownloading ? 'Downloading PDF...' : `Download ${selectedLang === 'ta' ? 'Tamil' : selectedLang === 'hi' ? 'Hindi' : 'English'} PDF`}
             </button>
 
             <button

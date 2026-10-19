@@ -8,9 +8,10 @@ Customer requests implemented together:
    checkout) now starts **blank** with a "Who is this report for?" picker:
    *Enter new details* (default), *Myself*, or any saved family member.
    Picking someone fills the form; nothing is ever filled silently.
-2. **Family members' birth details can be saved in the profile** (new
-   "Family Members" tab in the dashboard, **maximum 6** besides the
-   customer's own profile), so future orders need no form filling.
+2. **Saved birth details live in one place: the Family Members tab** (new
+   tab in the dashboard, **maximum 6 people in total, the customer included** —
+   there is no separate saved birth profile), so future orders need no form
+   filling.
    "Order for <name>" on a member card hands that one explicit pick to
    the order form (one-time `sessionStorage` hint, consumed once).
 3. **Delivered reports can be downloaded from the dashboard — frozen.**
@@ -59,24 +60,53 @@ the form with a relation. No order can touch `birth_profiles` otherwise.
   legacy multi-order, multi-person header + items) and only while the
   snapshot is still empty. Admin preview/send never call it, so later
   recalculations for fulfilment can never thaw a frozen report.
-- `GET /api/services/orders/:id/report-pdf` (optional `?itemId=`):
+- `GET /api/services/orders/:id/report-snapshot` (optional `?itemId=`):
   owner-only (`WHERE id = ? AND user_id = ?`, foreign ids look missing),
   delivered orders only (`COMPLETED`/`GENERATED` + `has_pdf`, per-item
-  `SENT`), rate-limited, report-only. It renders with
-  `order['frozen_snapshot'] = true`, which makes
-  `AstroEngine::generateReportPdf` skip its rebuild/upgrade logic and
-  the baby/muhurtham renderers skip their recalculation paths. Nothing
-  in the endpoint writes any result column. This is not the removed
-  direct-PDF route: that served freshly generated files; this serves
-  only the frozen snapshot.
+  `SENT`), rate-limited, report-only. It returns the frozen snapshot
+  BODY as JSON and nothing else: no recalculation, no rebuild/upgrade
+  path, and no writes to any result column. The browser then renders it
+  with the same builders and print profile as the emailed PDF. (This
+  replaced the old `/report-pdf` route, which streamed a server-rendered
+  file; the mPDF renderer itself was removed in Oct 2026.)
 - Prepared date = the snapshot's `generatedAt` (filled from
   `report_snapshot_at`, else the order's `created_at`, when a legacy
   stored result lacks one). It is rendered into the Birth Jathagam page
   headers (`Prepared on: 05 Feb 2026` / தயாரிக்கப்பட்ட நாள் / तैयार तिथि,
   on the existing reference line so fixed page heights do not move), the
   TS Jathagam footer, and the dashboard shows "Prepared on <date> •
-  frozen as ordered" next to each download. Live previews keep today's
-  date because their result was just calculated.
+  <Language>" next to each download. Live previews keep today's date
+  because their result was just calculated.
+
+## Print-quality dashboard download (2026-10-19 update)
+
+The dashboard download used to be the server-side mPDF render — a visibly
+thinner document with different pagination than the emailed PDF. It now
+renders the frozen report in the customer's browser through the SAME HTML
+builders and the SAME 300 dpi capture profile (`EMAIL_RENDER_OPTIONS`) that
+produced the emailed document and the admin's approved preview, so the file a
+customer downloads from their profile is the file that was emailed to them.
+
+- `GET /api/services/orders/:id/report-snapshot` (optional `?itemId=`) returns
+  the frozen snapshot body for ONE delivered report to its owner. It is the
+  same owner-only/delivered-only/per-item-`SENT` gate as the old PDF route,
+  is rate-limited separately, and performs no recalculation and no writes. The
+  orders list still carries metadata only (`hasReportSnapshot`,
+  `reportSnapshotAt`) — the body is fetched on the Download click.
+- `downloadPaidReportPdf()` (exporter) renders that snapshot at the print
+  profile through `renderEmailPdfBase64` (the same helper every paid email
+  uses, including the 2480 × 3508 px floor) and saves it. Only a device that
+  cannot allocate the print canvas drops to the documented last-resort
+  density; if even that fails, the dashboard reports the failure — the server
+  no longer has a PDF renderer to fall back to. No path recalculates the
+  report.
+- A legacy snapshot without `generatedAt` is stamped with `reportSnapshotAt`
+  (else the order's `created_at`) before rendering, so it can never print
+  today's date.
+
+Deployment needs no schema change: the route reads the same snapshot columns
+(falling back to `calculated_result` when they are absent). Upload
+`api/services/index.php` and the rebuilt frontend bundle.
 
 ## Verification
 
@@ -84,7 +114,8 @@ the form with a relation. No order can touch `birth_profiles` otherwise.
   `scripts/run-tests.mjs`): pure saved-people logic, the client/server
   relation-enum match, per-file wiring contracts (no auto-fill remnants,
   picker present, save-gating, owner scoping, 6-member cap, snapshot
-  write-once, forbidden recalculation calls in the download block,
+  write-once, forbidden recalculation calls in the snapshot block, the
+  removed server PDF route and renderer,
   migration/schema parity), plus real PHP renderer execution under
   PHP-WASM when installed — a frozen legacy baby snapshot renders as
   frozen (fails closed instead of recalculating) while the same input

@@ -11,13 +11,11 @@
  *
  * WHY THIS LIVES IN A MODULE
  * --------------------------
- * The invoice is rendered twice by runtimes that cannot import each other:
- *   • in the browser by src/services/invoiceHtmlBuilder.ts (live preview, the
- *     customer download and the admin "Approved" email attachment), and
- *   • on the server by api/astrology/pdf_mpdf_invoice.php (mPDF).
- * Both read these helpers, so the number cannot drift between the two copies of
- * the same document. The PHP mirror of the number is `ASTRO_BUSINESS_REG_NO` in
- * `api/branding.php`.
+ * The invoice is rendered in the browser by src/services/invoiceHtmlBuilder.ts
+ * (live preview, the admin email attachment and any download), which reads
+ * these helpers, so the number cannot drift between copies of the same
+ * document. The PHP mirror of the number is `ASTRO_BUSINESS_REG_NO` in
+ * `api/branding.php`; the server no longer renders invoices itself.
  *
  * The address is the classic piece of copy that gets retyped slightly
  * differently in each template (a dropped PIN, "Kamakshi Puram" vs "Kamakshipuram"),

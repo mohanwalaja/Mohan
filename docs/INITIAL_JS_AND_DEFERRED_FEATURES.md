@@ -31,11 +31,12 @@ in the initial request set, and no route chunk is requested during idle.
 |---|---|
 | Open a report page (e.g. `/birth-jathagam`) | page chunk 22 kB + `jathagamHtmlBuilder` 185 kB (its chart data) |
 | Open a public sample report | `LivePdfPreviewModal` 18 kB + that report's builder only (+ `sampleReports`, `vendor-astrology` when the report needs an ephemeris) — the PDF engine is **not** touched |
-| Click **Download** / **Send** | `jathagamPdfExporter` 26 kB + the other builders + `vendor-pdf` 785 kB (cached for the tab) |
+| Click **Download** / **Send** | `pdfEngine` 1 kB (the shared cached loader) → `jathagamPdfExporter` 25 kB + the other builders + `vendor-pdf` 765 kB (cached for the tab) |
 | Open the map picker | `LeafletMapPickerModal` 7 kB + `vendor-maps` 150 kB + Leaflet CSS 15.6 kB |
 | Open the family tray / checkout | `FamilyCartDrawer` 14 kB / `UnifiedCheckoutModal` 40 kB + `BirthDateTimeFields` 42 kB + `multiPersonOrder` 12 kB |
 | Open the AI astrologer (entitled customer or admin only) | `AiAstrologerLauncher` 2.7 kB + `aiAstrologerApi` 2.1 kB when a visitor signs in, then `AiAstrologerPanel` 54 kB on click |
-| Open the admin portal | `AdminPortal` 394 kB + `vendor-charts` 419 kB + `vendor-pdf` 785 kB |
+| Open the admin portal | `AdminPortal` 391 kB + `vendor-charts` 419 kB — **no PDF engine**; it arrives only when Approve / Send / Download is clicked |
+| Open the customer dashboard | `CustomerDashboard` 72 kB + `timezone` — **no PDF engine**; the download click fetches it |
 
 A short loading state on the first use of each deferred feature is expected and
 intentional (the sample viewer, the map modal and the AI panel each render a
@@ -59,10 +60,18 @@ anyway).
    is open.
 3. **The sample viewer** (`SampleReportButton`) lazy-loads
    `LivePdfPreviewModal` and mounts it only when open; the modal builds the
-   preview from HTML and dynamically imports the exporter (jspdf/html2canvas)
-   on Download/Send; the per-report HTML builders are *named chunks* so the
-   preview's `import()` resolves to a builder instead of to the exporter chunk
+   preview from HTML and fetches the PDF engine only on Download/Send; the
+   per-report HTML builders are *named chunks* so the preview's `import()`
+   resolves to a builder instead of to the exporter chunk
    (`REPORT_BUILDER_CHUNKS` in `vite.config.ts`, pinned by tests).
+   Since the dashboard/admin fix there is **one** dynamic boundary:
+   `src/services/pdfEngine.ts` (`loadPdfEngine()`, promise cached for the tab)
+   owns the only `import('./jathagamPdfExporter')`. The dashboard, the admin
+   portal, the order modal, the order-items sender and the preview modal all
+   import that loader statically (~1 kB) and `await` it inside the click
+   handler that produces a PDF. A static `import … from 'jathagamPdfExporter'`
+   anywhere in `src/` is a test failure — it used to attach the 765 kB
+   `vendor-pdf` chunk to the dashboard and the admin portal on page load.
 4. **Intent prefetch instead of idle prefetch** (`src/services/routeChunks.ts`):
    the idle warm-all is gone; links carrying `data-route` warm *their* chunk on
    `pointerenter`/`focusin`/`touchstart`, skipped on Save-Data / 2G. All
@@ -83,12 +92,13 @@ anyway).
 ## Verification
 
 - `tests/initial-js-budget.test.ts` (registered in `scripts/run-tests.mjs`,
-  19 checks) — source contracts + built-output contracts: the initial request
+  21 checks) — source contracts + built-output contracts: the initial request
   set is entry + `vendor-core` only, no deferred chunk is in it, `index.html`
   preloads nothing heavy, every deferred feature is still emitted and wired
-  through dynamic imports, every builder is its own chunk outside the PDF
-  engine's chunk, and the initial JS stays under a 460 kB ceiling (it was
-  2.1 MB when the audit started).
+  through dynamic imports, only `services/pdfEngine.ts` may import the
+  exporter, only the exporter chunk may statically import `vendor-pdf`, every
+  builder is its own chunk outside the PDF engine's chunk, and the initial JS
+  stays under a 650 kB ceiling (it was 2.1 MB when the audit started).
 - `tests/browser/deferred-features.spec.ts` — browser-level request assertions
   for the same rules (homepage, hover prefetch, sample open vs download, map
   open) plus "a signed-out visit downloads none of the AI astrologer". Runs against the dev server and the production preview.

@@ -9,12 +9,11 @@
  *
  * OWNERSHIP DESIGN — read this before changing it.
  * The uploaded PDF is treated as an OWNERSHIP TOKEN, not as the source of the
- * explanation. mPDF embeds subset fonts, and glyph-to-Unicode mapping for Tamil
- * and Devanagari runs frequently does not survive PDF text extraction; the
- * extracted Indic text can come back garbled or empty. That could not be tested
- * in the build sandbox because PHP is not installable there. So the design only
+ * explanation. Every delivered PDF is a rasterised browser capture (page
+ * images), so there is no extractable Tamil or Devanagari text layer at all and
+ * whatever a text extractor returns is unusable. The design therefore only
  * ever depends on the ASCII order number, which is printed in the page header
- * of every report by AstroMpdfReports::topHeader. The content that actually
+ * of every report by AstroReportViews::topHeader. The content that actually
  * gets explained is regenerated server-side from the order's saved inputs,
  * which is already how official downloads are produced
  * (AstroEngine::rebuildReportResultFromSavedInputs).

@@ -4,12 +4,11 @@
  *
  * The disclaimer is legally significant wording, so it lives in ONE asset
  * (wedding_disclaimer_notes.json) that is consumed by:
- *   - api/astrology/pdf_mpdf_reports.php   (server-side mPDF export)
+ *   - api/astrology/report_views.php        (admin preview HTML)
  *   - src/services/weddingDisclaimerNotes.ts (browser preview + html2canvas PDF)
- *   - src/lib/astrology/pdfGenerator.ts     (PHP PDF renderer)
  *
- * Paragraphs may contain **bold** emphasis markers; browser/mPDF renderers
- * convert them to <strong>. The legacy plain-PHP PDF writer has been removed.
+ * Paragraphs may contain **bold** emphasis markers; the renderers convert them
+ * to <strong>. There is no server-side PDF writer any more.
  */
 class WeddingDisclaimerNotes
 {

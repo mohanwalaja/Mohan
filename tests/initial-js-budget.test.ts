@@ -325,8 +325,42 @@ check('the PDF renderer is reached through one dynamic boundary', () => {
   );
   assert.match(
     modal,
-    /import\('\.\.\/\.\.\/services\/jathagamPdfExporter'\)/,
-    'the exporter must be reached through a dynamic import',
+    /loadPdfEngine\(\)/,
+    'the exporter must be reached through the deferred loader at the download click',
+  );
+
+  // ONE deferred boundary for every consumer: page code imports
+  // `services/pdfEngine`, which owns the only import() of the exporter. A
+  // static value import anywhere outside the loader is what put the PDF engine
+  // on the dashboard / admin portal before the user clicked anything.
+  const offenders: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!/\.(ts|tsx)$/.test(entry.name)) continue;
+      const relative = path.relative(projectRoot, full);
+      if (relative === 'src/services/pdfEngine.ts' || relative === 'src/services/jathagamPdfExporter.ts') continue;
+      const source = fs.readFileSync(full, 'utf8');
+      // `import type` is erased at build time; a value import is not.
+      if (/^\s*import\s+(?!type\b)[\s\S]{0,400}?from '[^']*jathagamPdfExporter';?$/m.test(source)) {
+        offenders.push(relative);
+      }
+    }
+  };
+  walk(abs('src'));
+  assert.deepEqual(
+    offenders,
+    [],
+    `only services/pdfEngine.ts may import the PDF exporter (it must be a dynamic import there): ${offenders.join(', ')}`,
+  );
+  assert.match(
+    read('src/services/pdfEngine.ts'),
+    /=\s*import\('\.\/jathagamPdfExporter'\)/,
+    'pdfEngine.ts must be the single dynamic entry point to the PDF engine',
   );
   // The render profiles and the pure payload rules the preview needs while
   // RENDERING live in a module that does not pull the renderer in.
@@ -563,15 +597,47 @@ check('the deferred features are still shipped and wired through dynamic imports
     !previewImports.some((url) => /vendor-pdf/.test(url)),
     `opening a sample must not download jspdf/html2canvas: ${previewChunk} imports ${previewImports.join(', ')}`,
   );
+  // The preview's dynamic path now goes through the shared loader chunk, which
+  // owns the only dynamic path to the exporter itself.
   assert.ok(
-    chunkText(`/assets/${previewChunk}`).includes('jathagamPdfExporter'),
-    'the preview must keep a dynamic path to the exporter for its download button',
+    chunkText(`/assets/${previewChunk}`).includes('pdfEngine-'),
+    'the preview must keep a dynamic path to the deferred loader for its download button',
+  );
+  const loaderChunk = files.find((f) => /^pdfEngine-.*\.js$/.test(f))!;
+  assert.ok(
+    chunkText(`/assets/${loaderChunk}`).includes('jathagamPdfExporter'),
+    'the loader chunk must keep the dynamic import of the exporter',
   );
 
   const exporterChunk = files.find((f) => /^jathagamPdfExporter-.*\.js$/.test(f))!;
   assert.ok(
     staticImportsOf(`/assets/${exporterChunk}`).some((url) => /vendor-pdf/.test(url)),
     'the exporter chunk is what carries the PDF engine — it must import vendor-pdf',
+  );
+
+  // ...and NOTHING else may. Every route chunk (dashboard, admin portal, order
+  // modal, report pages) must reach the engine only through the dynamic
+  // import in `pdfEngine`; a static edge would download ~780 kB of jspdf +
+  // html2canvas on page load, for a visitor who never asks for a PDF.
+  const staticVendorPdfImporters = files.filter((file) => {
+    if (!file.endsWith('.js')) return false;
+    const text = chunkText(`/assets/${file}`);
+    return /import\s*\{[^}]*\}\s*from\s*"\.\/vendor-pdf-/.test(text);
+  });
+  assert.deepEqual(
+    staticVendorPdfImporters,
+    [exporterChunk],
+    'only the exporter chunk may statically import vendor-pdf',
+  );
+  const staticExporterImporters = files.filter((file) => {
+    if (!file.endsWith('.js')) return false;
+    const text = chunkText(`/assets/${file}`);
+    return /import\s*\{[^}]*\}\s*from\s*"\.\/jathagamPdfExporter-/.test(text);
+  });
+  assert.deepEqual(
+    staticExporterImporters,
+    [],
+    'no chunk may statically import the exporter — the loader makes it dynamic everywhere',
   );
 });
 

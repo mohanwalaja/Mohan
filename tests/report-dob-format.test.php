@@ -1,7 +1,7 @@
 <?php
 // Every server-side (mPDF) report prints the date of birth as DD/MM/YYYY, e.g. 27/07/1990.
 require_once __DIR__ . '/../api/astrology/engine.php';
-require_once __DIR__ . '/../api/astrology/pdf_mpdf_reports.php';
+require_once __DIR__ . '/../api/astrology/report_views.php';
 $birth = ['birthPlace' => 'Chennai', 'country' => 'India', 'latitude' => 13.0827, 'longitude' => 80.2707, 'timezoneOffsetHours' => 5.5, 'timeZoneId' => 'Asia/Kolkata'];
 $fail = 0;
 $chk = function ($label, $html, $want, $bad) use (&$fail) {

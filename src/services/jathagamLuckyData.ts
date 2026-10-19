@@ -27,8 +27,8 @@
  *     சூரியன் 1, சந்திரன் 2, குரு 3, ராகு 4, புதன் 5, சுக்கிரன் 6, கேது 7, சனி 8,
  *     செவ்வாய் 9).
  *
- * The PHP mPDF renderer mirrors this table in
- * api/astrology/pdf_mpdf_reports.php (jathagamLuckyData); keep both in sync.
+ * The PHP report renderer mirrors this table in
+ * api/astrology/report_views.php (jathagamLuckyData); keep both in sync.
  * tests/jathagam-lucky-indicators.test.ts freezes the contract.
  */
 import { AppLanguage, Graha } from '../lib/astrology/types';

@@ -20,14 +20,11 @@
 
 import { AppLanguage, Order, OrderItem, ServiceType } from '../types';
 import { api } from './api';
-import {
-  buildOrderReportHtml,
-  mergeOrderPayloadIntoResult,
-  renderEmailPdfBase64,
-  orderReportFileName,
-  orderInvoiceFileName,
-  yieldToBrowser
-} from './jathagamPdfExporter';
+// The PDF engine is deferred (audit PERF-1): this module is imported by the
+// admin portal and the order modal for pure HTML/invoice helpers, so it must
+// NOT pull jspdf + html2canvas into those pages. Every function below that
+// renders a PDF awaits loadPdfEngine() at call time.
+import { loadPdfEngine } from './pdfEngine';
 import { buildInvoiceHtml, buildFamilyInvoiceHtml } from './invoiceHtmlBuilder';
 
 export interface OrderItemResult {
@@ -97,6 +94,14 @@ export async function prepareOrderItemPdfs(
   result: any,
   lang?: AppLanguage
 ): Promise<{ reportPdfBase64: string; invoicePdfBase64: string; reportFileName: string; invoiceFileName: string }> {
+  const {
+    buildOrderReportHtml,
+    mergeOrderPayloadIntoResult,
+    renderEmailPdfBase64,
+    orderReportFileName,
+    orderInvoiceFileName,
+    yieldToBrowser
+  } = await loadPdfEngine();
   const chartOrder = orderItemAsOrder(header, item);
   const effectiveLang = (lang || item.language || 'ta') as AppLanguage;
   const reportHtml = buildOrderReportHtml(chartOrder, mergeOrderPayloadIntoResult(chartOrder, result), effectiveLang);
@@ -136,6 +141,14 @@ export async function prepareOrderItemsSendPayload(
   invoicePdfBase64: string;
   invoiceFileName: string;
 }> {
+  const {
+    buildOrderReportHtml,
+    mergeOrderPayloadIntoResult,
+    renderEmailPdfBase64,
+    orderReportFileName,
+    orderInvoiceFileName,
+    yieldToBrowser
+  } = await loadPdfEngine();
   const reportPdfs: Array<{ itemId: number; fileName: string; pdfBase64: string }> = [];
   let invoicePdfBase64 = '';
   let invoiceFileName = orderInvoiceFileName(header);

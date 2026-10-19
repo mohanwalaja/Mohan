@@ -38,9 +38,8 @@ const MOUNT_FILES = [
   // The horoscope engine, so a probe can build a real chart for knowledge-base mode.
   'api/branding.php',
   'api/astrology/engine.php',
+  'api/astrology/report_views.php',
   'api/astrology/ephemeris_tables.php',
-  'api/astrology/mpdf_fontconfig.php',
-  'api/astrology/pdf_mpdf_reports.php',
   'api/astrology/muhurtham_report_notes.php',
   'api/astrology/wedding_disclaimer_notes.php',
   'api/astrology/namakaran_meanings.php',

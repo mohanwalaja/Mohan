@@ -12,7 +12,7 @@
  * Regenerate the fixture with `npx tsx scripts/emit-jathagam-summary-parity.ts`
  * only when the rule changes on purpose.
  */
-require_once __DIR__ . '/../api/astrology/pdf_mpdf_reports.php';
+require_once __DIR__ . '/../api/astrology/report_views.php';
 
 function checkSummaryParity(bool $condition, string $message): void
 {

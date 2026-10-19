@@ -1,7 +1,7 @@
 /**
  * PARITY between the PHP PDF generator and the shared life-card rules.
  *
- * The PHP mirror of page 2 (api/astrology/pdf_mpdf_reports.php) is what renders
+ * The PHP mirror of page 2 (api/astrology/report_views.php) is what renders
  * the PDF a customer actually reads. It now reads
  * api/astrology/life_cards_rules.json for its dusthana list and its badge
  * wording, so the PDF, the browser report and the chat cannot drift on those.
@@ -22,7 +22,7 @@ import { sliceText, sliceToEnd, assertNonEmptySet } from './helpers/sourceSlice'
 import { LIFE_CARD_RULES } from '../src/lib/astrology/lifeCardPredictions';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const php = fs.readFileSync(path.join(root, 'api/astrology/pdf_mpdf_reports.php'), 'utf8');
+const php = fs.readFileSync(path.join(root, 'api/astrology/report_views.php'), 'utf8');
 const rules = JSON.parse(
   fs.readFileSync(path.join(root, 'api/astrology/life_cards_rules.json'), 'utf8')
 ) as {

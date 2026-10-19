@@ -297,9 +297,6 @@ $mailResult = AstroMailer::sendEmailWithAttachments(
 );
 
 unset($attachments, $invoicePdf, $htmlBody);
-if (class_exists('AstroMpdfReports') && method_exists('AstroMpdfReports', 'cleanupTempFiles')) {
-    AstroMpdfReports::cleanupTempFiles(60);
-}
 if (function_exists('gc_collect_cycles')) {
     gc_collect_cycles();
 }

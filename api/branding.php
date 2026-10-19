@@ -9,7 +9,7 @@
  *
  *   1. A hard-coded remote URL  -> https://astrosivam.com/astrosivam_logo.png
  *      (emails: blocked by most mail clients by default / slow / fails when
- *       the host cannot reach itself, and mPDF then renders nothing.)
+ *       the host cannot reach itself, and the PDF then has no logo.)
  *   2. A hard-coded filesystem path that only exists in the local repo
  *      (__DIR__ . '/../../public/...') which does NOT exist on cPanel, where
  *      the deployed layout is public_html/api/... and the logo sits in
@@ -70,7 +70,7 @@ if (!function_exists('astro_logo_candidates')) {
 if (!function_exists('astro_logo_path')) {
     /**
      * Absolute filesystem path to the logo, or '' when it cannot be located.
-     * Used by mPDF / PDF writers, which cannot fetch remote images reliably.
+     * Kept for any server-side consumer of the logo; PDFs are captured in the browser.
      */
     function astro_logo_path(): string
     {
@@ -202,13 +202,11 @@ if (!function_exists('astro_inline_logo_attachment')) {
  * (MSME) under the Udyam Registration scheme of the Ministry of Micro, Small &
  * Medium Enterprises, Government of India. The registration number is printed on
  * every tax invoice / payment receipt the customer keeps, so it is written ONCE
- * — here — and read by every PHP renderer (the mPDF invoices in
- * api/astrology/pdf_mpdf_invoice.php, and any future financial document).
- *
- * The frontend mirrors these helpers in src/data/businessInfo.ts because the
- * invoice is rendered twice: once in the browser (jsPDF capture, admin portal
- * email attachment) and once by the server (mPDF). The two values must match;
- * neither template may retype the number.
+ * — here — and mirrored by the browser invoice builder
+ * (src/services/invoiceHtmlBuilder.ts) through src/data/businessInfo.ts.
+ * Invoices are only ever rendered in the browser now (jsPDF capture, admin
+ * portal email attachment); this constant exists so any future PHP document
+ * reads the same value instead of retyping it.
  *
  * NOTE: the OFFICE ADDRESS is deliberately absent here. It is shown on the
  * Contact page only (frontend), so nothing in the invoice ever prints a street
@@ -271,7 +269,7 @@ if (!function_exists('astro_business_registration_sentence')) {
 }
 
 if (!function_exists('astro_business_registration_sentence_html')) {
-    /** The same sentence, escaped for direct use inside mPDF/HTML templates. */
+    /** The same sentence, escaped for direct use inside HTML templates. */
     function astro_business_registration_sentence_html(): string
     {
         return htmlspecialchars(astro_business_registration_sentence(), ENT_QUOTES, 'UTF-8');

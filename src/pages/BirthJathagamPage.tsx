@@ -625,7 +625,7 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
                       />
                       <label htmlFor="saveProfileCheck" className="text-xs text-slate-400 cursor-pointer">
                         {pickedPerson?.source === 'self'
-                          ? 'Update my saved birth profile with these details.'
+                          ? 'Update my own saved birth details with these details.'
                           : pickedPerson?.source === 'family'
                             ? `Update ${pickedPerson.name}'s saved family details with any corrections.`
                             : 'Save these birth details as a family member for 1-click ordering next time.'}

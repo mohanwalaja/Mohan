@@ -114,12 +114,14 @@ single-order "View" / Live PDF Preview in the admin panel. Now:
 * **View Invoice** on a family card opens the live preview of a **consolidated
   family tax invoice** built with the exact same premium design as the
   single-order tax invoice (one line item per member, combined totals, group
-  reference). *Invoice PDF* downloads that same render at 2.5x canvas quality.
+  reference). *Invoice PDF* downloads that same render at the shared print
+  profile (3.2× ≈ 307 dpi, JPEG 0.95) — the same quality as every other download.
 * **Approve (N)** / **Resend Email** render all N member reports + the
   consolidated family invoice **client-side from the live preview** and send
   those preview-exact PDFs to the backend (`reportPdfs` + `invoicePdfBase64`),
-  which attaches them to the single customer email. Server-side rendering is
-  only a fallback.
+  which attaches them to the single customer email. There is no server-side
+  rendering fallback: the mPDF renderer was removed in October 2026, and a
+  missing browser render fails the send instead of substituting a lighter PDF.
 
 Backend (`api/admin/family_approval.php`, Node `server/routes/admin.ts`) accepts
 the optional client PDF payload on approve/resend and validates every PDF
@@ -163,7 +165,7 @@ The group flow now works like the single-order flow, member by member:
 ```
 for each devotee in the family order:
     calculate / refresh the chart        (same calculate-preview API)
-    render the report in the browser     (same HTML builders, html2canvas scale 2.5)
+    render the report in the browser     (same HTML builders, html2canvas at 3.2× print scale)
     upload that ONE ~2 MB PDF            POST /api/admin/family-orders/:groupId/stage-doc
 render the consolidated family invoice   (same premium invoice builder)
 upload it                                POST .../stage-doc  (kind=invoice)

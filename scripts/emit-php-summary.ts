@@ -3,15 +3,15 @@
  *
  * The page-3 data and the ONE classification rule live in TypeScript
  * (src/services/jathagamDoshaData.ts + src/services/jathagamPlanetSummary.ts).
- * The mPDF renderer must print exactly the same lists, so this script emits the
- * PHP twin of that data and rule:
+ * The PHP report views must print exactly the same lists, so this script emits
+ * the PHP twin of that data and rule:
  *
  *   npx tsx scripts/emit-php-summary.ts > /tmp/summary-block.php
  *
  * and the emitted block replaces the region between the
  * `// BIRTH JATHAGAM - PAGE 3 (SHORT SUMMARY)` banner and the
  * `// MARRIAGE COMPATIBILITY - 1 PAGE HTML` marker inside
- * api/astrology/pdf_mpdf_reports.php's AstroReportViews class.
+ * api/astrology/report_views.php's AstroReportViews class.
  *
  * Keep the two sides in sync: `tests/jathagam-summary-parity.test.php` (CI PHP)
  * and `tests/jathagam-summary-parity.test.ts` (Node) both check their engine

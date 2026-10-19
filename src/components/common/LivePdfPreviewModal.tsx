@@ -13,17 +13,17 @@ import { describeFamilyRenderQuality } from '../../services/formatUtils';
 import { warmReportFonts } from '../../services/reportFonts';
 import { applySampleWatermark, SAMPLE_BANNER, sampleDetailsLine, sampleReportFileName, sampleReportTitle, type SampleServiceType } from '../../services/sampleReportInfo';
 import { normalizeReportLanguage } from '../../services/reportLanguage';
+import { loadPdfEngine } from '../../services/pdfEngine';
 
 /**
- * The PDF renderer (jspdf + html2canvas, ~950 KB with its raster helpers) is a
+ * The PDF renderer (jspdf + html2canvas, ~780 KB with its raster helpers) is a
  * DEFERRED feature (audit PERF-1): the modal above renders the report from
- * HTML only. Fetching the renderer here — at the moment the visitor clicks
- * Download or Send, never while the preview is being read — keeps an opened
- * sample report ~1 MB lighter than it used to be, and the browser's module
- * cache means the second download is instant. The returned promise is cached
- * for the life of the tab, so the loading state appears at most once.
- */
-/**
+ * HTML only. `loadPdfEngine()` is awaited at the moment the visitor clicks
+ * Download or Send — never while the preview is being read — so opening a
+ * sample (or any preview) downloads no PDF code at all. The shared promise in
+ * `services/pdfEngine` is cached for the tab, so the loading state appears at
+ * most once and every other PDF action reuses it.
+ *
  * The HTML report builders are DEFERRED PER REPORT TYPE (audit PERF-1). They
  * are not equal: the Baby Naming builder carries the ~370 KB name tables and
  * the Muhurtham builder the ~245 KB six-month scan data, while the horoscope
@@ -33,13 +33,6 @@ import { normalizeReportLanguage } from '../../services/reportLanguage';
  * download path is unaffected: the exporter imports the same builders, so the
  * preview and the PDF stay pixel-identical.
  */
-let pdfRendererPromise: Promise<typeof import('../../services/jathagamPdfExporter')> | null = null;
-function loadReportPdfRenderer(): Promise<typeof import('../../services/jathagamPdfExporter')> {
-  if (!pdfRendererPromise) {
-    pdfRendererPromise = import('../../services/jathagamPdfExporter');
-  }
-  return pdfRendererPromise;
-}
 
 export interface LivePdfPreviewModalProps {
   isOpen: boolean;
@@ -236,9 +229,9 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
     if (!order) return;
     setIsSendingEmail(true);
     // Deferred renderer: this handler is the first moment the PDF engine is
-    // actually needed (see loadReportPdfRenderer).
+    // actually needed (see loadPdfEngine).
     const { prepareFamilyFulfilPayload, generateOrderPdfsBase64, deliverOrderPdfPayload } =
-      await loadReportPdfRenderer();
+      await loadPdfEngine();
     setEmailStatusMsg({
       type: 'success',
       text: 'Preparing the preview-exact report & tax invoice for delivery…'
@@ -354,34 +347,32 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
    * The download must be the preview. Rendering `previewHtml` — the very string
    * the iframe above is showing — with the browser's html2canvas + jsPDF
    * pipeline produces a print-resolution PDF that is pixel-identical to the
-   * preview, instead of the separate (and visibly thinner) server-side render.
-   *
-   * The server renderers are kept purely as a fallback for devices that cannot
-   * capture the canvas (very low memory, blocked canvas APIs).
+   * preview. There is no server-side renderer to fall back to: a device that
+   * cannot capture the canvas is told, instead of silently receiving a
+   * different, visibly thinner document.
    */
   const handleDownload = async () => {
     setIsDownloading(true);
     /**
-     * Samples render at their own, deliberately lighter profile (~200 dpi);
-     * everything else keeps the preview-exact print density. The choice is
-     * passed down as an explicit profile, which downloadAttemptOptions() treats
-     * as a ceiling — a sample is never escalated back to 300 dpi on retry.
-     * Paid reports (customer download, admin approval, emailed PDFs) pass no
-     * profile here and are untouched by this.
+     * Paid documents and the admin preview keep the print density (3.2× ≈ 307
+     * dpi, JPEG 0.95). Public samples are the one documented exception: the
+     * owner allows them 40% below print (1.92× ≈ 184 dpi), still JPEG 0.95, so
+     * a phone can allocate the canvas. No paid path can request it.
      */
     setDownloadNote(sampleMode
-      ? 'Preparing the sample report — this takes a few seconds…'
-      : 'Preparing the report you see above at print resolution — this takes a few seconds…');
-    // Deferred renderer (see loadReportPdfRenderer): opening a report — the
-    // public samples included — no longer downloads jspdf/html2canvas; the
-    // click that renders a PDF does. The module cache makes a repeat download
-    // instant, and the note above is already on screen while it arrives.
+      ? 'Downloading the sample report — this takes a few seconds…'
+      : 'Downloading the report you see above — this takes a few seconds…');
+    // Deferred engine (see loadPdfEngine): opening a report — the public
+    // samples included — downloads no jspdf/html2canvas code; the click that
+    // saves a PDF does. The module cache makes a repeat download instant, and
+    // the "Downloading…" note above is already on screen while it arrives.
     const {
       downloadHtmlPdf,
       downloadPreviewPagesPdf,
-      downloadFromServerUrl,
       SAMPLE_RENDER_OPTIONS
-    } = await loadReportPdfRenderer();
+    } = await loadPdfEngine();
+    // Samples only: 40% below the print density. Paid downloads pass nothing,
+    // so they always resolve to the full print profile.
     const downloadProfile = sampleMode ? SAMPLE_RENDER_OPTIONS : undefined;
     try {
       if (!previewHtml) {
@@ -405,49 +396,14 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
       //    rendered off-screen with the same html2canvas pipeline (now font-safe).
       await downloadHtmlPdf(previewHtml, previewFileName(), downloadProfile);
       setDownloadNote('');
-      return;
     } catch (e: any) {
-      console.error('Preview-exact download failed, falling back to the server renderer:', e);
+      // There is NO server-side renderer any more: rendering either succeeds in
+      // this browser or the visitor is told (rather than handed a lower-quality
+      // document they did not preview).
+      console.error('Preview-exact download failed on this device:', e);
       setDownloadNote(
-        'This device could not capture the high-resolution copy, so the server-rendered PDF was downloaded instead.'
+        'This device could not capture the PDF at the required resolution. Please retry, or open the preview in a desktop browser.'
       );
-      try {
-        if (serviceType === 'INVOICE') {
-          if (familyOrders && familyOrders.length > 0) {
-            downloadFromServerUrl(`/api/admin/family-orders/${getFamilyGroupId(familyOrders)}/invoice-pdf`);
-          } else if (order) {
-            downloadFromServerUrl(`/api/admin/orders/${order.id}/invoice`);
-          }
-        } else if (order) {
-          downloadFromServerUrl(`/api/admin/orders/${order.id}/pdf?lang=${selectedLang}`);
-        } else if (effectiveResult) {
-          const res = await fetch('/api/services/export-preview-pdf', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              serviceType,
-              result: effectiveResult,
-              language: selectedLang,
-              inputPayload: order?.inputPayload
-            })
-          });
-          if (!res.ok) {
-            throw new Error('Failed to generate preview PDF from server');
-          }
-          const blob = await res.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = previewFileName();
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-        }
-      } catch (fallbackError) {
-        console.error('Server fallback download failed too:', fallbackError);
-        setDownloadNote('The PDF could not be generated. Please try again, or use a desktop browser.');
-      }
     } finally {
       setIsDownloading(false);
     }
@@ -635,7 +591,7 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
               title="Downloads exactly what this preview shows — same fonts, same layout, print resolution"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{isDownloading ? 'Rendering print-quality PDF…' : 'Download PDF (exactly this preview)'}</span>
+              <span>{isDownloading ? 'Downloading…' : 'Download PDF (exactly this preview)'}</span>
             </button>
 
             {/* Close Button */}

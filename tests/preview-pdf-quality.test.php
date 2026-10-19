@@ -84,18 +84,23 @@ $truncated = previewPdfFixture([
 checkPreviewPdfQuality(!astroFamilyDocsIsPreviewQualityPdf($truncated), 'A truncated PDF without an EOF marker fails closed');
 checkPreviewPdfQuality(astroFamilyDocsDecodePdf('not base64') === null, 'Malformed base64 is rejected');
 
-// Server preview exports must retain Unicode shaping without loading the
-// unsupported OTL tables in the browser's modern Noto Indic font files.
+// There is no server-side PDF renderer any more: the PHP views produce HTML
+// only, and every PDF is captured in the browser from that same HTML. A
+// server renderer reappearing here would be a second, lower-quality engine.
 require_once __DIR__ . '/../api/astrology/engine.php';
-foreach (['ta', 'hi'] as $language) {
-    checkPreviewPdfQuality(
-        AstroMpdfReports::pdfFontStack($language) === 'freeserif',
-        "{$language} mPDF uses its compatible embedded Indic font"
-    );
-}
 checkPreviewPdfQuality(
-    AstroMpdfReports::pdfFontStack('en') === 'notosans, cinzel, sans-serif',
-    'English mPDF keeps its existing font stack'
+    !class_exists('AstroMpdfReports') && !class_exists('AstroMpdfInvoice'),
+    'no server-side mPDF renderer class is loaded'
+);
+checkPreviewPdfQuality(
+    !function_exists('astroEnsureMpdfAutoload') && !function_exists('astroMpdfFontDir'),
+    'the mPDF font/autoload configuration is gone'
+);
+checkPreviewPdfQuality(
+    !method_exists('AstroEngine', 'generateReportPdf')
+        && !method_exists('AstroEngine', 'generateInvoicePdf')
+        && !method_exists('AstroEngine', 'generateFamilyInvoicePdf'),
+    'the engine exposes no server PDF generator'
 );
 checkPreviewPdfQuality(
     strpos(AstroReportViews::sharedCss('ta'), 'notosanstamil') !== false
@@ -103,84 +108,4 @@ checkPreviewPdfQuality(
     'Browser HTML retains its original Noto Indic fonts'
 );
 
-// Synthetic inputs only; exercise the same engine/rendering path as the POST
-// endpoint without a database or customer data. The required mode prevents a
-// deployment check from silently passing without the real mPDF dependency:
-// ASTRO_REQUIRE_MPDF_TESTS=1 php tests/preview-pdf-quality.test.php
-if (AstroMpdfReports::isAvailable()) {
-    $birthInput = [
-        'name' => 'PDF Regression', 'dob' => '1990-01-05', 'tob' => '12:00',
-        'birthPlace' => 'Chennai', 'country' => 'India',
-        'latitude' => 13.0827, 'longitude' => 80.2707,
-        'timezoneOffsetHours' => 5.5, 'timeZoneId' => 'Asia/Kolkata'
-    ];
-    $brideInput = array_merge($birthInput, ['name' => 'PDF Bride', 'dob' => '1992-05-12', 'tob' => '08:30']);
-    $babyInput = array_merge($birthInput, ['name' => 'PDF Baby', 'dob' => '2024-03-10', 'tob' => '08:45', 'gender' => 'M']);
-    $services = [
-        'BIRTH_JATHAGAM' => [$birthInput, AstroEngine::calculateHoroscope($birthInput)],
-        'MARRIAGE_COMPATIBILITY' => [
-            ['groom' => $birthInput, 'bride' => $brideInput],
-            AstroEngine::calculateMatchmaking(['groom' => $birthInput, 'bride' => $brideInput])
-        ],
-        'BABY_NAMING' => [$babyInput, AstroEngine::calculateBabyNaming($babyInput)]
-    ];
-    foreach (['en', 'ta', 'hi'] as $language) {
-        foreach ($services as $serviceType => [$input, $result]) {
-            $order = [
-                'service_type' => $serviceType, 'language' => $language,
-                'order_number' => 'PREVIEW-PDF-TEST', 'user_name' => 'PDF Regression',
-                'input_payload' => $input
-            ];
-            if ($serviceType === 'BABY_NAMING') {
-                $note = [
-                    'en' => 'not a certified birth-pada name match',
-                    'ta' => 'பொருந்துவதாகச் சான்றளிக்கப்படவில்லை',
-                    'hi' => 'मेल प्रमाणित नहीं है'
-                ][$language];
-                checkPreviewPdfQuality(
-                    strpos(AstroReportViews::generateBabyNamingHtml($order, $result), $note) !== false,
-                    "{$language} certificate does not certify the supplied name as matching the birth pada"
-                );
-            }
-            $pdf = AstroEngine::generateReportPdf($order, $result);
-            checkPreviewPdfQuality(
-                strpos($pdf, '%PDF-') === 0 && strpos(substr($pdf, -2048), '%%EOF') !== false,
-                "{$language} {$serviceType} preview export produces a complete mPDF document"
-            );
-            if ($language !== 'en') {
-                checkPreviewPdfQuality(
-                    preg_match('/\/BaseFont\s*\/[A-Za-z0-9+_-]*FreeSerif/', $pdf) === 1,
-                    "{$language} {$serviceType} PDF actually embeds the compatible Indic font"
-                );
-            }
-            if ($serviceType === 'BIRTH_JATHAGAM') {
-                $physicalPages = preg_match_all('/\/Type\s*\/Page\b/', $pdf);
-                checkPreviewPdfQuality(
-                    $physicalPages === 3,
-                    "{$language} birth report has exactly three physical pages, not a footer-only fourth (actual: {$physicalPages})"
-                );
-            }
-        }
-    }
-    // Check the actual public fixed sample as well: its remedy-card density is
-    // different from the synthetic chart and originally produced page four.
-    $publicBirth = array_merge($birthInput, ['name' => 'Karthik Raman', 'dob' => '2000-01-01', 'tob' => '02:00']);
-    $publicChart = AstroEngine::calculateHoroscope($publicBirth);
-    foreach (['en', 'ta', 'hi'] as $language) {
-        $order = [
-            'service_type' => 'BIRTH_JATHAGAM', 'language' => $language,
-            'order_number' => 'PUBLIC-SAMPLE-TEST', 'input_payload' => $publicBirth
-        ];
-        $pdf = AstroEngine::generateReportPdf($order, $publicChart);
-        checkPreviewPdfQuality(
-            preg_match_all('/\/Type\s*\/Page\b/', $pdf) === 3,
-            "{$language} public Chennai birth sample has three physical pages"
-        );
-    }
-} elseif (getenv('ASTRO_REQUIRE_MPDF_TESTS') === '1') {
-    throw new RuntimeException('mPDF is required to verify three-language server preview exports.');
-} else {
-    echo "[SKIP] Three-language server rendering and physical page counts require mPDF.\n";
-}
-
-echo "\nPreview PDF quality tests passed.\n";
+echo "\nAll preview PDF quality checks passed.\n";

@@ -418,12 +418,12 @@ $checks[] = astro_health_run('logging', function () {
 });
 
 // ---------------------------------------------------------------------------
-// 10. Runtime: report the limits that silently drop preview PDF uploads, and
-//    whether the report renderer (vendor/mPDF) is actually installed.
+// 10. Runtime: report the limits that silently drop preview PDF uploads.
+//     There is no server-side PDF renderer any more — the admin panel captures
+//     every document in the browser and uploads it before the email is sent —
+//     so only the upload budget matters here.
 // ---------------------------------------------------------------------------
 $checks[] = astro_health_run('runtime', function () {
-    $vendor = is_dir(__DIR__ . '/../vendor');
-    $mpdf = $vendor && (is_dir(__DIR__ . '/../vendor/mpdf') || is_file(__DIR__ . '/../vendor/autoload.php'));
     $postMax = (string)ini_get('post_max_size');
     $uploadMax = (string)ini_get('upload_max_filesize');
     $toBytes = function ($value) {
@@ -443,14 +443,9 @@ $checks[] = astro_health_run('runtime', function () {
         'postMaxSize' => $postMax,
         'uploadMaxFilesize' => $uploadMax,
         'maxExecutionTime' => (string)ini_get('max_execution_time'),
-        'vendorInstalled' => $vendor,
-        'mpdfAvailable' => $mpdf,
         'timezone' => date_default_timezone_get()
     ];
 
-    if (!$mpdf) {
-        return ['status' => 'degraded', 'detail' => 'vendor/mPDF not detected - server-side report PDFs may fall back or fail.', 'data' => $data];
-    }
     if ($postMaxBytes > 0 && $postMaxBytes < 33554432) {
         return ['status' => 'degraded', 'detail' => 'post_max_size is ' . $postMax . ' - admin preview uploads need at least 32M (api/.user.ini sets 128M).', 'data' => $data];
     }

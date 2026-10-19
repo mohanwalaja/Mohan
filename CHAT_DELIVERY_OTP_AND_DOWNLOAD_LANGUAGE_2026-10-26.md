@@ -15,8 +15,9 @@ Two customer requests, as they now stand:
    all three languages (en/ta/hi), the system never accepts a `language`
    parameter that could switch it (server ignores it, client never
    sends one), and the frozen snapshot keeps this true forever. The
-   dashboard now states the language on every download ("Prepared on …
-   • Tamil (your order language) • frozen as ordered").
+   dashboard states the language on every download ("Prepared on …
+   • Tamil") and renders the file in the browser at the same print
+   density as the emailed copy.
 
 2. **WhatsApp/Viber order alerts go only to OTP-verified numbers.** In
    their profile, the customer saves ONE mobile number and verifies it

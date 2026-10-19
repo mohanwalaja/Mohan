@@ -30,8 +30,8 @@ customer's own download. There is no device-specific profile any more — the ol
 - The PHP API validates each uploaded PDF's header and EOF marker, page count, and embedded raster resolution before staging or mail dispatch. Missing, low-resolution (including the old 3× desktop raster, 2382 × 3369 px ≈ 288 dpi), vector-only, truncated, or oversized documents are rejected.
 - Every report and invoice must pass before approval/resend. If a capture or upload fails, the action returns an error and **no email is sent**.
 - **The approving device does not change the document.** An admin who approves from a phone gets the same 300 dpi A4 capture as one who approves from a desktop — every paid render goes through `renderEmailPdfBase64()` (one helper, one profile), which retries the *same* density once and then fails closed. There is no `deviceMemory`/user-agent branch left in the exporter.
-- The only reduced-density profile left in the app is `DOWNLOAD_RENDER_OPTIONS_SAFE` (1.8× ≈ 173 dpi). It is a **download-only** last resort for a device that rejects the print canvas twice; it can never reach an email.
-- Public **sample** reports keep their own lighter profile (2× ≈ 200 dpi) and must never reach a paid path — see the guard in `tests/pdf-pipeline-integrity.test.ts`.
+- **Paid PDFs have exactly one quality on the whole site.** The emailed report/invoice, the admin preview download, the family bundle and the customer dashboard download all use `PDF_RENDER_OPTIONS` (= `EMAIL_RENDER_OPTIONS`: 3.2× ≈ 307 dpi, JPEG 0.95, 2480 × 3508 px floor). There is no reduced-density download retry; a failed capture is retried at the *same* density and then reported.
+- **Public sample reports are the one allowed exception:** they capture at 40% below print density — `SAMPLE_RENDER_OPTIONS` = 3.2 × 0.6 = 1.92× (≈ 184 dpi, A4 ≈ 1524 × 2155 px) with the same JPEG 0.95. The sample profile is reachable only from sample mode in `LivePdfPreviewModal`; every paid, admin and email path is clamped to the print profile. `tests/pdf-pipeline-integrity.test.ts` fails if any other lighter profile appears.
 
 ### Upload size
 
@@ -69,11 +69,23 @@ The client floor (`A4_PRINT_MIN_*`) and the server floor (`ASTRO_FAMILY_DOC_MIN_
 silently ships sub-300-dpi reports. Deploy the whole `dist.zip` (frontend + `api/`), then verify with one
 real order from `/admin`.
 
-## PHP server-side PDF exports
+## When the PDF engine is downloaded
 
-PHP server-side report and invoice exports use mPDF only. The former plain-PHP writer (`AstroPdfReports` / `AstroPdfWriter`) has been removed. If mPDF is missing or fails, the PHP endpoint returns an error and produces no substitute PDF. The separate jsPDF exporter is browser-side code; there is no Node.js PDF server or Node route in the production application.
+The browser PDF engine (`jspdf` + `html2canvas`, the `vendor-pdf` chunk) is
+never part of a page. Every surface — homepage, service pages, public sample
+preview, customer dashboard, admin portal — opens without it; one shared loader
+(`src/services/pdfEngine.ts`) fetches it on the click that actually produces a
+PDF (sample download, dashboard download, admin preview download, approve /
+resend), and the cached promise makes later clicks instant.
+`docs/INITIAL_JS_AND_DEFERRED_FEATURES.md` records the measured chunks;
+`tests/initial-js-budget.test.ts` fails if any page imports the exporter
+statically again.
 
-Deployments must install `mpdf/mpdf` under `public_html/vendor` before using PHP server-side export endpoints. Customer email delivery continues to require the validated browser-rendered documents described above.
+## No server-side PDF renderer
+
+The mPDF renderer was removed in October 2026. `AstroMpdfReports`, `AstroMpdfInvoice`, `mpdf_fontconfig.php`, `api/check_mpdf.php` and every route that streamed a server-generated PDF (`/services/orders/:id/report-pdf`, `/services/export-preview-pdf`, `/admin/orders/:id/pdf`, `/admin/family-orders/:groupId/invoice-pdf`) are gone. PHP now produces **HTML only** (`api/astrology/report_views.php`, used by the admin preview routes and the parity tests); every PDF is captured in a browser from that same HTML. `composer.json` requires only `smalot/pdfparser`, a read-only parser used by the AI report importer.
+
+An admin approval/resend without browser-rendered report and invoice PDFs fails closed (no email is sent). A customer whose device cannot capture the print canvas is told, never handed a different document. `api/astrology/fonts/` is kept: the browser capture and the report HTML load those same Tamil/Hindi fonts.
 
 ## Verification
 

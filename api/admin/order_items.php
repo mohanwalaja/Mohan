@@ -24,7 +24,7 @@
  *                                         into budget-sized parts only when the
  *                                         mail provider would reject the size
  *
- * Nothing here touches auth, OTP, signed tokens or the mPDF report builders -
+ * Nothing here touches auth, OTP, signed tokens or the report HTML builders -
  * it only calls the existing, unchanged report/invoice generators.
  */
 
@@ -79,7 +79,8 @@ function astro_order_item_to_client(array $row, array $personsById = []): array
         'calculatedResult' => astro_order_item_decode($row['calculated_result'] ?? null),
         // Frozen download metadata (migration 016): a frozen snapshot or,
         // for pre-migration rows, the stored calculated_result (used
-        // as-is, never recalculated). Never the snapshot JSON itself.
+        // as-is, never recalculated). Lists carry metadata only; the
+        // customer's report-snapshot route returns one body on demand.
         'hasReportSnapshot' => !empty($row['report_snapshot']) || !empty($row['calculated_result']),
         'reportSnapshotAt' => $row['report_snapshot_at'] ?? null,
         'sentAt' => $row['sent_at'] ?? null,
@@ -382,7 +383,7 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
     $attachments = [];
     $attachmentNames = [];
     $resolvedItems = [];
-    $qualityCounts = ['PREVIEW_EXACT' => 0, 'SERVER_RENDER' => 0];
+    $qualityCounts = ['PREVIEW_EXACT' => 0];
 
     foreach ($items as $item) {
         $itemId = (int)($item['id'] ?? 0);
@@ -397,25 +398,22 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
             ];
         }
         $item = $calculated['item'];
-        $result = $calculated['result'];
-        $synthetic = astro_order_item_synthetic_order($order, $item);
 
         $clientPdf = $clientPdfs[(string)$itemId] ?? ($singleItemSend ? ($clientPdfs['@single'] ?? null) : null);
-        $quality = 'PREVIEW_EXACT';
-        if ($clientPdf !== null) {
-            $pdf = $clientPdf;
-        } else {
-            $quality = 'SERVER_RENDER';
-            try {
-                $pdf = AstroEngine::generateReportPdf($synthetic, $result);
-            } catch (Throwable $e) {
-                return [
-                    'success' => false,
-                    'message' => 'Could not render the report PDF for "' . astro_order_item_label($item) . '": ' . $e->getMessage() . ' Nothing was emailed.'
-                ];
-            }
+        // Fail closed, exactly like approve_order.php: the browser-rendered
+        // preview PDF is the ONLY deliverable. There is no server-side renderer
+        // to fall back to any more (mPDF was retired in Oct 2026), so a missing
+        // document means the admin must render it again - never that the
+        // customer receives a visibly lower-quality substitute.
+        if ($clientPdf === null) {
+            return [
+                'success' => false,
+                'httpStatus' => 422,
+                'message' => 'The live-preview PDF for "' . astro_order_item_label($item) . '" did not reach the server, so nothing was emailed. Open the preview and send again.'
+            ];
         }
-        $qualityCounts[$quality]++;
+        $pdf = $clientPdf;
+        $qualityCounts['PREVIEW_EXACT']++;
         $fileName = 'ASTRO_SIVAM_' . preg_replace('/[^A-Za-z0-9]+/', '_', $serviceCode) . '_' . $orderNumber . ($singleItemSend ? '' : '_' . $itemId) . '.pdf';
         $attachments[] = ['name' => $fileName, 'content' => $pdf];
         $attachmentNames[] = $fileName;
@@ -428,20 +426,12 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
         $invoicePdf = astroFamilyDocsDecodePdf((string)$body['invoicePdfBase64']);
     }
     if ($invoicePdf === null) {
-        try {
-            $pseudoOrders = [];
-            foreach ($resolvedItems as $item) {
-                $pseudoOrders[] = astro_order_item_synthetic_order($order, $item);
-            }
-            $invoicePdf = count($pseudoOrders) > 1
-                ? AstroEngine::generateFamilyInvoicePdf($pseudoOrders, $orderId)
-                : AstroEngine::generateInvoicePdf($pseudoOrders[0]);
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'message' => 'Could not render the order tax invoice: ' . $e->getMessage() . ' Nothing was emailed.'
-            ];
-        }
+        // Same rule as the reports: the browser-rendered invoice is required.
+        return [
+            'success' => false,
+            'httpStatus' => 422,
+            'message' => 'The live-preview tax invoice did not reach the server, so nothing was emailed. Open the preview and send again.'
+        ];
     }
     $invoiceName = 'ASTRO_SIVAM_Invoice_' . $orderNumber . '.pdf';
     $attachments[] = ['name' => $invoiceName, 'content' => $invoicePdf];
@@ -537,7 +527,7 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
         (string)($admin['name'] ?? 'Admin'),
         'admin',
         $mode === 'resend' ? 'ORDER_ITEMS_RESENT' : 'ORDER_ITEMS_APPROVED',
-        'Order #' . $orderNumber . ': delivered ' . count($resolvedItems) . ' report(s) (+1 invoice) in ' . $sentParts . ' email part(s); quality PREVIEW_EXACT=' . $qualityCounts['PREVIEW_EXACT'] . ', SERVER_RENDER=' . $qualityCounts['SERVER_RENDER']
+        'Order #' . $orderNumber . ': delivered ' . count($resolvedItems) . ' report(s) (+1 invoice) in ' . $sentParts . ' email part(s); every document browser-rendered (PREVIEW_EXACT=' . $qualityCounts['PREVIEW_EXACT'] . ')'
     );
 
     if ($finalStatus === 'COMPLETED') {
@@ -550,7 +540,8 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
         }
     }
 
-    $renderQuality = $qualityCounts['SERVER_RENDER'] === 0 ? 'PREVIEW_EXACT' : ($qualityCounts['PREVIEW_EXACT'] === 0 ? 'SERVER_RENDER' : 'MIXED');
+    // Always PREVIEW_EXACT: a missing preview PDF aborts before this point.
+    $renderQuality = 'PREVIEW_EXACT';
     $delivered = count($resolvedItems);
 
     return [
@@ -633,5 +624,9 @@ function astro_admin_order_item_action($pdo, array $admin, string $orderId, $ite
 
     $mode = ($action === 'resend') ? 'resend' : 'approve';
     $result = astro_send_order_items_email($pdo, $admin, $order, $targets, $mode, $body);
-    jsonResponse($result, !empty($result['success']) ? 200 : 503);
+    // 422 = the browser documents are missing (re-render needed); 503 = the
+    // mail provider failed. Both send nothing; the admin UI says which.
+    $httpStatus = (int)($result['httpStatus'] ?? (!empty($result['success']) ? 200 : 503));
+    unset($result['httpStatus']);
+    jsonResponse($result, $httpStatus);
 }

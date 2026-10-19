@@ -9,7 +9,7 @@
  * Tamil and Hindi meanings for page 2 of the Vedic Namakaran report, keyed by
  * the English meaning of the name bank. Kept byte-for-byte in step with
  * src/lib/astrology/namakaranMeaningData.ts so the browser preview and the official
- * mPDF report always localize a meaning identically.
+ * report HTML always localizes a meaning identically.
  *
  * The bank deliberately keeps one short English meaning as its source value and
  * older orders only persisted that shape, so translations are resolved here at

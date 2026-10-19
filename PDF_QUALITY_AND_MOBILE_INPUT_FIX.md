@@ -42,11 +42,13 @@ previewHtml ──► html2canvas (scale 3 desktop / 2.5 phone) ──► JPEG 0
                         so a popup blocker cannot swallow the fallback
 ```
 
-Capture density is chosen per device in `recommendedDownloadOptions()`:
-`navigator.deviceMemory ≤ 3 GB` or a phone-sized viewport → 2.5× / 0.95,
-otherwise 3× / 0.95 (~300 dpi on A4). **Compression changes, resolution never
-does** — the old 0.92 stays the default for *emailed* documents so a ten-report
-family bundle cannot exceed SMTP size limits.
+Capture density is no longer chosen per device: every paid document — report,
+invoice, admin preview and dashboard download — is captured at 300 dpi
+(scale 3.2, JPEG 0.95) on every device. Public samples are the one allowed
+exception, at 40% below print density (1.92× ≈ 184 dpi, same JPEG 0.95). The
+old 2.5× phone profile, the 1.8× download retry and the server-rendered
+fallback are all gone; a failed capture is retried at the same density and then
+reported. See `docs/PDF_DELIVERY_QUALITY.md`.
 
 ### Where it is wired
 
@@ -54,8 +56,8 @@ family bundle cannot exceed SMTP size limits.
 |---|---|---|
 | Preview modal → **Download PDF** | `src/components/common/LivePdfPreviewModal.tsx` | Renders `previewHtml` (reports *and* invoices, single *and* family). Button reads "Download PDF (exactly this preview)" and a banner explains the fallback if it is ever used. |
 | Customer order modal → **Download / Invoice** | `src/components/common/OrderReportModal.tsx` | `exportOrderReportPdf(order, lang, result)` uses the freshly recalculated result the modal is showing. |
-| Admin order list → **PDF / Invoice / Family invoice** | `src/services/jathagamPdfExporter.ts` (`exportOrderPdf`, `exportOrderInvoicePdf`, `exportFamilyInvoiceHtmlToPdf`) | Same preview-exact render, same server fallback. |
-| Per-service exporters | `exportJathagamHtmlToPdf`, `exportWeddingHtmlToPdf`, `exportBabyNamingHtmlToPdf`, `exportMuhurthamHtmlToPdf` | Build the preview HTML, render it, and only then call `downloadServerMpdf`. |
+| Admin order list → **PDF / Invoice / Family invoice** | `src/services/jathagamPdfExporter.ts` (`exportOrderPdf`, `exportOrderInvoicePdf`, `exportFamilyInvoiceHtmlToPdf`) | Same preview-exact render at the one print profile; a failed capture is reported, never replaced by a server render. |
+| Per-service exporters | `exportJathagamHtmlToPdf`, `exportWeddingHtmlToPdf`, `exportBabyNamingHtmlToPdf`, `exportMuhurthamHtmlToPdf` | Build the preview HTML and render it with the shared browser capture. |
 
 ### Emailed documents follow the same rule
 
@@ -71,14 +73,14 @@ render anyway. Now:
   discarded).
 * `api/admin/index.php` (approve **and** resend) resolves them through the new
   `astroSingleOrderClientDocs()` in `api/admin/family_docs.php` — inline body
-  wins, staged documents cover the rest, mPDF is the fallback per document.
+  wins, staged documents cover the rest. There is no server-render fallback:
+  a missing document fails the send (HTTP 422) so the documents can be rendered
+  again.
 * `api/admin/family_approval.php` attaches the client report it picked
-  (`$pickClientReport($o)`) and the client invoice, and now counts/names
-  server-rendered reports honestly (`$serverReports`, `$serverReportNumbers[]`,
-  `$invoiceFromPreview` → `renderQuality: PREVIEW_EXACT | MIXED | SERVER_RENDER`).
-  The admin UI surfaces that via `describeFamilyRenderQuality(res)`.
-* If a browser render fails, the payload is simply omitted and the customer still
-  receives the official mPDF package — an approval can never fail for want of a PDF.
+  (`$pickClientReport($o)`) and the client invoice, and reports
+  `renderQuality: PREVIEW_EXACT` — there is only one quality to report.
+* If a browser render fails, the approval fails loudly with "render and send
+  again" — the customer is never sent a lighter or server-rendered substitute.
 
 ### Bonus bug fixed on the way
 
