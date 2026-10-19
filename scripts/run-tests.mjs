@@ -48,6 +48,10 @@ const testFiles = [
   // document), with no server-side renderer left to substitute a thinner one.
   // Also pins the profile copy the customer asked to remove.
   'tests/customer-report-download-quality.test.ts',
+  // The customer-facing half of the same flow: while a download runs, the
+  // dashboard and the preview/sample modal say "Downloading…", never
+  // "Rendering…"/"Preparing…" (the file is the preview, not a new render).
+  'tests/download-progress-labels.test.ts',
   // Right after the render contract: the rendered PDFs must also REACH the
   // server. The admin "Approve / Send" routes once read their ~3 MB bodies
   // through config.php's 1 MiB getJsonBody() cap, which silently emptied them

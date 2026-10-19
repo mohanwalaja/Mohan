@@ -1332,7 +1332,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                       className="shrink-0 px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-slate-700 disabled:opacity-50"
                                     >
                                       <Download className="w-3.5 h-3.5" />
-                                      <span>{downloadingKey === `${order.id}:${item.id}` ? 'Preparing…' : 'Download Report'}</span>
+                                      <span>{downloadingKey === `${order.id}:${item.id}` ? 'Downloading…' : 'Download Report'}</span>
                                     </button>
                                   ) : (
                                     <span className="text-[11px] text-slate-500">
@@ -1361,7 +1361,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               className="shrink-0 px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-slate-700 disabled:opacity-50"
                             >
                               <Download className="w-3.5 h-3.5" />
-                              <span>{downloadingKey === order.id ? 'Preparing…' : 'Download Report'}</span>
+                              <span>{downloadingKey === order.id ? 'Downloading…' : 'Download Report'}</span>
                             </button>
                           </div>
                         )}

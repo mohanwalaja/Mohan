@@ -360,12 +360,12 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
      * a phone can allocate the canvas. No paid path can request it.
      */
     setDownloadNote(sampleMode
-      ? 'Preparing the sample report — this takes a few seconds…'
-      : 'Preparing the report you see above at print resolution — this takes a few seconds…');
-    // Deferred renderer (see loadPdfEngine): opening a report — the
-    // public samples included — no longer downloads jspdf/html2canvas; the
-    // click that renders a PDF does. The module cache makes a repeat download
-    // instant, and the note above is already on screen while it arrives.
+      ? 'Downloading the sample report — this takes a few seconds…'
+      : 'Downloading the report you see above — this takes a few seconds…');
+    // Deferred engine (see loadPdfEngine): opening a report — the public
+    // samples included — downloads no jspdf/html2canvas code; the click that
+    // saves a PDF does. The module cache makes a repeat download instant, and
+    // the "Downloading…" note above is already on screen while it arrives.
     const {
       downloadHtmlPdf,
       downloadPreviewPagesPdf,
@@ -591,9 +591,7 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
               title="Downloads exactly what this preview shows — same fonts, same layout, print resolution"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{isDownloading
-                ? (sampleMode ? 'Rendering sample PDF…' : 'Rendering print-quality PDF…')
-                : 'Download PDF (exactly this preview)'}</span>
+              <span>{isDownloading ? 'Downloading…' : 'Download PDF (exactly this preview)'}</span>
             </button>
 
             {/* Close Button */}

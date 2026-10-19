@@ -504,7 +504,7 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
               title={`Download PDF Report in ${selectedLang === 'ta' ? 'Tamil' : selectedLang === 'hi' ? 'Hindi' : 'English'}`}
             >
               <Download className="w-3.5 h-3.5" />
-              {isDownloading ? 'Preparing PDF...' : `Download ${selectedLang === 'ta' ? 'Tamil' : selectedLang === 'hi' ? 'Hindi' : 'English'} PDF`}
+              {isDownloading ? 'Downloading PDF...' : `Download ${selectedLang === 'ta' ? 'Tamil' : selectedLang === 'hi' ? 'Hindi' : 'English'} PDF`}
             </button>
 
             <button

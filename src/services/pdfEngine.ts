@@ -12,7 +12,7 @@
  *
  *   * opening the home page, a service page, a sample report or the dashboard
  *     downloads no PDF code at all;
- *   * the first click fetches the engine (a "Preparing…" state is already on
+ *   * the first click fetches the engine (a "Downloading…" state is already on
  *     screen), and the cached promise makes every later click instant;
  *   * `import()` here is a single, shared cache — two click paths cannot fetch
  *     the engine twice.
