@@ -260,12 +260,33 @@ check('every report prints its prepared date (frozen date, never download date)'
   assert.match(views, /Prepared on/, 'English prepared-on label');
   assert.match(views, /தயாரிக்கப்பட்ட நாள்/, 'Tamil prepared-on label');
   assert.match(views, /तैयार तिथि/, 'Hindi prepared-on label');
-  assert.ok((views.match(/preparedLabel\)/g) || []).length >= 3, 'all three Jathagam pages carry the stamp');
+  // Owner request (Oct 2026): the stamp prints on the FIRST page of every
+  // report only, on the LEFT of the reference line — never centred with the
+  // page numbers.
+  assert.ok(
+    (views.match(/topHeader\([^;]*\$preparedLabel/g) || []).length >= 3,
+    'the Jathagam, Wedding and Muhurtham page-1 headers all carry the stamp'
+  );
+  assert.doesNotMatch(views, /\$page2Html = self::topHeader\([^;]*\$preparedLabel/,
+    'Jathagam page 2 carries no stamp');
+  assert.doesNotMatch(views, /\$page3Html = self::topHeader\([^;]*\$preparedLabel/,
+    'Jathagam page 3 carries no stamp');
+  assert.match(views, /ref-left/, 'the server views put the stamp on the LEFT of the reference line');
+  assert.match(views, /bn-prepared/, 'the Baby Naming page-1 footer carries the stamp');
   assert.match(views, /Issued On/, 'wedding/muhurtham/baby keep their issued-on date');
   const ts = read('src/services/jathagamHtmlBuilder.ts');
   assert.match(ts, /footer-prepared/);
   assert.match(ts, /Prepared on/);
+  assert.match(ts, /pageNumber === 1/, 'the browser Jathagam builder stamps page 1 only');
+  assert.match(ts, /position: absolute;\s*left: 0/, 'the browser stamp is pinned to the left edge');
   assert.match(ts, /\['generatedAt'\]|generatedAt/, 'TS stamp reads the frozen result date');
+  for (const builderName of ['weddingHtmlBuilder', 'babyNamingHtmlBuilder']) {
+    const builder = read(`src/services/${builderName}.ts`);
+    assert.match(builder, /footer-prepared/, `${builderName} stamps its first-page footer`);
+    assert.match(builder, /pageNumber === 1|preparedStampHtml/, `${builderName} keeps the stamp off later pages`);
+  }
+  assert.match(read('src/services/muhurthamHtmlBuilder.ts'), /brand-prepared/,
+    'the Muhurtham builder stamps the left of its page-1 brand line');
 });
 
 check('migration + schema carry family_members and the snapshot columns', () => {
@@ -324,6 +345,8 @@ $order = ['service_type' => 'BIRTH_JATHAGAM', 'language' => 'en', 'order_number'
   'user_name' => 'Frozen Native', 'input_payload' => $birth];
 $html = AstroReportViews::renderFullReportHtml($order, $result);
 ok(strpos($html, 'Prepared on: 03 Feb 2024') !== false, 'Jathagam header prints the frozen prepared date');
+ok(substr_count($html, 'Prepared on: 03 Feb 2024') === 1, 'the stamp prints on the first page only, never repeated');
+ok(strpos($html, 'ref-left') !== false, 'the stamp rides the LEFT cell of the reference line');
 $babyOrder = ['service_type' => 'BABY_NAMING', 'language' => 'en', 'order_number' => 'ORD-PREVIEW2',
   'user_name' => 'Parent', 'input_payload' => $birth];
 try {

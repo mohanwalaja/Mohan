@@ -389,6 +389,24 @@ export function buildMuhurthamHtml(result: MuhurthamScanResult, lang: AppLanguag
   const referenceNo = muhurthamReferenceNumber(result);
   const issuedOn = formatIssuedAt(result.generatedAt, result.muhurthamTimeZoneId);
 
+  /**
+   * "Prepared on" stamp — the frozen calculation date, date-only like the
+   * other reports. First page only, on the LEFT of the bottom brand line,
+   * never centred (owner request, Oct 2026). No stamp when the result has no
+   * date rather than an invented "today".
+   */
+  const preparedOnLabel = isTa ? 'தயாரிக்கப்பட்ட நாள்' : isHi ? 'तैयार तिथि' : 'Prepared on';
+  const preparedDate = ((): string => {
+    const raw = (result as any)?.generatedAt;
+    if (!raw) return '';
+    const parsed = new Date(String(raw).replace(' ', 'T'));
+    if (isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  })();
+  const preparedStampHtml = preparedDate
+    ? `<span class="brand-prepared">${escapeHtml(preparedOnLabel)}: ${escapeHtml(preparedDate)}</span>`
+    : '';
+
   // Gather recommended BEST and GOOD dates
   const dates = months.flatMap(month => (month.days || [])
     .filter(day => (day.grade || '').toUpperCase() === 'BEST' || (day.grade || '').toUpperCase() === 'GOOD')
@@ -852,8 +870,14 @@ ${REPORT_FONT_LINK_TAG}
   .pill-good { background: #fef3c7; color: #92400e; border: 1.5px solid #f59e0b; }
 
   .page-bottom-brand {
+    position: relative;
     text-align: center; font-size: 8.5px; color: var(--ink-muted); font-weight: 600;
     margin-top: 1.5mm; letter-spacing: 0.3px; flex-shrink: 0;
+  }
+  /* Page 1 only: the "Prepared on" stamp sits on the LEFT edge of the brand
+     line; the centred brand text never moves. */
+  .page-bottom-brand .brand-prepared {
+    position: absolute; left: 0; bottom: 0; color: var(--maroon); font-weight: 700; white-space: nowrap;
   }
 
   /* Calendar layout; the selection guide follows in normal flow. */
@@ -1020,7 +1044,7 @@ ${REPORT_FONT_LINK_TAG}
         <span>${escapeHtml(labels.reference)}: ${escapeHtml(referenceNo)}</span>
       </div>
 
-      <div class="page-bottom-brand">ASTRO SIVAM • Vedic Astrological Consultancy • astrosivam.com • admin@astrosivam.com</div>
+      <div class="page-bottom-brand">${preparedStampHtml}ASTRO SIVAM • Vedic Astrological Consultancy • astrosivam.com • admin@astrosivam.com</div>
     </div>
   </div>
 

@@ -582,9 +582,18 @@ class AstroReportViews {
     .header-sub { font-size: 10.5px; color: #0b7a5a; font-weight: bold; margin-top: 0.5mm; text-align: center; }
     .header-contact { font-size: 8.5px; color: #64748b; margin-top: 0.5mm; text-align: center; font-weight: bold; }
     .header-extra { font-size: 8px; color: #64748b; margin-top: 0.4mm; text-align: center; font-weight: bold; }
-    .header-reference { font-size: 7.5px; color: #64748b; margin-top: 0.6mm; text-align: center; font-weight: bold; }
+    /* The reference line is a three-cell row: the "Prepared on" stamp rides
+       on the LEFT (first page only), the page tag + order reference stay
+       centred. Fixed equal side cells keep the centre block centred whatever
+       the stamp's length. */
+    .header-reference { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 0.6mm; }
+    .header-reference td { font-size: 7.5px; color: #64748b; font-weight: bold; padding: 0; vertical-align: middle; }
+    .header-reference .ref-side { width: 32%; }
+    .header-reference .ref-left { text-align: left; }
+    .header-reference .ref-center { text-align: center; }
     .header-page-tag { color: #7d1233; font-weight: bold; }
     .header-order-ref { margin-left: 2mm; color: #64748b; }
+    .header-prepared { color: #7d1233; font-weight: bold; white-space: nowrap; }
     table.modern-divider { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 1.2mm 0 3mm; }
     table.modern-divider td { height: 0.6mm; padding: 0; border: 0; }
 
@@ -712,6 +721,10 @@ CSS;
      * original order-date time, so a preview never looks freshly prepared.
      * Empty when the result carries no date (no stamp rather than a wrong
      * "today" stamp).
+     *
+     * Display rule (owner request, Oct 2026): every report prints the stamp
+     * on its FIRST page only, on the LEFT of the header/footer reference
+     * line — never centred with the page numbers.
      */
     public static function preparedOnLabel($result, string $lang): string {
         $raw = is_array($result) ? trim((string) ($result['generatedAt'] ?? '')) : '';
@@ -726,6 +739,9 @@ CSS;
         // $slashPageLabel: the Birth Jathagam states "Page x / 3" (the form the
         // change request asks for). The other reports keep their existing
         // "Page x of y" wording, so this stays opt-in.
+        // $preparedLabel is passed by the callers' page-1 header only (the
+        // stamp never repeats on later pages) and prints on the LEFT of the
+        // reference line, opposite the centred page/order tags.
         $brandText = trim($title) === 'ASTRO SIVAM' ? 'ASTRO SIVAM - OFFICIAL VEDIC REPORT' : $title;
         $brand = self::e($brandText);
         $s = self::e($subtitle);
@@ -733,9 +749,11 @@ CSS;
         $pageStr = ($lang === 'ta') ? "பக்கம் {$page} / {$total}" : (($lang === 'hi') ? "पृष्ठ {$page} / {$total}" : ($slashPageLabel ? "Page {$page} / {$total}" : "Page {$page} of {$total}"));
         $metaHtml = trim($meta) !== '' ? '<div class="header-extra">' . self::e($meta) . '</div>' : '';
         $orderHtml = trim($orderNumber) !== '' ? '<span class="header-order-ref">#' . $o . '</span>' : '';
-        // The prepared date rides on the existing reference line, so
-        // fixed-height report pages do not move.
-        $preparedHtml = trim($preparedLabel) !== '' ? '<span class="header-order-ref">' . self::e($preparedLabel) . '</span>' : '';
+        // The "Prepared on" stamp (first page only) rides on the LEFT of the
+        // reference line — never centred with the page tag (owner request,
+        // Oct 2026). Absolutely positioned in the browser builders; a fixed
+        // side cell here, so fixed-height report pages do not move.
+        $preparedHtml = trim($preparedLabel) !== '' ? '<span class="header-prepared">' . self::e($preparedLabel) . '</span>' : '';
 
         // Root-relative URL on purpose: this same HTML string is served to a
         // browser by the admin "preview HTML" route, so a raw server path could
@@ -750,7 +768,11 @@ CSS;
   <div class="header-sub">{$s}</div>
   <div class="header-contact">astrosivam.com &bull; admin@astrosivam.com</div>
   {$metaHtml}
-  <div class="header-reference"><span class="header-page-tag">{$pageStr}</span>{$orderHtml}{$preparedHtml}</div>
+  <table class="header-reference"><tr>
+    <td class="ref-side ref-left">{$preparedHtml}</td>
+    <td class="ref-center"><span class="header-page-tag">{$pageStr}</span>{$orderHtml}</td>
+    <td class="ref-side"></td>
+  </tr></table>
 </div>
 <table class="modern-divider"><tr>
   <td style="width:17%;background:#edd1d9;"></td><td style="width:16%;background:#cf8e9f;"></td>
@@ -808,8 +830,9 @@ HTML;
         $chandraRasiInfo = $chandraRasiNum !== null ? ($rasiNamesByNumber[$chandraRasiNum] ?? null) : null;
 
         $orderNumber = $order['order_number'] ?? $order['orderNumber'] ?? 'ORD-JATHAGAM';
-        // Printed on every page header: when this report was prepared. A
-        // stored snapshot keeps its original order date.
+        // Printed on the FIRST page header only, on the LEFT of the reference
+        // line: when this report was prepared. A stored snapshot keeps its
+        // original order date.
         $preparedLabel = self::preparedOnLabel($result, $lang);
         $name = self::e($result['devoteeName'] ?? $result['nativeName'] ?? ($order['user_name'] ?? 'User'));
         $dob = self::e(self::birthDate($result['dob'] ?? '', 'N/A'));
@@ -1690,7 +1713,7 @@ HTML;
         }
         $lifeCardsHtml .= '</table>';
 
-        $page2Html = self::topHeader('ASTRO SIVAM', $p2Sub, $orderNumber, 2, self::JATHAGAM_PAGE_TOTAL, $lang, '', true, $preparedLabel);
+        $page2Html = self::topHeader('ASTRO SIVAM', $p2Sub, $orderNumber, 2, self::JATHAGAM_PAGE_TOTAL, $lang, '', true);
         $page2Html .= '<div class="life-disclaimer">' . self::e($lifeDisclaimer) . '</div>' . $lifeCardsHtml;
 
         // ---------------- PAGE 3: Short Summary (one A4, always) ----------------
@@ -1809,7 +1832,7 @@ HTML;
             }
         )));
 
-        $page3Html = self::topHeader('ASTRO SIVAM', $summaryText['subtitle'], $orderNumber, 3, self::JATHAGAM_PAGE_TOTAL, $lang, '', true, $preparedLabel);
+        $page3Html = self::topHeader('ASTRO SIVAM', $summaryText['subtitle'], $orderNumber, 3, self::JATHAGAM_PAGE_TOTAL, $lang, '', true);
         $page3Html .= '<div class="summary-card">'
             . '<div class="summary-card-title">' . self::e($summaryText['detailsTitle']) . '</div>'
             . $summaryDetailsHtml . '</div>';
@@ -3353,7 +3376,10 @@ CSS;
         $thSt = $isTa ? 'நிலை' : ($isHi ? 'स्थिति' : 'Status');
         $thExp = $isTa ? 'விளக்கம் & பலன்' : ($isHi ? 'विवरण एवं फल' : 'Explanation');
 
-        $body = self::topHeader('ASTRO SIVAM', $headerSub, $orderNumber, 1, 2, $lang);
+        // "Prepared on" stamp: first page only, on the LEFT of the reference
+        // line — never centred with the page tag (owner request, Oct 2026).
+        $preparedLabel = self::preparedOnLabel($result, $lang);
+        $body = self::topHeader('ASTRO SIVAM', $headerSub, $orderNumber, 1, 2, $lang, '', false, $preparedLabel);
         $body .= <<<HTML
 <div class="panel" style="padding:3.5mm 4mm;">
   <table style="width:100%; font-size:10px; line-height:1.5;"><tr>
@@ -3876,7 +3902,10 @@ HTML;
 
         $recommendedDatesLabel = $isTa ? 'பரிந்துரைக்கப்பட்ட தேதிகள்' : ($isHi ? 'अनुशंसित तिथियाँ' : 'recommended dates');
         $coverMeta = $eventTitle . ' • ' . $totalRecommendedDates . ' ' . $recommendedDatesLabel;
-        $coverHeader = self::topHeader('ASTRO SIVAM', $t['docTitle'], $orderNumberSafe, 1, 2, $lang, $coverMeta);
+        // "Prepared on" stamp: first page only, on the LEFT of the reference
+        // line — never centred with the page tag (owner request, Oct 2026).
+        $preparedLabel = self::preparedOnLabel($result, $lang);
+        $coverHeader = self::topHeader('ASTRO SIVAM', $t['docTitle'], $orderNumberSafe, 1, 2, $lang, $coverMeta, false, $preparedLabel);
 
         $page1DatesHtml = $renderCalendarTable($page1Rows);
 
@@ -4370,6 +4399,10 @@ HTML;
                 : "This report certifies the computed Janma Nakshatra and naming syllables for {$babyName}. The supplied name is for identification only, not a certified birth-pada name match.");
         $signRole = $isTa ? 'அங்கீகரிக்கப்பட்ட ஜோதிடர்' : ($isHi ? 'अधिकृत ज्योतिषी' : 'AUTHORIZED ASTROLOGER');
         $footerLabel = $isTa ? 'அதிகாரப்பூர்வ வேத நாமகரண அறிக்கை' : ($isHi ? 'आधिकारिक वैदिक नामकरण रिपोर्ट' : 'Official Vedic Namakaran Report');
+        // "Prepared on" stamp: first page only, on the LEFT of the footer bar
+        // — never centred with the brand line (owner request, Oct 2026).
+        $preparedLabel = self::preparedOnLabel($result, $lang);
+        $bnPreparedSpan = $preparedLabel !== '' ? '<span class="bn-prepared">' . self::e($preparedLabel) . '</span>' : '';
 
         $virtue1 = $isTa ? 'பிரகாசமான உயிர்த்திருவும் அறிவும் — கூர்மையான பார்வை, உயர்ந்த மன சுறுசுறுப்பு.' : ($isHi ? 'तेजस्वी ओज एवं बुद्धि — तीक्ष्ण बुद्धि, सूक्ष्म दृष्टि एवं उत्तम स्वभाव।' : 'Radiant Vitality &amp; Intellect — keen observational clarity, mental agility and noble presence.');
         $virtue2 = $isTa ? 'கருணை & தர்ம நெறி — உண்மை, ஈகை, வலிய அற உணர்வு.' : ($isHi ? 'करुणा एवं धर्म — सत्यनिष्ठा, उदारता एवं नैतिक बल।' : 'Compassion &amp; Dharma Alignment — truthfulness, generosity and strong moral grounding.');
@@ -4463,8 +4496,11 @@ HTML;
     .bn-seal { border: 1.5px dashed #b3862e; border-radius: 50%; width: 17mm; height: 17mm; text-align: center; vertical-align: middle; background: #f7efdd; }
     .bn-seal-title { font-size: 8px; color: #7a2129; font-weight: bold; line-height: 1.1; }
     .bn-seal-sub { font-size: 5.8px; color: #8c6a1e; font-weight: bold; }
-    .bn-footer-bar { border-top: 1px solid #b3862e; margin-top: 2mm; padding-top: 1mm; font-size: 7.2px; color: #8a7c6c; }
+    .bn-footer-bar { border-top: 1px solid #b3862e; margin-top: 2mm; padding-top: 1mm; font-size: 7.2px; color: #8a7c6c; text-align: center; position: relative; }
     .bn-footer-bar b { color: #7a2129; letter-spacing: 0.8px; }
+    /* First page only: the "Prepared on" stamp sits on the LEFT edge of the
+       footer bar, level with the brand text; the centred line never moves. */
+    .bn-footer-bar .bn-prepared { position: absolute; left: 0; top: 1mm; color: #7a2129; font-weight: bold; white-space: nowrap; }
     .bn-doc-hint { font-size: 7.2px; color: #5c5044; margin-top: 1.4mm; line-height: 1.35; }
 
     /* ── Page 2: South & North Indian name suggestions (table layout) ── */
@@ -4683,7 +4719,7 @@ CSS;
     </td>
   </tr></table>
 
-  <div class="bn-footer-bar"><b>ASTRO SIVAM</b> &nbsp;&bull;&nbsp; {$footerLabel} &nbsp;&bull;&nbsp; admin@astrosivam.com</div>
+  <div class="bn-footer-bar">{$bnPreparedSpan}<b>ASTRO SIVAM</b> &nbsp;&bull;&nbsp; {$footerLabel} &nbsp;&bull;&nbsp; admin@astrosivam.com</div>
 
 </div>
 HTML;

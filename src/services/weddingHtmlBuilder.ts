@@ -342,8 +342,20 @@ export function buildWeddingMatchHtml(
 
   const renderHeader = (subtitle: string) => buildReportHeaderHtml({ subtitle });
 
-  const renderFooter = `
+  /**
+   * "Prepared on" stamp — the frozen calculation date. First page only, on the
+   * LEFT of the footer, never centred with the brand line (owner request,
+   * Oct 2026). The date comes from the result itself, so a re-downloaded
+   * frozen snapshot keeps its original prepared date.
+   */
+  const preparedOnLabel = isTa ? 'தயாரிக்கப்பட்ட நாள்' : isHi ? 'तैयार तिथि' : 'Prepared on';
+  const preparedDateRaw = resAny.generatedAt ? new Date(String(resAny.generatedAt).replace(' ', 'T')) : null;
+  const preparedDate = preparedDateRaw && !isNaN(preparedDateRaw.getTime())
+    ? preparedDateRaw.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '';
+  const renderFooterFor = (pageNumber: number) => `
     <div class="footer">
+      ${pageNumber === 1 && preparedDate ? `<span class="footer-prepared">${escapeHtml(preparedOnLabel)}: ${escapeHtml(preparedDate)}</span>` : ''}
       <div class="brand-title">ASTRO SIVAM - OFFICIAL VEDIC REPORT</div>
       <div class="brand-sub">astrosivam.com • admin@astrosivam.com</div>
     </div>
@@ -816,6 +828,7 @@ ${REPORT_FONT_LINK_TAG}
      No auto top margin: the growing block owns the leftover height, so the
      footer already lands on the bottom edge of the sheet. */
   .footer {
+    position: relative;
     text-align: center;
     border-top: 1px solid var(--slate-border);
     padding-top: 1.5mm;
@@ -837,6 +850,17 @@ ${REPORT_FONT_LINK_TAG}
     color: var(--ink-muted);
     font-weight: 600;
     margin-top: 0.3mm;
+  }
+  /* Page 1 only: the "Prepared on" stamp sits on the LEFT edge of the footer,
+     level with the last footer line; the centred brand line never moves. */
+  .footer .footer-prepared {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    color: var(--maroon);
+    font-weight: 700;
+    font-size: 9.5px;
+    white-space: nowrap;
   }
 
   /* ── Page 2: Marriage Matching disclaimer ──
@@ -1122,7 +1146,7 @@ ${REPORT_FONT_LINK_TAG}
       <div class="final-verdict-message">${finalVerdictText}</div>
     </div>
 
-    ${renderFooter}
+    ${renderFooterFor(1)}
   </div>
 </div>
 
@@ -1141,7 +1165,7 @@ ${disclaimerParagraphsHtml}
 
 ${attestationHtml}
 
-    ${renderFooter}
+    ${renderFooterFor(2)}
   </div>
 </div>
 
