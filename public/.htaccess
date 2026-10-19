@@ -27,6 +27,10 @@
     Deny from all
   </IfModule>
 </FilesMatch>
+# SECURITY: Block direct web access to Composer's vendor/ tree installed at the
+# docroot (mpdf, etc.). `public_html/vendor` is installed outside the deploy zip
+# and must never be reachable through the static site.
+RewriteRule ^vendor(/|$) - [F,L]
 
 # ------------------------------------------------------------------------------
 # 2. HTTP Security Headers

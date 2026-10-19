@@ -1,0 +1,15 @@
+# ASTRO SIVAM - transient directory for the private signing key (app_secret_key.txt)
+# and mPDF font cache. Nothing here may ever be reachable over HTTP.
+# This file is the only file committed inside api/astrology/tmp/ (see .gitignore
+# `!api/astrology/tmp/.htaccess`); the key itself is ALWAYS generated on host.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+
+Options -Indexes -ExecCGI
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8
+RemoveType .php

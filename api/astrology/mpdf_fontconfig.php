@@ -67,14 +67,14 @@ astroEnsureMpdfAutoload();
 function astroMpdfTempDir(): string {
     $dir = __DIR__ . '/tmp';
     if (!is_dir($dir)) {
-        @mkdir($dir, 0777, true);
+        @mkdir($dir, 0700, true);
     }
     if (is_dir($dir) && is_writable($dir)) {
         return $dir;
     }
     $sysTemp = sys_get_temp_dir() . '/mpdf_astrosivam';
     if (!is_dir($sysTemp)) {
-        @mkdir($sysTemp, 0777, true);
+        @mkdir($sysTemp, 0700, true);
     }
     return is_dir($sysTemp) && is_writable($sysTemp) ? $sysTemp : sys_get_temp_dir();
 }

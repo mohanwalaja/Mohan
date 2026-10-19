@@ -2,9 +2,13 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/$USER/public_html
-    - /bin/mkdir -p $DEPLOYPATH/api
-    # Preserve live database credentials on subsequent Git deployments while still installing config.php on a fresh host.
-    - /bin/find api -type f ! -path 'api/astrology/tmp/app_secret_key.txt' ! -path 'api/astrology/tmp/app_secret_key.txt.*' -exec sh -c 'for file do relative="${file#api/}"; target="$DEPLOYPATH/api/$relative"; if [ "$relative" = "config.php" ] && [ -f "$target" ]; then continue; fi; /bin/mkdir -p "$(dirname "$target")"; /bin/cp -f "$file" "$target"; done' sh {} +
+    - /bin/mkdir -p $HOME/.astrosivam
+    # Preserve live database credentials on subsequent Git deployments while still
+    # installing config.php on a fresh host. The live file is archived OUTSIDE the
+    # docroot (so it is never web-supplied by a stale upload); API security/
+    # hardening changes must be re-applied deliberately (docs/AUTH_SECURITY_
+    # HARDENING.md) because the archive is a snapshot, not the live source of truth.
+    - /bin/find api -type f ! -path 'api/astrology/tmp/app_secret_key.txt' ! -path 'api/astrology/tmp/app_secret_key.txt.*' -exec sh -c 'for file do relative="${file#api/}"; target="$DEPLOYPATH/api/$relative"; if [ "$relative" = "config.php" ] && [ -f "$target" ]; then cp -p "$file" "$HOME/.astrosivam/config.php.live-$(date +%s)"; continue; fi; /bin/mkdir -p "$(dirname "$target")"; /bin/cp -f "$file" "$target"; done' sh {} +
     - /bin/mkdir -p $DEPLOYPATH/src/lib/muhurtham
     - /bin/cp -f src/lib/muhurtham/rules.json $DEPLOYPATH/src/lib/muhurtham/rules.json
     - /bin/find dist -type f ! -name '*.map' ! -name '*.cjs' -exec sh -c 'for file do target="$DEPLOYPATH/${file#dist/}"; /bin/mkdir -p "$(dirname "$target")"; /bin/cp -f "$file" "$target"; done' sh {} +
