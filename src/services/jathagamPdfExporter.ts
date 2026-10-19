@@ -13,6 +13,12 @@ import {
   mergeOrderPayloadIntoResult,
   resultNeedsRecalculation
 } from './orderPayload';
+import { PDF_CAPTURE_ERROR } from './pdfErrors';
+
+// Re-exported for the Node test suites (and for compatibility); page code
+// imports the constant from './pdfErrors' directly so comparing an error
+// message never pulls this module into a route chunk.
+export { PDF_CAPTURE_ERROR } from './pdfErrors';
 
 // Re-exported so the report/admin/customer code (and the Node test suites) that
 // has always imported these from the exporter keeps compiling unchanged.
@@ -930,14 +936,6 @@ export async function downloadPreviewPagesPdf(
   }
   throw lastError || new Error('PDF rendering failed.');
 }
-
-/**
- * The ONE message a device gets when the browser cannot capture a PDF at print
- * density. There is no server-side renderer any more, so this is never replaced
- * by a lower-quality server document: the operator/customer is told instead.
- */
-export const PDF_CAPTURE_ERROR =
-  'The PDF could not be rendered at print quality on this device. Please retry, or open this page in a desktop browser.';
 
 /**
  * Every service exporter below follows the same rule: build the preview HTML in

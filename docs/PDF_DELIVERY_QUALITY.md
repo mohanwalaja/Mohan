@@ -69,6 +69,18 @@ The client floor (`A4_PRINT_MIN_*`) and the server floor (`ASTRO_FAMILY_DOC_MIN_
 silently ships sub-300-dpi reports. Deploy the whole `dist.zip` (frontend + `api/`), then verify with one
 real order from `/admin`.
 
+## When the PDF engine is downloaded
+
+The browser PDF engine (`jspdf` + `html2canvas`, the `vendor-pdf` chunk) is
+never part of a page. Every surface — homepage, service pages, public sample
+preview, customer dashboard, admin portal — opens without it; one shared loader
+(`src/services/pdfEngine.ts`) fetches it on the click that actually produces a
+PDF (sample download, dashboard download, admin preview download, approve /
+resend), and the cached promise makes later clicks instant.
+`docs/INITIAL_JS_AND_DEFERRED_FEATURES.md` records the measured chunks;
+`tests/initial-js-budget.test.ts` fails if any page imports the exporter
+statically again.
+
 ## No server-side PDF renderer
 
 The mPDF renderer was removed in October 2026. `AstroMpdfReports`, `AstroMpdfInvoice`, `mpdf_fontconfig.php`, `api/check_mpdf.php` and every route that streamed a server-generated PDF (`/services/orders/:id/report-pdf`, `/services/export-preview-pdf`, `/admin/orders/:id/pdf`, `/admin/family-orders/:groupId/invoice-pdf`) are gone. PHP now produces **HTML only** (`api/astrology/report_views.php`, used by the admin preview routes and the parity tests); every PDF is captured in a browser from that same HTML. `composer.json` requires only `smalot/pdfparser`, a read-only parser used by the AI report importer.

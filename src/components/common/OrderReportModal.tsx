@@ -6,16 +6,7 @@ import { RasiChartSvg } from './RasiChartSvg';
 import { LivePdfPreviewModal } from './LivePdfPreviewModal';
 import { getGunam } from '../../services/gunamData';
 import { api } from '../../services/api';
-import {
-  exportInvoiceHtmlToPdf,
-  exportFamilyInvoiceHtmlToPdf,
-  exportOrderReportPdf,
-  generateOrderPdfsBase64,
-  prepareFamilyFulfilPayload,
-  deliverOrderPdfPayload,
-  downloadHtmlPdf,
-  orderInvoiceFileName
-} from '../../services/jathagamPdfExporter';
+import { loadPdfEngine } from '../../services/pdfEngine';
 import { buildOrderInvoiceHtmlForItems, orderItemAsOrder, prepareOrderItemPdfs } from '../../services/orderItems';
 import { describeFamilyRenderQuality } from '../../services/formatUtils';
 import { normalizeReportLanguage } from '../../services/reportLanguage';
@@ -188,6 +179,10 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
       text: 'Preparing the preview-exact report & tax invoice for delivery…'
     });
     try {
+      // The PDF engine is fetched HERE — on the Send click — so merely opening
+      // this modal downloads no PDF code.
+      const { prepareFamilyFulfilPayload, generateOrderPdfsBase64, deliverOrderPdfPayload } =
+        await loadPdfEngine();
       // FAMILY BUNDLE: prepare every preview-quality report and invoice before
       // calling the fulfillment API. A render/upload failure must stop delivery.
       const isFamilyBundle = !!(order.groupId && familyOrders && familyOrders.length > 0);
@@ -345,6 +340,7 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
     const lang = langToUse || selectedLang;
     setIsDownloading(true);
     try {
+      const { exportOrderReportPdf } = await loadPdfEngine();
       await exportOrderReportPdf(order, lang, result);
     } catch (err: any) {
       console.error('PDF export failed:', err);
@@ -357,6 +353,12 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
   const handleDownloadInvoice = async () => {
     setIsDownloadingInvoice(true);
     try {
+      const {
+        downloadHtmlPdf,
+        orderInvoiceFileName,
+        exportFamilyInvoiceHtmlToPdf,
+        exportInvoiceHtmlToPdf
+      } = await loadPdfEngine();
       if (orderItemSend) {
         // One invoice per ORDER - the customer paid one total.
         const header = orderItemSend.header;

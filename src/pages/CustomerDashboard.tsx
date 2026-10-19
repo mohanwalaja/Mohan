@@ -31,15 +31,8 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { normalizeReportLanguage } from '../services/reportLanguage';
-import {
-  buildOrderReportHtml,
-  deliverOrderPdfPayload,
-  downloadPaidReportPdf,
-  generateOrderPdfsBase64,
-  PDF_CAPTURE_ERROR,
-  mergeOrderPayloadIntoResult,
-  prepareFamilyFulfilPayload
-} from '../services/jathagamPdfExporter';
+import { PDF_CAPTURE_ERROR } from '../services/pdfErrors';
+import { loadPdfEngine } from '../services/pdfEngine';
 import { Order, OrderItem, BirthProfile, CustomerReview, ReviewEligibleOrder, FamilyMember, FamilyRelation, MAX_FAMILY_MEMBERS, ChatDeliveryState } from '../types';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
 import { BirthDateField, BirthTimeField, BirthTimeZoneNotice } from '../components/common/BirthDateTimeFields';
@@ -522,6 +515,13 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
     const fileName = `ASTRO_SIVAM_Report_${order.orderNumber}${personPart}.pdf`;
     const language = normalizeReportLanguage(item?.language || order.language);
     try {
+      // The PDF engine (jspdf + html2canvas, ~780 KB) is fetched HERE, on the
+      // click that needs it — the dashboard itself never downloads it.
+      const {
+        buildOrderReportHtml,
+        mergeOrderPayloadIntoResult,
+        downloadPaidReportPdf
+      } = await loadPdfEngine();
       // The frozen snapshot body is fetched only when Download is clicked and
       // only for the signed-in owner — the orders list never carries it.
       const frozen = await api.getMyOrderReportSnapshot(order.id, item?.id);
@@ -609,26 +609,35 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
     try {
       let payload: any;
       const isCompleted = (resendOrder.status || '').toUpperCase() === 'COMPLETED';
-      if (isCompleted && resendOrder.groupId) {
-        const familyOrders = orders.filter(order => order.groupId === resendOrder.groupId);
-        if (familyOrders.length === 0) {
-          throw new Error('The full family order is not available. Refresh your orders and retry.');
+      if (isCompleted) {
+        // Sending produces PDFs: the engine is fetched at this click, never
+        // when the dashboard was opened.
+        const {
+          prepareFamilyFulfilPayload,
+          generateOrderPdfsBase64,
+          deliverOrderPdfPayload
+        } = await loadPdfEngine();
+        if (resendOrder.groupId) {
+          const familyOrders = orders.filter(order => order.groupId === resendOrder.groupId);
+          if (familyOrders.length === 0) {
+            throw new Error('The full family order is not available. Refresh your orders and retry.');
+          }
+          const prepared = await prepareFamilyFulfilPayload(
+            familyOrders,
+            resendOrder.groupId,
+            progress => setResendFeedback({ type: 'success', message: progress.message }),
+            { stagingAudience: 'customer' }
+          );
+          payload = prepared.payload;
+        } else {
+          const language = resendOrder.language || 'ta';
+          const pdfs = await generateOrderPdfsBase64(resendOrder, language);
+          payload = await deliverOrderPdfPayload(
+            resendOrder,
+            { ...pdfs, language },
+            { stagingAudience: 'customer' }
+          );
         }
-        const prepared = await prepareFamilyFulfilPayload(
-          familyOrders,
-          resendOrder.groupId,
-          progress => setResendFeedback({ type: 'success', message: progress.message }),
-          { stagingAudience: 'customer' }
-        );
-        payload = prepared.payload;
-      } else if (isCompleted) {
-        const language = resendOrder.language || 'ta';
-        const pdfs = await generateOrderPdfsBase64(resendOrder, language);
-        payload = await deliverOrderPdfPayload(
-          resendOrder,
-          { ...pdfs, language },
-          { stagingAudience: 'customer' }
-        );
       }
 
       const res = await api.requestCustomerEmailResend(resendOrder.id, emailToUse, payload);

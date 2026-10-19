@@ -281,26 +281,42 @@ check('every download path uses the default print profile', () => {
     'a lighter download must not be announced or produced');
 });
 
-check('the admin panel and the customer previews draw from the SAME renderer', () => {
+check('every PDF consumer reaches the SAME renderer through the ONE deferred loader', () => {
   // One exporter, one set of builders: a sample, a customer download and the
   // admin approval render can never drift apart in layout or density.
+  //
+  // And one loader: no page/component/service may statically import the
+  // exporter, because that is what put jspdf + html2canvas (~780 KB) into the
+  // dashboard and admin portal before the user clicked anything. Each consumer
+  // imports `loadPdfEngine` and awaits it INSIDE the click handler.
   for (const consumer of [
     'src/pages/AdminPortal.tsx',
     'src/pages/CustomerDashboard.tsx',
-    'src/components/common/OrderReportModal.tsx'
+    'src/components/common/OrderReportModal.tsx',
+    'src/services/orderItems.ts'
   ]) {
-    assert.match(read(consumer), /from '(\.\.\/)+services\/jathagamPdfExporter'/, `${consumer} must use the shared exporter`);
+    const source = read(consumer);
+    assert.match(source, /from '(?:[^']*\/)?pdfEngine'/,
+      `${consumer} must use the shared deferred PDF loader`);
+    assert.match(source, /await loadPdfEngine\(\)/,
+      `${consumer} must fetch the engine at the moment it renders a PDF`);
+    // `import type` is erased at build time and fetches nothing; a VALUE import
+    // would attach the PDF chunk to the page the moment it opens.
+    assert.doesNotMatch(source, /^\s*import\s+(?!type\b)[\s\S]{0,400}?from '(?:\.\.\/)+services\/jathagamPdfExporter';?$/m,
+      `${consumer} must not statically import the exporter (that fetches the PDF engine on page load)`);
   }
-  // The live preview still uses the SAME exporter — but through a dynamic
-  // import at the download click (audit PERF-1), so that opening a report, and
-  // in particular a public sample, no longer downloads jspdf + html2canvas.
-  // What must never change is WHERE the bytes come from: one exporter, so a
-  // preview download and the admin approval render stay pixel-identical.
-  assert.match(
-    livePdfPreview,
-    /import\('\.\.\/\.\.\/services\/jathagamPdfExporter'\)/,
-    'the live preview must load the shared exporter on demand'
-  );
+
+  const loader = read('src/services/pdfEngine.ts');
+  assert.match(loader, /import\('\.\/jathagamPdfExporter'\)/,
+    'the loader must reach the exporter through a dynamic import');
+  assert.match(loader, /if \(!enginePromise\)/,
+    'the loader must cache its promise so the engine is fetched once per tab');
+
+  // The live preview uses the same loader, so opening a report — in particular
+  // a public sample — downloads no PDF code. What must never change is WHERE
+  // the bytes come from: one exporter, so a preview download and the admin
+  // approval render stay pixel-identical.
+  assert.match(livePdfPreview, /loadPdfEngine\(\)/, 'the live preview must load the engine on demand');
   assert.doesNotMatch(
     livePdfPreview,
     /import[\s\S]{0,200}from '\.\.\/\.\.\/services\/jathagamPdfExporter'/,

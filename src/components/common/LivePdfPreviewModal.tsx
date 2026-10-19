@@ -13,17 +13,17 @@ import { describeFamilyRenderQuality } from '../../services/formatUtils';
 import { warmReportFonts } from '../../services/reportFonts';
 import { applySampleWatermark, SAMPLE_BANNER, sampleDetailsLine, sampleReportFileName, sampleReportTitle, type SampleServiceType } from '../../services/sampleReportInfo';
 import { normalizeReportLanguage } from '../../services/reportLanguage';
+import { loadPdfEngine } from '../../services/pdfEngine';
 
 /**
- * The PDF renderer (jspdf + html2canvas, ~950 KB with its raster helpers) is a
+ * The PDF renderer (jspdf + html2canvas, ~780 KB with its raster helpers) is a
  * DEFERRED feature (audit PERF-1): the modal above renders the report from
- * HTML only. Fetching the renderer here — at the moment the visitor clicks
- * Download or Send, never while the preview is being read — keeps an opened
- * sample report ~1 MB lighter than it used to be, and the browser's module
- * cache means the second download is instant. The returned promise is cached
- * for the life of the tab, so the loading state appears at most once.
- */
-/**
+ * HTML only. `loadPdfEngine()` is awaited at the moment the visitor clicks
+ * Download or Send — never while the preview is being read — so opening a
+ * sample (or any preview) downloads no PDF code at all. The shared promise in
+ * `services/pdfEngine` is cached for the tab, so the loading state appears at
+ * most once and every other PDF action reuses it.
+ *
  * The HTML report builders are DEFERRED PER REPORT TYPE (audit PERF-1). They
  * are not equal: the Baby Naming builder carries the ~370 KB name tables and
  * the Muhurtham builder the ~245 KB six-month scan data, while the horoscope
@@ -33,13 +33,6 @@ import { normalizeReportLanguage } from '../../services/reportLanguage';
  * download path is unaffected: the exporter imports the same builders, so the
  * preview and the PDF stay pixel-identical.
  */
-let pdfRendererPromise: Promise<typeof import('../../services/jathagamPdfExporter')> | null = null;
-function loadReportPdfRenderer(): Promise<typeof import('../../services/jathagamPdfExporter')> {
-  if (!pdfRendererPromise) {
-    pdfRendererPromise = import('../../services/jathagamPdfExporter');
-  }
-  return pdfRendererPromise;
-}
 
 export interface LivePdfPreviewModalProps {
   isOpen: boolean;
@@ -236,9 +229,9 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
     if (!order) return;
     setIsSendingEmail(true);
     // Deferred renderer: this handler is the first moment the PDF engine is
-    // actually needed (see loadReportPdfRenderer).
+    // actually needed (see loadPdfEngine).
     const { prepareFamilyFulfilPayload, generateOrderPdfsBase64, deliverOrderPdfPayload } =
-      await loadReportPdfRenderer();
+      await loadPdfEngine();
     setEmailStatusMsg({
       type: 'success',
       text: 'Preparing the preview-exact report & tax invoice for delivery…'
@@ -369,7 +362,7 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
     setDownloadNote(sampleMode
       ? 'Preparing the sample report — this takes a few seconds…'
       : 'Preparing the report you see above at print resolution — this takes a few seconds…');
-    // Deferred renderer (see loadReportPdfRenderer): opening a report — the
+    // Deferred renderer (see loadPdfEngine): opening a report — the
     // public samples included — no longer downloads jspdf/html2canvas; the
     // click that renders a PDF does. The module cache makes a repeat download
     // instant, and the note above is already on screen while it arrives.
@@ -377,7 +370,7 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
       downloadHtmlPdf,
       downloadPreviewPagesPdf,
       SAMPLE_RENDER_OPTIONS
-    } = await loadReportPdfRenderer();
+    } = await loadPdfEngine();
     // Samples only: 40% below the print density. Paid downloads pass nothing,
     // so they always resolve to the full print profile.
     const downloadProfile = sampleMode ? SAMPLE_RENDER_OPTIONS : undefined;
