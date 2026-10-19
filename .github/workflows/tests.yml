@@ -7,9 +7,6 @@ name: PHP Test Suite
 #   curl -s https://api.github.com/repos/<owner>/<repo>/commits/<tag>
 
 on:
-  pull_request:
-  push:
-    branches: [ main, master ]
   workflow_dispatch:
 
 permissions:
@@ -48,3 +45,4 @@ jobs:
         env:
           ASTRO_REQUIRE_MPDF_TESTS: '1'
         run: bash scripts/run-php-tests.sh
+

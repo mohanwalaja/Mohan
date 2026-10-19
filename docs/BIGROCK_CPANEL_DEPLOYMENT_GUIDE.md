@@ -141,6 +141,8 @@ The package contains only the compiled static website, PHP API, and deployment n
 
 1. Create the MySQL database and database user in cPanel, then grant only the required database privileges.
 2. Configure `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT`, and a random `APP_SECRET_KEY` (at least 32 characters) in the hosting environment/secret manager. If the host does not provide environment variables, place the values only in the server-side `api/config.php` after upload; never paste them into this repository, a ticket, or a deployment log.
+
+   **Config is preserved, not rewritten, on later Git deploys.** The live `api/config.php` is archived by `.cpanel.yml` to `$HOME/.astrosivam/config.php.live-<ts>` so a stale upload never overwrites it or serves it from the docroot. API security/hardening changes (CORS, sessions, cookies, headers, the signing key) must be re-applied deliberately after each deploy and recorded in the archive; see [`AUTH_SECURITY_HARDENING.md`](AUTH_SECURITY_HARDENING.md).
 3. Rotate any database or mail credentials that have ever appeared in source control or shared deployment notes. Treat those values as compromised.
 
 ---
