@@ -15,9 +15,9 @@ const workflow = fs.readFileSync(path.join(workflowDir, 'tests.yml'), 'utf8');
 
 assert.deepEqual(workflowFiles, ['tests.yml'], 'PHP Test Suite must be the only GitHub Actions workflow');
 assert.match(workflow, /^name: PHP Test Suite$/m);
-assert.match(workflow, /^  pull_request:$/m);
-assert.match(workflow, /^  push:$/m);
 assert.match(workflow, /^  workflow_dispatch:$/m);
+assert.doesNotMatch(workflow, /^  pull_request:$/m);
+assert.doesNotMatch(workflow, /^  push:$/m);
 assert.ok(workflow.includes('\njobs:\n'), 'PHP workflow must define jobs');
 const jobs = workflow.slice(workflow.indexOf('\njobs:\n') + '\njobs:\n'.length);
 assert.deepEqual([...jobs.matchAll(/^  ([a-z][a-z0-9-]*):$/gm)].map(match => match[1]), ['php'],
