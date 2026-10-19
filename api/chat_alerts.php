@@ -6,6 +6,11 @@
  *   1. order_confirmed - the customer's order was placed successfully
  *   2. order_completed - admin approved it and the report + invoice were emailed
  *
+ * VERIFIED NUMBERS ONLY: an alert is sent only to a number the customer
+ * verified with an OTP inside that app (WhatsApp and Viber separately).
+ * The mobile on the order is not trusted. Reports/invoices are NEVER sent
+ * through WhatsApp or Viber - email is the only document channel.
+ *
  * Channels:
  *   WhatsApp - Meta WhatsApp Cloud API (template or free-text message),
  *              or any gateway via a generic webhook (WATI / AiSensy / Interakt / etc.)
@@ -520,6 +525,12 @@ class AstroChatAlerts
     /**
      * Fire WhatsApp + Viber alerts for a lifecycle event.
      *
+     * Customer alerts are sent ONLY to a number the customer has verified
+     * with an OTP inside that app (one contact per channel in
+     * user_chat_contacts). The unverified mobile stored on the order is
+     * never used, and reports/invoices are never sent over chat — email
+     * remains the only document delivery channel.
+     *
      * @param object|null $pdo    Database handle (for settings + audit logging).
      * @param string      $event  'order_confirmed' | 'order_completed'.
      * @param array       $orders One or more order rows (DB snake_case or API camelCase).
@@ -550,6 +561,14 @@ class AstroChatAlerts
             }
 
             $first = $orders[0];
+            $userId = (string)($first['user_id'] ?? ($first['userId'] ?? ''));
+            $target = self::verifiedChatTargets($pdo, $userId, $settings);
+            if (empty($target)) {
+                return [];
+            }
+            $phone = (string)$target['phone'];
+            $channels = (array)$target['channels'];
+
             $count = count($orders);
             $vars = self::buildVars($first);
             $vars['event'] = $event;
@@ -571,16 +590,11 @@ class AstroChatAlerts
                 : (string)($settings['orderCompletedMessage'] ?? self::DEFAULT_ORDER_COMPLETED_MESSAGE);
             $message = self::renderTemplate($template, $vars);
 
-            $phone = self::normalizePhone(
-                $first['user_mobile'] ?? ($first['userMobile'] ?? ''),
-                $first['country'] ?? ($first['billingCountry'] ?? '')
-            );
-
             $results = [];
-            if ($waOn) {
+            if (in_array('whatsapp', $channels, true)) {
                 $results[] = self::sendWhatsApp($settings, $phone, $message, $vars);
             }
-            if ($vbOn) {
+            if (in_array('viber', $channels, true)) {
                 $results[] = self::sendViber($settings, $phone, $message, $vars);
             }
 
@@ -599,7 +613,11 @@ class AstroChatAlerts
         }
     }
 
-    /** Send a diagnostic test message to an arbitrary phone number. */
+    /**
+     * Send a diagnostic test message to an arbitrary phone number.
+     * Admin-only tooling: this checks the gateway configuration and is not
+     * a customer alert, so it is not gated by the OTP verification state.
+     */
     public static function sendTestAlert(array $settings, string $phone, array $channels = ['whatsapp', 'viber']): array
     {
         $phone = self::normalizePhone($phone);
@@ -632,10 +650,11 @@ class AstroChatAlerts
     //
     // A customer may save ONE mobile number in their profile and verify it
     // separately on WhatsApp and/or Viber with a one-time code sent in that
-    // app. Once an app is verified, delivered orders ALSO send the actual
-    // report + invoice PDFs to that app — in addition to email, which
-    // remains the official delivery channel. Verification state lives in
-    // user_chat_contacts; pending codes (hashed only) in chat_number_otps.
+    // app. Once an app is verified, order status alerts go to that app.
+    // Reports and invoices are never sent over chat — email remains the
+    // official (and only) document delivery channel. Verification state
+    // lives in user_chat_contacts; pending codes (hashed only) in
+    // chat_number_otps.
     // ------------------------------------------------------------------
 
     /** Create the contact/OTP tables on first use (CREATE is kept by design). */
@@ -707,6 +726,30 @@ class AstroChatAlerts
         return false;
     }
 
+    /**
+     * The customer's OTP-verified chat targets for the currently configured
+     * channels. A saved number never receives anything until it has been
+     * verified in that specific app; the unverified checkout mobile on an
+     * order is deliberately not used. Returns ['phone' => E.164,
+     * 'channels' => ['whatsapp'|'viber', ...]] or [] when nothing qualifies.
+     */
+    public static function verifiedChatTargets($pdo, string $userId, array $settings): array
+    {
+        if ($userId === '') return [];
+        $contact = self::getChatContact($pdo, $userId);
+        if (!$contact) return [];
+        $phone = (string)($contact['phone_e164'] ?? '');
+        if (!preg_match('/^\+\d{7,15}$/', $phone)) return [];
+        $channels = [];
+        if (!empty($contact['whatsapp_verified_at']) && self::channelConfigured($settings, 'whatsapp')) {
+            $channels[] = 'whatsapp';
+        }
+        if (!empty($contact['viber_verified_at']) && self::channelConfigured($settings, 'viber')) {
+            $channels[] = 'viber';
+        }
+        return $channels ? ['phone' => $phone, 'channels' => $channels] : [];
+    }
+
     /** Profile-facing state: never exposes provider credentials. */
     public static function chatContactState($pdo, string $userId): array
     {
@@ -742,7 +785,7 @@ class AstroChatAlerts
             ON DUPLICATE KEY UPDATE phone_e164 = VALUES(phone_e164), whatsapp_verified_at = NULL, viber_verified_at = NULL, updated_at = NOW()");
         $stmt->execute([$userId, $phone]);
         $pdo->prepare("DELETE FROM chat_number_otps WHERE user_id = ?")->execute([$userId]);
-        return ['success' => true, 'message' => 'Number saved. Verify it on WhatsApp and/or Viber to receive your report and invoice PDFs there as well.', 'state' => self::chatContactState($pdo, $userId)];
+        return ['success' => true, 'message' => 'Number saved. Verify it on WhatsApp and/or Viber with the one-time code to receive order status alerts there as well.', 'state' => self::chatContactState($pdo, $userId)];
     }
 
     /** Remove the saved number and any pending codes. */
@@ -840,371 +883,7 @@ class AstroChatAlerts
         $column = $channel === 'whatsapp' ? 'whatsapp_verified_at' : 'viber_verified_at';
         $pdo->prepare("UPDATE user_chat_contacts SET `{$column}` = NOW(), updated_at = NOW() WHERE user_id = ?")->execute([$userId]);
         $pdo->prepare("DELETE FROM chat_number_otps WHERE user_id = ? AND channel = ?")->execute([$userId, $channel]);
-        return ['success' => true, 'message' => ($channel === 'whatsapp' ? 'WhatsApp' : 'Viber') . ' verified. Your report and invoice PDFs will also be sent there when orders are delivered.', 'state' => self::chatContactState($pdo, $userId)];
-    }
-
-    // ------------------------------------------------------------------
-    // Document delivery (report + invoice PDFs into the chat)
-    // ------------------------------------------------------------------
-
-    /** Multipart POST (Meta media upload). cURL first, manual multipart fallback. */
-    private static function httpPostMultipart(string $url, array $fields, array $file, array $headers = []): array
-    {
-        if (function_exists('curl_init')) {
-            $tmp = tempnam(sys_get_temp_dir(), 'wa_media_');
-            if ($tmp === false) {
-                return ['ok' => false, 'status' => 0, 'body' => '', 'error' => 'temp file unavailable'];
-            }
-            file_put_contents($tmp, (string)($file['content'] ?? ''));
-            $post = $fields;
-            $post['file'] = new \CURLFile($tmp, (string)($file['mime'] ?? 'application/pdf'), (string)($file['filename'] ?? 'document.pdf'));
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => $post,
-                CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_CONNECTTIMEOUT => 8,
-                CURLOPT_TIMEOUT => 30,
-                CURLOPT_SSL_VERIFYPEER => true,
-                CURLOPT_SSL_VERIFYHOST => 2,
-                CURLOPT_FOLLOWLOCATION => false,
-                CURLOPT_PROTOCOLS => CURLPROTO_HTTPS
-            ]);
-            $body = curl_exec($ch);
-            $errno = curl_errno($ch);
-            $err = curl_error($ch);
-            $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            @unlink($tmp);
-            if ($errno !== 0) {
-                return ['ok' => false, 'status' => 0, 'body' => '', 'error' => $err];
-            }
-            $ok = $status >= 200 && $status < 300;
-            return ['ok' => $ok, 'status' => $status, 'body' => (string)$body, 'error' => $ok ? '' : 'HTTP ' . $status];
-        }
-
-        $boundary = '----AstroSivam' . bin2hex(random_bytes(8));
-        $body = '';
-        foreach ($fields as $name => $value) {
-            $body .= "--{$boundary}\r\nContent-Disposition: form-data; name=\"{$name}\"\r\n\r\n{$value}\r\n";
-        }
-        $body .= "--{$boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"" . ($file['filename'] ?? 'document.pdf') . "\"\r\n"
-            . 'Content-Type: ' . ($file['mime'] ?? 'application/pdf') . "\r\n\r\n" . (string)($file['content'] ?? '') . "\r\n--{$boundary}--\r\n";
-        $headers[] = 'Content-Type: multipart/form-data; boundary=' . $boundary;
-        $ctx = stream_context_create([
-            'http' => ['method' => 'POST', 'header' => implode("\r\n", $headers), 'content' => $body, 'timeout' => 30, 'ignore_errors' => true, 'follow_location' => 0],
-            'ssl' => ['verify_peer' => true, 'verify_peer_name' => true]
-        ]);
-        $resp = @file_get_contents($url, false, $ctx);
-        $status = 0;
-        if (isset($http_response_header[0]) && preg_match('/\s(\d{3})\s/', $http_response_header[0] . ' ', $m)) {
-            $status = (int)$m[1];
-        }
-        $ok = $resp !== false && $status >= 200 && $status < 300;
-        return ['ok' => $ok, 'status' => $status, 'body' => (string)$resp, 'error' => $ok ? '' : 'HTTP ' . $status];
-    }
-
-    /** Send ONE PDF document on WhatsApp (Meta upload+send, or webhook gateway). */
-    public static function sendWhatsAppDocument(array $settings, string $phone, string $pdf, string $filename, string $caption = ''): array
-    {
-        $wa = $settings['whatsapp'] ?? [];
-        if (empty($wa['enabled'])) {
-            return ['success' => false, 'channel' => 'whatsapp', 'message' => 'WhatsApp alerts are disabled'];
-        }
-        if ($phone === '' || $pdf === '') {
-            return ['success' => false, 'channel' => 'whatsapp', 'message' => 'Missing phone or document'];
-        }
-        if (strlen($pdf) > 16 * 1024 * 1024) {
-            return ['success' => false, 'channel' => 'whatsapp', 'message' => 'Document exceeds the WhatsApp 16 MB limit'];
-        }
-
-        if (($wa['provider'] ?? 'meta') === 'webhook') {
-            $url = trim((string)($wa['webhookUrl'] ?? ''));
-            if ($url === '' || !self::isValidWebhookUrl($url)) {
-                return ['success' => false, 'channel' => 'whatsapp', 'message' => 'WhatsApp webhook URL is not configured or not allowed'];
-            }
-            $res = self::httpPostJson($url, [
-                'channel' => 'whatsapp',
-                'event' => 'order_documents',
-                'to' => $phone,
-                'message' => $caption,
-                'documents' => [[
-                    'filename' => $filename,
-                    'mimeType' => 'application/pdf',
-                    'contentBase64' => base64_encode($pdf)
-                ]]
-            ]);
-            return ['success' => $res['ok'], 'channel' => 'whatsapp', 'message' => $res['ok'] ? 'Document delivered via webhook gateway' : 'Webhook error: ' . $res['error'] . ' ' . substr($res['body'], 0, 300)];
-        }
-
-        $token = trim((string)($wa['accessToken'] ?? ''));
-        $phoneId = trim((string)($wa['phoneNumberId'] ?? ''));
-        if ($token === '' || $phoneId === '') {
-            return ['success' => false, 'channel' => 'whatsapp', 'message' => 'WhatsApp Phone Number ID / Access Token missing'];
-        }
-        $apiVersion = trim((string)($wa['apiVersion'] ?? 'v21.0')) ?: 'v21.0';
-        $base = 'https://graph.facebook.com/' . $apiVersion . '/' . rawurlencode($phoneId);
-
-        $upload = self::httpPostMultipart(
-            $base . '/media',
-            ['messaging_product' => 'whatsapp'],
-            ['content' => $pdf, 'filename' => $filename, 'mime' => 'application/pdf'],
-            ['Authorization: Bearer ' . $token]
-        );
-        $mediaId = '';
-        if ($upload['ok']) {
-            $decoded = json_decode((string)$upload['body'], true);
-            $mediaId = (string)($decoded['id'] ?? '');
-        }
-        if ($mediaId === '') {
-            return ['success' => false, 'channel' => 'whatsapp', 'message' => 'WhatsApp media upload failed: ' . $upload['error'] . ' ' . substr((string)$upload['body'], 0, 300)];
-        }
-
-        $res = self::httpPostJson($base . '/messages', [
-            'messaging_product' => 'whatsapp',
-            'recipient_type' => 'individual',
-            'to' => ltrim($phone, '+'),
-            'type' => 'document',
-            'document' => ['id' => $mediaId, 'filename' => $filename, 'caption' => substr($caption, 0, 1024)]
-        ], ['Authorization: Bearer ' . $token]);
-        return ['success' => $res['ok'], 'channel' => 'whatsapp', 'message' => $res['ok'] ? 'Document delivered via WhatsApp Cloud API' : 'WhatsApp API error: ' . $res['error'] . ' ' . substr($res['body'], 0, 300)];
-    }
-
-    /**
-     * Send ONE PDF document on Viber. The partner webhook receives the file
-     * bytes (base64). The official Viber Bot API cannot accept uploads — a
-     * 'file' message must LINK to a hosted file — so the bot path points at
-     * our own signed, expiring media URL for this exact order document.
-     */
-    public static function sendViberDocument(array $settings, string $phone, string $pdf, string $filename, string $caption, string $mediaUrl): array
-    {
-        $vb = $settings['viber'] ?? [];
-        if (empty($vb['enabled'])) {
-            return ['success' => false, 'channel' => 'viber', 'message' => 'Viber alerts are disabled'];
-        }
-        if ($phone === '' || $pdf === '') {
-            return ['success' => false, 'channel' => 'viber', 'message' => 'Missing phone or document'];
-        }
-
-        if (($vb['provider'] ?? 'viber_bot') === 'webhook') {
-            $url = trim((string)($vb['webhookUrl'] ?? ''));
-            if ($url === '' || !self::isValidWebhookUrl($url)) {
-                return ['success' => false, 'channel' => 'viber', 'message' => 'Viber webhook URL is not configured or not allowed'];
-            }
-            $res = self::httpPostJson($url, [
-                'channel' => 'viber',
-                'event' => 'order_documents',
-                'to' => $phone,
-                'message' => $caption,
-                'documents' => [[
-                    'filename' => $filename,
-                    'mimeType' => 'application/pdf',
-                    'contentBase64' => base64_encode($pdf)
-                ]]
-            ]);
-            return ['success' => $res['ok'], 'channel' => 'viber', 'message' => $res['ok'] ? 'Document delivered via webhook gateway' : 'Webhook error: ' . $res['error'] . ' ' . substr($res['body'], 0, 300)];
-        }
-
-        $token = trim((string)($vb['authToken'] ?? ''));
-        if ($token === '') {
-            return ['success' => false, 'channel' => 'viber', 'message' => 'Viber auth token missing'];
-        }
-        if ($mediaUrl === '') {
-            return ['success' => false, 'channel' => 'viber', 'message' => 'No hosted media URL available for the Viber file message'];
-        }
-        if ($caption !== '') {
-            self::sendViber(array_merge($settings, []), $phone, $caption, ['event' => 'order_documents']);
-        }
-        $res = self::httpPostJson('https://chatapi.viber.com/pa/send_message', [
-            'receiver' => ltrim($phone, '+'),
-            'min_api_version' => 7,
-            'sender' => ['name' => (string)($vb['senderName'] ?? 'ASTRO SIVAM')],
-            'type' => 'file',
-            'media' => $mediaUrl,
-            'size' => strlen($pdf),
-            'file_name' => $filename
-        ], ['X-Viber-Auth-Token: ' . $token]);
-        $ok = $res['ok'];
-        $detail = 'Document delivered via Viber Bot API';
-        $decoded = json_decode((string)$res['body'], true);
-        if (is_array($decoded) && isset($decoded['status']) && (int)$decoded['status'] !== 0) {
-            $ok = false;
-            $detail = 'Viber API error ' . $decoded['status'] . ': ' . ($decoded['status_message'] ?? 'unknown');
-        } elseif (!$ok) {
-            $detail = 'Viber API error: ' . $res['error'] . ' ' . substr((string)$res['body'], 0, 300);
-        }
-        return ['success' => $ok, 'channel' => 'viber', 'message' => $detail];
-    }
-
-    /** Signed, expiring media token for the Viber bot file link (order + document scoped). */
-    public static function signedMediaToken(string $orderId, string $kind, int $itemId = 0, int $ttlSeconds = 604800): string
-    {
-        if (!defined('APP_SECRET_KEY') || APP_SECRET_KEY === '') return '';
-        $payload = json_encode([
-            'oid' => $orderId,
-            'kind' => $kind === 'invoice' ? 'invoice' : 'report',
-            'item' => $itemId,
-            'exp' => time() + max(60, $ttlSeconds)
-        ]);
-        $b64 = rtrim(strtr(base64_encode((string)$payload), '+/', '-_'), '=');
-        return $b64 . '.' . hash_hmac('sha256', $b64, APP_SECRET_KEY);
-    }
-
-    /** Verify a signed media token; returns its payload or null. */
-    public static function verifySignedMediaToken(string $token): ?array
-    {
-        if (!defined('APP_SECRET_KEY') || APP_SECRET_KEY === '') return null;
-        $parts = explode('.', trim($token));
-        if (count($parts) !== 2) return null;
-        [$b64, $sig] = $parts;
-        if (!hash_equals(hash_hmac('sha256', $b64, APP_SECRET_KEY), $sig)) return null;
-        $json = base64_decode(strtr($b64, '-_', '+/'), true);
-        $payload = $json === false ? null : json_decode($json, true);
-        if (!is_array($payload) || empty($payload['oid']) || (int)($payload['exp'] ?? 0) < time()) return null;
-        return $payload;
-    }
-
-    private static function mediaUrlFor(string $orderId, string $kind, int $itemId = 0): string
-    {
-        $token = self::signedMediaToken($orderId, $kind, $itemId);
-        if ($token === '') return '';
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = (string)($_SERVER['HTTP_HOST'] ?? 'astrosivam.com');
-        return $scheme . '://' . $host . '/api/services/chat-media/' . $token;
-    }
-
-    /** Report + invoice PDFs for delivered orders, mirroring the email attachments. */
-    private static function buildOrderDocuments($pdo, array $orders): array
-    {
-        $docs = [];
-        try {
-            require_once __DIR__ . '/astrology/engine.php';
-            $first = $orders[0];
-
-            // Legacy group (family bundle): one report per order + ONE family invoice.
-            if (count($orders) > 1 || !empty($first['group_id'])) {
-                foreach ($orders as $order) {
-                    try {
-                        $pdf = AstroEngine::generateReportPdf($order, null);
-                        $docs[] = ['name' => 'ASTRO_SIVAM_Report_' . $order['order_number'] . '.pdf', 'content' => $pdf, 'orderId' => (string)$order['id'], 'kind' => 'report', 'itemId' => 0];
-                    } catch (\Throwable $e) {
-                        error_log('AstroChatAlerts: chat report build failed for ' . ($order['order_number'] ?? '') . ': ' . $e->getMessage());
-                    }
-                }
-                try {
-                    $groupId = (string)($first['group_id'] ?? ($orders[0]['order_number'] ?? 'GROUP'));
-                    $docs[] = ['name' => 'ASTRO_SIVAM_Invoice_' . $groupId . '.pdf', 'content' => AstroEngine::generateFamilyInvoicePdf($orders, $groupId), 'orderId' => (string)$first['id'], 'kind' => 'invoice', 'itemId' => 0];
-                } catch (\Throwable $e) {
-                    error_log('AstroChatAlerts: chat family invoice build failed: ' . $e->getMessage());
-                }
-                return $docs;
-            }
-
-            $order = $first;
-            $items = [];
-            $usesItems = false;
-            try {
-                require_once __DIR__ . '/admin/order_items.php';
-                $items = astro_order_items_all($pdo, (string)$order['id']);
-                $usesItems = astro_order_uses_items($order, $items);
-            } catch (\Throwable $e) {
-                $usesItems = false;
-            }
-
-            if ($usesItems) {
-                foreach ($items as $item) {
-                    if ((string)($item['report_status'] ?? '') !== 'SENT') continue;
-                    try {
-                        $synthetic = astro_order_item_synthetic_order($order, $item);
-                        $pdf = AstroEngine::generateReportPdf($synthetic, null);
-                        $docs[] = ['name' => 'ASTRO_SIVAM_Report_' . $order['order_number'] . '_' . (int)$item['id'] . '.pdf', 'content' => $pdf, 'orderId' => (string)$order['id'], 'kind' => 'report', 'itemId' => (int)$item['id']];
-                    } catch (\Throwable $e) {
-                        error_log('AstroChatAlerts: chat item report build failed: ' . $e->getMessage());
-                    }
-                }
-            } else {
-                try {
-                    $docs[] = ['name' => 'ASTRO_SIVAM_Report_' . $order['order_number'] . '.pdf', 'content' => AstroEngine::generateReportPdf($order, null), 'orderId' => (string)$order['id'], 'kind' => 'report', 'itemId' => 0];
-                } catch (\Throwable $e) {
-                    error_log('AstroChatAlerts: chat report build failed: ' . $e->getMessage());
-                }
-            }
-            try {
-                $docs[] = ['name' => 'ASTRO_SIVAM_Invoice_' . $order['order_number'] . '.pdf', 'content' => AstroEngine::generateInvoicePdf($order), 'orderId' => (string)$order['id'], 'kind' => 'invoice', 'itemId' => 0];
-            } catch (\Throwable $e) {
-                error_log('AstroChatAlerts: chat invoice build failed: ' . $e->getMessage());
-            }
-        } catch (\Throwable $e) {
-            error_log('AstroChatAlerts: buildOrderDocuments failed: ' . $e->getMessage());
-        }
-        return array_values(array_filter($docs, static function ($doc) {
-            return is_string($doc['content'] ?? null) && strlen($doc['content']) > 0 && strlen($doc['content']) <= 16 * 1024 * 1024;
-        }));
-    }
-
-    /**
-     * Additionally send the delivered report + invoice PDFs to the
-     * customer's VERIFIED WhatsApp/Viber number(s). Email remains the
-     * official delivery; this is strictly best-effort and never throws,
-     * so it can never block or fail an approval.
-     *
-     * @param array $orders Delivered order rows (COMPLETED/GENERATED).
-     */
-    public static function sendOrderDocuments($pdo, array $orders): array
-    {
-        try {
-            if (!$pdo || empty($orders)) return [];
-            $delivered = array_values(array_filter($orders, static function ($o) {
-                return in_array((string)($o['status'] ?? ''), ['COMPLETED', 'GENERATED'], true);
-            }));
-            if (empty($delivered)) return [];
-
-            $userId = (string)($delivered[0]['user_id'] ?? ($delivered[0]['userId'] ?? ''));
-            if ($userId === '') return [];
-            $contact = self::getChatContact($pdo, $userId);
-            if (!$contact) return [];
-
-            $settings = self::getAlertSettings($pdo);
-            $channels = [];
-            if (!empty($contact['whatsapp_verified_at']) && self::channelConfigured($settings, 'whatsapp')) $channels[] = 'whatsapp';
-            if (!empty($contact['viber_verified_at']) && self::channelConfigured($settings, 'viber')) $channels[] = 'viber';
-            if (empty($channels)) return [];
-
-            $documents = self::buildOrderDocuments($pdo, $delivered);
-            if (empty($documents)) return [];
-
-            $phone = (string)$contact['phone_e164'];
-            $vars = self::buildVars($delivered[0]);
-            $orderNumbers = implode(', ', array_map(static function ($o) { return (string)($o['order_number'] ?? ''); }, $delivered));
-            $caption = 'Namaste ' . ($vars['customer_name'] ?? 'User') . ", your ASTRO SIVAM order {$orderNumbers} is complete. Your official Report PDF and Tax Invoice PDF are attached here as well — the same files were also emailed to " . ($vars['customer_email'] ?? 'your email') . '. Please save them for your records.';
-
-            $results = [];
-            foreach ($channels as $channel) {
-                if ($channel === 'whatsapp') {
-                    $results[] = self::sendWhatsApp($settings, $phone, $caption, ['event' => 'order_documents']);
-                    foreach ($documents as $doc) {
-                        $results[] = self::sendWhatsAppDocument($settings, $phone, $doc['content'], $doc['name'], 'ASTRO SIVAM — ' . $doc['name']);
-                    }
-                } else {
-                    $results[] = self::sendViber($settings, $phone, $caption, ['event' => 'order_documents']);
-                    foreach ($documents as $doc) {
-                        $results[] = self::sendViberDocument($settings, $phone, $doc['content'], $doc['name'], '', self::mediaUrlFor($doc['orderId'], $doc['kind'], (int)$doc['itemId']));
-                    }
-                }
-            }
-            foreach ($results as $r) {
-                if (empty($r['success'])) {
-                    error_log("AstroChatAlerts [order_documents] {$r['channel']} -> {$phone}: {$r['message']}");
-                }
-            }
-            self::auditResults($pdo, 'order_documents', $orderNumbers, $results);
-            return $results;
-        } catch (\Throwable $e) {
-            // Chat document delivery must never break fulfilment.
-            error_log('AstroChatAlerts: sendOrderDocuments failed: ' . $e->getMessage());
-            return [];
-        }
+        return ['success' => true, 'message' => ($channel === 'whatsapp' ? 'WhatsApp' : 'Viber') . ' verified. Order status alerts will be sent to this number there. Reports and invoices are delivered by email.', 'state' => self::chatContactState($pdo, $userId)];
     }
 
     private static function auditResults($pdo, string $event, string $orderNumber, array $results): void

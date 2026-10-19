@@ -1,11 +1,11 @@
--- ASTRO SIVAM — verified WhatsApp/Viber delivery contacts.
+-- ASTRO SIVAM — verified WhatsApp/Viber alert contacts.
 --
 -- WHY THIS EXISTS
---   Customers can now save ONE mobile number in their profile and verify
---   it separately on WhatsApp and/or Viber with a one-time code sent in
---   that app. Once an app is verified, delivered orders ALSO send the
---   actual report + invoice PDFs to that app — in addition to email,
---   which remains the official delivery channel. Verification state
+--   Customers can save ONE mobile number in their profile and verify it
+--   separately on WhatsApp and/or Viber with a one-time code sent in that
+--   app. Order-status alerts go ONLY to an app the customer verified.
+--   Reports and invoices are NEVER sent over chat: email remains the
+--   official (and only) document delivery channel. Verification state
 --   lives in `user_chat_contacts`; pending codes (HMAC hashes only,
 --   never plain text) in `chat_number_otps`. The checkout `user_mobile`
 --   on orders is NOT reused: it was never verified.

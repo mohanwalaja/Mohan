@@ -125,7 +125,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   const [downloadingKey, setDownloadingKey] = useState('');
   const [downloadFeedback, setDownloadFeedback] = useState<{ orderId: string; type: 'success' | 'error'; message: string } | null>(null);
 
-  // WhatsApp & Viber delivery state: one saved number, verified per app.
+  // WhatsApp & Viber alert state: one saved number, verified per app.
   const [chatDelivery, setChatDelivery] = useState<ChatDeliveryState | null>(null);
   const [chatPhoneInput, setChatPhoneInput] = useState('');
   const [chatOtpChannel, setChatOtpChannel] = useState<'whatsapp' | 'viber' | null>(null);
@@ -174,7 +174,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   };
 
   const handleRemoveChatNumber = async () => {
-    if (!window.confirm('Remove your WhatsApp/Viber delivery number? Future reports will be delivered by email only.')) return;
+    if (!window.confirm('Remove your WhatsApp/Viber alert number? Order-status alerts will stop. Reports and invoices continue to arrive by email.')) return;
     setChatBusy(true);
     setChatFeedback(null);
     try {
@@ -1491,20 +1491,22 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
         </div>
       )}
 
-      {/* WhatsApp & Viber delivery (inside the profile tab): one saved
-          number, verified per app; verified apps also receive the PDFs. */}
+      {/* WhatsApp & Viber alerts (inside the profile tab): one saved
+          number, verified per app; alerts only go to verified numbers and
+          reports/invoices are never sent over chat. */}
       {activeTab === 'profile' && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
           <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <MessageCircle className="w-4.5 h-4.5 text-emerald-500" />
-              WhatsApp &amp; Viber Delivery
+              WhatsApp &amp; Viber Order Alerts
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
-              Also receive your report and tax invoice PDFs on WhatsApp or Viber. Save your number,
-              verify it with the one-time code we send in that app, and every delivered order will
-              send the same PDF files there <strong>in addition to email</strong> (email remains the
-              official delivery). Each app is verified separately.
+              Get an alert on WhatsApp or Viber when your order is confirmed and when it is completed.
+              Save your number and verify it with the one-time code we send in that app — alerts are
+              sent <strong>only to a verified number</strong>. Reports and tax invoices are always
+              delivered by <strong>email</strong>; PDFs are never sent over chat. Each app is verified
+              separately.
             </p>
           </div>
 
@@ -1632,7 +1634,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                       )}
                       {!app.available && (
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                          {app.label} delivery is not switched on yet — the button will work once it is enabled. Your reports will keep arriving by email.
+                          {app.label} alerts are not switched on yet — the button will work once they are enabled. Your reports will keep arriving by email.
                         </p>
                       )}
                     </>
@@ -1640,7 +1642,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
                   {app.verified && (
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Report + invoice PDFs will also be sent to {chatDelivery.phone} on {app.label} when an order is delivered.
+                      Order status alerts (confirmed / completed) will be sent to {chatDelivery.phone} on {app.label}. Reports and invoices arrive by email.
                     </p>
                   )}
                 </div>
@@ -1648,7 +1650,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
             </div>
           ) : (
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Save your number first, then verify it on WhatsApp and/or Viber. Changing the number later requires verifying the new number again.
+              Save your number first, then verify it on WhatsApp and/or Viber to receive order status alerts. Changing the number later requires verifying the new number again.
             </p>
           )}
         </div>

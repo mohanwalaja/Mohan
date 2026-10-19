@@ -732,9 +732,9 @@ export const api = {
     return safeJson(res);
   },
 
-  // WhatsApp & Viber delivery contact: one saved number, verified per app
-  // by a one-time code sent in that app. Verified apps additionally receive
-  // the delivered report + invoice PDFs; email remains the official delivery.
+  // WhatsApp & Viber alert contact: one saved number, verified per app by a
+  // one-time code sent in that app. Order alerts go only to verified apps;
+  // reports and invoices are delivered by email, never over chat.
   async getChatDelivery(): Promise<{ success: boolean; chatDelivery?: ChatDeliveryState; message?: string }> {
     const apiBase = getApiBase();
     try {

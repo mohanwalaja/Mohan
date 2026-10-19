@@ -545,9 +545,6 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
             $alertOrder = $order;
             $alertOrder['status'] = 'COMPLETED';
             AstroChatAlerts::sendOrderAlerts($pdo, 'order_completed', [$alertOrder]);
-            // Additionally send the actual report + invoice PDFs to the
-            // customer's verified WhatsApp/Viber number (best-effort).
-            AstroChatAlerts::sendOrderDocuments($pdo, [$alertOrder]);
         } catch (Throwable $e) {
             // Alerts never block delivery.
         }

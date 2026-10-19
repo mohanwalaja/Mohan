@@ -70,9 +70,9 @@ CREATE TABLE IF NOT EXISTS `family_members` (
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2c. Verified WhatsApp/Viber delivery contacts (migration 017): one
--- saved number per customer, verified per app by OTP; delivered orders
--- also send report + invoice PDFs to verified apps (email stays primary).
+-- 2c. Verified WhatsApp/Viber alert contacts (migration 017): one saved
+-- number per customer, verified per app by OTP. Order-status alerts go
+-- only to verified apps; reports/invoices are email-only, never chat.
 CREATE TABLE IF NOT EXISTS `user_chat_contacts` (
   `user_id` VARCHAR(64) NOT NULL PRIMARY KEY,
   `phone_e164` VARCHAR(32) NOT NULL,

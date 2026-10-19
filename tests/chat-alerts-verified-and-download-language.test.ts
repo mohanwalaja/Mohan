@@ -1,5 +1,5 @@
 /**
- * WhatsApp/Viber PDF delivery + download-language rule (customer request).
+ * WhatsApp/Viber alerts + download-language rule (customer request).
  *
  * Confirmed requirements pinned here:
  *   1. The dashboard report download is ONLY in the language chosen when
@@ -9,14 +9,15 @@
  *   2. A customer can save ONE mobile number in their profile and verify
  *      it separately on WhatsApp and/or Viber via a one-time code sent in
  *      that app (hashed, 10-minute expiry, attempt-capped).
- *   3. When an order is delivered, the actual report + invoice PDFs are
- *      ADDITIONALLY sent to the verified app(s). Email remains the
- *      official delivery; chat sending is strictly best-effort and must
- *      never block or fail an approval.
+ *   3. Order-status alerts are sent ONLY to a number verified with an OTP
+ *      in that same app. The unverified mobile from checkout is never a
+ *      chat destination.
+ *   4. Reports and invoices are NEVER sent over WhatsApp or Viber. Email
+ *      remains the only document delivery channel; chat is alerts only.
  *
  * Layers: source contracts across frontend + PHP, plus real PHP
- * execution of the pure helpers (phone normalization, OTP hashing,
- * signed media tokens) under PHP-WASM when installed.
+ * execution of the pure helpers (phone normalization, OTP hashing, the
+ * verified-target gate) under PHP-WASM when installed.
  *   npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54
  */
 import assert from 'node:assert/strict';
@@ -24,6 +25,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sliceText } from './helpers/sourceSlice';
 
 const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const read = (rel: string) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -34,7 +36,7 @@ const check = (name: string, fn: () => void) => checks.push([name, fn]);
 check('download renders only the ordered language, only on click', () => {
   const services = read('api/services/index.php');
   const start = services.indexOf('// 6c. GET /api/services/orders/:id/report-pdf');
-  const end = services.indexOf('// 6d. GET /api/services/chat-media');
+  const end = services.indexOf('// 7. (Removed)');
   assert.ok(start > 0 && end > start, 'frozen download block exists');
   const block = services.slice(start, end);
   assert.ok(!block.includes("$_GET['language']") && !block.includes('$_GET["language"]'),
@@ -51,11 +53,11 @@ check('download renders only the ordered language, only on click', () => {
 });
 
 // ------------------------------------------------------------ endpoints ---
-check('chat-delivery endpoints: authenticated, rate-limited, OTP never echoed', () => {
+check('chat-alert endpoints: authenticated, rate-limited, OTP never echoed', () => {
   const services = read('api/services/index.php');
-  const start = services.indexOf('// 3c. WhatsApp & Viber delivery contacts');
+  const start = services.indexOf('// 3c. WhatsApp & Viber alert contacts');
   const end = services.indexOf('// 4. POST /api/services/calculate-preview');
-  assert.ok(start > 0 && end > start, 'chat-delivery block exists');
+  assert.ok(start > 0 && end > start, 'chat-alert contact block exists');
   const block = services.slice(start, end);
   assert.match(block, /requireAuth\(\$pdo\)/);
   assert.match(block, /chat-delivery-number/);
@@ -86,52 +88,39 @@ check('changing the number clears both verifications', () => {
   assert.match(alerts, /DELETE FROM chat_number_otps WHERE user_id = \?/);
 });
 
-// ------------------------------------------------------------- delivery ---
-check('document delivery: real PDFs, transports per provider, best-effort', () => {
+// --------------------------------------------------------- verified only ---
+check('alerts use only OTP-verified numbers, never the order mobile', () => {
   const alerts = read('api/chat_alerts.php');
-  assert.match(alerts, /function sendOrderDocuments/);
-  assert.match(alerts, /function sendWhatsAppDocument/);
-  assert.match(alerts, /function sendViberDocument/);
-  // Meta WhatsApp: upload then reference the media id.
-  assert.match(alerts, /graph\.facebook\.com/);
-  assert.match(alerts, /'\/media'/);
-  assert.match(alerts, /'type' => 'document'/);
-  assert.match(alerts, /'id' => \$mediaId/);
-  // Webhook gateways receive the file bytes.
-  assert.match(alerts, /'contentBase64' => base64_encode\(\$pdf\)/);
-  // Viber bot: file message links our signed media URL; the API takes no uploads.
-  assert.match(alerts, /'type' => 'file'/);
-  assert.match(alerts, /'media' => \$mediaUrl/);
-  assert.match(alerts, /signedMediaToken/);
-  assert.match(alerts, /verifySignedMediaToken/);
-  // Documents mirror the email: per-order reports (+items), one invoice/family invoice.
-  assert.match(alerts, /generateFamilyInvoicePdf/);
-  assert.match(alerts, /generateInvoicePdf/);
-  // Delivered-only gate inside the orchestrator.
-  assert.match(alerts, /\['COMPLETED', 'GENERATED'\]/);
-  // Verified-channel gate.
-  assert.match(alerts, /whatsapp_verified_at'\]\) && self::channelConfigured\(\$settings, 'whatsapp'\)/);
-  assert.match(alerts, /viber_verified_at'\]\) && self::channelConfigured\(\$settings, 'viber'\)/);
+  const target = sliceText(alerts, 'function verifiedChatTargets', 'function chatContactState', 'verified target gate');
+  assert.match(target, /getChatContact\(\$pdo, \$userId\)/);
+  assert.match(target, /!empty\(\$contact\['whatsapp_verified_at'\]\) && self::channelConfigured\(\$settings, 'whatsapp'\)/);
+  assert.match(target, /!empty\(\$contact\['viber_verified_at'\]\) && self::channelConfigured\(\$settings, 'viber'\)/);
+  assert.match(target, /preg_match\('\/\^\\\+\\d\{7,15\}\$\/', \$phone\)/, 'only a full E.164 number can receive alerts');
+
+  const orchestrator = sliceText(alerts, 'function sendOrderAlerts', 'function sendTestAlert', 'order alert orchestrator');
+  assert.match(orchestrator, /verifiedChatTargets\(\$pdo, \$userId, \$settings\)/);
+  assert.match(orchestrator, /if \(empty\(\$target\)\) \{\s*return \[\];/);
+  assert.match(orchestrator, /in_array\('whatsapp', \$channels, true\)/);
+  assert.match(orchestrator, /in_array\('viber', \$channels, true\)/);
+  assert.doesNotMatch(orchestrator, /user_mobile|userMobile|normalizePhone/,
+    'the unverified checkout mobile is never a chat destination');
 });
 
-check('all four completion flows also send the chat documents', () => {
+// ------------------------------------------------------------ alerts only ---
+check('no report or invoice is ever sent over WhatsApp/Viber', () => {
+  const alerts = read('api/chat_alerts.php');
+  const services = read('api/services/index.php');
+  assert.doesNotMatch(alerts, /sendOrderDocuments|sendWhatsAppDocument|sendViberDocument|signedMediaToken|verifySignedMediaToken|buildOrderDocuments|httpPostMultipart/);
+  assert.doesNotMatch(alerts, /generateReportPdf|generateInvoicePdf|generateFamilyInvoicePdf/);
+  assert.doesNotMatch(services, /chat-media|verifySignedMediaToken/);
   for (const file of ['api/admin/index.php', 'api/admin/approve_order.php', 'api/admin/family_approval.php', 'api/admin/order_items.php']) {
     const src = read(file);
     assert.match(src, /AstroChatAlerts::sendOrderAlerts\(\$pdo, 'order_completed'/, `${file} keeps the completion alert`);
-    assert.match(src, /AstroChatAlerts::sendOrderDocuments\(\$pdo, /, `${file} also sends the PDFs`);
+    assert.doesNotMatch(src, /sendOrderDocuments/, `${file} must not send PDFs over chat`);
   }
-});
-
-check('signed chat-media endpoint: HMAC + expiry scoped, frozen report, invoice capable', () => {
-  const services = read('api/services/index.php');
-  const start = services.indexOf('// 6d. GET /api/services/chat-media');
-  const end = services.indexOf('// 7. (Removed)');
-  assert.ok(start > 0 && end > start, 'chat-media block exists');
-  const block = services.slice(start, end);
-  assert.match(block, /verifySignedMediaToken/);
-  assert.match(block, /frozen_snapshot'\] = true/, 'reports served to Viber are the frozen snapshot');
-  assert.match(block, /generateInvoicePdf/, 'invoice document kind supported');
-  assert.match(block, /chat-media-ip/, 'rate limited');
+  for (const file of ['api/services/index.php', 'api/services/multi_person_order.php']) {
+    assert.match(read(file), /AstroChatAlerts::sendOrderAlerts\(\$pdo, 'order_confirmed'/);
+  }
 });
 
 // ------------------------------------------------------------ schema/UI ---
@@ -145,12 +134,24 @@ check('migration 017 + schema carry the contact tables', () => {
   assert.match(schema, /CREATE TABLE IF NOT EXISTS `chat_number_otps`/);
 });
 
-check('dashboard offers number save + per-app OTP verification', () => {
+check('dashboard offers number save + per-app OTP verification and states alerts-only', () => {
   const dashboard = read('src/pages/CustomerDashboard.tsx');
-  assert.match(dashboard, /WhatsApp &amp; Viber Delivery/);
+  assert.match(dashboard, /WhatsApp &amp; Viber Order Alerts/);
+  assert.match(dashboard, /only to a verified number/);
+  assert.match(dashboard, /PDFs are never sent over chat/);
+  assert.match(dashboard, /Order status alerts \(confirmed \/ completed\) will be sent/);
   assert.match(dashboard, /Verify on \{app\.label\}/);
   assert.match(dashboard, /Enter the 6-digit code/);
-  assert.match(dashboard, /in addition to email/);
+  assert.doesNotMatch(dashboard, /in addition to email|PDFs will also be sent/, 'no PDF-over-chat promise remains');
+
+  const checkout = read('src/components/cart/SingleServiceCheckoutModal.tsx');
+  assert.doesNotMatch(checkout, /whatsappDelivery|PDF certificate to my WhatsApp/,
+    'checkout never collects an unverified WhatsApp PDF destination');
+
+  const panel = read('src/components/admin/ChatAlertConfigPanel.tsx');
+  assert.match(panel, /Reports and invoices are never sent over WhatsApp\/Viber/);
+  assert.doesNotMatch(panel, /PDFs are also sent to verified apps/);
+
   const api = read('src/services/api.ts');
   for (const method of ['getChatDelivery', 'saveChatDeliveryNumber', 'removeChatDelivery', 'requestChatDeliveryOtp', 'confirmChatDeliveryOtp']) {
     assert.match(api, new RegExp(`async ${method}`), `api client exposes ${method}`);
@@ -174,14 +175,28 @@ if (!wasmInstalled) {
   console.log('  [SKIP] @php-wasm/node is not installed - the PHP helper execution did not run.');
   console.log('         npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54');
 } else {
-  const phpFile = path.join(root, 'tests', '_chat_delivery_runtime.php');
+  const phpFile = path.join(root, 'tests', '_chat_alerts_verified_runtime.php');
   fs.writeFileSync(phpFile, `<?php
 define('APP_SECRET_KEY', str_repeat('k', 40));
 require_once __DIR__ . '/../api/chat_alerts.php';
+
+class FakeChatContactPdo {
+    public $contact = null;
+    public function exec($sql) { return 0; }
+    public function prepare($sql) { return new FakeChatContactStmt($this); }
+}
+class FakeChatContactStmt {
+    private $pdo;
+    public function __construct($pdo) { $this->pdo = $pdo; }
+    public function execute($params = []) { return true; }
+    public function fetch() { return $this->pdo->contact; }
+}
+
 function ok(bool $c, string $m): void {
     echo ($c ? "[PASS] " : "[FAIL] ") . $m . "\\n";
     if (!$c) { $GLOBALS['fails'] = ($GLOBALS['fails'] ?? 0) + 1; }
 }
+
 ok(AstroChatAlerts::normalizePhone('98765 43210', 'India') === '+919876543210', 'local Indian number normalizes with country');
 ok(AstroChatAlerts::normalizePhone('+679 123 4567') === '+6791234567', 'international number keeps its country code');
 $h = AstroChatAlerts::hashChatOtp('user1', 'whatsapp', '+919876543210', '123456');
@@ -189,19 +204,42 @@ ok($h === AstroChatAlerts::hashChatOtp('user1', 'whatsapp', '+919876543210', '12
 ok($h !== AstroChatAlerts::hashChatOtp('user1', 'viber', '+919876543210', '123456'), 'OTP hash is channel-scoped');
 ok($h !== AstroChatAlerts::hashChatOtp('user1', 'whatsapp', '+919876543210', '654321'), 'different code, different hash');
 ok(strpos($h, '123456') === false, 'stored hash never contains the plain code');
-$token = AstroChatAlerts::signedMediaToken('ord_1', 'report', 7);
-$p = AstroChatAlerts::verifySignedMediaToken($token);
-ok(is_array($p) && $p['oid'] === 'ord_1' && (int)$p['item'] === 7 && $p['kind'] === 'report', 'signed media token round-trips');
-$tampered = substr($token, 0, -2) . 'xx';
-ok(AstroChatAlerts::verifySignedMediaToken($tampered) === null, 'tampered media token is rejected');
-$expiredPayload = rtrim(strtr(base64_encode(json_encode(['oid' => 'ord_1', 'kind' => 'report', 'item' => 0, 'exp' => time() - 5])), '+/', '-_'), '=');
-$expired = $expiredPayload . '.' . hash_hmac('sha256', $expiredPayload, APP_SECRET_KEY);
-ok(AstroChatAlerts::verifySignedMediaToken($expired) === null, 'expired media token is rejected');
+
+$settings = [
+    'enabled' => true,
+    'whatsapp' => ['enabled' => true, 'provider' => 'meta', 'phoneNumberId' => '123', 'accessToken' => 'token'],
+    'viber' => ['enabled' => true, 'provider' => 'viber_bot', 'authToken' => 'token'],
+];
+$pdo = new FakeChatContactPdo();
+ok(AstroChatAlerts::verifiedChatTargets($pdo, 'user1', $settings) === [], 'no saved contact means no alert destination');
+$alertSettings = $settings + ['notifyOrderConfirmed' => true, 'notifyOrderCompleted' => true];
+ok(AstroChatAlerts::sendOrderAlerts($pdo, 'order_confirmed', [['userId' => 'user1', 'orderNumber' => 'ORD-X']], $alertSettings) === [], 'the dispatcher sends nothing without a saved contact');
+
+$pdo->contact = ['phone_e164' => '+919876543210', 'whatsapp_verified_at' => null, 'viber_verified_at' => null];
+ok(AstroChatAlerts::verifiedChatTargets($pdo, 'user1', $settings) === [], 'unverified number is not an alert destination');
+ok(AstroChatAlerts::sendOrderAlerts($pdo, 'order_confirmed', [['userId' => 'user1', 'orderNumber' => 'ORD-X', 'userMobile' => '+919876543210']], $alertSettings) === [], 'the dispatcher ignores an unverified order mobile');
+
+$pdo->contact = ['phone_e164' => '+919876543210', 'whatsapp_verified_at' => '2026-10-19 10:00:00', 'viber_verified_at' => null];
+$wa = AstroChatAlerts::verifiedChatTargets($pdo, 'user1', $settings);
+ok(($wa['channels'] ?? []) === ['whatsapp'] && $wa['phone'] === '+919876543210', 'per-app verification: WhatsApp only');
+
+$pdo->contact = ['phone_e164' => '+919876543210', 'whatsapp_verified_at' => '2026-10-19 10:00:00', 'viber_verified_at' => '2026-10-19 10:00:00'];
+$both = AstroChatAlerts::verifiedChatTargets($pdo, 'user1', $settings);
+ok(($both['channels'] ?? []) === ['whatsapp', 'viber'], 'both apps must be verified separately and both then qualify');
+
+$pdo->contact = ['phone_e164' => '98765', 'whatsapp_verified_at' => '2026-10-19 10:00:00', 'viber_verified_at' => null];
+ok(AstroChatAlerts::verifiedChatTargets($pdo, 'user1', $settings) === [], 'a non-E.164 saved number is never messaged');
+
+$off = $settings;
+$off['whatsapp']['enabled'] = false;
+$pdo->contact = ['phone_e164' => '+919876543210', 'whatsapp_verified_at' => '2026-10-19 10:00:00', 'viber_verified_at' => null];
+ok(AstroChatAlerts::verifiedChatTargets($pdo, 'user1', $off) === [], 'an admin-disabled channel is not a target');
+
 exit(($GLOBALS['fails'] ?? 0) > 0 ? 1 : 0);
 `);
   try {
     const run = spawnSync(process.execPath,
-      [path.join(root, 'scripts', 'php-wasm-run.mjs'), '--php', '8.4', 'tests/_chat_delivery_runtime.php'],
+      [path.join(root, 'scripts', 'php-wasm-run.mjs'), '--php', '8.4', 'tests/_chat_alerts_verified_runtime.php'],
       { cwd: root, encoding: 'utf8', timeout: 240000 });
     process.stdout.write(run.stdout || '');
     if (run.status !== 0) {
@@ -214,7 +252,7 @@ exit(($GLOBALS['fails'] ?? 0) > 0 ? 1 : 0);
 }
 
 if (failures > 0) {
-  console.error(`\nchat-delivery-and-download-language: ${failures} failing check(s)`);
+  console.error(`\nchat-alerts-verified-and-download-language: ${failures} failing check(s)`);
   process.exit(1);
 }
-console.log('\nchat-delivery-and-download-language: all checks passed');
+console.log('\nchat-alerts-verified-and-download-language: all checks passed');
