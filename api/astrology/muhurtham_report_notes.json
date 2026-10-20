@@ -36,9 +36,7 @@
       "panguni": "Panguni"
     },
     "checksHeading": "What was checked for these dates",
-    "checksText": "Every day is judged on its Panchangam - nakshatra (star at local sunrise), tithi, weekday and Tamil month - and Venus/Jupiter asta periods are excluded. The selected date is then checked against BOTH charts: Chandrashtama (Moon 8th from either Rasi), Tara Bala from each Janma Nakshatra, and either person's own star day. A date failing any check for either person is not recommended.",
-    "nextStepHeading": "What do I do next?",
-    "nextStepText": "Pick one date above (BEST first, then GOOD) and send it with your order number to admin@astrosivam.com — we reply with a written confirmation you can show the hall and the priest. If two dates suit equally, confirm the earlier one and keep the other as a backup."
+    "checksText": "Every day is judged on its Panchangam - nakshatra (star at local sunrise), tithi, weekday and Tamil month - and Venus/Jupiter asta periods are excluded. The selected date is then checked against BOTH charts: Chandrashtama (Moon 8th from either Rasi), Tara Bala from each Janma Nakshatra, and either person's own star day. A date failing any check for either person is not recommended."
   },
   "ta": {
     "title": "இந்த தேதிகள் ஏன் தேர்ந்தெடுக்கப்பட்டன?",
@@ -77,9 +75,7 @@
       "panguni": "பங்குனி"
     },
     "checksHeading": "என்ன சரிபார்க்கப்பட்டது?",
-    "checksText": "ஒவ்வொரு நாளும் பஞ்சாங்கத்தின்படி — நட்சத்திரம் (சூரிய உதயம்), திதி, கிழமை, தமிழ் மாதம் — சரிபார்க்கப்படுகிறது; குரு/சுக்கிர அஸ்தமனம் விலக்கப்படுகிறது. தேர்ந்தெடுக்கப்படும் தேதி இரு ஜாதகங்களுடனும் ஒப்பிடப்படுகிறது: சந்திராஷ்டமம் (ராசியிலிருந்து 8-வது ராசியில் சந்திரன்), இரு ஜன்ம நட்சத்திரங்களின் தாரா பலம், யாரேனும் ஒருவரின் ஜன்ம நட்சத்திர நாள். யாருக்கேனும் பொருந்தவில்லை எனில் அத்தேதி பரிந்துரைக்கப்படுவதில்லை.",
-    "nextStepHeading": "அடுத்து என்ன செய்ய வேண்டும்?",
-    "nextStepText": "மேலே உள்ள தேதிகளில் ஒன்றைத் தேர்ந்தெடுத்து (முதலில் BEST, பின்னர் GOOD), ஆர்டர் எண்ணுடன் admin@astrosivam.com-க்கு அனுப்புங்கள் — மண்டபத்திற்கும் குருக்களுக்கும் காட்ட எழுத்துப்பூர்வ உறுதிப்பத்திரம் அனுப்புவோம். இரண்டு தேதிகள் சமமானால், முந்தையதை உறுதி செய்து மற்றதை மாற்றாக வைத்திருங்கள்."
+    "checksText": "ஒவ்வொரு நாளும் பஞ்சாங்கத்தின்படி — நட்சத்திரம் (சூரிய உதயம்), திதி, கிழமை, தமிழ் மாதம் — சரிபார்க்கப்படுகிறது; குரு/சுக்கிர அஸ்தமனம் விலக்கப்படுகிறது. தேர்ந்தெடுக்கப்படும் தேதி இரு ஜாதகங்களுடனும் ஒப்பிடப்படுகிறது: சந்திராஷ்டமம் (ராசியிலிருந்து 8-வது ராசியில் சந்திரன்), இரு ஜன்ம நட்சத்திரங்களின் தாரா பலம், யாரேனும் ஒருவரின் ஜன்ம நட்சத்திர நாள். யாருக்கேனும் பொருந்தவில்லை எனில் அத்தேதி பரிந்துரைக்கப்படுவதில்லை."
   },
   "hi": {
     "title": "इन तिथियों का चयन क्यों हुआ?",
@@ -118,8 +114,6 @@
       "panguni": "पंगुनि"
     },
     "checksHeading": "इन तिथियों के लिए क्या जाँचा गया",
-    "checksText": "प्रत्येक दिन की पंचांग से जाँच होती है — नक्षत्र (स्थानीय सूर्योदय का), तिथि, वार, तमिल मास — और गुरु/शुक्र अस्त काल बाहर रहता है। चुनी जाने वाली तिथि दोनों कुंडलियों से मिलाई जाती है: चंद्राष्टम (किसी एक की राशि से 8वीं राशि में चंद्र), दोनों जन्म नक्षत्रों का तारा बल, और किसी एक का जन्म नक्षत्र दिवस। किसी भी व्यक्ति के लिए जाँच विफल होने पर वह तिथि अनुशंसित नहीं है।",
-    "nextStepHeading": "अब आगे क्या करें?",
-    "nextStepText": "ऊपर दी गई सूची में से एक तिथि चुनें (पहले BEST, फिर GOOD) और ऑर्डर नंबर के साथ admin@astrosivam.com पर भेजें — हम लिखित पुष्टि भेजेंगे, जिसे आप मंडप और पुरोहित को दिखा सकते हैं। दो तिथियाँ समान हों तो पहले वाली की पुष्टि करें और दूसरी विकल्प रखें।"
+    "checksText": "प्रत्येक दिन की पंचांग से जाँच होती है — नक्षत्र (स्थानीय सूर्योदय का), तिथि, वार, तमिल मास — और गुरु/शुक्र अस्त काल बाहर रहता है। चुनी जाने वाली तिथि दोनों कुंडलियों से मिलाई जाती है: चंद्राष्टम (किसी एक की राशि से 8वीं राशि में चंद्र), दोनों जन्म नक्षत्रों का तारा बल, और किसी एक का जन्म नक्षत्र दिवस। किसी भी व्यक्ति के लिए जाँच विफल होने पर वह तिथि अनुशंसित नहीं है।"
   }
 }

@@ -663,11 +663,6 @@ export function buildMuhurthamHtml(result: MuhurthamScanResult, lang: AppLanguag
       : ''),
     ((notes.summaryText || notes.selectionText)
       ? `<p><strong>${escapeHtml(notes.selectionHeading)}</strong>${notes.summaryText ? `<span class="selection-counts">${escapeHtml(notes.summaryText)}</span>` : ''}${escapeHtml(notes.selectionText)}</p>`
-      : ''),
-    // The report used to stop at the table: a family had the dates and no idea
-    // what to do with them. This is the step after the table.
-    (notes.nextStepText
-      ? `<p class="selection-next-step"><strong>${escapeHtml(notes.nextStepHeading)}</strong>${escapeHtml(notes.nextStepText)}</p>`
       : '')
   ].filter(Boolean).join('\n    ');
   const reportNotesHtml = `<aside class="muhurtham-selection-notes">
@@ -959,11 +954,6 @@ ${REPORT_FONT_LINK_TAG}
   .muhurtham-selection-notes p { margin-top: 1.6mm; }
   .muhurtham-selection-notes strong { display: block; color: var(--maroon); font-size: 15px; font-weight: 800; }
   .muhurtham-selection-notes .selection-counts { display: block; color: var(--green); font-weight: 700; margin-bottom: 0.8mm; }
-  /* The action paragraph: same type, a gold rule above so the eye lands on it. */
-  .muhurtham-selection-notes .selection-next-step {
-    border-top: 1px solid var(--gold-border);
-    padding-top: 1.6mm;
-  }
 
   /* Personally favourable dates (Tara Balam + no Chandrashtama) */
   .six-month-table .row-personal td { background: #fff1f2 !important; }

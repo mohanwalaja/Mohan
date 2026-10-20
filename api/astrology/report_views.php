@@ -994,7 +994,6 @@ class AstroReportViews {
     /* Report Guide & Glossary sheet — the last page of every report.
        Two side-by-side columns because a print renderer has no CSS columns. */
     .glossary-sheet { padding: 5.5mm 7mm 5.5mm; }
-    .muhurtham-selection-notes .selection-next-step { border-top: 1px solid #e8d9b8; padding-top: 1.6mm; }
     .glossary-quick { border: 1px solid #e2e8f0; border-left: 3px solid #c9962c; background: #fffdf7; border-radius: 4px; padding: 1.6mm 2.6mm 1.4mm; margin: 1.6mm 0 2mm; page-break-inside: avoid; }
     .glossary-quick-title { font-size: 10px; font-weight: bold; color: #7a1230; margin-bottom: 1mm; }
     .glossary-quick-row { font-size: 9.5px; line-height: 1.32; color: #2b1d14; margin: 0 0 0.7mm; }
@@ -4394,10 +4393,6 @@ HTML;
             . '<p><b>' . self::e($notes['selectionHeading']) . '</b><br/>'
             . ($notes['summaryText'] !== '' ? '<span class="selection-counts">' . self::e($notes['summaryText']) . '</span><br/>' : '')
             . self::e($notes['selectionText']) . '</p>'
-            // The report used to stop at the table. This is the step after it.
-            . (!empty($notes['nextStepText'])
-                ? '<p class="selection-next-step"><b>' . self::e($notes['nextStepHeading']) . '</b><br/>' . self::e($notes['nextStepText']) . '</p>'
-                : '')
             . '</div>';
         $upperHalf = '';
         if ($datesContinueOnPage2) {

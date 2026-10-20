@@ -6,6 +6,7 @@ const projectRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const testFiles = [
   'tests/user-design.test.ts',
   'tests/user-design-regressions.test.ts',
+  'tests/user-design-dark-surfaces.test.ts',
   'tests/remedies.test.ts',
   // Cheap and first on purpose: it enforces the requested PHP-only GitHub
   // Actions setup so additional workflows cannot silently return.

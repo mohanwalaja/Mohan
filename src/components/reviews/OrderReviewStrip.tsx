@@ -26,7 +26,7 @@ export function OrderReviewStrip({ eligibility, reviews, onOpen }: OrderReviewSt
   const hasReview = reviews.length > 0;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-amber-700/40 bg-gradient-to-r from-amber-950/40 to-slate-950/40 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="order-review-strip flex flex-col gap-3 rounded-xl border border-amber-700/40 bg-gradient-to-r from-amber-950/40 to-slate-950/40 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 space-y-1.5 text-xs">
         {hasReview ? (
           <>
