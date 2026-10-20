@@ -45,9 +45,19 @@ still live on page 3, Short Summary).
 | Pitru | Pitru dosha is indicated when the Sun is afflicted by Rahu/Ketu, or Saturn sits in the 9th house. It is read as ancestral debt that delays family matters, eased by honouring ancestors. |
 | Guru Chandala | Guru Chandala dosha forms when Guru (Jupiter) conjoins or is aspected by Rahu/Ketu. It is read as clouded judgement and interrupted fortune, eased by Guru worship and honest conduct. |
 
-The Tamil and Hindi versions are the same two sentences in those languages
-(shorter than the paragraphs they replace), so the card stays compact in every
-report.
+Tamil and Hindi now carry the same two-line note, not a paragraph — 91–130
+characters each (English is 168–190), which is one to two printed lines in the
+full-width card:
+
+| Dosha | தமிழ் | हिन्दी |
+|---|---|---|
+| Sani | ஜென்ம ராசியிலிருந்து 12, 1, 2, 8, 4, 7, 10-ஆம் ராசியில் சனி சஞ்சரித்தால் சனி தோஷம். பொறுமையும் முதியோர் சேவையும் நிவாரணம். | जन्म राशि से 12, 1, 2, 8, 4, 7 या 10वीं राशि में शनि गोचर करे तो शनि दोष; विलंब देता है। धैर्य और वृद्धजन सेवा राहत है। |
+| Kala Sarpa | ஏழு கிரகங்களும் ராகு–கேது அச்சுக்குள் இருந்தால் காலசர்ப தோஷம்; தடைகள் தொடரும். நிலையான முயற்சியே நிவாரணம். | सातों ग्रह राहु–केतु अक्ष के भीतर हों तो काल सर्प दोष; बाधाएँ बनी रहती हैं। निरंतर प्रयास राहत देता है। |
+| Pitru | சூரியன் ராகு/கேது பாதிப்பில் அல்லது சனி 9-ஆம் வீட்டில் இருந்தால் பித்ரு தோஷம்; குடும்ப விஷயங்கள் தாமதம். முன்னோர் நினைவே நிவாரணம். | सूर्य राहु/केतु से पीड़ित या शनि नवम भाव में हो तो पितृ दोष; पारिवारिक विलंब। पूर्वजों का स्मरण राहत देता है। |
+| Guru Chandala | குரு ராகு/கேதுவுடன் இணைந்தால் குரு சண்டாள தோஷம்; தெளிவற்ற முடிவுகள். குரு வழிபாடே நிவாரணம். | गुरु राहु/केतु के साथ या दृष्टि में हो तो गुरु चांडाल दोष; अस्पष्ट निर्णय। गुरु आराधना राहत देती है। |
+
+Each is exactly two sentences: what forms the dosha, then what it brings and the
+remedy.
 
 ## One file feeds both renderers
 
@@ -80,8 +90,9 @@ and the emailed PDF together — impossible to drift.
    and the bold star under `Janma Nakshatra / Star Sign`;
 3. Tamil and Hindi print the same single rasi name, bold, without the English
    zodiac twin, and the bold star;
-4. each of the four explanations is **exactly two sentences**, under 900
-   characters, in `en` / `ta` / `hi`, and the JSON and renderers agree;
+4. each of the four explanations is **exactly two sentences** and stays inside
+   the two-line budget (`en` ≤ 260 characters, `ta`/`hi` ≤ 140 — a paragraph
+   regression fails the suite), and the JSON and renderers agree;
 5. the old long Sade Sati / remedy paragraphs never return to page 1;
 6. the PHP renderer reads the same JSON, prints the explainer in every Sani card
    (Ezharai / Ashtama / Kandaka / none) and in the engine-dosha loop, and builds

@@ -1,5 +1,5 @@
 {
-  "_comment": "Birth Jathagam page-1 wording shared by BOTH renderers: src/services/jathagamHtmlBuilder.ts (browser preview/PDF) and api/astrology/report_views.php (server preview, admin email). Read by astro_jathagam_page1() in report_views.php, so the two stacks cannot drift.",
+  "_comment": "Birth Jathagam page-1 wording shared by BOTH renderers: src/services/jathagamHtmlBuilder.ts (browser preview/PDF) and api/astrology/report_views.php (server preview, admin email). Read by astro_jathagam_page1() in report_views.php, so the two stacks cannot drift. Every dosha explanation is TWO sentences and nothing more: the cards are a compact two-line note under the badge, not a paragraph. Tamil/Hindi are kept to the same short length as English so they also print in two lines.",
   "zodiacSignEn": {
     "1": "Aries",
     "2": "Taurus",
@@ -17,23 +17,23 @@
   "doshaExplainers": {
     "sani": {
       "en": "Sani dosha is read from Saturn's transit over the 12th, 1st, 2nd, 8th, 4th, 7th or 10th sign from your Janma Rasi. It brings delays and hard lessons, eased by patience and service to elders.",
-      "ta": "ஜென்ம ராசியிலிருந்து 12, 1, 2, 8, 4, 7, 10-ஆம் ராசிகளில் சனி சஞ்சரிக்கும்போது சனி தோஷம் கணிக்கப்படும். தாமதமும் கடின பாடங்களும் வரும்; பொறுமை, ஒழுக்கம், முதியோர் சேவை நிவாரணம்.",
-      "hi": "जन्म राशि से 12, 1, 2, 8, 4, 7 या 10वीं राशि में शनि के गोचर से शनि दोष माना जाता है। विलंब और कठिन पाठ आते हैं; धैर्य, अनुशासन और वृद्धजनों की सेवा राहत देती है।"
+      "ta": "ஜென்ம ராசியிலிருந்து 12, 1, 2, 8, 4, 7, 10-ஆம் ராசியில் சனி சஞ்சரித்தால் சனி தோஷம். பொறுமையும் முதியோர் சேவையும் நிவாரணம்.",
+      "hi": "जन्म राशि से 12, 1, 2, 8, 4, 7 या 10वीं राशि में शनि गोचर करे तो शनि दोष; विलंब देता है। धैर्य और वृद्धजन सेवा राहत है।"
     },
     "kalaSarpa": {
       "en": "Kala Sarpa dosha forms when all seven planets lie within the Rahu–Ketu axis. It is read as delays and repeated obstacles, eased by steady effort and Rahu–Ketu remedies.",
-      "ta": "ஏழு கிரகங்களும் ராகு–கேது அச்சுக்குள் அமைந்தால் காலசர்ப தோஷம் உருவாகும். தாமதமும் தொடர் தடைகளும் எனக் கருதப்படும்; நிலையான முயற்சியும் ராகு–கேது பரிகாரமும் நிவாரணம்.",
-      "hi": "सातों ग्रह राहु–केतु अक्ष के भीतर हों तो काल सर्प दोष बनता है। यह विलंब और बार-बार बाधा का संकेत है; निरंतर प्रयास और राहु–केतु उपाय राहत देते हैं।"
+      "ta": "ஏழு கிரகங்களும் ராகு–கேது அச்சுக்குள் இருந்தால் காலசர்ப தோஷம்; தடைகள் தொடரும். நிலையான முயற்சியே நிவாரணம்.",
+      "hi": "सातों ग्रह राहु–केतु अक्ष के भीतर हों तो काल सर्प दोष; बाधाएँ बनी रहती हैं। निरंतर प्रयास राहत देता है।"
     },
     "pitru": {
       "en": "Pitru dosha is indicated when the Sun is afflicted by Rahu/Ketu, or Saturn sits in the 9th house. It is read as ancestral debt that delays family matters, eased by honouring ancestors.",
-      "ta": "சூரியன் ராகு/கேது பாதிப்பில் இருக்கும்போதோ அல்லது சனி 9-ஆம் வீட்டில் அமையும்போதோ பித்ரு தோஷம் குறிக்கப்படும். முன்னோர் கடனாகக் கருதப்படும் இது குடும்ப விஷயங்களில் தாமதம் தரும்; முன்னோரை நினைவுகூர்வது நிவாரணம்.",
-      "hi": "सूर्य राहु/केतु से पीड़ित हो या शनि नवम भाव में हो तो पितृ दोष माना जाता है। इसे पूर्वजों का ऋण माना जाता है जो परिवार संबंधी विलंब देता है; पूर्वजों का स्मरण राहत देता है।"
+      "ta": "சூரியன் ராகு/கேது பாதிப்பில் அல்லது சனி 9-ஆம் வீட்டில் இருந்தால் பித்ரு தோஷம்; குடும்ப விஷயங்கள் தாமதம். முன்னோர் நினைவே நிவாரணம்.",
+      "hi": "सूर्य राहु/केतु से पीड़ित या शनि नवम भाव में हो तो पितृ दोष; पारिवारिक विलंब। पूर्वजों का स्मरण राहत देता है।"
     },
     "guruChandala": {
       "en": "Guru Chandala dosha forms when Guru (Jupiter) conjoins or is aspected by Rahu/Ketu. It is read as clouded judgement and interrupted fortune, eased by Guru worship and honest conduct.",
-      "ta": "குரு ராகு/கேதுவுடன் இணையும்போதோ அவர்கள் பார்வையில் இருக்கும்போதோ குரு சண்டாள தோஷம் உருவாகும். தெளிவற்ற முடிவும் தடைபடும் நல்லதிர்ஷ்டமும் எனக் கருதப்படும்; குரு வழிபாடும் நேர்மையும் நிவாரணம்.",
-      "hi": "गुरु राहु/केतु के साथ युति में या उनकी दृष्टि में हों तो गुरु चांडाल दोष बनता है। इसे अस्पष्ट निर्णय और रुकी शुभता माना जाता है; गुरु आराधना और सच्चा आचरण राहत देते हैं।"
+      "ta": "குரு ராகு/கேதுவுடன் இணைந்தால் குரு சண்டாள தோஷம்; தெளிவற்ற முடிவுகள். குரு வழிபாடே நிவாரணம்.",
+      "hi": "गुरु राहु/केतु के साथ या दृष्टि में हो तो गुरु चांडाल दोष; अस्पष्ट निर्णय। गुरु आराधना राहत देती है।"
     }
   }
 }

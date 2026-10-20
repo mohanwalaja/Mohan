@@ -139,7 +139,12 @@ check('all four dosha cards explain the dosha in exactly two sentences, in every
         .map(part => part.trim())
         .filter(Boolean);
       assert.equal(sentences.length, 2, `${key}/${lang}: expected exactly 2 sentences, got ${sentences.length}`);
-      assert.ok(text.length < 900, `${key}/${lang}: explanation must stay short ("no big")`);
+      // "Two lines, not a paragraph": the card prints at 10.5px (TS) / 8.5px (PHP),
+      // so ~190 Latin characters or ~130 Tamil/Devanagari glyphs is the ceiling for
+      // a two-line note. Tamil/Hindi were paragraphs before and are now the same
+      // visual length as English.
+      const limit = lang === 'en' ? 260 : 140;
+      assert.ok(text.length <= limit, `${key}/${lang}: ${text.length} chars — must fit two lines (<= ${limit})`);
       assert.equal(page1Json.doshaExplainers[key][lang], text, `${key}/${lang}: JSON and renderer disagree`);
     }
   }
