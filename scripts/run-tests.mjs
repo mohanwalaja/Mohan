@@ -90,6 +90,11 @@ const testFiles = [
   'tests/subha-muhurtham-sample.test.ts',
   'tests/node-php-parity.test.ts',
   'tests/astrology-integrity-regression.test.tsx',
+  // Birth Jathagam page 1 (owner request 2026-10-20): the English Janma Rasi
+  // row prints "Mesham/Aries" (all twelve signs) in bold, the star name stays
+  // and is bold, and every dosha card explains its dosha in exactly two
+  // sentences in English, Tamil and Hindi. One JSON feeds both renderers.
+  'tests/jathagam-page1-signs-and-doshas.test.ts',
   'tests/jathagam-card-rules.test.ts',
   'tests/jathagam-lucky-indicators.test.ts',
   'tests/vimshottari-dasha-timeline.test.ts',

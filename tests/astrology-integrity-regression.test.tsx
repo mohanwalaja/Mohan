@@ -115,7 +115,7 @@ assert.match(lifeCards[7].badge, /N\/A/, 'Unknown current-period assessment is n
 
 const htmlReport = buildJathagamHtml(missingPlacements, 'en');
 assert.match(htmlReport, /Lagna<\/span><span class="value">N\/A \(N\/A\)<\/span>/);
-assert.match(htmlReport, /Janma Rasi<\/span><span class="value">N\/A<\/span>/);
+assert.match(htmlReport, /Janma Rasi \/ Zodiac Sign<\/span><span class="value"><strong>N\/A<\/strong><\/span>/);
 assert.doesNotMatch(htmlReport, /Current Dasa/, 'The current Dasha summary is omitted from page 1 even when unavailable');
 assert.doesNotMatch(htmlReport, /class="planet-name is-lagna"/, 'No Lagna marker is rendered from an invalid Ascendant');
 assert.doesNotMatch(htmlReport, /Rahu Mahadasa|House 1 \(.*Kuja/i,
