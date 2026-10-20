@@ -26,6 +26,14 @@ import { LUCKY_INDICATOR_TEXT, resolveLuckyIndicators } from './jathagamLuckyDat
 // astro_jathagam_page1()). One file, two renderers: the browser preview and the
 // server/email PDF cannot drift on the zodiac names or the dosha explanations.
 import jathagamPage1Data from '../../api/astrology/jathagam_page1.json';
+// Plain-language glossary shared with api/astrology/report_views.php (read there
+// by astro_report_glossary()). Appended as the report's last page so no reader
+// has to guess what "bhava", "vakri" or "porutham" means.
+import {
+  GLOSSARY_PAGE_TEXT,
+  REPORT_GLOSSARY_CSS,
+  reportGlossaryHtml
+} from './reportGlossary';
 
 // Rasi names in 3 languages
 export const RASI_NAMES_REPORT: Record<number, { en: string; ta: string; hi: string }> = {
@@ -643,7 +651,7 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
  * The total lives here once: the page labels and the tests read it, so a page
  * can never claim "x / 4" again.
  */
-export const JATHAGAM_PAGE_COUNT = 3;
+export const JATHAGAM_PAGE_COUNT = 4;
 
 /** Localized "page x / N" label, with N taken from the real page count. */
 export function jathagamPageLabel(page: number, lang: AppLanguage, total: number = JATHAGAM_PAGE_COUNT): string {
@@ -1922,6 +1930,7 @@ ${REPORT_FONT_LINK_TAG}
       break-inside: avoid;
     }
   }
+${REPORT_GLOSSARY_CSS}
 </style>
 </head>
 <body>
@@ -1952,6 +1961,8 @@ ${REPORT_FONT_LINK_TAG}
         <div class="item"><span class="label">${isTa ? 'ராகு நிலை (Node)' : isHi ? 'राहु नोड (Node)' : 'Rahu Node'}</span><span class="value">${escapeHtml(nodeTypeText)}</span></div>
       </div>
     </div>
+
+    <p class="glossary-pointer">${escapeHtml(GLOSSARY_PAGE_TEXT[lang].pointer)}</p>
 
     <div class="chart-section">
       <div class="chart-box panel">
@@ -2100,6 +2111,29 @@ ${REPORT_FONT_LINK_TAG}
     <div class="reassurance" id="summary-reassurance">${escapeHtml(summaryText.reassurance)}</div>
 
     ${footerHtmlFor(3)}
+  </div>
+</div>
+
+<!-- ============ PAGE 4: REPORT GUIDE & GLOSSARY ============ -->
+<!--
+  Why a whole page for words: the audit (docs/REPORTS_READABILITY_AUDIT_2026-10-20.md)
+  found 20 specialist terms in this report and not one explanation. The wording
+  lives in api/astrology/report_glossary.json and is shared with the PHP
+  renderer, so the printed PDF and the browser preview explain a term the same
+  way. Page 1 points here; the page is content-sized and the sheet fitter below
+  still guarantees it never grows past one A4.
+-->
+<div class="page" id="jathagam-glossary">
+  <div class="inner">
+    ${buildReportHeaderHtml({
+      subtitle: isTa
+        ? 'சொல் விளக்கம் (Report Guide)'
+        : isHi
+          ? 'शब्दार्थ (Report Guide)'
+          : 'Plain-language guide to this report'
+    })}
+    ${reportGlossaryHtml('BIRTH_JATHAGAM', lang)}
+    ${footerHtmlFor(4)}
   </div>
 </div>
 

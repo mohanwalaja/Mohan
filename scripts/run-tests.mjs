@@ -99,6 +99,10 @@ const testFiles = [
   // condition, every Sanskrit term glossed inline, no English fragment inside a
   // Tamil/Hindi report, plain-English verdicts.
   'tests/report-readability-guard.test.ts',
+  // One shared glossary (api/astrology/report_glossary.json) explains every
+  // specialist term in one line, in all three languages, in the PDF and the
+  // browser preview. See docs/REPORTS_READABILITY_AUDIT_2026-10-20.md.
+  'tests/report-glossary.test.ts',
   'tests/jathagam-card-rules.test.ts',
   'tests/jathagam-lucky-indicators.test.ts',
   'tests/vimshottari-dasha-timeline.test.ts',

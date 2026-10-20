@@ -209,21 +209,28 @@ Four phases. Each phase is independently shippable and testable.
 
 **Effort:** done. **Risk:** none — no layout change.
 
-### Phase 2 — One shared glossary, used everywhere
-1. New file `api/astrology/report_glossary.json` — ~30 terms, each with
-   `en` / `ta` / `hi` one-line meaning and one plain alias
-   ("Lagna (Ascendant) — the rising sign at birth").
-2. Both renderers read it exactly like `jathagam_page1.json` already does:
-   TypeScript imports it; PHP loads it through one cached helper.
-3. Add a **"How to read this report"** box on page 1 (5 terms that report uses).
-4. Add the **full glossary** as the last page (or a two-column block on the
-   remedies page if it fits).
-5. Add **inline glosses** on first use: "debilitated (Neecha)".
+### Phase 2 — One shared glossary, used everywhere ✅ **DONE (20 Oct 2026)**
+Delivered in `docs/REPORT_GLOSSARY_2026-10-20.md`:
+1. `api/astrology/report_glossary.json` — **34 terms**, each with an
+   `en` / `ta` / `hi` one-line meaning and a plain alias
+   ("Lagna (Ascendant) — the sign rising on the eastern horizon at your birth").
+2. Both renderers read it: `src/services/reportGlossary.ts` and
+   `astro_report_glossary()` / `astro_report_glossary_html()` in PHP. One file,
+   so the preview and the printed PDF cannot drift.
+3. Every report now ends with a **Report Guide & Glossary** sheet
+   (Jathagam 4 sheets, the other three 3 sheets), in the order's language.
+4. Page 1 of every report carries a one-line **pointer** to it.
+5. Inline glosses on first use in running prose:
+   "debilitated (Neecha)", "retrograde (Vakri)", "combust (Astangata)".
 
-**Effort:** medium (one JSON + two renderers + 3 languages of copy).
-**Acceptance:** no term from the glossary appears on any page without either an
-inline gloss or a pointer to the glossary; a test asserts every term in the JSON
-has all three languages.
+**Acceptance:** `tests/report-glossary.test.ts` (in `npm test`) fails the build
+if a term lacks a language, if a meaning is missing/too long/not a sentence, if
+a report stops printing its sheet or loses the pointer, or if PHP stops reading
+the shared file.
+
+**Still open from this phase:** the *"How to read this report"* box listing the
+five most-used terms **on page 1** — the full glossary is on the last page and
+page 1 points to it.
 
 ### Phase 3 — "What this means and what to do"
 1. Every caution line gets one **action** sentence (max 12 words) — the life

@@ -161,6 +161,112 @@ function astro_jathagam_page1()
 }
 
 /**
+ * The shared plain-language glossary (api/astrology/report_glossary.json).
+ *
+ * WHY: the readability audit (docs/REPORTS_READABILITY_AUDIT_2026-10-20.md)
+ * found 30 specialist terms across the four reports and not one explanation.
+ * The wording is shared with src/services/reportGlossary.ts, so the browser
+ * preview, the customer PDF and the emailed PDF explain a term identically.
+ *
+ * An unreadable/missing file returns an empty array and the caller simply does
+ * not print the glossary sheet — it never prints a half-built one.
+ */
+function astro_report_glossary(): array
+{
+    static $cache = null;
+    if (is_array($cache)) {
+        return $cache;
+    }
+    $cache = [];
+    $path = __DIR__ . '/report_glossary.json';
+    if (!is_file($path)) {
+        return $cache;
+    }
+    $raw = @file_get_contents($path);
+    $decoded = is_string($raw) ? json_decode($raw, true) : null;
+    if (!is_array($decoded)) {
+        return $cache;
+    }
+    $cache = [
+        'terms' => is_array($decoded['terms'] ?? null) ? $decoded['terms'] : [],
+        'reportTerms' => is_array($decoded['reportTerms'] ?? null) ? $decoded['reportTerms'] : [],
+    ];
+    return $cache;
+}
+
+/**
+ * The terms one report uses, already resolved for the requested language:
+ * [['label' => ..., 'meaning' => ...], ...]. English is the fallback, and a term
+ * with an incomplete translation is skipped rather than printed half-empty.
+ */
+function astro_report_glossary_entries(string $reportKind, string $lang): array
+{
+    $glossary = astro_report_glossary();
+    $keys = $glossary['reportTerms'][$reportKind] ?? [];
+    $entries = [];
+    foreach ((array) $keys as $key) {
+        $row = $glossary['terms'][$key] ?? null;
+        if (!is_array($row)) { continue; }
+        $copy = is_array($row[$lang] ?? null) ? $row[$lang] : ($row['en'] ?? null);
+        if (!is_array($copy)) { continue; }
+        $label = trim((string) ($copy['label'] ?? ''));
+        $meaning = trim((string) ($copy['meaning'] ?? ''));
+        if ($label === '' || $meaning === '') { continue; }
+        $entries[] = ['label' => $label, 'meaning' => $meaning];
+    }
+    return $entries;
+}
+
+/**
+ * The "Report Guide & Glossary" sheet body for one report: title, two-column
+ * list of term + one-line meaning, and the closing reassurance.
+ */
+function astro_report_glossary_html(string $reportKind, string $lang): string
+{
+    $entries = astro_report_glossary_entries($reportKind, $lang);
+    if ($entries === []) {
+        return '';
+    }
+    $e = static function (string $value): string {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    };
+    $text = [
+        'en' => [
+            'title' => 'Report Guide & Glossary',
+            'intro' => 'Every technical word used in this report, explained in one line. Read this page once and the whole report becomes clear.',
+            'note' => 'Nothing here is a prediction of doom. These words describe tendencies and timings; the reports always state a caution together with what to do about it.',
+        ],
+        'ta' => [
+            'title' => 'அறிக்கை வழிகாட்டி & சொல் விளக்கம்',
+            'intro' => 'இந்த அறிக்கையில் பயன்படுத்தப்பட்ட ஒவ்வொரு தொழில்நுட்பச் சொல்லும் ஒரு வரியில் விளக்கப்பட்டுள்ளது. இந்தப் பக்கத்தை ஒருமுறை படித்தால் முழு அறிக்கையும் தெளிவாகும்.',
+            'note' => 'இங்கு எதுவும் தீங்கான முன்னறிவிப்பு அல்ல. இவை போக்குகளையும் காலங்களையும் குறிக்கும்; ஒவ்வொரு கவனத்திற்கும் என்ன செய்ய வேண்டும் என்பதும் அறிக்கையில் தரப்படுகிறது.',
+        ],
+        'hi' => [
+            'title' => 'रिपोर्ट मार्गदर्शिका एवं शब्दार्थ',
+            'intro' => 'इस रिपोर्ट में प्रयुक्त हर तकनीकी शब्द एक पंक्ति में समझाया गया है। यह पृष्ठ एक बार पढ़ लें, पूरी रिपोर्ट स्पष्ट हो जाएगी।',
+            'note' => 'यहाँ कुछ भी अशुभ भविष्यवाणी नहीं है। ये शब्द प्रवृत्तियाँ और समय बताते हैं; हर सावधानी के साथ यह भी बताया जाता है कि क्या करना है।',
+        ],
+    ];
+    $copy = $text[$lang] ?? $text['en'];
+    // Print renderers have no CSS columns, so the list is one table per column:
+    // the entries are split down the middle and laid out side by side.
+    $half = (int) ceil(count($entries) / 2);
+    $left = ''; $right = '';
+    foreach ($entries as $index => $entry) {
+        $cell = '<div class="glossary-item"><div class="glossary-term">' . $e($entry['label'])
+            . '</div><div class="glossary-meaning">' . $e($entry['meaning']) . '</div></div>';
+        if ($index < $half) { $left .= $cell; } else { $right .= $cell; }
+    }
+    return '<div class="glossary-sheet-body">'
+        . '<div class="glossary-title">' . $e($copy['title']) . '</div>'
+        . '<div class="glossary-intro">' . $e($copy['intro']) . '</div>'
+        . '<table class="glossary-columns"><tr><td class="glossary-col">' . $left
+        . '</td><td class="glossary-col">' . $right . '</td></tr></table>'
+        . '<div class="glossary-note">' . $e($copy['note']) . '</div>'
+        . '</div>';
+}
+
+/**
  * One two-line dosha explanation. Falls back to English, then to an empty string
  * (the caller then keeps its unavailable/N/A sentence).
  */
@@ -181,7 +287,7 @@ class AstroReportViews {
      * - so the three page headers can never disagree, and a fourth sheet can
      * never be introduced without this number changing too.
      */
-    public const JATHAGAM_PAGE_TOTAL = 3;
+    public const JATHAGAM_PAGE_TOTAL = 4;
 
     public static function e($str): string {
         return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
@@ -742,6 +848,19 @@ class AstroReportViews {
     .rule-note { font-size: 6.4px; color: #475569; margin-top: 0.4mm; line-height: 1.22; }
     .planet-dignity { font-size: 6.8px; color: #334155; }
     .dosha-desc { font-size: 8.5px; color: #2b1d14; line-height: 1.4; margin-top: 0.6mm; }
+
+    /* Report Guide & Glossary sheet — the last page of every report.
+       Two side-by-side columns because a print renderer has no CSS columns. */
+    .glossary-sheet { padding: 5.5mm 7mm 5.5mm; }
+    .glossary-title { font-size: 14px; font-weight: bold; color: #7a1230; margin-bottom: 1mm; }
+    .glossary-intro { font-size: 10px; color: #2b1d14; line-height: 1.4; margin-bottom: 2.5mm; }
+    table.glossary-columns { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    table.glossary-columns td.glossary-col { width: 50%; vertical-align: top; padding: 0 3mm 0 0; }
+    table.glossary-columns td.glossary-col:last-child { padding: 0 0 0 3mm; border-left: 0.6px dotted #c9962c; }
+    .glossary-item { margin-bottom: 2.2mm; page-break-inside: avoid; }
+    .glossary-term { font-size: 10.5px; font-weight: bold; color: #7a1230; line-height: 1.25; }
+    .glossary-meaning { font-size: 9.5px; color: #2b1d14; line-height: 1.38; }
+    .glossary-note { font-size: 9.5px; color: #64748b; line-height: 1.38; border-top: 0.6px dotted #c9962c; padding-top: 1.6mm; margin-top: 2mm; }
 
     /* Page 2 Life Cards Grid.
        Item 7: every card is sized to its own content. A table row grows to its
@@ -1976,11 +2095,24 @@ HTML;
             . '<p class="summary-short">' . self::e($summaryText['dailyHabit']) . '</p></div>';
         $page3Html .= '<div class="summary-reassurance">' . self::e($summaryText['reassurance']) . '</div>';
 
+        $glossarySubtitle = $isTa ? 'சொல் விளக்கம்' : ($isHi ? 'शब्दार्थ' : 'Plain-language guide to this report');
+        $glossaryBody = astro_report_glossary_html('BIRTH_JATHAGAM', $lang);
+        $glossarySheetHtml = $glossaryBody === ''
+            ? ''
+            : '<div class="sheet glossary-sheet" id="birth-glossary-sheet">'
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitle, $orderNumber, 4, self::JATHAGAM_PAGE_TOTAL, $lang, '', true)
+                . $glossaryBody . self::footerBand($lang) . '</div>';
+
         $css = self::sharedCss($lang) . self::birthSummaryCss();
         return '<!DOCTYPE html><html lang="' . self::e($lang) . '"><head><meta charset="UTF-8"><title>ASTRO SIVAM - Birth Jathagam Report</title><style>' . $css . '</style></head><body>'
             . '<div class="sheet">' . $page1Html . self::footerBand($lang) . '</div><pagebreak />'
             . '<div class="sheet">' . $page2Html . ($yogaNotesCardHtml ?? '') . self::footerBand($lang) . '</div><pagebreak />'
-            . '<div class="sheet' . ($isCompact ? ' is-compact' : '') . '" id="birth-summary-sheet">' . $page3Html . self::footerBand($lang) . '</div>'
+            . '<div class="sheet' . ($isCompact ? ' is-compact' : '') . '" id="birth-summary-sheet">' . $page3Html . self::footerBand($lang) . '</div><pagebreak />'
+            // Report Guide & Glossary: the wording lives in
+            // api/astrology/report_glossary.json and is shared with the browser
+            // builder, so the printed PDF and the preview explain a term the
+            // same way. Skipped entirely if the JSON is unreadable.
+            . $glossarySheetHtml
             . '</body></html>';
     }
 
@@ -3629,10 +3761,19 @@ HTML;
 HTML;
         $disclaimerBody .= $attestation;
 
+        $glossaryBodyWedding = astro_report_glossary_html('MARRIAGE_COMPATIBILITY', $lang);
+        $glossarySubtitleWedding = $isTa ? 'சொல் விளக்கம்' : ($isHi ? 'शब्दार्थ' : 'Plain-language guide to this report');
+        $glossarySheetWedding = $glossaryBodyWedding === ''
+            ? ''
+            : '<pagebreak /><div class="sheet glossary-sheet" id="wedding-glossary-sheet">'
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitleWedding, $orderNumber, 3, 3, $lang)
+                . $glossaryBodyWedding . self::footerBand($lang) . '</div>';
+
         $css = self::sharedCss($lang);
         return '<!DOCTYPE html><html lang="' . self::e($lang) . '"><head><meta charset="UTF-8"><title>ASTRO SIVAM - Marriage Compatibility Report</title><style>' . $css . '</style></head><body>'
             . '<div class="sheet">' . $body . self::footerBand($lang) . '</div><pagebreak />'
             . '<div class="sheet">' . $disclaimerBody . self::footerBand($lang) . '</div>'
+            . $glossarySheetWedding
             . '</body></html>';
     }
 
@@ -4133,8 +4274,16 @@ HTML;
 
         $css = self::sharedCss($lang) . $muhurthamCss;
 
+        $glossaryBodyMuh = astro_report_glossary_html('MUHURTHAM', $lang);
+        $glossarySubtitleMuh = $isTa ? 'சொல் விளக்கம்' : ($isHi ? 'शब्दार्थ' : 'Plain-language guide to this report');
+        $glossarySheetMuh = $glossaryBodyMuh === ''
+            ? ''
+            : '<pagebreak /><div class="sheet glossary-sheet" id="muhurtham-glossary-sheet">'
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitleMuh, $orderNumberSafe, 3, 3, $lang)
+                . $glossaryBodyMuh . self::footerBand($lang) . '</div>';
+
         return '<!DOCTYPE html><html lang="' . self::e($lang) . '"><head><meta charset="UTF-8"><title>ASTRO SIVAM - Subha Muhurtham Report</title><style>' . $css . '</style></head><body>'
-            . $cover . $secondPage
+            . $cover . $secondPage . $glossarySheetMuh
             . '</body></html>';
     }
 
@@ -4824,10 +4973,18 @@ CSS;
 HTML;
 
         $css = self::sharedCss($lang) . $babyCss;
-        // Page 1 = the certificate, page 2 = the South & North Indian name lists.
+        // Page 1 = the certificate, page 2 = the South & North Indian name lists,
+        // page 3 = the plain-language glossary of every term used in the report.
+        $glossaryBodyBaby = astro_report_glossary_html('BABY_NAMING', $lang);
+        $glossarySubtitleBaby = $isTa ? 'சொல் விளக்கம்' : ($isHi ? 'शब्दार्थ' : 'Plain-language guide to this report');
+        $glossarySheetBaby = $glossaryBodyBaby === ''
+            ? ''
+            : '<pagebreak /><div class="sheet glossary-sheet" id="namakaran-glossary-sheet">'
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitleBaby, $orderNumber, 3, 3, $lang)
+                . $glossaryBodyBaby . self::footerBand($lang) . '</div>';
         return '<!DOCTYPE html><html lang="' . self::e($lang) . '"><head><meta charset="UTF-8"><title>ASTRO SIVAM - Baby Naming Certificate</title><style>' . $css . '</style></head><body>'
             . $body . self::footerBand($lang)
-            . $suggestionsPage
+            . $suggestionsPage . $glossarySheetBaby
             . '</body></html>';
     }
 }

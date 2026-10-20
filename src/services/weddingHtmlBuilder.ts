@@ -7,6 +7,11 @@ import {
   buildWeddingDisclaimerNotes,
   weddingDisclaimerRichHtml
 } from './weddingDisclaimerNotes';
+import {
+  GLOSSARY_PAGE_TEXT,
+  REPORT_GLOSSARY_CSS,
+  reportGlossaryHtml
+} from './reportGlossary';
 
 const WEDDING_RASI_NAMES: Record<number, { en: string; ta: string; hi: string }> = {
   1: { en: 'Mesham', ta: 'மேஷம்', hi: 'मेष' },
@@ -994,6 +999,7 @@ ${REPORT_FONT_LINK_TAG}
     .page { page-break-after: always; }
     .page:last-child { page-break-after: auto; }
   }
+${REPORT_GLOSSARY_CSS}
 </style>
 </head>
 <body>
@@ -1146,6 +1152,8 @@ ${REPORT_FONT_LINK_TAG}
       <div class="final-verdict-message">${finalVerdictText}</div>
     </div>
 
+    <p class="glossary-pointer">${escapeHtml(GLOSSARY_PAGE_TEXT[lang].pointer)}</p>
+
     ${renderFooterFor(1)}
   </div>
 </div>
@@ -1166,6 +1174,18 @@ ${disclaimerParagraphsHtml}
 ${attestationHtml}
 
     ${renderFooterFor(2)}
+  </div>
+</div>
+
+<!-- ============ PAGE 3: REPORT GUIDE & GLOSSARY ============ -->
+<!-- Porutham, Rajju, Gana, Yoni, Kuja dosha… are the words this report leans on
+     hardest, so the plain-language meanings are printed with it. The wording is
+     shared with api/astrology/report_views.php (astro_report_glossary()). -->
+<div class="page" id="wedding-glossary">
+  <div class="inner">
+    ${renderHeader(isTa ? 'சொல் விளக்கம்' : isHi ? 'शब्दार्थ' : 'Plain-language guide to this report')}
+    ${reportGlossaryHtml('MARRIAGE_COMPATIBILITY', lang)}
+    ${renderFooterFor(3)}
   </div>
 </div>
 

@@ -12,6 +12,11 @@ import { getGunam } from './gunamData';
 import { formatBirthDate, formatBirthPlace } from './formatUtils';
 import { normalizeReportLanguage } from './reportLanguage';
 import { formatBabyNameForReport } from './indicTransliteration';
+import {
+  GLOSSARY_PAGE_TEXT,
+  REPORT_GLOSSARY_CSS,
+  reportGlossaryHtml
+} from './reportGlossary';
 
 function escapeHtml(str: string | undefined | null): string {
   if (!str) return '';
@@ -1363,6 +1368,7 @@ ${REPORT_FONT_LINK_TAG}
     color: var(--ink-muted);
     font-style: italic;
   }
+${REPORT_GLOSSARY_CSS}
 </style>
 </head>
 <body>
@@ -1395,6 +1401,8 @@ ${REPORT_FONT_LINK_TAG}
 
     <!-- 4 ─ Vedic gunam & core virtues (the block is omitted when there are none) -->
 ${virtuesHtml}
+
+    <p class="glossary-pointer">${escapeHtml(GLOSSARY_PAGE_TEXT[lang].pointer)}</p>
 
     <!-- 5 ─ Vedic certification & divine blessing -->
     <div class="certification-panel">
@@ -1639,6 +1647,17 @@ ${suggestionsPage}
   if (certStar) certStar.textContent = merge(data.nakshatra, certStar.textContent);
 })();
 </script>
+
+<!-- ============ PAGE 3: REPORT GUIDE & GLOSSARY ============ -->
+<!-- Namakaran, Nakshatra, Pada, Gunam… explained in one line each, in the
+     family's language. The wording is shared with api/astrology/report_views.php. -->
+<div class="page namakaran-certificate-page" id="namakaran-glossary">
+  <div class="royal-frame inner">
+    ${certificateHeader(isTa ? 'சொல் விளக்கம்' : isHi ? 'शब्दार्थ' : 'Plain-language guide to this report')}
+    <div class="modern-divider"></div>
+    ${reportGlossaryHtml('BABY_NAMING', lang)}
+  </div>
+</div>
 
 </body>
 </html>`;
