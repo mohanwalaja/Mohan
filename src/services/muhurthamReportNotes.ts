@@ -13,9 +13,6 @@ export interface MuhurthamReportNotes {
   selectionHeading: string;
   summaryText: string;
   selectionText: string;
-  /** The step after the table: which date to confirm, and how. */
-  nextStepHeading: string;
-  nextStepText: string;
   /** One-line page-1 explanation of the ♥ personally-favourable date mark. */
   personalMarkNote: string;
 }
@@ -65,8 +62,6 @@ export function buildMuhurthamReportNotes(
     selectionHeading: copy.selectionHeading,
     summaryText,
     selectionText: [copy.selectionRule, ...additionalRules].join(' '),
-    nextStepHeading: String(copy.nextStepHeading || notesData.en.nextStepHeading || ''),
-    nextStepText: String(copy.nextStepText || notesData.en.nextStepText || ''),
     personalMarkNote: String(copy.personalMarkNote || notesData.en.personalMarkNote || '')
   };
 }

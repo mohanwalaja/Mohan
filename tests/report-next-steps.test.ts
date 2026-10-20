@@ -33,6 +33,7 @@ import type { AppLanguage } from '../src/lib/astrology/types.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rendererPhp = fs.readFileSync(path.join(root, 'api/astrology/report_views.php'), 'utf8');
 const phpNotes = fs.readFileSync(path.join(root, 'api/astrology/muhurtham_report_notes.php'), 'utf8');
+const phpNotesJson = fs.readFileSync(path.join(root, 'api/astrology/muhurtham_report_notes.json'), 'utf8');
 const LANGS: AppLanguage[] = ['en', 'ta', 'hi'];
 
 let passed = 0;
@@ -131,24 +132,23 @@ check('Baby Naming explains why the first sound matters, on page 1', () => {
   }
 });
 
-check('Muhurtham tells the family what to do with the dates it just listed', () => {
-  const headings: Record<AppLanguage, string> = {
-    en: 'What do I do next?',
-    ta: 'அடுத்து என்ன செய்ய வேண்டும்?',
-    hi: 'अब आगे क्या करें?'
+check('the Muhurtham guide ends at the dates — no extra next-step block', () => {
+  // Owner decision (20 Oct 2026): the "What do I do next?" paragraph was
+  // removed from page 2. The report explains how its dates were chosen and
+  // stops there; it must not print a booking or email instruction.
+  const banned: Record<AppLanguage, string[]> = {
+    en: ['What do I do next?', 'written confirmation', 'order number'],
+    ta: ['அடுத்து என்ன செய்ய வேண்டும்?', 'உறுதிப்பத்திரம்', 'ஆர்டர் எண்ணுடன்'],
+    hi: ['अब आगे क्या करें?', 'लिखित पुष्टि', 'ऑर्डर नंबर']
   };
   for (const lang of LANGS) {
     const html = buildMuhurthamHtml(muhurtham, lang);
-    const step = /<p class="selection-next-step">[\s\S]*?<\/p>/.exec(html)?.[0] || '';
-    assert.ok(step.includes(headings[lang]), `${lang}: the date table has no next step`);
-    assert.ok(step.includes('admin@astrosivam.com'), `${lang}: the next step does not say where to send the date`);
-    // Confirmation in writing is the point: the family has to show it to others.
-    assert.ok(
-      lang === 'en' ? /confirmation/i.test(step) : true,
-      `${lang}: the next step never promises a written confirmation`
-    );
-    assert.equal((html.match(/class="selection-next-step"/g) || []).length, 1,
-      `${lang}: the next step is printed more than once`);
+    assert.doesNotMatch(html, /selection-next-step/, `${lang}: the removed next-step block is rendered again`);
+    for (const phrase of banned[lang]) {
+      assert.ok(!html.includes(phrase), `${lang}: "${phrase}" is back on page 2`);
+    }
+    // The guide itself stays: it is what makes the dates understandable.
+    assert.ok(html.includes('muhurtham-selection-notes'), `${lang}: the selection guide disappeared too`);
     assert.equal((html.match(/<div class="page /g) || []).length, 3,
       `${lang}: the Muhurtham report changed sheet count`);
   }
@@ -161,9 +161,9 @@ check('the PHP renderer carries the same copy', () => {
   assert.match(rendererPhp, /\$nextStepText = \$isTa/);
   assert.match(rendererPhp, /class="bn-why"/);
   assert.match(rendererPhp, /\$whySoundTitle = \$isTa \? 'ஏன் முதல் ஒலி முக்கியம்'/);
-  assert.match(rendererPhp, /class="selection-next-step"/, 'the PHP Muhurtham guide has no next step');
-  assert.match(rendererPhp, /\$notes\['nextStepText'\]/, 'the PHP Muhurtham guide never reads the next-step copy');
-  assert.match(phpNotes, /'nextStepHeading'/, 'the PHP notes builder returns no next-step copy');
+  assert.doesNotMatch(rendererPhp, /selection-next-step/, 'the PHP Muhurtham guide prints the removed next step');
+  assert.doesNotMatch(phpNotes, /nextStep/, 'the PHP notes builder still returns next-step copy');
+  assert.doesNotMatch(phpNotesJson, /nextStep/, 'the shared notes JSON still carries next-step copy');
 });
 
 console.log(`\n${passed} no-dead-end checks passed.`);

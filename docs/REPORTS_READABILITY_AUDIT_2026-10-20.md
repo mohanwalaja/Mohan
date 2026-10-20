@@ -204,7 +204,10 @@ In the other three reports there is no summary page at all.
   star and pada, any name starting with one of the four syllables is correct,
   and every list on page 2 starts with those sounds. (The 4-step "how to
   choose" walkthrough is still open.)
-- Muhurtham: no next step after the date table (nothing about booking/confirming).
+- Muhurtham: no next step after the date table. **Closed as "won't fix" (owner,
+  20 Oct 2026):** a "What do I do next?" paragraph was drafted on page 2 and the
+  owner asked for it to be removed — the report explains how its dates were
+  chosen and stops there. The selection guide stays.
 - Jathagam: remedies exist on page 3, but page 2's cautions never point to them.
 
 **11. Baby Naming is the thinnest report.** *✅ The central idea is now stated (20 Oct 2026)*
@@ -327,14 +330,13 @@ page 1 points to it.
    Sanskrit only on the glossary page. See finding 6.
 3. Marriage: per-porutham remedy line when a porutham scores 0 — replacing
    "ask an astrologer".
-4. Muhurtham: next step after the date table **✅ DONE (20 Oct 2026)** — the
-   page-2 selection guide now closes with *"What do I do next?"*: pick one date
-   (BEST before GOOD) and send it with the order number to
-   admin@astrosivam.com for a written date confirmation the family can show to
-   the hall and the priest; if two dates suit equally, confirm the earlier one
-   and keep the other as a backup. Same copy in en / ta / hi
-   (`api/astrology/muhurtham_report_notes.json`), unchanged page count (3).
-   Guarded by `tests/report-next-steps.test.ts`.
+4. ~~Muhurtham: next step after the date table~~ **REMOVED (owner, 20 Oct 2026)**
+   — a *"What do I do next?"* paragraph (confirm a date, email the order number,
+   get a written confirmation) was shipped on page 2 and then removed at the
+   owner's request. The page-2 selection guide still explains what was checked
+   and why only a few dates are listed, and the report ends there. Copy deleted
+   from `api/astrology/muhurtham_report_notes.json` and both renderers;
+   `tests/report-next-steps.test.ts` now guards that it cannot come back.
 5. Muhurtham: explain the one-line Tara Bala note ("Groom: Vadha Tara — avoid
    this date for him") or suppress it when the date is still GOOD for the couple.
 6. Baby naming: add a "How to choose the name" block (4 steps), and explain why

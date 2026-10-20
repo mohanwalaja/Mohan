@@ -18,8 +18,6 @@ class MuhurthamReportNotes {
                 'weekdayHeading' => 'Weekday rules',
                 'weekdayText' => 'Weekday exclusions follow the selected ceremony rules; family traditions may differ.',
                 'selectionHeading' => 'Recommended dates', 'summaryText' => '',
-                'nextStepHeading' => 'What do I do next?',
-                'nextStepText' => 'Pick one date above (BEST first, then GOOD) and send it with your order number to admin@astrosivam.com — we reply with a written confirmation you can show the hall and the priest. If two dates suit equally, confirm the earlier one and keep the other as a backup.',
                 'selectionText' => 'Only BEST and GOOD dates are listed after Panchangam and ceremony-specific checks. FAIR and AVOID dates are not listed.',
                 'personalMarkNote' => 'Dates marked with ♥ are especially auspicious for YOU personally — verified against your own Janma Nakshatra and Rasi (good Tara Balam, no Chandrashtama). The other listed dates are generally auspicious for everyone.'
             ];
@@ -75,8 +73,6 @@ class MuhurthamReportNotes {
             'selectionHeading' => $copy['selectionHeading'],
             'summaryText' => strtr($copy['summary'], $placeholders),
             'selectionText' => implode(' ', $selectionParts),
-            'nextStepHeading' => (string) ($copy['nextStepHeading'] ?? ($translations['en']['nextStepHeading'] ?? '')),
-            'nextStepText' => (string) ($copy['nextStepText'] ?? ($translations['en']['nextStepText'] ?? '')),
             'personalMarkNote' => (string) ($copy['personalMarkNote']
                 ?? ($translations['en']['personalMarkNote'] ?? ''))
         ];
