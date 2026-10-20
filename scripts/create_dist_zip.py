@@ -40,9 +40,13 @@ def create_dist_zip():
         # temp file, even when an ignored local runtime key exists in the checkout.
         if basename.startswith('app_secret_key.txt'):
             return True
-        if '/storage/' not in normalized:
-            return False
-        return not basename.startswith('.ht')
+        if '/storage/' in normalized or '/uploads/' in normalized:
+            # api/uploads/team holds the portraits the admin uploaded through
+            # the panel. On the live server they are written there directly; a
+            # developer's local test uploads must never ride along in a release,
+            # so only the folder guards (.htaccess) ship.
+            return not basename.startswith('.ht')
+        return False
 
     with zipfile.ZipFile(zip_name, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zipf:
         # 1. Add all optimized static frontend files from dist/ to root of zip

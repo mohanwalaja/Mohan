@@ -51,7 +51,10 @@ import {
   MapPin,
   Palette,
   Star,
-  IndianRupee
+  IndianRupee,
+  ImagePlus,
+  Loader2,
+  Link2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -121,6 +124,13 @@ import { AiAstrologerConfigPanel } from '../components/admin/AiAstrologerConfigP
 import { DatabaseBackupPanel } from '../components/admin/DatabaseBackupPanel';
 import { SystemHealthPanel } from '../components/admin/SystemHealthPanel';
 import { SetupChecklistPanel } from '../components/admin/SetupChecklistPanel';
+import { TeamMemberAvatar, isUsableTeamPhoto } from '../components/common/TeamMemberAvatar';
+import {
+  TEAM_PHOTO_ACCEPT,
+  TEAM_PHOTO_MAX_BYTES,
+  formatTeamPhotoBytes,
+  prepareTeamPhoto
+} from '../services/teamPhoto';
 import { GoogleSetupPanel } from '../components/admin/GoogleSetupPanel';
 import { SecurityBannedIpPanel } from '../components/admin/SecurityBannedIpPanel';
 import { CustomerReviewsPanel } from '../components/admin/CustomerReviewsPanel';
@@ -320,6 +330,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     isActive: true,
     order: 1
   });
+  // Team photo upload (the admin picks a file instead of pasting a URL).
+  const [isTeamPhotoUploading, setIsTeamPhotoUploading] = useState(false);
+  const [teamPhotoError, setTeamPhotoError] = useState('');
+  const [teamPhotoInfo, setTeamPhotoInfo] = useState<{ bytes: number; width: number; height: number } | null>(null);
+  const [showPhotoUrlField, setShowPhotoUrlField] = useState(false);
+  const teamPhotoInputRef = React.useRef<HTMLInputElement>(null);
 
   const fetchAdminData = async () => {
     setIsLoading(true);
@@ -1142,6 +1158,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
   // Team CRUD Handlers
   const handleOpenAddTeamModal = () => {
     setEditingMember(null);
+    setTeamPhotoError('');
+    setTeamPhotoInfo(null);
+    setShowPhotoUrlField(false);
     setMemberFormData({
       nameEn: '',
       nameTa: '',
@@ -1163,6 +1182,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
   const handleOpenEditTeamModal = (member: TeamMember) => {
     setEditingMember(member);
+    setTeamPhotoError('');
+    setTeamPhotoInfo(null);
+    // A pasted link stays visible if that is how this member was set up.
+    setShowPhotoUrlField(isUsableTeamPhoto(member.photoUrl) && !member.photoUrl.startsWith('/api/uploads/team/'));
     setMemberFormData({
       nameEn: member.nameEn,
       nameTa: member.nameTa || '',
@@ -1182,8 +1205,52 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     setIsTeamModalOpen(true);
   };
 
+  /**
+   * The admin picked a photo file. It is shrunk in the browser first (so the
+   * upload is small even on mobile data), then stored on the server, and the
+   * returned /api/uploads/team/… URL is what gets saved on the member.
+   */
+  const handleTeamPhotoSelected = async (file: File | null) => {
+    if (!file) return;
+    setTeamPhotoError('');
+    setIsTeamPhotoUploading(true);
+    try {
+      const prepared = await prepareTeamPhoto(file);
+      const res = await api.uploadTeamPhoto(prepared.base64);
+      if (!res.success || !res.photoUrl) {
+        throw new Error(res.message || 'The photo could not be uploaded. Please try again.');
+      }
+      setMemberFormData(prev => ({ ...prev, photoUrl: res.photoUrl as string }));
+      setTeamPhotoInfo({
+        bytes: res.bytes ?? prepared.bytes,
+        width: res.width ?? prepared.width,
+        height: res.height ?? prepared.height
+      });
+      setShowPhotoUrlField(false);
+    } catch (err: any) {
+      setTeamPhotoError(err?.message || 'The photo could not be uploaded. Please try again.');
+    } finally {
+      setIsTeamPhotoUploading(false);
+      if (teamPhotoInputRef.current) teamPhotoInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveTeamPhoto = () => {
+    setMemberFormData(prev => ({ ...prev, photoUrl: '' }));
+    setTeamPhotoInfo(null);
+    setTeamPhotoError('');
+  };
+
   const handleSaveTeamMember = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isTeamPhotoUploading) {
+      setTeamPhotoError('Please wait for the photo to finish uploading.');
+      return;
+    }
+    if (!memberFormData.photoUrl.trim()) {
+      setTeamPhotoError('Add a photo first: upload one from your phone or computer, or paste an image link.');
+      return;
+    }
     try {
       const payload = {
         nameEn: memberFormData.nameEn,
@@ -3552,11 +3619,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         <tr key={member.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-amber-500/30 shrink-0 p-1 flex items-center justify-center">
-                                <img
-                                  src={member.photoUrl && !member.photoUrl.includes('unsplash.com') ? member.photoUrl : logoImg}
-                                  alt={name}
-                                  className="w-full h-full object-contain"
+                              <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-900 border border-amber-500/30 shrink-0 flex items-center justify-center">
+                                <TeamMemberAvatar
+                                  photoUrl={member.photoUrl}
+                                  name={name}
+                                  className="w-full h-full"
+                                  imageClassName="w-full h-full object-cover"
+                                  emblemClassName="w-full h-full object-contain p-1"
                                 />
                               </div>
                               <div>
@@ -4514,15 +4583,100 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
                   <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    Photo URL *
+                    Photo *
                   </label>
-                  <input
-                    type="url"
-                    required
-                    value={memberFormData.photoUrl}
-                    onChange={e => setMemberFormData({ ...memberFormData, photoUrl: e.target.value })}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono"
-                  />
+                  <div className="flex items-start gap-3">
+                    <div className="w-20 h-20 shrink-0 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                      <TeamMemberAvatar
+                        photoUrl={memberFormData.photoUrl}
+                        name={memberFormData.nameEn || 'Team member'}
+                        className="w-full h-full"
+                        imageClassName="w-full h-full object-cover"
+                        emblemClassName="w-full h-full object-contain p-2"
+                      />
+                    </div>
+
+                    <div className="min-w-0 space-y-1.5">
+                      <input
+                        ref={teamPhotoInputRef}
+                        data-testid="team-photo-input"
+                        type="file"
+                        accept={TEAM_PHOTO_ACCEPT}
+                        className="hidden"
+                        onChange={e => handleTeamPhotoSelected(e.target.files?.[0] ?? null)}
+                      />
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          data-testid="team-photo-upload-button"
+                          disabled={isTeamPhotoUploading}
+                          onClick={() => teamPhotoInputRef.current?.click()}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-slate-950 text-[11px] font-bold cursor-pointer transition-colors"
+                        >
+                          {isTeamPhotoUploading ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <ImagePlus className="w-3.5 h-3.5" />
+                          )}
+                          <span>
+                            {isTeamPhotoUploading
+                              ? 'Uploading…'
+                              : memberFormData.photoUrl
+                              ? 'Replace photo'
+                              : 'Upload photo'}
+                          </span>
+                        </button>
+                        {memberFormData.photoUrl && !isTeamPhotoUploading && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveTeamPhoto}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-[11px] font-semibold text-slate-600 dark:text-slate-300 cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Remove</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setShowPhotoUrlField(v => !v)}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400 underline cursor-pointer"
+                        >
+                          <Link2 className="w-3 h-3" />
+                          <span>{showPhotoUrlField ? 'hide link field' : 'or paste a link'}</span>
+                        </button>
+                      </div>
+
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                        JPG, PNG or WebP. It is shrunk to {formatTeamPhotoBytes(TEAM_PHOTO_MAX_BYTES)} automatically — no
+                        editing needed, and it works straight from your phone.
+                      </p>
+                      {teamPhotoInfo && !isTeamPhotoUploading && (
+                        <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                          ✓ Uploaded {formatTeamPhotoBytes(teamPhotoInfo.bytes)} • {teamPhotoInfo.width}×
+                          {teamPhotoInfo.height}px
+                        </p>
+                      )}
+                      {teamPhotoError && (
+                        <p data-testid="team-photo-error" className="text-[10px] font-semibold text-rose-600 leading-relaxed">
+                          {teamPhotoError}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {showPhotoUrlField && (
+                    <input
+                      type="text"
+                      inputMode="url"
+                      value={memberFormData.photoUrl}
+                      onChange={e => {
+                        setMemberFormData({ ...memberFormData, photoUrl: e.target.value });
+                        setTeamPhotoInfo(null);
+                      }}
+                      placeholder="https://… (only if the photo is already online)"
+                      className="mt-2 w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono"
+                    />
+                  )}
                 </div>
 
                 <div>

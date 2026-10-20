@@ -18,6 +18,7 @@ import { TeamMember } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
 import { DEFAULT_TEAM_MEMBERS } from '../../data/defaultTeamMembers';
 import logoImg from '../../assets/astrosivam_logo.png';
+import { TeamMemberAvatar } from './TeamMemberAvatar';
 
 interface AstrologyTeamSectionProps {
   showTitle?: boolean;
@@ -363,11 +364,13 @@ export const AstrologyTeamSection: React.FC<AstrologyTeamSectionProps> = ({
                     {/* Emblem & Experience Badge */}
                     <div className="flex items-center gap-4">
                       <div className="relative shrink-0">
-                        <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 via-slate-900 to-amber-950/60 border-2 ${theme.photoBorder} shadow-md flex items-center justify-center p-2 group-hover:scale-105 transition-transform`}>
-                          <img
-                            src={logoImg}
-                            alt="ASTRO SIVAM Emblem"
-                            className="w-full h-full object-contain"
+                        <div className={`w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-amber-500/20 via-slate-900 to-amber-950/60 border-2 ${theme.photoBorder} shadow-md flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                          <TeamMemberAvatar
+                            photoUrl={member.photoUrl}
+                            name={memberName}
+                            className="w-full h-full"
+                            imageClassName="w-full h-full object-cover"
+                            emblemClassName="w-full h-full object-contain p-2"
                           />
                         </div>
                         <div className={`absolute -bottom-1 -right-1 ${theme.expBadge} text-[9px] font-black px-1.5 py-0.2 rounded-full shadow-xs`}>
@@ -518,11 +521,13 @@ export const AstrologyTeamSection: React.FC<AstrologyTeamSectionProps> = ({
                   {/* Emblem & Experience Badge */}
                   <div className="flex items-center gap-4">
                     <div className="relative shrink-0">
-                      <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 via-slate-900 to-amber-950/60 border-2 ${theme.photoBorder} shadow-md flex items-center justify-center p-2 group-hover:scale-105 transition-transform`}>
-                        <img
-                          src={logoImg}
-                          alt="ASTRO SIVAM Emblem"
-                          className="w-full h-full object-contain"
+                      <div className={`w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-amber-500/20 via-slate-900 to-amber-950/60 border-2 ${theme.photoBorder} shadow-md flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                        <TeamMemberAvatar
+                          photoUrl={member.photoUrl}
+                          name={memberName}
+                          className="w-full h-full"
+                          imageClassName="w-full h-full object-cover"
+                          emblemClassName="w-full h-full object-contain p-2"
                         />
                       </div>
                       <div className={`absolute -bottom-1 -right-1 ${theme.expBadge} text-[9px] font-black px-1.5 py-0.2 rounded-full shadow-xs`}>

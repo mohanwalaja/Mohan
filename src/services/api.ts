@@ -1836,6 +1836,27 @@ export const api = {
     return safeJson(res);
   },
 
+  /**
+   * Upload one astrology team portrait (already shrunk to <=250 KB in the
+   * browser by src/services/teamPhoto.ts). Returns the site-relative URL to
+   * save on the member, e.g. /api/uploads/team/ab12….jpg.
+   */
+  async uploadTeamPhoto(imageBase64: string): Promise<{
+    success: boolean;
+    message: string;
+    photoUrl?: string;
+    bytes?: number;
+    width?: number;
+    height?: number;
+  }> {
+    const res = await fetch(`${API_BASE}/admin/team/photo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ imageBase64 })
+    });
+    return safeJson(res);
+  },
+
   async deleteTeamMember(id: string): Promise<{ success: boolean; message: string }> {
     const res = await fetch(`${API_BASE}/admin/team/${id}`, {
       method: 'DELETE',

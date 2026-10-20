@@ -1,0 +1,24 @@
+# ASTRO SIVAM - admin-uploaded photos (astrology team portraits).
+#
+# These files are meant to be SERVED as images and nothing else. This folder is
+# written to by the admin panel: never let an uploaded file execute as code,
+# and never list what is inside it.
+Options -Indexes -ExecCGI
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar .cgi .pl .py .sh
+RemoveType .php .phtml .phar
+
+# Belt and braces: the writer only ever produces .jpg/.png/.webp names, and any
+# script-ish file that somehow appears here is refused rather than executed.
+<FilesMatch "\.(php|phtml|php[0-9]|phar|cgi|pl|py|sh|inc|shtml|htaccess)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>

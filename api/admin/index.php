@@ -13,6 +13,8 @@ require_once __DIR__ . '/../rate_limit.php';
 require_once __DIR__ . '/../reviews.php';
 require_once __DIR__ . '/family_approval.php';
 require_once __DIR__ . '/family_docs.php';
+// Uploaded astrology team portraits (no pasted image URL needed).
+require_once __DIR__ . '/team_photos.php';
 // Document-sized JSON bodies for the delivery routes (see api/request_body.php).
 require_once __DIR__ . '/../request_body.php';
 
@@ -36,7 +38,10 @@ function astro_admin_action_limit($pdo, $admin, $action) {
         // The test mail is sent to an arbitrary address: 5 per 10 minutes.
         'test-mail' => array(5, 600, 'Too many test emails were sent in a short time. Please wait a few minutes.'),
         // Reconciliation sweeps hit provider APIs: 10 per 10 minutes.
-        'provider' => array(10, 600, 'Too many reconciliation runs in a short time. Please wait before sweeping again.')
+        'provider' => array(10, 600, 'Too many reconciliation runs in a short time. Please wait before sweeping again.'),
+        // Team portraits: 20 uploads per 10 minutes per admin. Generous for a
+        // real team (a handful of photos), useless as a disk-filling weapon.
+        'team-photo' => array(20, 600, 'Too many photo uploads in a short time. Please wait a few minutes and try again.')
     );
     if (!isset($limits[$action])) return;
     list($maxHits, $windowSeconds, $message) = $limits[$action];
@@ -1943,6 +1948,21 @@ if (strpos($path, 'admin/reports/financial') !== false && $method === 'GET') {
     jsonResponse(['success' => true, 'report' => $report]);
 }
 
+// 7z. POST /api/admin/team/photo — upload one team portrait.
+//
+// The admin adds a photo from their phone/computer instead of pasting a public
+// image URL. The browser already shrinks it to <=250 KB; the server re-checks
+// the real type, the byte budget and the dimensions, stores it under
+// api/uploads/team/ and returns the site-relative URL to save on the member.
+// This MUST stay above the /admin/team block: that router treats any POST under
+// admin/team as "create a member".
+if ($method === 'POST' && preg_match('#/admin/team/photo/?$#', $path)) {
+    astro_admin_action_limit($pdo, $admin, 'team-photo');
+    astro_team_photo_prune($pdo);
+    $result = astro_team_photo_store(getJsonBody());
+    jsonResponse($result, !empty($result['success']) ? 200 : 400);
+}
+
 // 8. GET & POST & PUT & DELETE /api/admin/team
 if (strpos($path, 'admin/team') !== false) {
     if ($method === 'GET') {
@@ -1988,7 +2008,9 @@ if (strpos($path, 'admin/team') !== false) {
         $location = $body['location'] ?? 'Tamil Nadu, India';
         $exp = intval($body['experienceYears'] ?? $body['yearsOfExperience'] ?? 10);
         $specs = isset($body['specializations']) && is_array($body['specializations']) ? json_encode($body['specializations']) : '[]';
-        $photo = $body['photoUrl'] ?? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&fit=crop&q=80';
+        // No pasted stock photo by default: without an upload (or an explicit
+        // link) the public card shows the ASTRO SIVAM emblem, never a stranger.
+        $photo = is_string($body['photoUrl'] ?? null) ? trim($body['photoUrl']) : '';
         $is_active = isset($body['isActive']) ? ($body['isActive'] ? 1 : 0) : 1;
         $order = intval($body['displayOrder'] ?? 1);
 
@@ -2021,14 +2043,28 @@ if (strpos($path, 'admin/team') !== false) {
                 $sets[] = "experience_years = ?";
                 $params[] = intval($body['experienceYears'] ?? $body['yearsOfExperience']);
             }
+            $previousPhoto = '';
             if (isset($body['photoUrl'])) {
                 $sets[] = "photo_url = ?";
-                $params[] = $body['photoUrl'];
+                $params[] = trim((string)$body['photoUrl']);
+                // Read the old value first: a replaced upload is deleted from
+                // disk once the row points at the new one, so the folder never
+                // accumulates orphaned portraits.
+                try {
+                    $prevStmt = $pdo->prepare("SELECT photo_url FROM team_members WHERE id = ?");
+                    $prevStmt->execute([$id]);
+                    $previousPhoto = (string)($prevStmt->fetchColumn() ?: '');
+                } catch (Throwable $e) {
+                    $previousPhoto = '';
+                }
             }
             if (!empty($sets)) {
                 $params[] = $id;
                 $stmt = $pdo->prepare("UPDATE team_members SET " . implode(', ', $sets) . ", updated_at = NOW() WHERE id = ?");
                 $stmt->execute($params);
+                if ($previousPhoto !== '' && $previousPhoto !== trim((string)($body['photoUrl'] ?? ''))) {
+                    astro_team_photo_delete($previousPhoto);
+                }
             }
             jsonResponse(['success' => true, 'message' => 'Team member updated']);
         }
@@ -2040,8 +2076,20 @@ if (strpos($path, 'admin/team') !== false) {
             $id = $_GET['id'] ?? '';
         }
         if ($id) {
+            $photoToRemove = '';
+            try {
+                $photoStmt = $pdo->prepare("SELECT photo_url FROM team_members WHERE id = ?");
+                $photoStmt->execute([$id]);
+                $photoToRemove = (string)($photoStmt->fetchColumn() ?: '');
+            } catch (Throwable $e) {
+                $photoToRemove = '';
+            }
             $stmt = $pdo->prepare("DELETE FROM team_members WHERE id = ?");
             $stmt->execute([$id]);
+            // The member is gone, so their uploaded portrait must not linger.
+            if ($photoToRemove !== '') {
+                astro_team_photo_delete($photoToRemove);
+            }
             jsonResponse(['success' => true, 'message' => 'Team member removed']);
         }
         jsonResponse(['success' => false, 'message' => 'ID missing for deletion'], 400);

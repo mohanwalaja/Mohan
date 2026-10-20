@@ -523,14 +523,26 @@ if ((preg_match('#/services/team/?$#', $path) || $action === 'team') && $method 
     $stmt = $pdo->query("SELECT * FROM team_members WHERE is_active = 1 ORDER BY display_order ASC, created_at ASC");
     $rows = $stmt->fetchAll();
     $team = array_map(function($r) {
+        // The public cards read the `…En` / `fullName` aliases (the same shape
+        // the admin endpoint returns). Without them a real team member rendered
+        // as the generic "Astrology Scholar" placeholder on the site.
         return [
             'id' => $r['id'],
             'name' => $r['name'],
+            'nameEn' => $r['name'],
+            'fullName' => $r['name'],
+            'nameTa' => $r['name_ta'] ?? '',
+            'nameHi' => $r['name_hi'] ?? '',
             'title' => $r['title'],
+            'titleEn' => $r['title'],
             'titleTa' => $r['title_ta'],
             'titleHi' => $r['title_hi'],
             'bio' => $r['bio'],
+            'bioEn' => $r['bio'],
             'location' => $r['location'],
+            'education' => $r['education'] ?? '',
+            'educationEn' => $r['education'] ?? '',
+            'educationTa' => $r['education_ta'] ?? '',
             'experienceYears' => intval($r['experience_years']),
             'specializations' => json_decode($r['specializations'], true) ?: [],
             'photoUrl' => $r['photo_url'],

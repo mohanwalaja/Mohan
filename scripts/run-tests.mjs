@@ -192,6 +192,13 @@ const testFiles = [
   // USD → INR RATE as an admin setting (₹95 default, ₹40–₹300 accepted band):
   // a hard-coded ₹84 silently under-charged every India price by ~12%.
   'tests/usd-base-pricing.test.ts',
+  // The admin uploads an astrology team portrait instead of pasting a URL
+  // (250 KB budget, shrunk in the browser, sniffed and renamed on the server,
+  // folder cannot execute code). Executes the PHP rules when wasm is present.
+  'tests/team-photo-upload.test.ts',
+  // And the real routes end-to-end under PHP-WASM (upload -> member -> public
+  // team card -> replace/delete cleanup), which is the flow the admin performs.
+  'tests/team-photo-e2e.test.ts',
   // Saved family members + frozen report download: order forms must start
   // blank (explicit picker, never silent auto-fill), up to 6 family
   // members are saveable, and a dashboard re-download must render the
