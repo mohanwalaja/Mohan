@@ -12,7 +12,6 @@ import {
 import { classifyJathagamPlanetsForSummary } from './jathagamPlanetSummary';
 import { withDerivedNavamsa } from './navamsa';
 import {
-  dignityCardLine,
   debilitationSign,
   EXALTATION_SIGN,
   OWN_SIGNS
@@ -27,6 +26,14 @@ import { LUCKY_INDICATOR_TEXT, resolveLuckyIndicators } from './jathagamLuckyDat
 // astro_jathagam_page1()). One file, two renderers: the browser preview and the
 // server/email PDF cannot drift on the zodiac names or the dosha explanations.
 import jathagamPage1Data from '../../api/astrology/jathagam_page1.json';
+// Plain-language glossary shared with api/astrology/report_views.php (read there
+// by astro_report_glossary()). Appended as the report's last page so no reader
+// has to guess what "bhava", "vakri" or "porutham" means.
+import {
+  GLOSSARY_PAGE_TEXT,
+  REPORT_GLOSSARY_CSS,
+  reportGlossaryHtml
+} from './reportGlossary';
 
 // Rasi names in 3 languages
 export const RASI_NAMES_REPORT: Record<number, { en: string; ta: string; hi: string }> = {
@@ -301,37 +308,46 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
     const isChallenging = isDusthana || isDebilitated || isCombust || conjunctMalefics.length > 0;
     const reasonsEn = [
       isDusthana ? `placed in a challenging ${enOrdinal(bhava)} house` : '',
-      isDebilitated ? 'debilitated' : '',
-      isCombust ? 'combust/too close to Sun' : '',
+      isDebilitated ? 'debilitated (Neecha)' : '',
+      isCombust ? 'combust (Astangata), too close to the Sun' : '',
       conjunctMalefics.length ? `joined within ${MALEFIC_CONJUNCTION_ORB_DEG}° with ${conjunctMalefics.join('/')}` : '',
       offsetMaleficNames.length ? `exalted/own-sign lord offsets one malefic conjunction (${offsetMaleficNames.join('/')})` : '',
       weakMaleficNames.length ? `${weakMaleficNames.join('/')} is debilitated, so not counted as a strong malefic` : '',
-      isRetrograde ? 'retrograde, requiring review and patience' : ''
+      isRetrograde ? 'retrograde (Vakri), so results need patience' : ''
     ].filter(Boolean);
     const reasonsTa = [
       isDusthana ? `${bhava}-ஆம் சவாலான பாவத்தில்` : '',
-      isDebilitated ? 'நீச நிலையில்' : '',
-      isCombust ? 'சூரியனுக்கு அருகில் அஸ்தமன நிலையில்' : '',
+      isDebilitated ? 'நீச நிலையில் (நீசம்)' : '',
+      isCombust ? 'சூரியனுக்கு அருகில் அஸ்தமன நிலையில் (அஸ்தங்கதம்)' : '',
       conjunctMalefics.length ? `${MALEFIC_CONJUNCTION_ORB_DEG}°-க்குள் ${conjunctMalefics.join('/')} சேர்க்கையுடன்` : '',
       offsetMaleficNames.length ? `உச்ச/சொந்த ராசி அதிபதி ஒரு பாவச் சேர்க்கையை ஈடுசெய்கிறார் (${offsetMaleficNames.join('/')})` : '',
       weakMaleficNames.length ? `${weakMaleficNames.join('/')} நீச நிலையில் உள்ளதால் வலுவான பாவ கிரகமாகக் கணக்கிடப்படவில்லை` : '',
-      isRetrograde ? 'வக்கிரமாக இருப்பதால் பொறுமை தேவை' : ''
+      isRetrograde ? 'வக்கிரமாக (வக்கிரம்) இருப்பதால் பொறுமை தேவை' : ''
     ].filter(Boolean);
     const reasonsHi = [
       isDusthana ? `${hiOrdinal(bhava)} चुनौतीपूर्ण भाव में` : '',
-      isDebilitated ? 'नीच राशि में' : '',
-      isCombust ? 'सूर्य के निकट अस्त' : '',
+      isDebilitated ? 'नीच राशि में (नीच)' : '',
+      isCombust ? 'सूर्य के निकट अस्त (अस्तंगत)' : '',
       conjunctMalefics.length ? `${MALEFIC_CONJUNCTION_ORB_DEG}° के भीतर ${conjunctMalefics.join('/')} के साथ` : '',
       offsetMaleficNames.length ? `उच्च/स्वराशि का स्वामी एक पाप-युति की भरपाई करता है (${offsetMaleficNames.join('/')})` : '',
       weakMaleficNames.length ? `${weakMaleficNames.join('/')} नीच होने से प्रबल पाप ग्रह नहीं माना गया` : '',
-      isRetrograde ? 'वक्री होने से धैर्य आवश्यक' : ''
+      isRetrograde ? 'वक्री (वक्री) होने से धैर्य आवश्यक' : ''
     ].filter(Boolean);
     // Item 3: when the card's lord is debilitated (e.g. Mars as the Lagna lord
     // in the Health card, or the 10th lord in the Career card) the card names
     // the Neecha Bhanga rule that applies and carries the caveat.
-    const dignityNote = dignityCardLine(lordPos.dignity, lang);
+    //
+    // Readability (Oct 2026): the dignity status WORD is already carried by the
+    // reasons above ("debilitated (Neecha)", "retrograde (Vakri)"), so the card
+    // must not print the dignity tag line again — that produced
+    // "Caution: debilitated, retrograde, requiring review and patience,
+    //  Debilitated (Neecha), Retrograde (Vakri); …". Only the extra
+    // Neecha Bhanga explanation is appended, and only when it applies.
+    const neechaBhangaNote = lordPos.dignity && lordPos.dignity.isNeechaBhanga
+      ? (isTa ? lordPos.dignity.neechaBhangaTa : isHi ? lordPos.dignity.neechaBhangaHi : lordPos.dignity.neechaBhangaEn)
+      : '';
     const reasons = isTa ? reasonsTa : isHi ? reasonsHi : reasonsEn;
-    if (dignityNote) reasons.push(dignityNote);
+    if (neechaBhangaNote) reasons.push(neechaBhangaNote);
     return {
       targetSign,
       lordGraha,
@@ -344,7 +360,6 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
       isRetrograde,
       isSupportive,
       isChallenging,
-      dignityNote,
       reason: reasons.join(', ')
     };
   };
@@ -636,7 +651,7 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
  * The total lives here once: the page labels and the tests read it, so a page
  * can never claim "x / 4" again.
  */
-export const JATHAGAM_PAGE_COUNT = 3;
+export const JATHAGAM_PAGE_COUNT = 4;
 
 /** Localized "page x / N" label, with N taken from the real page count. */
 export function jathagamPageLabel(page: number, lang: AppLanguage, total: number = JATHAGAM_PAGE_COUNT): string {
@@ -883,6 +898,44 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
       ${renderRasiBox(6, 'pos-4-4', source)}
     </div>`;
 
+  // ── Chart legend ────────────────────────────────────────────────────────
+  // The chart cells print short tags ("Su", "Ch", … and "Lagna"), and two
+  // planets in one rasi print side by side ("GuSa"). Until now nothing on the
+  // page said what a tag meant, so the chart was unreadable without a teacher.
+  // One compact key under the two charts, in the family's language.
+  const WESTERN_NAME_EN: Record<string, string> = {
+    [Graha.SURYA]: 'Sun', [Graha.CHANDRA]: 'Moon', [Graha.CHEVVAI]: 'Mars',
+    [Graha.BUDHA]: 'Mercury', [Graha.GURU]: 'Jupiter', [Graha.SUKRA]: 'Venus',
+    [Graha.SANI]: 'Saturn', [Graha.RAHU]: 'N. Node', [Graha.KETU]: 'S. Node'
+  };
+  const legendPlanets: Graha[] = [
+    Graha.SURYA, Graha.CHANDRA, Graha.CHEVVAI, Graha.BUDHA, Graha.GURU,
+    Graha.SUKRA, Graha.SANI, Graha.RAHU, Graha.KETU
+  ];
+  const chartLegendItems = [
+    ...legendPlanets.map(graha => {
+      const info = GRAHA_NAMES_REPORT[graha];
+      const tag = isTa ? info.tagTa : isHi ? info.tagHi : info.tagEn;
+      const name = isTa ? info.ta : isHi ? info.hi : `${info.en} (${WESTERN_NAME_EN[graha] || info.en})`;
+      return { tag, name };
+    }),
+    {
+      tag: isTa ? 'லக்' : isHi ? 'लग्न' : 'Lagna',
+      name: isTa ? 'லக்னம்' : isHi ? 'लग्न (उदय राशि)' : 'Ascendant (rising sign)'
+    }
+  ];
+  const chartLegendTitle = isTa ? 'கட்டக் குறியீடுகள்' : isHi ? 'चक्र के चिह्न' : 'Chart Symbols';
+  const chartLegendNote = isTa
+    ? 'ஒரே ராசியில் இரண்டு குறியீடுகள் (எ.கா. குருசனி) என்பது இரண்டு கிரகங்களும் அந்த ராசியில் அமைந்துள்ளன என்று பொருள்.'
+    : isHi
+    ? 'एक ही राशि में दो चिह्न (जैसे गुश) का अर्थ है कि दोनों ग्रह उसी राशि में हैं।'
+    : 'Two symbols in one sign (for example GuSa) mean both planets sit in that rasi.';
+  const chartLegendHtml = `<div class="chart-legend" role="note" aria-label="${escapeHtml(chartLegendTitle)}">
+      <span class="chart-legend-title">${escapeHtml(chartLegendTitle)}</span>
+      <span class="chart-legend-items">${chartLegendItems.map(item => `<span class="chart-legend-item"><b>${escapeHtml(item.tag)}</b> ${escapeHtml(item.name)}</span>`).join('')}</span>
+      <span class="chart-legend-note">${escapeHtml(chartLegendNote)}</span>
+    </div>`;
+
   // The Dasha timeline and planetary positions remain in the horoscope result.
   // They continue to power the page-2 predictions and chart placements; their
   // standalone tables and current-period summary are not printed on page 1.
@@ -935,7 +988,7 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
 
   const hasAnySaniDosha = Boolean(isEzharaiSani || isAshtamaSani || isKandakaSani);
   const noSaniTitle = isTa ? 'சனி தோஷ நிலை' : isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status';
-  const noSaniBadge = isTa ? 'எந்த சனி தோஷமும் இல்லை' : isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha';
+  const noSaniBadge = isTa ? 'எந்த சனி தோஷமும் இல்லை' : isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'No Sani dosha is active in your chart';
   const noSaniDesc = saniStatus ? saniExplainer : unavailableDosha;
 
 
@@ -1419,6 +1472,33 @@ ${REPORT_FONT_LINK_TAG}
     margin: 0;
     white-space: nowrap;
   }
+  /* Chart key: one compact line under the two squares. */
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6mm 2.4mm;
+    margin: 1mm 0 0;
+    padding: 1mm 2mm;
+    border: 1px solid var(--slate-border);
+    border-left: 2px solid var(--gold);
+    border-radius: 3px;
+    background: #fffdf7;
+    font-size: 7.6px;
+    line-height: 1.3;
+    color: var(--ink-light);
+  }
+  .chart-legend-title {
+    font-family: ${headerFont};
+    font-size: 8.2px;
+    font-weight: 800;
+    color: var(--maroon);
+    letter-spacing: 0.3px;
+  }
+  .chart-legend-items { display: inline-flex; flex-wrap: wrap; gap: 0.6mm 2.2mm; }
+  .chart-legend-item b { color: var(--maroon); font-weight: 900; }
+  .chart-legend-note { flex-basis: 100%; color: var(--ink-muted); font-size: 7.2px; }
+
   .rasi-chart-grid .planet-name.is-lagna {
     color: #b91c1c;
     font-weight: 900;
@@ -1915,6 +1995,7 @@ ${REPORT_FONT_LINK_TAG}
       break-inside: avoid;
     }
   }
+${REPORT_GLOSSARY_CSS}
 </style>
 </head>
 <body>
@@ -1946,6 +2027,8 @@ ${REPORT_FONT_LINK_TAG}
       </div>
     </div>
 
+    <p class="glossary-pointer">${escapeHtml(GLOSSARY_PAGE_TEXT[lang].pointer)}</p>
+
     <div class="chart-section">
       <div class="chart-box panel">
         <h2>${isTa ? 'ராசி கட்டம் (Rasi Chart)' : isHi ? 'राशि चक्र (Rasi Chakra)' : 'Rasi Chart (Chakra)'}</h2>
@@ -1959,6 +2042,8 @@ ${REPORT_FONT_LINK_TAG}
           : `<p class="mini-note">${isTa ? 'நவாம்ச நிலை தகவல் கிடைக்கவில்லை; N/A.' : isHi ? 'नवांश स्थिति उपलब्ध नहीं; N/A।' : 'Navamsa positions unavailable; N/A.'}</p>`}
       </div>
     </div>
+
+    ${chartLegendHtml}
 
     <div class="section-title">${isTa ? 'தோஷ பரிசீலனை' : isHi ? 'दोष विश्लेषण' : 'Dosha Analysis'}</div>
     ${isEzharaiSani ? `<div class="dosha-card"><div class="dosha-header"><span class="name">${isTa ? 'ஏழரை சனி — சனி பெயர்ச்சி (Sade Sati / Ezharai Sani)' : isHi ? 'साढ़े साती — शनि गोचर (Ezharai Sani)' : 'Ezharai Sani — Saturn Transit (Sade Sati)'}</span><span class="dosha-badge ${ezharaiBadgeClass}">${escapeHtml(ezharaiStatus)}</span></div><div class="desc">${escapeHtml(ezharaiDesc)}</div></div>` : ''}
@@ -2093,6 +2178,29 @@ ${REPORT_FONT_LINK_TAG}
     <div class="reassurance" id="summary-reassurance">${escapeHtml(summaryText.reassurance)}</div>
 
     ${footerHtmlFor(3)}
+  </div>
+</div>
+
+<!-- ============ PAGE 4: REPORT GUIDE & GLOSSARY ============ -->
+<!--
+  Why a whole page for words: the audit (docs/REPORTS_READABILITY_AUDIT_2026-10-20.md)
+  found 20 specialist terms in this report and not one explanation. The wording
+  lives in api/astrology/report_glossary.json and is shared with the PHP
+  renderer, so the printed PDF and the browser preview explain a term the same
+  way. Page 1 points here; the page is content-sized and the sheet fitter below
+  still guarantees it never grows past one A4.
+-->
+<div class="page" id="jathagam-glossary">
+  <div class="inner">
+    ${buildReportHeaderHtml({
+      subtitle: isTa
+        ? 'சொல் விளக்கம் (Report Guide)'
+        : isHi
+          ? 'शब्दार्थ (Report Guide)'
+          : 'Plain-language guide to this report'
+    })}
+    ${reportGlossaryHtml('BIRTH_JATHAGAM', lang)}
+    ${footerHtmlFor(4)}
   </div>
 </div>
 

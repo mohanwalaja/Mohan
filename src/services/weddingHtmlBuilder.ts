@@ -7,6 +7,12 @@ import {
   buildWeddingDisclaimerNotes,
   weddingDisclaimerRichHtml
 } from './weddingDisclaimerNotes';
+import {
+  GLOSSARY_PAGE_TEXT,
+  REPORT_GLOSSARY_CSS,
+  reportGlossaryHtml
+} from './reportGlossary';
+import { TIER_FROM_STATUS, verdictTierFrom, verdictTierHint, verdictTierLabel } from './poruthamVerdict';
 
 const WEDDING_RASI_NAMES: Record<number, { en: string; ta: string; hi: string }> = {
   1: { en: 'Mesham', ta: 'மேஷம்', hi: 'मेष' },
@@ -161,9 +167,9 @@ export function buildWeddingMatchHtml(
   const finalVerdictText = !verdictKnown
     ? notAvailableLabel
     : isGood
-    ? (isTa ? 'இந்த மதிப்பீட்டின்படி நல்ல பொருத்தம்.' : isHi ? 'इस आकलन के अनुसार अच्छा मेल है।' : 'Good match based on this assessment.')
+    ? (isTa ? 'இந்த மதிப்பீட்டின்படி மிக நல்ல பொருத்தம்.' : isHi ? 'इस आकलन के अनुसार बहुत अच्छा मेल है।' : 'Very good match based on this assessment.')
     : isModerate
-    ? (isTa ? 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களைப் பரிசீலிக்கலாம்.' : isHi ? 'स्वीकार्य मेल; उपायों पर विचार किया जा सकता है।' : 'Acceptable match; remedies may be considered.')
+    ? (isTa ? 'ஒட்டுமொத்தமாக நல்ல பொருத்தம் — சில பொருத்தங்கள் பகுதியளவே.' : isHi ? 'कुल मिलाकर अच्छा मेल — कुछ पोरुथम आंशिक हैं।' : 'Good match overall — a few poruthams are partial.')
     : (isTa
       ? 'இந்த மதிப்பீட்டின்படி பரிந்துரைக்கப்படவில்லை; நிபுணர் ஆலோசனை பெறவும்.'
       : isHi
@@ -173,13 +179,27 @@ export function buildWeddingMatchHtml(
     ? 'final-verdict-unavailable'
     : isGood ? 'final-verdict-good' : isModerate ? 'final-verdict-moderate' : 'final-verdict-not-good';
 
-  const verdictBadgeText = !verdictKnown
-    ? 'N/A'
-    : isGood
-    ? (isTa ? 'உத்தமம் (மிக நன்று)' : isHi ? 'उत्तम (अति शुभ)' : 'Utthamam (Highly Auspicious)')
-    : isModerate
-    ? (isTa ? 'மத்திமம் (பரிகாரங்களுடன்)' : isHi ? 'मध्यम (उपाय सहित)' : 'Madhyamam (with remedies)')
-    : (isTa ? 'பொருந்தாது' : isHi ? 'अशुभ' : 'Not Recommended');
+  // One grading ladder, one set of words (see poruthamVerdict.ts):
+  // Very Good / Good / Incompatible, in the order's language.
+  const verdictTier = verdictKnown ? verdictTierFrom(result.verdictStatus) : null;
+  const verdictBadgeText = verdictTier ? verdictTierHint(verdictTier, lang) : 'N/A';
+
+  // A verdict with no next step is a dead end - but only where there IS a next
+  // step. When the charts match (Very Good or Good), the report points the
+  // family at the one thing they do next: pick the wedding date with the Subha
+  // Muhurtham report, which checks Tara Bala, Chandrashtama and Nalla Neram for
+  // both of them. When they do not match, the verdict stands on its own: no
+  // upsell and no promised review line.
+  const nextStepLabel = isTa ? 'அடுத்த படி' : isHi ? 'अगला कदम' : 'NEXT STEP';
+  const nextStepText = !verdictKnown
+    ? ''
+    : isGood || isModerate
+    ? (isTa
+        ? 'திருமணத் தேதியை நமது சுப முகூர்த்த அறிக்கையுடன் தேர்ந்தெடுங்கள் — உங்கள் இருவருக்கும் தாரா பலம், சந்திராஷ்டமம், நல்ல நேரம் சரிபார்த்து சுப தேதிகளைப் பட்டியலிடும்: astrosivam.com/subha-muhurtham'
+        : isHi
+        ? 'विवाह की तिथि हमारी शुभ मुहूर्त रिपोर्ट से चुनें — यह आप दोनों के लिए तारा बल, चंद्राष्टम और नल्ला नेरम जाँचकर शुभ तिथियाँ देती है: astrosivam.com/subha-muhurtham'
+        : 'Choose the wedding date with our Subha Muhurtham report — it checks Tara Bala, Chandrashtama and Nalla Neram for both of you and lists the auspicious dates: astrosivam.com/subha-muhurtham')
+    : '';
 
   const verdictBadgeClass = !verdictKnown ? 'badge-na' : isGood ? 'badge-good' : isModerate ? 'badge-moderate' : 'badge-bad';
   const scoreMeterFillClass = !verdictKnown ? 'score-meter-fill-na' : isGood ? 'score-meter-fill-good' : isModerate ? 'score-meter-fill-moderate' : 'score-meter-fill-bad';
@@ -228,37 +248,8 @@ export function buildWeddingMatchHtml(
   const lblDoshaTitle = isTa ? 'செவ்வாய் தோஷச் சுருக்கம்' : isHi ? 'मंगल दोष सारांश' : 'Kuja (Mars) Dosha Summary';
   const lblGuidance = isTa ? 'செவ்வாய் வழிகாட்டல்' : isHi ? 'मंगल मार्गदर्शन' : 'Kuja Guidance';
   const lblVisualMeter = isTa ? 'பொருத்த ஒத்திசைவு அளவுகோல்' : isHi ? 'विवाह अनुकूलता मीटर' : 'Visual Compatibility Meter';
-  const lblPoints = isTa ? 'புள்ளிகள்' : isHi ? 'अंक' : 'Points';
   const lblPoruthamsMatched = isTa ? 'பொருத்தங்கள் பொருந்தின' : isHi ? 'गुण मेल खाते हैं' : 'Poruthams matched';
   const lblRajju = isTa ? 'ரஜ்ஜு நிலை' : isHi ? 'रज्जु स्थिति' : 'Rajju Status';
-  const scoreRows = Array.isArray(result.poruthams) ? result.poruthams : [];
-  const scoreRowsComplete = scoreRows.length === 10 && scoreRows.every((p: any) => {
-    const earned = p?.pointsEarned ?? p?.points;
-    const maximum = p?.maxPoints;
-    return earned !== undefined && earned !== null && earned !== '' && Number.isFinite(Number(earned)) && Number(earned) >= 0 &&
-      maximum !== undefined && maximum !== null && maximum !== '' && Number.isFinite(Number(maximum)) && Number(maximum) > 0;
-  });
-  const derivedScore = scoreRowsComplete
-    ? scoreRows.reduce((sum: number, p: any) => sum + Number(p.pointsEarned ?? p.points), 0)
-    : undefined;
-  const derivedMaxScore = scoreRowsComplete
-    ? scoreRows.reduce((sum: number, p: any) => sum + Number(p.maxPoints), 0)
-    : undefined;
-  const rawScore = result.totalScore ?? resAny.score ?? resAny.totalPointsEarned ?? derivedScore;
-  const rawMaxScore = result.maxScore ?? resAny.maxScore ?? resAny.maxPossiblePoints ?? derivedMaxScore;
-  const scoreValue = rawScore !== undefined && rawScore !== null && rawScore !== '' ? Number(rawScore) : Number.NaN;
-  const maxScoreValue = rawMaxScore !== undefined && rawMaxScore !== null && rawMaxScore !== '' ? Number(rawMaxScore) : Number.NaN;
-  const scoreDisplay = Number.isFinite(scoreValue) && scoreValue >= 0 ? String(Number(scoreValue.toFixed(1))) : 'N/A';
-  const maxScoreDisplay = Number.isFinite(maxScoreValue) && maxScoreValue > 0 ? String(Number(maxScoreValue.toFixed(1))) : 'N/A';
-  const rawScorePercent = resAny.matchPercentage ?? resAny.percentage;
-  const scorePercentRaw = rawScorePercent !== undefined && rawScorePercent !== null && rawScorePercent !== '' && Number.isFinite(Number(rawScorePercent))
-    ? Number(rawScorePercent)
-    : Number.isFinite(scoreValue) && scoreValue >= 0 && Number.isFinite(maxScoreValue) && maxScoreValue > 0
-    ? (scoreValue / maxScoreValue) * 100
-    : Number.NaN;
-  const scorePercentValue = Number.isFinite(scorePercentRaw) ? Math.min(100, Math.max(0, scorePercentRaw)) : null;
-  const scorePercentWidth = scorePercentValue === null ? 0 : Number(scorePercentValue.toFixed(1));
-  const scorePercentDisplay = scorePercentValue === null ? 'N/A' : `${Number(scorePercentValue.toFixed(1))}%`;
   const rawMatchedCount = result.totalPoruthamsMatched ?? resAny.matchedCount;
   const poruthamsForCount = Array.isArray(result.poruthams) ? result.poruthams : [];
   const poruthamRowsCountable = poruthamsForCount.length === 10 && poruthamsForCount.every((p: any) => {
@@ -281,6 +272,12 @@ export function buildWeddingMatchHtml(
   const matchedCountDisplay = Number.isInteger(matchedCountValue) && matchedCountValue >= 0 && matchedCountValue <= 10
     ? String(matchedCountValue)
     : 'N/A';
+  // ONE number on page 1 (owner request, Oct 2026): "8 / 10 Poruthams matched".
+  // The panel used to print 7.5 / 10, 75% and 8 / 10 side by side - three
+  // different measures with nothing saying so - and the reader could not tell
+  // which one was the verdict. Only the porutham count survives, and the meter
+  // now fills from that same number so the bar and the text cannot disagree.
+  const matchedMeterWidth = matchedCountDisplay === 'N/A' ? 0 : Number(matchedCountDisplay) * 10;
   const rajjuKnown = typeof (result as any).rajjuMatch === 'boolean';
   const rajjuStatusText = !rajjuKnown
     ? 'N/A'
@@ -297,13 +294,10 @@ export function buildWeddingMatchHtml(
     const pStatusClass = !pStatusKnown
       ? 'status-na'
       : p.status === PoruthamStatus.UTTHAMAM ? 'status-good' : p.status === PoruthamStatus.MADHYAMAM ? 'status-moderate' : 'status-bad';
-    const pStatusLabel = !pStatusKnown
-      ? 'N/A'
-      : p.status === PoruthamStatus.UTTHAMAM
-      ? (isTa ? 'உத்தமம்' : isHi ? 'उत्तम' : 'Utthamam')
-      : p.status === PoruthamStatus.MADHYAMAM
-      ? (isTa ? 'மத்திமம்' : isHi ? 'मध्यम' : 'Madhyamam')
-      : (isTa ? 'பொருந்தாது' : isHi ? 'अशुभ' : 'Incompatible');
+    // Status column: the plain grading word only. Mixing "Utthamam",
+    // "Madhyamam" and "Incompatible" in one column made the rows look like they
+    // came from different tables; all three now read on the same ladder.
+    const pStatusLabel = pStatusKnown ? verdictTierLabel(TIER_FROM_STATUS[p.status as PoruthamStatus], lang) : 'N/A';
     // `??` (not `||`) so a genuine ZERO earned score still prints "0 / 4":
     // `0 || fallback` would blank the numerator and leave a bare "/ 4".
     // The legacy `points` key is accepted because the PHP engine and old saved
@@ -823,6 +817,22 @@ ${REPORT_FONT_LINK_TAG}
     line-height: 1.25;
     font-weight: 900;
   }
+  /* The action under the verdict — one line, never a new sheet. */
+  .final-verdict-next {
+    margin-top: 1.2mm;
+    padding-top: 1.1mm;
+    border-top: 1px dotted currentColor;
+    font-size: 9.5px;
+    line-height: 1.3;
+    font-weight: 600;
+    text-align: left;
+  }
+  .final-verdict-next-label {
+    font-weight: 900;
+    letter-spacing: 0.4px;
+    margin-right: 1.4mm;
+    white-space: nowrap;
+  }
 
   /* ── Footer ──
      No auto top margin: the growing block owns the leftover height, so the
@@ -994,6 +1004,7 @@ ${REPORT_FONT_LINK_TAG}
     .page { page-break-after: always; }
     .page:last-child { page-break-after: auto; }
   }
+${REPORT_GLOSSARY_CSS}
 </style>
 </head>
 <body>
@@ -1081,15 +1092,11 @@ ${REPORT_FONT_LINK_TAG}
           <div class="score-badge ${verdictBadgeClass}">${verdictBadgeText}</div>
         </div>
         <div class="score-value-row">
-          <strong class="score-value">${scoreDisplay} / ${maxScoreDisplay}</strong>
-          <span class="score-percent">${scorePercentDisplay}</span>
+          <strong class="score-value">${matchedCountDisplay} / 10</strong>
+          <span class="score-percent">${lblPoruthamsMatched}</span>
         </div>
-        <div class="score-meter-track" role="meter" aria-label="${lblVisualMeter}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${scorePercentValue ?? 0}" aria-valuetext="${scorePercentDisplay}">
-          <div class="score-meter-fill ${scoreMeterFillClass}" style="width:${scorePercentWidth}%"></div>
-        </div>
-        <div class="score-meter-meta">
-          <span><strong>${matchedCountDisplay} / 10</strong> ${lblPoruthamsMatched}</span>
-          <span>${lblPoints}</span>
+        <div class="score-meter-track" role="meter" aria-label="${lblVisualMeter}" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${matchedCountDisplay}" aria-valuetext="${matchedCountDisplay} / 10 ${lblPoruthamsMatched}">
+          <div class="score-meter-fill ${scoreMeterFillClass}" style="width:${matchedMeterWidth}%"></div>
         </div>
         <div class="score-meter-meta">
           <span>${lblRajju}: <strong style="color: ${rajjuStatusColor}">${rajjuStatusText}</strong></span>
@@ -1144,7 +1151,13 @@ ${REPORT_FONT_LINK_TAG}
     <div class="final-verdict ${finalVerdictClass}" role="status" aria-label="${finalVerdictLabel}">
       <div class="final-verdict-label">${finalVerdictLabel}</div>
       <div class="final-verdict-message">${finalVerdictText}</div>
+      ${nextStepText ? `<div class="final-verdict-next">
+        <span class="final-verdict-next-label">${nextStepLabel}</span>
+        <span>${escapeHtml(nextStepText)}</span>
+      </div>` : ''}
     </div>
+
+    <p class="glossary-pointer">${escapeHtml(GLOSSARY_PAGE_TEXT[lang].pointer)}</p>
 
     ${renderFooterFor(1)}
   </div>
@@ -1166,6 +1179,18 @@ ${disclaimerParagraphsHtml}
 ${attestationHtml}
 
     ${renderFooterFor(2)}
+  </div>
+</div>
+
+<!-- ============ PAGE 3: REPORT GUIDE & GLOSSARY ============ -->
+<!-- Porutham, Rajju, Gana, Yoni, Kuja dosha… are the words this report leans on
+     hardest, so the plain-language meanings are printed with it. The wording is
+     shared with api/astrology/report_views.php (astro_report_glossary()). -->
+<div class="page" id="wedding-glossary">
+  <div class="inner">
+    ${renderHeader(isTa ? 'சொல் விளக்கம்' : isHi ? 'शब्दार्थ' : 'Plain-language guide to this report')}
+    ${reportGlossaryHtml('MARRIAGE_COMPATIBILITY', lang)}
+    ${renderFooterFor(3)}
   </div>
 </div>
 

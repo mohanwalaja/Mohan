@@ -6,6 +6,11 @@ import { buildMuhurthamReportNotes } from './muhurthamReportNotes';
 import { AppLanguage } from '../types';
 import { buildReportHeaderHtml, reportHeaderCss } from './reportHeader';
 import { formatBirthDate } from './formatUtils';
+import {
+  GLOSSARY_PAGE_TEXT,
+  REPORT_GLOSSARY_CSS,
+  reportGlossaryHtml
+} from './reportGlossary';
 
 export interface MuhurthamDayRow {
   date: string;
@@ -308,7 +313,7 @@ function personalNoteFor(day: MuhurthamDayRow, lang: AppLanguage): string {
  *  - page 2 = remaining dates + a compact ceremony-specific selection guide
  * Reserve space for the guide before choosing density / splitting date rows.
  */
-export const MUHURTHAM_TOTAL_PAGES = 2;
+export const MUHURTHAM_TOTAL_PAGES = 3;
 // Leave room for wrapped devotee / place details as well as the A4 footer.
 export const MUHURTHAM_PAGE1_DATE_BUDGET_MM = 160;
 export const MUHURTHAM_PAGE2_DATE_BUDGET_MM = 78;
@@ -441,7 +446,7 @@ export function buildMuhurthamHtml(result: MuhurthamScanResult, lang: AppLanguag
         datesTableNote: 'தேதி • கிழமை • நட்சத்திரம் (சூரிய உதயம்) • நல்ல நேரம்',
         continuedLabel: 'தொடர்ச்சி',
         bandBest: 'உத்தமம்', bandGood: 'சுபம்',
-        pageTag: (page: number) => `பக்கம் ${page} / 2`,
+        pageTag: (page: number) => `பக்கம் ${page} / ${MUHURTHAM_TOTAL_PAGES}`,
         colDate: 'தேதி & கிழமை', colStar: 'நட்சத்திரம் (சூரிய உதயம்)', colTime: 'நல்ல நேரம்', colGrade: 'தரம்',
         certifiedBy: 'சான்றளித்தவர்: ASTRO SIVAM',
         monthDatesLabel: (count: number) => `${count} சிறந்த / சுப தேதிகள்`,
@@ -464,7 +469,7 @@ export function buildMuhurthamHtml(result: MuhurthamScanResult, lang: AppLanguag
         datesTableNote: 'दिनांक • वार • नक्षत्र (स्थानीय सूर्योदय) • शुभ समय',
         continuedLabel: 'जारी',
         bandBest: 'उत्तम', bandGood: 'शुभ',
-        pageTag: (page: number) => `पृष्ठ ${page} / 2`,
+        pageTag: (page: number) => `पृष्ठ ${page} / ${MUHURTHAM_TOTAL_PAGES}`,
         colDate: 'दिनांक व वार', colStar: 'नक्षत्र (सूर्योदय)', colTime: 'शुभ समय', colGrade: 'श्रेणी',
         certifiedBy: 'प्रमाणित: ASTRO SIVAM',
         monthDatesLabel: (count: number) => `${count} उत्तम / शुभ तिथियाँ`,
@@ -486,7 +491,7 @@ export function buildMuhurthamHtml(result: MuhurthamScanResult, lang: AppLanguag
         datesTableNote: 'Date • Weekday • Nakshatra (at sunrise) • Nalla Neram',
         continuedLabel: 'Continued from page 1',
         bandBest: 'BEST', bandGood: 'GOOD',
-        pageTag: (page: number) => `PAGE ${page} / 2`,
+        pageTag: (page: number) => `PAGE ${page} / ${MUHURTHAM_TOTAL_PAGES}`,
         colDate: 'DATE & DAY', colStar: 'NAKSHATRA (AT SUNRISE)', colTime: 'BEST TIME (NALLA NERAM)', colGrade: 'GRADE',
         certifiedBy: 'Certified by ASTRO SIVAM',
         monthDatesLabel: (count: number) => `${count} BEST / GOOD dates`,
@@ -658,6 +663,11 @@ export function buildMuhurthamHtml(result: MuhurthamScanResult, lang: AppLanguag
       : ''),
     ((notes.summaryText || notes.selectionText)
       ? `<p><strong>${escapeHtml(notes.selectionHeading)}</strong>${notes.summaryText ? `<span class="selection-counts">${escapeHtml(notes.summaryText)}</span>` : ''}${escapeHtml(notes.selectionText)}</p>`
+      : ''),
+    // The report used to stop at the table: a family had the dates and no idea
+    // what to do with them. This is the step after the table.
+    (notes.nextStepText
+      ? `<p class="selection-next-step"><strong>${escapeHtml(notes.nextStepHeading)}</strong>${escapeHtml(notes.nextStepText)}</p>`
       : '')
   ].filter(Boolean).join('\n    ');
   const reportNotesHtml = `<aside class="muhurtham-selection-notes">
@@ -949,6 +959,11 @@ ${REPORT_FONT_LINK_TAG}
   .muhurtham-selection-notes p { margin-top: 1.6mm; }
   .muhurtham-selection-notes strong { display: block; color: var(--maroon); font-size: 15px; font-weight: 800; }
   .muhurtham-selection-notes .selection-counts { display: block; color: var(--green); font-weight: 700; margin-bottom: 0.8mm; }
+  /* The action paragraph: same type, a gold rule above so the eye lands on it. */
+  .muhurtham-selection-notes .selection-next-step {
+    border-top: 1px solid var(--gold-border);
+    padding-top: 1.6mm;
+  }
 
   /* Personally favourable dates (Tara Balam + no Chandrashtama) */
   .six-month-table .row-personal td { background: #fff1f2 !important; }
@@ -989,6 +1004,7 @@ ${REPORT_FONT_LINK_TAG}
     .page { page-break-after: always; }
     .page:last-child { page-break-after: auto; }
   }
+${REPORT_GLOSSARY_CSS}
 </style>
 </head>
 <body>
@@ -1027,6 +1043,8 @@ ${REPORT_FONT_LINK_TAG}
           <span class="badge-good-summary">✓ ${goodCount} ${escapeHtml(labels.bandGood)}</span>
         </div>
       </div>
+
+      <p class="glossary-pointer">${escapeHtml(GLOSSARY_PAGE_TEXT[lang].pointer)}</p>
 
       <section class="dates-section">
         <div class="dates-section-head">
@@ -1080,6 +1098,20 @@ ${REPORT_FONT_LINK_TAG}
 
       ${reportNotesHtml}
       ${attestationHtml}
+      <div class="page-bottom-brand">ASTRO SIVAM • Vedic Astrological Consultancy • astrosivam.com • admin@astrosivam.com</div>
+    </div>
+  </div>
+
+  <!-- PAGE 3 — Report Guide & Glossary: what Tara Bala, Chandrashtama, Nalla
+       Neram and the rest actually mean. Shared wording with
+       api/astrology/report_views.php (astro_report_glossary()). -->
+  <div class="page muhurtham-dates-page" id="muhurtham-glossary">
+    <div class="inner">
+      ${buildReportHeaderHtml({
+        subtitle: isTa ? 'சொல் விளக்கம்' : isHi ? 'शब्दार्थ' : 'Plain-language guide to this report',
+        meta: `${title} • ${labels.pageTag(3)}`
+      })}
+      ${reportGlossaryHtml('MUHURTHAM', lang)}
       <div class="page-bottom-brand">ASTRO SIVAM • Vedic Astrological Consultancy • astrosivam.com • admin@astrosivam.com</div>
     </div>
   </div>

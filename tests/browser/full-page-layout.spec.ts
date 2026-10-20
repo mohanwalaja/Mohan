@@ -79,14 +79,14 @@ const invoiceOrder = (over: Record<string, unknown> = {}) => ({
  * millimetres.
  */
 const DOCUMENTS: Array<{ name: string; pages: number; html: (lang: AppLanguage) => string; contentSized?: string[] }> = [
-  { name: 'Birth Jathagam', pages: 3, html: lang => buildJathagamHtml(horoscope as any, lang) },
-  { name: 'Marriage Matching', pages: 2, html: lang => buildWeddingMatchHtml(wedding as any, lang, { orderNumber: 'LAYOUT-1001' }) },
-  { name: 'Baby Naming', pages: 2, html: lang => buildBabyNamingHtml(baby as any, lang) },
+  { name: 'Birth Jathagam', pages: 4, html: lang => buildJathagamHtml(horoscope as any, lang) },
+  { name: 'Marriage Matching', pages: 3, html: lang => buildWeddingMatchHtml(wedding as any, lang, { orderNumber: 'LAYOUT-1001' }) },
+  { name: 'Baby Naming', pages: 3, html: lang => buildBabyNamingHtml(baby as any, lang) },
   // The sparse month is the difficult case: a full six-month calendar is already
   // dense enough to fill the sheet, a two-date month is the one that used to
   // leave half the paper empty.
-  { name: 'Muhurtham (sparse)', pages: 2, html: lang => buildMuhurthamHtml(muhurthamSparse as any, lang) },
-  { name: 'Muhurtham (six months)', pages: 2, html: lang => buildMuhurthamHtml(muhurthamFull as any, lang) },
+  { name: 'Muhurtham (sparse)', pages: 3, html: lang => buildMuhurthamHtml(muhurthamSparse as any, lang) },
+  { name: 'Muhurtham (six months)', pages: 3, html: lang => buildMuhurthamHtml(muhurthamFull as any, lang) },
   { name: 'Tax invoice', pages: 1, html: () => buildInvoiceHtml(invoiceOrder()) },
   {
     name: 'Family invoice', pages: 1,

@@ -57,7 +57,7 @@ async function main() {
   assert.ok(html.includes('Chennai'));
   const watermarked = applySampleWatermark(html);
   const pageCount = (html.match(/<div class="page(?:\s|\")/g) || []).length;
-  assert.equal(pageCount, 2, 'the sample renders the complete two-page report');
+  assert.equal(pageCount, 3, 'the sample renders the complete report: dates, selection guide, glossary');
   assert.equal(countSampleWatermarks(watermarked), pageCount, 'each report page receives the sample watermark');
 
   console.log('  [PASS] Subha Muhurtham sample builds and renders its complete six-month report offline.');

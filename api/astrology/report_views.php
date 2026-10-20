@@ -161,6 +161,239 @@ function astro_jathagam_page1()
 }
 
 /**
+ * The shared plain-language glossary (api/astrology/report_glossary.json).
+ *
+ * WHY: the readability audit (docs/REPORTS_READABILITY_AUDIT_2026-10-20.md)
+ * found 30 specialist terms across the four reports and not one explanation.
+ * The wording is shared with src/services/reportGlossary.ts, so the browser
+ * preview, the customer PDF and the emailed PDF explain a term identically.
+ *
+ * An unreadable/missing file returns an empty array and the caller simply does
+ * not print the glossary sheet — it never prints a half-built one.
+ */
+function astro_report_glossary(): array
+{
+    static $cache = null;
+    if (is_array($cache)) {
+        return $cache;
+    }
+    $cache = [];
+    $path = __DIR__ . '/report_glossary.json';
+    if (!is_file($path)) {
+        return $cache;
+    }
+    $raw = @file_get_contents($path);
+    $decoded = is_string($raw) ? json_decode($raw, true) : null;
+    if (!is_array($decoded)) {
+        return $cache;
+    }
+    $cache = [
+        'terms' => is_array($decoded['terms'] ?? null) ? $decoded['terms'] : [],
+        'reportTerms' => is_array($decoded['reportTerms'] ?? null) ? $decoded['reportTerms'] : [],
+        'quickTerms' => is_array($decoded['quickTerms'] ?? null) ? $decoded['quickTerms'] : [],
+    ];
+    return $cache;
+}
+
+/**
+ * The terms one report uses, already resolved for the requested language:
+ * [['label' => ..., 'meaning' => ...], ...]. English is the fallback, and a term
+ * with an incomplete translation is skipped rather than printed half-empty.
+ */
+function astro_report_glossary_entries(string $reportKind, string $lang): array
+{
+    $glossary = astro_report_glossary();
+    $keys = $glossary['reportTerms'][$reportKind] ?? [];
+    $entries = [];
+    foreach ((array) $keys as $key) {
+        $row = $glossary['terms'][$key] ?? null;
+        if (!is_array($row)) { continue; }
+        $copy = is_array($row[$lang] ?? null) ? $row[$lang] : ($row['en'] ?? null);
+        if (!is_array($copy)) { continue; }
+        $label = trim((string) ($copy['label'] ?? ''));
+        $meaning = trim((string) ($copy['meaning'] ?? ''));
+        if ($label === '' || $meaning === '') { continue; }
+        $entries[] = ['label' => $label, 'meaning' => $meaning];
+    }
+    return $entries;
+}
+
+/**
+ * The five words a reader meets first (quickTerms in report_glossary.json).
+ * Same lines as the full guide, so the box and the page can never disagree.
+ */
+function astro_report_glossary_quick_entries(string $reportKind, string $lang): array
+{
+    $glossary = astro_report_glossary();
+    $keys = $glossary['quickTerms'][$reportKind] ?? [];
+    $entries = [];
+    foreach ((array) $keys as $key) {
+        $row = $glossary['terms'][$key] ?? null;
+        if (!is_array($row)) { continue; }
+        $copy = is_array($row[$lang] ?? null) ? $row[$lang] : ($row['en'] ?? null);
+        if (!is_array($copy)) { continue; }
+        $label = trim((string) ($copy['label'] ?? ''));
+        $meaning = trim((string) ($copy['meaning'] ?? ''));
+        if ($label === '' || $meaning === '') { continue; }
+        $entries[] = ['label' => $label, 'meaning' => $meaning];
+    }
+    return $entries;
+}
+
+/**
+ * The compact "5 words you'll meet in this report" box: term + one line each,
+ * closed by the pointer to the full guide. Printed on page 1 of the Birth
+ * Jathagam and at the top of every Report Guide sheet.
+ */
+function astro_report_glossary_quick_html(string $reportKind, string $lang): string
+{
+    $entries = astro_report_glossary_quick_entries($reportKind, $lang);
+    if ($entries === []) {
+        return '';
+    }
+    $e = static function (string $value): string {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    };
+    $text = [
+        'en' => [
+            'title' => '5 words you will meet in this report',
+            'more' => 'All the other words are explained in one line on the last page (Report Guide & Glossary).',
+        ],
+        'ta' => [
+            'title' => 'இந்த அறிக்கையில் சந்திக்கும் 5 சொற்கள்',
+            'more' => 'மற்ற அனைத்துச் சொற்களும் கடைசிப் பக்கத்தில் ஒரு வரியில் விளக்கப்பட்டுள்ளன (அறிக்கை வழிகாட்டி & சொல் விளக்கம்).',
+        ],
+        'hi' => [
+            'title' => 'इस रिपोर्ट में मिलने वाले 5 शब्द',
+            'more' => 'बाकी सभी शब्द अंतिम पृष्ठ पर एक पंक्ति में समझाए गए हैं (रिपोर्ट मार्गदर्शिका एवं शब्दार्थ)।',
+        ],
+    ];
+    $copy = $text[$lang] ?? $text['en'];
+    $rows = '';
+    foreach ($entries as $entry) {
+        $rows .= '<div class="glossary-quick-row"><b>' . $e($entry['label']) . '</b> — '
+            . '<span class="glossary-quick-meaning">' . $e($entry['meaning']) . '</span></div>';
+    }
+    return '<div class="glossary-quick"><div class="glossary-quick-title">' . $e($copy['title']) . '</div>'
+        . $rows . '<div class="glossary-quick-more">' . $e($copy['more']) . '</div></div>';
+}
+
+/**
+ * The marriage verdict ladder, in the customer's own words.
+ *
+ * The porutham table used to print "Utthamam", "Madhyamam" and "Incompatible"
+ * in one column - two Sanskrit words and one English word in the same list, so
+ * a reader who does not know the Sanskrit could not rank them. All three tiers
+ * now read as plain grading words, and the same ladder is used for the score
+ * badge and the recommendation, so one row can never look like it came from a
+ * different table:
+ *
+ *   UTTHAMAM    -> Very Good / மிக நன்று / बहुत अच्छा
+ *   MADHYAMAM   -> Good      / நன்று     / अच्छा
+ *   PORUNDHADHU -> Incompatible / பொருந்தாது / मेल नहीं
+ *
+ * $withHint adds the one-glance hint used where the verdict stands alone.
+ */
+function astro_porutham_verdict_label(?string $tier, string $lang, bool $withHint = false): string
+{
+    $label = [
+        'UTTHAMAM' => ['en' => 'Very Good', 'ta' => 'மிக நன்று', 'hi' => 'बहुत अच्छा'],
+        'MADHYAMAM' => ['en' => 'Good', 'ta' => 'நன்று', 'hi' => 'अच्छा'],
+        'PORUNDHADHU' => ['en' => 'Incompatible', 'ta' => 'பொருந்தாது', 'hi' => 'मेल नहीं'],
+    ];
+    $hint = [
+        'UTTHAMAM' => ['en' => 'Very Good (highly favourable)', 'ta' => 'மிக நன்று (மிகச் சாதகம்)', 'hi' => 'बहुत अच्छा (अत्यंत अनुकूल)'],
+        'MADHYAMAM' => ['en' => 'Good (remedies may help)', 'ta' => 'நன்று (பரிகாரங்கள் உதவும்)', 'hi' => 'अच्छा (उपाय सहायक)'],
+        'PORUNDHADHU' => ['en' => 'Incompatible', 'ta' => 'பொருந்தாது', 'hi' => 'मेल नहीं'],
+    ];
+    $key = strtoupper(trim((string) $tier));
+    $map = $withHint ? $hint : $label;
+    if (!isset($map[$key])) {
+        return 'N/A';
+    }
+    return $map[$key][$lang] ?? $map[$key]['en'];
+}
+
+/**
+ * Reads a verdict tier out of anything an older saved order may carry: the
+ * enum itself, the engine's legacy labels ("Uthama (Excellent)",
+ * "Madhyama (Good)", "Porundhadhu (Not Compatible)") or the plain wording.
+ */
+function astro_porutham_verdict_tier($value): ?string
+{
+    $raw = trim((string) $value);
+    if ($raw === '') {
+        return null;
+    }
+    $upper = strtoupper($raw);
+    if (in_array($upper, ['UTTHAMAM', 'MADHYAMAM', 'PORUNDHADHU'], true)) {
+        return $upper;
+    }
+    $lower = strtolower($raw);
+    if (preg_match('/very good|utthama|uthama|uttama|excellent|highly/', $lower)) {
+        return 'UTTHAMAM';
+    }
+    if (preg_match('/^good\b|madhyam|mathimam|moderate|acceptable|partial/', $lower)) {
+        return 'MADHYAMAM';
+    }
+    if (preg_match('/incompatible|porundh|not compatible|not recommended|adhamam/', $lower)) {
+        return 'PORUNDHADHU';
+    }
+    return null;
+}
+
+/**
+ * The "Report Guide & Glossary" sheet body for one report: title, two-column
+ * list of term + one-line meaning, and the closing reassurance.
+ */
+function astro_report_glossary_html(string $reportKind, string $lang, bool $includeQuick = true): string
+{
+    $entries = astro_report_glossary_entries($reportKind, $lang);
+    if ($entries === []) {
+        return '';
+    }
+    $quickHtml = $includeQuick ? astro_report_glossary_quick_html($reportKind, $lang) : '';
+    $e = static function (string $value): string {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    };
+    $text = [
+        'en' => [
+            'title' => 'Report Guide & Glossary',
+            'intro' => 'Every technical word used in this report, explained in one line. Read this page once and the whole report becomes clear.',
+            'note' => 'Nothing here is a prediction of doom. These words describe tendencies and timings; the reports always state a caution together with what to do about it.',
+        ],
+        'ta' => [
+            'title' => 'அறிக்கை வழிகாட்டி & சொல் விளக்கம்',
+            'intro' => 'இந்த அறிக்கையில் பயன்படுத்தப்பட்ட ஒவ்வொரு தொழில்நுட்பச் சொல்லும் ஒரு வரியில் விளக்கப்பட்டுள்ளது. இந்தப் பக்கத்தை ஒருமுறை படித்தால் முழு அறிக்கையும் தெளிவாகும்.',
+            'note' => 'இங்கு எதுவும் தீங்கான முன்னறிவிப்பு அல்ல. இவை போக்குகளையும் காலங்களையும் குறிக்கும்; ஒவ்வொரு கவனத்திற்கும் என்ன செய்ய வேண்டும் என்பதும் அறிக்கையில் தரப்படுகிறது.',
+        ],
+        'hi' => [
+            'title' => 'रिपोर्ट मार्गदर्शिका एवं शब्दार्थ',
+            'intro' => 'इस रिपोर्ट में प्रयुक्त हर तकनीकी शब्द एक पंक्ति में समझाया गया है। यह पृष्ठ एक बार पढ़ लें, पूरी रिपोर्ट स्पष्ट हो जाएगी।',
+            'note' => 'यहाँ कुछ भी अशुभ भविष्यवाणी नहीं है। ये शब्द प्रवृत्तियाँ और समय बताते हैं; हर सावधानी के साथ यह भी बताया जाता है कि क्या करना है।',
+        ],
+    ];
+    $copy = $text[$lang] ?? $text['en'];
+    // Print renderers have no CSS columns, so the list is one table per column:
+    // the entries are split down the middle and laid out side by side.
+    $half = (int) ceil(count($entries) / 2);
+    $left = ''; $right = '';
+    foreach ($entries as $index => $entry) {
+        $cell = '<div class="glossary-item"><div class="glossary-term">' . $e($entry['label'])
+            . '</div><div class="glossary-meaning">' . $e($entry['meaning']) . '</div></div>';
+        if ($index < $half) { $left .= $cell; } else { $right .= $cell; }
+    }
+    return '<div class="glossary-sheet-body">'
+        . '<div class="glossary-title">' . $e($copy['title']) . '</div>'
+        . '<div class="glossary-intro">' . $e($copy['intro']) . '</div>'
+        . $quickHtml
+        . '<table class="glossary-columns"><tr><td class="glossary-col">' . $left
+        . '</td><td class="glossary-col">' . $right . '</td></tr></table>'
+        . '<div class="glossary-note">' . $e($copy['note']) . '</div>'
+        . '</div>';
+}
+
+/**
  * One two-line dosha explanation. Falls back to English, then to an empty string
  * (the caller then keeps its unavailable/N/A sentence).
  */
@@ -181,7 +414,17 @@ class AstroReportViews {
      * - so the three page headers can never disagree, and a fourth sheet can
      * never be introduced without this number changing too.
      */
-    public const JATHAGAM_PAGE_TOTAL = 3;
+    public const JATHAGAM_PAGE_TOTAL = 4;
+
+    /**
+     * The other three reports each carry their body/disclaimer sheets plus the
+     * Report Guide & Glossary sheet. The totals live here so a page header can
+     * never say "of 2" on a three-sheet document again - the glossary sheet was
+     * appended without these totals changing, and the printed headers drifted.
+     */
+    public const WEDDING_PAGE_TOTAL = 3;
+    public const MUHURTHAM_PAGE_TOTAL = 3;
+    public const BABY_PAGE_TOTAL = 3;
 
     public static function e($str): string {
         return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
@@ -714,6 +957,11 @@ class AstroReportViews {
     .rasi-planets { font-size: 7.5px; color: #1e293b; font-weight: bold; line-height: 1.15; margin-top: 0.3mm; }
     .planet-name { color: #1e293b; font-size: 7.5px; font-weight: bold; display: inline-block; margin: 0.2mm 0.5mm; background: none; border: none; padding: 0; }
     .planet-name.lagna { color: #dc2626; font-size: 8px; font-weight: 900; background: none; border: none; padding: 0; }
+    .chart-legend { display: block; margin: 1.4mm 0 0; padding: 1.4mm 2mm; border: 1px solid #e2e8f0; border-left: 2px solid #c9a227; border-radius: 3px; background: #fffdf7; font-size: 7.6px; line-height: 1.3; color: #475569; }
+    .chart-legend-title { font-size: 8.2px; font-weight: 800; color: #7b1e3b; letter-spacing: 0.3px; margin-right: 2mm; }
+    .chart-legend-item { display: inline-block; margin: 0 2.2mm 0.4mm 0; }
+    .chart-legend-item b { color: #7b1e3b; font-weight: 900; }
+    .chart-legend-note { display: block; color: #64748b; font-size: 7.2px; margin-top: 0.6mm; }
     .rasi-center-om { background: #fdf8ee; color: #7a1f1f; font-size: 12px; font-weight: bold; vertical-align: middle; text-align: center; height: 23mm !important; }
     .rasi-center-om span { font-size: 7px; color: #a67c1f; }
 
@@ -742,6 +990,25 @@ class AstroReportViews {
     .rule-note { font-size: 6.4px; color: #475569; margin-top: 0.4mm; line-height: 1.22; }
     .planet-dignity { font-size: 6.8px; color: #334155; }
     .dosha-desc { font-size: 8.5px; color: #2b1d14; line-height: 1.4; margin-top: 0.6mm; }
+
+    /* Report Guide & Glossary sheet — the last page of every report.
+       Two side-by-side columns because a print renderer has no CSS columns. */
+    .glossary-sheet { padding: 5.5mm 7mm 5.5mm; }
+    .muhurtham-selection-notes .selection-next-step { border-top: 1px solid #e8d9b8; padding-top: 1.6mm; }
+    .glossary-quick { border: 1px solid #e2e8f0; border-left: 3px solid #c9962c; background: #fffdf7; border-radius: 4px; padding: 1.6mm 2.6mm 1.4mm; margin: 1.6mm 0 2mm; page-break-inside: avoid; }
+    .glossary-quick-title { font-size: 10px; font-weight: bold; color: #7a1230; margin-bottom: 1mm; }
+    .glossary-quick-row { font-size: 9.5px; line-height: 1.32; color: #2b1d14; margin: 0 0 0.7mm; }
+    .glossary-quick-row b { color: #7a1230; }
+    .glossary-quick-more { font-size: 8.5px; line-height: 1.3; color: #64748b; border-top: 0.6px dotted #c9962c; padding-top: 0.8mm; margin-top: 0.6mm; }
+    .glossary-title { font-size: 14px; font-weight: bold; color: #7a1230; margin-bottom: 1mm; }
+    .glossary-intro { font-size: 10px; color: #2b1d14; line-height: 1.4; margin-bottom: 2.5mm; }
+    table.glossary-columns { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    table.glossary-columns td.glossary-col { width: 50%; vertical-align: top; padding: 0 3mm 0 0; }
+    table.glossary-columns td.glossary-col:last-child { padding: 0 0 0 3mm; border-left: 0.6px dotted #c9962c; }
+    .glossary-item { margin-bottom: 2.2mm; page-break-inside: avoid; }
+    .glossary-term { font-size: 10.5px; font-weight: bold; color: #7a1230; line-height: 1.25; }
+    .glossary-meaning { font-size: 9.5px; color: #2b1d14; line-height: 1.38; }
+    .glossary-note { font-size: 9.5px; color: #64748b; line-height: 1.38; border-top: 0.6px dotted #c9962c; padding-top: 1.6mm; margin-top: 2mm; }
 
     /* Page 2 Life Cards Grid.
        Item 7: every card is sized to its own content. A table row grows to its
@@ -951,6 +1218,13 @@ HTML;
             : ($result['nakshatram']['name'] ?? $result['janmaNakshatraEn'] ?? 'N/A'))
         );
         $pada = self::e($result['nakshatram']['pada'] ?? $result['janmaPada'] ?? 'N/A');
+        // Readability (Oct 2026): the particulars row must not print English
+        // fragments inside a Tamil/Hindi report. "at" and "Pada" used to be
+        // hard-coded here while the rest of the page was translated.
+        $dobAtJoiner = $isTa ? ' அன்று ' : ($isHi ? ' को ' : ' at ');
+        $padaTextForPdf = ($pada === '' || $pada === 'N/A')
+            ? 'N/A'
+            : ($isTa ? "{$pada}-ஆம் பாதம்" : ($isHi ? "पाद {$pada}" : "Pada {$pada}"));
 
         $lagnaRasi = self::e($lagnaRasiInfo[$lang] ?? 'N/A');
         $lagnaLord = self::e($lagnaRasiInfo[$lang === 'ta' ? 'lordTa' : ($lang === 'hi' ? 'lordHi' : 'lordEn')] ?? 'N/A');
@@ -986,16 +1260,32 @@ HTML;
         // Short tags for planets in chart. Keys are the engine's graha values
         // (the lowercase Graha enum: sun, moon, ...). They were capitalised before,
         // so no planet ever matched and the Hindi chart lost every placement.
+        // The tags must match src/services/jathagamHtmlBuilder.ts
+        // (GRAHA_NAMES_REPORT) exactly: the same customer reads both renderers,
+        // and the legend below is printed from these same strings.
         $grahaTags = [
             'sun' => $isTa ? 'சூ' : ($isHi ? 'सू' : 'Su'),
-            'moon' => $isTa ? 'சந்' : ($isHi ? 'चं' : 'Mo'),
+            'moon' => $isTa ? 'சந்' : ($isHi ? 'चं' : 'Ch'),
             'mars' => $isTa ? 'செவ்' : ($isHi ? 'मं' : 'Ma'),
-            'mercury' => $isTa ? 'பு' : ($isHi ? 'बु' : 'Me'),
-            'jupiter' => $isTa ? 'குரு' : ($isHi ? 'गु' : 'Ju'),
-            'venus' => $isTa ? 'சுக்' : ($isHi ? 'शु' : 'Ve'),
+            'mercury' => $isTa ? 'பு' : ($isHi ? 'बु' : 'Bu'),
+            'jupiter' => $isTa ? 'குரு' : ($isHi ? 'गु' : 'Gu'),
+            'venus' => $isTa ? 'சுக்' : ($isHi ? 'शु' : 'Sk'),
             'saturn' => $isTa ? 'சனி' : ($isHi ? 'श' : 'Sa'),
             'rahu' => $isTa ? 'ரா' : ($isHi ? 'रा' : 'Ra'),
             'ketu' => $isTa ? 'கே' : ($isHi ? 'के' : 'Ke'),
+        ];
+        // What each tag means, in the family's language. Read from the same
+        // arrays as the chart so a legend entry can never go missing.
+        $grahaLegendNames = [
+            'sun' => $isTa ? 'சூரியன்' : ($isHi ? 'सूर्य' : 'Surya (Sun)'),
+            'moon' => $isTa ? 'சந்திரன்' : ($isHi ? 'चंद्र' : 'Chandra (Moon)'),
+            'mars' => $isTa ? 'செவ்வாய்' : ($isHi ? 'मंगल' : 'Mangal (Mars)'),
+            'mercury' => $isTa ? 'புதன்' : ($isHi ? 'बुध' : 'Budha (Mercury)'),
+            'jupiter' => $isTa ? 'குரு' : ($isHi ? 'गुरु' : 'Guru (Jupiter)'),
+            'venus' => $isTa ? 'சுக்கிரன்' : ($isHi ? 'शुक्र' : 'Sukra (Venus)'),
+            'saturn' => $isTa ? 'சனி' : ($isHi ? 'शनि' : 'Sani (Saturn)'),
+            'rahu' => $isTa ? 'ராகு' : ($isHi ? 'राहु' : 'Rahu (N. Node)'),
+            'ketu' => $isTa ? 'கேது' : ($isHi ? 'केतु' : 'Ketu (S. Node)'),
         ];
 
         $chartPlanetPositions = is_array($result['planetPositions'] ?? null) ? $result['planetPositions'] : [];
@@ -1013,7 +1303,8 @@ HTML;
                 $planetsByRasi[$r][] = '<span class="planet-name">' . self::e($tag) . '</span>';
             }
         }
-        $lagnaTag = '<span class="planet-name lagna">' . ($isTa ? 'லக்' : ($isHi ? 'लग्न' : 'Lag')) . '</span>';
+        $lagnaTagText = $isTa ? 'லக்' : ($isHi ? 'लग्न' : 'Lagna');
+        $lagnaTag = '<span class="planet-name lagna">' . $lagnaTagText . '</span>';
 
         $signOrder = [
             ['Pisces','Aries','Taurus','Gemini'],
@@ -1021,6 +1312,27 @@ HTML;
             ['Capricorn', null, null, 'Leo'],
             ['Sagittarius','Scorpio','Libra','Virgo'],
         ];
+        // Chart key: without it a cell reading "GuSa" or "LagnaCh" is unreadable.
+        // Same wording as the browser report's .chart-legend.
+        $chartLegendTitle = $isTa ? 'கட்டக் குறியீடுகள்' : ($isHi ? 'चक्र के चिह्न' : 'Chart Symbols');
+        $chartLegendNote = $isTa
+            ? 'ஒரே ராசியில் இரண்டு குறியீடுகள் (எ.கா. குருசனி) என்பது இரண்டு கிரகங்களும் அந்த ராசியில் அமைந்துள்ளன என்று பொருள்.'
+            : ($isHi
+                ? 'एक ही राशि में दो चिह्न (जैसे गुश) का अर्थ है कि दोनों ग्रह उसी राशि में हैं।'
+                : 'Two symbols in one sign (for example GuSa) mean both planets sit in that rasi.');
+        $chartLegendItemsHtml = '';
+        foreach ($grahaTags as $gKey => $gTag) {
+            $chartLegendItemsHtml .= '<span class="chart-legend-item"><b>' . self::e($gTag) . '</b> '
+                . self::e($grahaLegendNames[$gKey] ?? '') . '</span>';
+        }
+        $chartLegendItemsHtml .= '<span class="chart-legend-item"><b>' . self::e($lagnaTagText) . '</b> '
+            . self::e($isTa ? 'லக்னம்' : ($isHi ? 'लग्न (उदय राशि)' : 'Ascendant (rising sign)')) . '</span>';
+        $chartLegendHtml = '<div class="chart-legend">'
+            . '<span class="chart-legend-title">' . self::e($chartLegendTitle) . '</span>'
+            . '<span class="chart-legend-items">' . $chartLegendItemsHtml . '</span>'
+            . '<span class="chart-legend-note">' . self::e($chartLegendNote) . '</span>'
+            . '</div>';
+
         // Item 7: the same 4x4 South-Indian grid serves the Rasi chart and the
         // Navamsa (D9) confirmation chart. A closure keeps the two grids from
         // drifting apart (cell order, Lagna marker, center label).
@@ -1094,7 +1406,7 @@ HTML;
                 $navamsaLagnaRasi = ((int) floor($lagnaTotalForNavamsa / (360.0 / 108.0)) % 12) + 1;
             }
         }
-        $navamsaLagnaTag = '<span class="planet-name lagna">' . ($isTa ? 'லக்' : ($isHi ? 'लग्न' : 'Lag')) . '</span>';
+        $navamsaLagnaTag = '<span class="planet-name lagna">' . $lagnaTagText . '</span>';
         $navamsaRows = $navamsaTagged > 0
             ? $buildRasiRows($navamsaPlanetsByRasi, $navamsaLagnaRasi, $navamsaLagnaTag, ($isTa ? 'நவாம்சம் D9' : ($isHi ? 'नवांश D9' : 'NAVAMSA D9')))
             : '';
@@ -1120,6 +1432,7 @@ HTML;
     </div>
   </td>
 </tr></table>
+{$chartLegendHtml}
 HTML;
 
         $planetsList = $chartPlanetPositions;
@@ -1177,7 +1490,7 @@ HTML;
         }
         $saniCardsHtml = '';
         // Show only the active Sani dosha; if none is active, show a single
-        // "There is no active any of Sani Dosha" card. Every Sani card carries
+        // "No Sani dosha is active" card. Every Sani card carries
         // the same two-line explanation (astro_jathagam_dosha_explainer) and the
         // badge carries the verdict, mirroring src/services/jathagamHtmlBuilder.ts.
         if (is_array($saniStatusData)) {
@@ -1212,14 +1525,14 @@ HTML;
             $hasAnySaniForPdf = $isEzharaiForPdf || $isAshtamaForPdf || $isKandakaForPdf;
             if (!$hasAnySaniForPdf) {
                 $noSaniTitleForPdf = $isTa ? 'சனி தோஷ நிலை' : ($isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status');
-                $noSaniBadgeForPdf = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha');
+                $noSaniBadgeForPdf = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'No Sani dosha is active in your chart');
                 $noSaniDescForPdf = astro_jathagam_dosha_explainer('sani', $lang);
                 $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($noSaniTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge badge-clean">' . self::e($noSaniBadgeForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($noSaniDescForPdf) . '</div></div>';
             }
         } else {
             // No saniStatus (legacy payload) — show the same "no active" card as fallback
             $fallbackTitle = $isTa ? 'சனி தோஷ நிலை' : ($isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status');
-            $fallbackBadge = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha');
+            $fallbackBadge = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'No Sani dosha is active in your chart');
             $fallbackDesc = astro_jathagam_dosha_explainer('sani', $lang);
             $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($fallbackTitle) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge badge-clean">' . self::e($fallbackBadge) . '</span></td></tr></table><div class="dosha-desc">' . self::e($fallbackDesc) . '</div></div>';
         }
@@ -1354,8 +1667,8 @@ HTML;
       <td><div class="det-box"><span class="det-lbl">{$lblPRasi}</span><span class="det-val">{$rasiValueHtml} ({$rasiLord})</span></div></td>
     </tr>
     <tr>
-      <td><div class="det-box"><span class="det-lbl">{$lblPDob}</span><span class="det-val">{$dob} at {$tob}</span></div></td>
-      <td><div class="det-box"><span class="det-lbl">{$lblPNak}</span><span class="det-val">{$nakValueHtml}, Pada {$pada}</span></div></td>
+      <td><div class="det-box"><span class="det-lbl">{$lblPDob}</span><span class="det-val">{$dob}{$dobAtJoiner}{$tob}</span></div></td>
+      <td><div class="det-box"><span class="det-lbl">{$lblPNak}</span><span class="det-val">{$nakValueHtml}, {$padaTextForPdf}</span></div></td>
     </tr>
     <tr>
       <td><div class="det-box"><span class="det-lbl">{$lblPPlace}</span><span class="det-val">{$place}</span></div></td>
@@ -1969,11 +2282,24 @@ HTML;
             . '<p class="summary-short">' . self::e($summaryText['dailyHabit']) . '</p></div>';
         $page3Html .= '<div class="summary-reassurance">' . self::e($summaryText['reassurance']) . '</div>';
 
+        $glossarySubtitle = $isTa ? 'சொல் விளக்கம்' : ($isHi ? 'शब्दार्थ' : 'Plain-language guide to this report');
+        $glossaryBody = astro_report_glossary_html('BIRTH_JATHAGAM', $lang);
+        $glossarySheetHtml = $glossaryBody === ''
+            ? ''
+            : '<div class="sheet glossary-sheet" id="birth-glossary-sheet">'
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitle, $orderNumber, 4, self::JATHAGAM_PAGE_TOTAL, $lang, '', true)
+                . $glossaryBody . self::footerBand($lang) . '</div>';
+
         $css = self::sharedCss($lang) . self::birthSummaryCss();
         return '<!DOCTYPE html><html lang="' . self::e($lang) . '"><head><meta charset="UTF-8"><title>ASTRO SIVAM - Birth Jathagam Report</title><style>' . $css . '</style></head><body>'
             . '<div class="sheet">' . $page1Html . self::footerBand($lang) . '</div><pagebreak />'
             . '<div class="sheet">' . $page2Html . ($yogaNotesCardHtml ?? '') . self::footerBand($lang) . '</div><pagebreak />'
-            . '<div class="sheet' . ($isCompact ? ' is-compact' : '') . '" id="birth-summary-sheet">' . $page3Html . self::footerBand($lang) . '</div>'
+            . '<div class="sheet' . ($isCompact ? ' is-compact' : '') . '" id="birth-summary-sheet">' . $page3Html . self::footerBand($lang) . '</div><pagebreak />'
+            // Report Guide & Glossary: the wording lives in
+            // api/astrology/report_glossary.json and is shared with the browser
+            // builder, so the printed PDF and the preview explain a term the
+            // same way. Skipped entirely if the JSON is unreadable.
+            . $glossarySheetHtml
             . '</body></html>';
     }
 
@@ -3281,19 +3607,12 @@ CSS;
         $scoreRaw = $result['totalPointsEarned'] ?? $result['score'] ?? null;
         $maxScoreRaw = $result['maxPossiblePoints'] ?? $result['maxScore'] ?? null;
         $percentRaw = $result['matchPercentage'] ?? $result['percentage'] ?? null;
-        $score = self::e(is_numeric($scoreRaw) && (float) $scoreRaw >= 0 ? (string) $scoreRaw : 'N/A');
-        $maxScore = self::e(is_numeric($maxScoreRaw) && (float) $maxScoreRaw > 0 ? (string) $maxScoreRaw : 'N/A');
-        $scorePercentForMeter = is_numeric($percentRaw)
-            ? (float) $percentRaw
-            : (is_numeric($scoreRaw) && is_numeric($maxScoreRaw) && (float) $maxScoreRaw > 0
-                ? ((float) $scoreRaw / (float) $maxScoreRaw) * 100.0
-                : null);
-        $scorePercentForMeter = $scorePercentForMeter !== null && is_finite($scorePercentForMeter)
-            ? max(0.0, min(100.0, $scorePercentForMeter))
-            : null;
-        $scoreMeterPercent = $scorePercentForMeter === null ? 'N/A' : (rtrim(rtrim(number_format($scorePercentForMeter, 1, '.', ''), '0'), '.') . '%');
-        $scoreMeterWidth = $scorePercentForMeter === null ? '0%' : number_format($scorePercentForMeter, 1, '.', '') . '%';
-        $scoreMeterValue = $scorePercentForMeter === null ? 0 : round($scorePercentForMeter, 1);
+        // ONE number on page 1 (owner request, Oct 2026): "8 / 10 Poruthams
+        // matched". The panel used to print the point score, the percentage AND
+        // the porutham count side by side - three different measures with
+        // nothing saying so - and the reader could not tell which was the
+        // verdict. Only the porutham count survives; the meter fills from that
+        // same number, so the bar and the text cannot disagree.
 
         $matchedCountRaw = $result['totalPoruthamsMatched'] ?? $result['matchedCount'] ?? null;
         $matchedCountValue = null;
@@ -3323,6 +3642,7 @@ CSS;
             }
         }
         $matchedCountDisplay = $matchedCountValue === null ? 'N/A' : (string) $matchedCountValue;
+        $matchedMeterWidth = $matchedCountValue === null ? '0%' : (($matchedCountValue * 10)) . '%';
 
         $verdictStatus = strtoupper(trim((string) ($result['verdictStatus'] ?? '')));
         $ratingTier = in_array($verdictStatus, ['UTTHAMAM', 'MADHYAMAM', 'PORUNDHADHU'], true) ? $verdictStatus : null;
@@ -3344,9 +3664,9 @@ CSS;
             }
         }
         if ($ratingTier === 'UTTHAMAM') {
-            $verdictText = $isTa ? 'இந்த மதிப்பீட்டின்படி நல்ல பொருத்தம்.' : ($isHi ? 'इस आकलन के अनुसार अच्छा मेल है।' : 'Good match based on this assessment.');
+            $verdictText = $isTa ? 'இந்த மதிப்பீட்டின்படி மிக நல்ல பொருத்தம்.' : ($isHi ? 'इस आकलन के अनुसार बहुत अच्छा मेल है।' : 'Very good match based on this assessment.');
         } elseif ($ratingTier === 'MADHYAMAM') {
-            $verdictText = $isTa ? 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களைப் பரிசீலிக்கலாம்.' : ($isHi ? 'स्वीकार्य मेल; उपायों पर विचार किया जा सकता है।' : 'Acceptable match; remedies may be considered.');
+            $verdictText = $isTa ? 'ஒட்டுமொத்தமாக நல்ல பொருத்தம் — சில பொருத்தங்கள் பகுதியளவே.' : ($isHi ? 'कुल मिलाकर अच्छा मेल — कुछ पोरुथम आंशिक हैं।' : 'Good match overall — a few poruthams are partial.');
         } elseif ($ratingTier === 'PORUNDHADHU') {
             $verdictText = $isTa
                 ? 'இந்த மதிப்பீட்டின்படி பரிந்துரைக்கப்படவில்லை; நிபுணர் ஆலோசனை பெறவும்.'
@@ -3358,20 +3678,37 @@ CSS;
         }
         $finalVerdictLabel = $isTa ? 'இறுதிப் பரிந்துரை' : ($isHi ? 'अंतिम अनुशंसा' : 'FINAL RECOMMENDATION');
         $finalVerdictText = $verdictText;
+        // The next step exists only where there IS one. When the charts match,
+        // the family's next action is picking the date with the Subha Muhurtham
+        // report (Tara Bala, Chandrashtama, Nalla Neram for both of them). A
+        // non-matching verdict stands on its own - no upsell, no promised
+        // review line.
+        $nextStepLabel = $isTa ? 'அடுத்த படி' : ($isHi ? 'अगला कदम' : 'NEXT STEP');
+        $nextStepText = '';
+        if ($ratingTier === 'UTTHAMAM' || $ratingTier === 'MADHYAMAM') {
+            $nextStepText = $isTa
+                ? 'திருமணத் தேதியை நமது சுப முகூர்த்த அறிக்கையுடன் தேர்ந்தெடுங்கள் — உங்கள் இருவருக்கும் தாரா பலம், சந்திராஷ்டமம், நல்ல நேரம் சரிபார்த்து சுப தேதிகளைப் பட்டியலிடும்: astrosivam.com/subha-muhurtham'
+                : ($isHi
+                    ? 'विवाह की तिथि हमारी शुभ मुहूर्त रिपोर्ट से चुनें — यह आप दोनों के लिए तारा बल, चंद्राष्टम और नल्ला नेरम जाँचकर शुभ तिथियाँ देती है: astrosivam.com/subha-muhurtham'
+                    : 'Choose the wedding date with our Subha Muhurtham report — it checks Tara Bala, Chandrashtama and Nalla Neram for both of you and lists the auspicious dates: astrosivam.com/subha-muhurtham');
+        }
         $finalVerdictClass = $ratingTier === null ? 'final-verdict-unavailable' : ($ratingTier === 'UTTHAMAM' ? 'final-verdict-good' : ($ratingTier === 'MADHYAMAM' ? 'final-verdict-moderate' : 'final-verdict-not-good'));
         $finalVerdictColor = $ratingTier === null ? '#475569' : ($ratingTier === 'UTTHAMAM' ? '#166534' : ($ratingTier === 'MADHYAMAM' ? '#92400e' : '#991b1b'));
         $finalVerdictBackground = $ratingTier === null ? '#f1f5f9' : ($ratingTier === 'UTTHAMAM' ? '#ecfdf5' : ($ratingTier === 'MADHYAMAM' ? '#fffbeb' : '#fef2f2'));
         $finalVerdictBorder = $ratingTier === null ? '#cbd5e1' : ($ratingTier === 'UTTHAMAM' ? '#86efac' : ($ratingTier === 'MADHYAMAM' ? '#fcd34d' : '#fca5a5'));
+        $nextStepHtml = $nextStepText === ''
+            ? ''
+            : '<div style="font-size:9.5px; line-height:1.3; font-weight:normal; color:' . $finalVerdictColor . '; text-align:left; margin-top:1.2mm; padding-top:1.1mm; border-top:1px dotted ' . $finalVerdictColor . ';"><b style="letter-spacing:0.4px;">' . $nextStepLabel . '</b>&nbsp;&nbsp;' . $nextStepText . '</div>';
         if ($ratingTier === 'UTTHAMAM') {
-            $meterBadgeText = $isTa ? 'உத்தமம்' : ($isHi ? 'उत्तम' : 'Utthamam');
+            $meterBadgeText = astro_porutham_verdict_label('UTTHAMAM', $lang, true);
             $meterBadgeStyle = 'background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7;';
             $meterFillColor = '#059669';
         } elseif ($ratingTier === 'MADHYAMAM') {
-            $meterBadgeText = $isTa ? 'மத்திமம்' : ($isHi ? 'मध्यम' : 'Madhyamam');
+            $meterBadgeText = astro_porutham_verdict_label('MADHYAMAM', $lang, true);
             $meterBadgeStyle = 'background:#fef3c7;color:#92400e;border:1px solid #fcd34d;';
             $meterFillColor = '#d97706';
         } elseif ($ratingTier === 'PORUNDHADHU') {
-            $meterBadgeText = $isTa ? 'பொருந்தாது' : ($isHi ? 'अनुशंसित नहीं' : 'Not Recommended');
+            $meterBadgeText = astro_porutham_verdict_label('PORUNDHADHU', $lang, true);
             $meterBadgeStyle = 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;';
             $meterFillColor = '#be123c';
         } else {
@@ -3423,7 +3760,6 @@ CSS;
         $lblDoshaBalance = $isTa ? 'தோஷ சமநிலை' : ($isHi ? 'दोष संतुलन' : 'Dosha Balance');
         $lblDoshaGuidance = $isTa ? 'செவ்வாய் வழிகாட்டல்' : ($isHi ? 'मंगल मार्गदर्शन' : 'Kuja Guidance');
         $lblVisualMeter = $isTa ? 'பொருத்த ஒத்திசைவு அளவுகோல்' : ($isHi ? 'विवाह अनुकूलता मीटर' : 'Visual Compatibility Meter');
-        $lblMeterPoints = $isTa ? 'புள்ளிகள்' : ($isHi ? 'अंक' : 'Points');
         $lblPoruthamsMatched = $isTa ? 'பொருத்தங்கள் பொருந்தின' : ($isHi ? 'गुण मेल खाते हैं' : 'Poruthams matched');
         $lblRajju = $isTa ? 'ரஜ்ஜு நிலை' : ($isHi ? 'रज्जु स्थिति' : 'Rajju status');
         $rajjuMatch = $result['rajjuMatch'] ?? null;
@@ -3448,7 +3784,14 @@ CSS;
             $hasEarned = $earnedRaw !== null && $earnedRaw !== '' && is_numeric($earnedRaw) && (float) $earnedRaw >= 0;
             $hasMaximum = $maxRaw !== null && $maxRaw !== '' && is_numeric($maxRaw) && (float) $maxRaw > 0;
             $pts = ($hasEarned ? (string) $earnedRaw : 'N/A') . ' / ' . ($hasMaximum ? (string) $maxRaw : 'N/A');
-            $status = $isTa ? ($p['statusTa'] ?? $p['status'] ?? 'N/A') : ($isHi ? ($p['statusHi'] ?? $p['status'] ?? 'N/A') : ($p['status'] ?? 'N/A'));
+            // The engine stores the tier in status2 / status; older saved
+            // orders only carry the legacy English label. Both are read and
+            // printed as the same plain grading word in the order's language.
+            $statusTier = astro_porutham_verdict_tier($p['status2'] ?? null);
+            if ($statusTier === null) {
+                $statusTier = astro_porutham_verdict_tier($p['status'] ?? null);
+            }
+            $status = astro_porutham_verdict_label($statusTier, $lang);
             $expl = $isTa ? ($p['explanationTa'] ?? $p['explanationEn'] ?? '') : ($isHi ? ($p['explanationHi'] ?? $p['explanationEn'] ?? '') : ($p['explanationEn'] ?? ''));
 
             $rows .= '<tr><td>' . $idx . '</td><td><b>' . self::e($pName) . '</b></td><td>' . self::e($pts) . '</td><td>' . self::e($status) . '</td><td>' . self::e($expl) . '</td></tr>';
@@ -3466,7 +3809,7 @@ CSS;
         // "Prepared on" stamp: first page only, on the LEFT of the reference
         // line — never centred with the page tag (owner request, Oct 2026).
         $preparedLabel = self::preparedOnLabel($result, $lang);
-        $body = self::topHeader('ASTRO SIVAM', $headerSub, $orderNumber, 1, 2, $lang, '', false, $preparedLabel);
+        $body = self::topHeader('ASTRO SIVAM', $headerSub, $orderNumber, 1, self::WEDDING_PAGE_TOTAL, $lang, '', false, $preparedLabel);
         $body .= <<<HTML
 <div class="panel" style="padding:3.5mm 4mm;">
   <table style="width:100%; font-size:10px; line-height:1.5;"><tr>
@@ -3501,13 +3844,11 @@ CSS;
           </tr>
         </table>
         <div style="font-size:15px; line-height:1.2; color:#0f172a; font-weight:bold; margin-bottom:1.2mm;">
-          {$score} / {$maxScore}<span style="font-size:8px; color:#64748b; font-weight:normal;"> {$lblMeterPoints}</span>
-          <span style="float:right; font-size:9px; color:#334155;">{$scoreMeterPercent}</span>
+          {$matchedCountDisplay} / 10<span style="font-size:8px; color:#64748b; font-weight:normal;"> {$lblPoruthamsMatched}</span>
         </div>
-        <div role="meter" aria-label="{$lblVisualMeter}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{$scoreMeterValue}" aria-valuetext="{$scoreMeterPercent}" style="width:100%; height:2.5mm; overflow:hidden; border-radius:20px; background:#e2e8f0; margin-bottom:1.2mm;">
-          <div style="width:{$scoreMeterWidth}; height:2.5mm; background:{$meterFillColor}; border-radius:20px;"></div>
+        <div role="meter" aria-label="{$lblVisualMeter}" aria-valuemin="0" aria-valuemax="10" aria-valuenow="{$matchedCountDisplay}" aria-valuetext="{$matchedCountDisplay} / 10 {$lblPoruthamsMatched}" style="width:100%; height:2.5mm; overflow:hidden; border-radius:20px; background:#e2e8f0; margin-bottom:1.2mm;">
+          <div style="width:{$matchedMeterWidth}; height:2.5mm; background:{$meterFillColor}; border-radius:20px;"></div>
         </div>
-        <div style="font-size:8px; line-height:1.35; color:#475569; margin-bottom:0.8mm;"><b>{$matchedCountDisplay} / 10</b> {$lblPoruthamsMatched}</div>
         <div style="font-size:8px; line-height:1.35; color:#475569;">{$lblRajju}: <b style="color:{$rajjuStatusColor};">{$rajjuStatusText}</b></div>
       </div>
     </td>
@@ -3545,6 +3886,7 @@ CSS;
 <div class="panel {$finalVerdictClass}" role="status" style="text-align:center; background:{$finalVerdictBackground}; border:1px solid {$finalVerdictBorder}; margin-top:1mm; margin-bottom:1mm; padding:3mm 4mm;">
   <div style="font-size:9.5px; font-weight:bold; letter-spacing:0.5px; color:{$finalVerdictColor};">{$finalVerdictLabel}</div>
   <div style="font-size:13px; line-height:1.25; font-weight:bold; color:{$finalVerdictColor}; margin-top:0.8mm;">{$finalVerdictText}</div>
+  {$nextStepHtml}
 </div>
 HTML;
 
@@ -3569,7 +3911,7 @@ HTML;
         }
         $disclaimerTitle = self::e($disclaimer['title']);
         $disclaimerHeading = self::e($disclaimer['heading']);
-        $disclaimerBody = self::topHeader('ASTRO SIVAM', $disclaimer['pageSubtitle'], $orderNumber, 2, 2, $lang);
+        $disclaimerBody = self::topHeader('ASTRO SIVAM', $disclaimer['pageSubtitle'], $orderNumber, 2, self::WEDDING_PAGE_TOTAL, $lang);
         $disclaimerBody .= <<<HTML
 <div class="panel disclaimer-panel" style="{$disclaimerPanelStyle} margin:0 auto;">
   <div class="disclaimer-title">{$disclaimerTitle}</div>
@@ -3622,10 +3964,19 @@ HTML;
 HTML;
         $disclaimerBody .= $attestation;
 
+        $glossaryBodyWedding = astro_report_glossary_html('MARRIAGE_COMPATIBILITY', $lang);
+        $glossarySubtitleWedding = $isTa ? 'சொல் விளக்கம்' : ($isHi ? 'शब्दार्थ' : 'Plain-language guide to this report');
+        $glossarySheetWedding = $glossaryBodyWedding === ''
+            ? ''
+            : '<pagebreak /><div class="sheet glossary-sheet" id="wedding-glossary-sheet">'
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitleWedding, $orderNumber, 3, self::WEDDING_PAGE_TOTAL, $lang)
+                . $glossaryBodyWedding . self::footerBand($lang) . '</div>';
+
         $css = self::sharedCss($lang);
         return '<!DOCTYPE html><html lang="' . self::e($lang) . '"><head><meta charset="UTF-8"><title>ASTRO SIVAM - Marriage Compatibility Report</title><style>' . $css . '</style></head><body>'
             . '<div class="sheet">' . $body . self::footerBand($lang) . '</div><pagebreak />'
             . '<div class="sheet">' . $disclaimerBody . self::footerBand($lang) . '</div>'
+            . $glossarySheetWedding
             . '</body></html>';
     }
 
@@ -3755,8 +4106,8 @@ HTML;
             'datesSub' => $isTa ? 'தேதி · கிழமை · நட்சத்திரம் (சூரிய உதயம்) · நல்ல நேரம்' : ($isHi ? 'दिनांक · वार · नक्षत्र (सूर्योदय) · शुभ समय' : 'Date · Weekday · Nakshatra (at sunrise) · Nalla Neram'),
             'continued' => $isTa ? '1-வது பக்கத்தின் தொடர்ச்சி' : ($isHi ? 'पृष्ठ 1 से जारी' : 'Continued from page 1'),
             'certified' => $isTa ? 'சான்றளித்தவர்: ASTRO SIVAM' : ($isHi ? 'प्रमाणित: ASTRO SIVAM' : 'Certified by ASTRO SIVAM'),
-            'page1' => $isTa ? 'பக்கம் 1 / 2' : ($isHi ? 'पृष्ठ 1 / 2' : 'Page 1 of 2'),
-            'page2Fixed' => $isTa ? 'பக்கம் 2 / 2' : ($isHi ? 'पृष्ठ 2 / 2' : 'Page 2 of 2'),
+            'page1' => ($isTa ? 'பக்கம்' : ($isHi ? 'पृष्ठ' : 'Page')) . ' 1 / ' . self::MUHURTHAM_PAGE_TOTAL,
+            'page2Fixed' => ($isTa ? 'பக்கம்' : ($isHi ? 'पृष्ठ' : 'Page')) . ' 2 / ' . self::MUHURTHAM_PAGE_TOTAL,
             'secParticulars' => $isTa ? 'பயனர் விவரம்' : ($isHi ? 'उपयोगकर्ता विवरण' : 'USER PARTICULARS'),
             'lblName' => $isTa ? 'பெயர்' : ($isHi ? 'नाम' : 'NAME'),
             'lblDob' => $isTa ? 'பிறந்த தேதி' : ($isHi ? 'जन्म तिथि' : 'DATE OF BIRTH'),
@@ -3992,7 +4343,7 @@ HTML;
         // "Prepared on" stamp: first page only, on the LEFT of the reference
         // line — never centred with the page tag (owner request, Oct 2026).
         $preparedLabel = self::preparedOnLabel($result, $lang);
-        $coverHeader = self::topHeader('ASTRO SIVAM', $t['docTitle'], $orderNumberSafe, 1, 2, $lang, $coverMeta, false, $preparedLabel);
+        $coverHeader = self::topHeader('ASTRO SIVAM', $t['docTitle'], $orderNumberSafe, 1, self::MUHURTHAM_PAGE_TOTAL, $lang, $coverMeta, false, $preparedLabel);
 
         $page1DatesHtml = $renderCalendarTable($page1Rows);
 
@@ -4042,7 +4393,12 @@ HTML;
                 : '')
             . '<p><b>' . self::e($notes['selectionHeading']) . '</b><br/>'
             . ($notes['summaryText'] !== '' ? '<span class="selection-counts">' . self::e($notes['summaryText']) . '</span><br/>' : '')
-            . self::e($notes['selectionText']) . '</p></div>';
+            . self::e($notes['selectionText']) . '</p>'
+            // The report used to stop at the table. This is the step after it.
+            . (!empty($notes['nextStepText'])
+                ? '<p class="selection-next-step"><b>' . self::e($notes['nextStepHeading']) . '</b><br/>' . self::e($notes['nextStepText']) . '</p>'
+                : '')
+            . '</div>';
         $upperHalf = '';
         if ($datesContinueOnPage2) {
             $upperHalf = '<div class="sec-head"><span class="sec-no">02</span>' . self::e($t['datesTitle'])
@@ -4061,7 +4417,7 @@ HTML;
         // Longer continuations expand the cell and keep the guide below dates.
         $secondPage = '<div class="sheet muhurtham-sheet">'
             . '<table class="muhurtham-page2-upper"><tr><td style="height:100mm;padding:0;vertical-align:top;">'
-            . self::topHeader('ASTRO SIVAM', $t['docTitle'] . ' - ' . $t['continued'], $orderNumberSafe, 2, 2, $lang, $eventTitle . ' • Clean dates only')
+            . self::topHeader('ASTRO SIVAM', $t['docTitle'] . ' - ' . $t['continued'], $orderNumberSafe, 2, self::MUHURTHAM_PAGE_TOTAL, $lang, $eventTitle . ' • Clean dates only')
             . $upperHalf
             . '</td></tr></table>'
             . $selectionGuide
@@ -4126,8 +4482,16 @@ HTML;
 
         $css = self::sharedCss($lang) . $muhurthamCss;
 
+        $glossaryBodyMuh = astro_report_glossary_html('MUHURTHAM', $lang);
+        $glossarySubtitleMuh = $isTa ? 'சொல் விளக்கம்' : ($isHi ? 'शब्दार्थ' : 'Plain-language guide to this report');
+        $glossarySheetMuh = $glossaryBodyMuh === ''
+            ? ''
+            : '<pagebreak /><div class="sheet glossary-sheet" id="muhurtham-glossary-sheet">'
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitleMuh, $orderNumberSafe, 3, self::MUHURTHAM_PAGE_TOTAL, $lang)
+                . $glossaryBodyMuh . self::footerBand($lang) . '</div>';
+
         return '<!DOCTYPE html><html lang="' . self::e($lang) . '"><head><meta charset="UTF-8"><title>ASTRO SIVAM - Subha Muhurtham Report</title><style>' . $css . '</style></head><body>'
-            . $cover . $secondPage
+            . $cover . $secondPage . $glossarySheetMuh
             . '</body></html>';
     }
 
@@ -4453,6 +4817,14 @@ HTML;
         $sec2 = $isTa ? 'ஜோதிட கணிப்புகள்' : ($isHi ? 'ज्योतिषीय गणना' : 'ASTROLOGICAL COORDINATES');
         $sec3 = $isTa ? 'சுப நாமகரண அக்ஷரம்' : ($isHi ? 'शुभ नामकरण अक्षर' : 'PRIMARY NAMING SYLLABLE');
         $sec4 = $isTa ? 'நட்சத்திர பாத அக்ஷரங்கள்' : ($isHi ? 'नक्षत्र पाद अक्षर' : 'NAKSHATRA PADA SYLLABLES');
+        // The whole point of the naming report, said out loud: WHY the first
+        // sound is fixed to the birth star's pada.
+        $whySoundTitle = $isTa ? 'ஏன் முதல் ஒலி முக்கியம்' : ($isHi ? 'पहली ध्वनि क्यों महत्वपूर्ण है' : 'WHY THE FIRST SOUND MATTERS');
+        $whySoundText = $isTa
+            ? 'பெயர் ஒலியை மட்டும் வைத்துத் தேர்ந்தெடுப்பதல்ல — மரபு குழந்தையின் பிறந்த நட்சத்திரம் மற்றும் பாதத்திலிருந்து முதல் ஒலியை நிர்ணயிக்கிறது; அதனால் பெயர் குழந்தையின் நட்சத்திரம் தொடங்கும் இடத்திலிருந்தே தொடங்குகிறது. மேலே உள்ள நான்கு ஒலிகளில் ஒன்றில் தொடங்கும் எந்தப் பெயரையும் குடும்பம் தேர்ந்தெடுக்கலாம். இந்த அறிக்கையின் அனைத்துப் பெயர் பட்டியலும் அந்த ஒலிகளில் தொடங்குவதற்குக் காரணம் இதுவே: பொருள் உங்கள் தேர்வு, முதல் ஒலி ஆசி.'
+            : ($isHi
+                ? 'नाम केवल सुनने में अच्छा लगने से नहीं चुना जाता — परंपरा पहली ध्वनि शिशु के जन्म नक्षत्र और पाद से तय करती है, इसलिए नाम वहीं से शुरू होता है जहाँ शिशु का नक्षत्र शुरू होता है। परिवार ऊपर दी गई चार ध्वनियों में से किसी एक से शुरू होने वाला कोई भी नाम चुन सकता है। इस रिपोर्ट की हर नाम-सूची इन्हीं ध्वनियों से शुरू होती है: अर्थ आपकी पसंद, पहली ध्वनि आशीर्वाद।'
+                : 'A name is not chosen by sound alone - tradition fixes the FIRST sound from the birth star and pada, so the name begins where the child\'s star begins. The family then picks any name that starts with one of the four syllables printed above. That is why every name list in this report starts with those sounds: the meaning is your choice, the first sound is the blessing.');
         $sec5 = $isTa ? 'வேத குணநலன்கள்' : ($isHi ? 'वैदिक गुण' : 'VEDIC GUNAM & VIRTUES');
 
         $lblBabyName = $isTa ? 'குழந்தையின் பெயர்' : ($isHi ? 'शिशु का नाम' : 'BABY NAME');
@@ -4463,6 +4835,11 @@ HTML;
         $lblLagna = $isTa ? 'லக்னம்' : ($isHi ? 'लग्न' : 'LAGNAM (ASCENDANT)');
         $lblNak = $isTa ? 'ஜன்ம நட்சத்திரம்' : ($isHi ? 'जन्म नक्षत्र' : 'JANMA NAKSHATRA');
         $lblPada = $isTa ? 'பாதம்' : ($isHi ? 'पाद / चरण' : 'JANMA PADA');
+        // Same fix as the Jathagam particulars: "Pada 2" is an English fragment
+        // inside a Tamil/Hindi Namakaran report.
+        $padaValue = ($pada === '' || $pada === 'N/A')
+            ? 'N/A'
+            : ($isTa ? "{$pada}-ஆம் பாதம்" : ($isHi ? "पाद {$pada}" : "Pada {$pada}"));
         $lblRasi = $isTa ? 'சந்திர ராசி' : ($isHi ? 'चंद्र राशि' : 'CHANDRA RASI (MOON)');
         $lblLord = $isTa ? 'நட்சத்திர அதிபதி' : ($isHi ? 'नक्षत्र स्वामी' : 'NAKSHATRA LORD');
         $lblGana = $isTa ? 'கணம்' : ($isHi ? 'गण' : 'GANA');
@@ -4547,6 +4924,9 @@ HTML;
     .bn-doc-meta { font-size: 7.5px; color: #8a7c6c; font-weight: bold; margin-top: 1.2mm; letter-spacing: 0.3px; }
     .bn-doc-meta b { color: #7a2129; }
 
+    .bn-why { background: #fdfaf4; border: 1px solid #e5d9c5; border-left: 3px solid #b3862e; border-radius: 3px; padding: 2mm 2.6mm; margin: 1.5mm 0 0; page-break-inside: avoid; }
+    .bn-why-title { font-size: 9.5px; font-weight: bold; color: #7a2129; letter-spacing: 0.5px; margin-bottom: 1mm; }
+    .bn-why-text { font-size: 8.6px; line-height: 1.45; color: #5c5044; text-align: justify; }
     .sec-head { font-size: 9.5px; font-weight: bold; color: #7a2129; letter-spacing: 0.8px; margin: 2.5mm 0 1.5mm; padding-bottom: 0.8mm; border-bottom: 1px solid #e5d9c5; }
     .sec-no { display: inline-block; background: #7a2129; color: #ffffff; font-size: 7.5px; padding: 0.4mm 1.4mm; margin-right: 1.6mm; border-radius: 2px; }
 
@@ -4696,7 +5076,7 @@ CSS;
                 . '<div class="bn-title-band bn-sug-title-band">'
                 . '<div class="bn-doc-title">' . $sugDocTitle . '</div>'
                 . '<div class="bn-doc-sub">' . $sugDocSub . '</div>'
-                . '<div class="bn-doc-meta"><b>' . $babyName . '</b> &nbsp;&bull;&nbsp; ' . $nak . ', Pada ' . $pada
+                . '<div class="bn-doc-meta"><b>' . $babyName . '</b> &nbsp;&bull;&nbsp; ' . $nak . ', ' . $padaValue
                 . ' &nbsp;&bull;&nbsp; ' . $gender . ' &nbsp;&bull;&nbsp; <b>' . $lblReportNo . ':</b> ' . $certId . '</div>'
                 . '</div>'
                 . '<table class="sug-cols" width="100%"><tr>'
@@ -4735,11 +5115,11 @@ CSS;
   <table class="bn-details">
     <tr>
       <td class="bn-lbl">{$lblBabyName}</td><td class="bn-val">{$babyName} ({$gender})</td>
-      <td class="bn-lbl">{$lblNak}</td><td class="bn-val">{$nak}, Pada {$pada}</td>
+      <td class="bn-lbl">{$lblNak}</td><td class="bn-val">{$nak}, {$padaValue}</td>
     </tr>
     <tr>
       <td class="bn-lbl">{$lblDob}</td><td class="bn-val">{$dob}</td>
-      <td class="bn-lbl">{$lblPada}</td><td class="bn-val">Pada {$pada}</td>
+      <td class="bn-lbl">{$lblPada}</td><td class="bn-val">{$padaValue}</td>
     </tr>
     <tr>
       <td class="bn-lbl">{$lblTob}</td><td class="bn-val">{$tob}</td>
@@ -4773,6 +5153,11 @@ CSS;
     <thead><tr><th width="30%">{$thPada}</th><th width="40%">{$thSound}</th><th>{$thRasi}</th></tr></thead>
     <tbody>{$padaRows}</tbody>
   </table>
+
+  <div class="bn-why">
+    <div class="bn-why-title">{$whySoundTitle}</div>
+    <div class="bn-why-text">{$whySoundText}</div>
+  </div>
 
   <div class="sec-head"><span class="sec-no">04</span>{$sec5}</div>
   <table class="bn-virtues">
@@ -4812,10 +5197,18 @@ CSS;
 HTML;
 
         $css = self::sharedCss($lang) . $babyCss;
-        // Page 1 = the certificate, page 2 = the South & North Indian name lists.
+        // Page 1 = the certificate, page 2 = the South & North Indian name lists,
+        // page 3 = the plain-language glossary of every term used in the report.
+        $glossaryBodyBaby = astro_report_glossary_html('BABY_NAMING', $lang);
+        $glossarySubtitleBaby = $isTa ? 'சொல் விளக்கம்' : ($isHi ? 'शब्दार्थ' : 'Plain-language guide to this report');
+        $glossarySheetBaby = $glossaryBodyBaby === ''
+            ? ''
+            : '<pagebreak /><div class="sheet glossary-sheet" id="namakaran-glossary-sheet">'
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitleBaby, $orderNumber, 3, self::BABY_PAGE_TOTAL, $lang)
+                . $glossaryBodyBaby . self::footerBand($lang) . '</div>';
         return '<!DOCTYPE html><html lang="' . self::e($lang) . '"><head><meta charset="UTF-8"><title>ASTRO SIVAM - Baby Naming Certificate</title><style>' . $css . '</style></head><body>'
             . $body . self::footerBand($lang)
-            . $suggestionsPage
+            . $suggestionsPage . $glossarySheetBaby
             . '</body></html>';
     }
 }

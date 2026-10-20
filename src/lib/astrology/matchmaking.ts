@@ -225,9 +225,9 @@ export function calculateWeddingCompatibility(
     pointsEarned: dinaStatus === PoruthamStatus.UTTHAMAM ? 1.0 : dinaStatus === PoruthamStatus.MADHYAMAM ? 0.5 : 0.0,
     maxPoints: 1.0,
     explanationTa: dinaStatus === PoruthamStatus.UTTHAMAM
-      ? 'உத்தமம்! தம்பதியரின் நீண்ட ஆயுளையும், உடல் நலனையும், நோய் நொடியற்ற வளமான வாழ்க்கையையும் அருளும்.'
+      ? 'தம்பதியரின் நீண்ட ஆயுளையும், உடல் நலனையும், நோய் நொடியற்ற வளமான வாழ்க்கையையும் அருளும்.'
       : dinaStatus === PoruthamStatus.MADHYAMAM
-      ? 'மத்திமம்! மிதமான நட்சத்திர தூரம்; முழு ஆரோக்கிய ஆதரவு இல்லை.'
+      ? 'மிதமான நட்சத்திர தூரம்; முழு ஆரோக்கிய ஆதரவு இல்லை.'
       : 'பொருந்தாது! நட்சத்திர இடைவெளி ஆரோக்கியத்தையும் நீண்ட ஆயுளையும் தாங்கவில்லை; மற்ற முதன்மைப் பொருத்தங்களின் பலம் தேவை.',
     explanationEn: dinaStatus === PoruthamStatus.UTTHAMAM
       ? 'Auspicious! Bestows vitality, health resilience, long life, and prosperity to the couple.'
@@ -235,7 +235,7 @@ export function calculateWeddingCompatibility(
       ? 'Only a partial Dina match - the star distance supports average, not full, vitality and longevity.'
       : 'No Dina support - the star distance carries neither full vitality and longevity nor freedom from discord, so it needs support from the other crucial Poruthams.',
     explanationHi: dinaStatus === PoruthamStatus.UTTHAMAM
-      ? 'उत्तम! दंपत्ति के दीर्घायु, उत्तम स्वास्थ्य और समृद्धि का कारक है।'
+      ? 'दंपत्ति के दीर्घायु, उत्तम स्वास्थ्य और समृद्धि का कारक है।'
       : dinaStatus === PoruthamStatus.MADHYAMAM
       ? 'आंशिक मेल - मध्यम नक्षत्र दूरी; पूर्ण स्वास्थ्य एवं दीर्घायु समर्थन नहीं।'
       : 'दिन पोरुथम नहीं - नक्षत्र दूरी स्वास्थ्य, दीर्घायु एवं मतभेद-रहितता का बल नहीं देती।',
@@ -294,13 +294,13 @@ export function calculateWeddingCompatibility(
     pointsEarned: mahendraStatus === PoruthamStatus.UTTHAMAM ? 1.0 : 0.0,
     maxPoints: 1.0,
     explanationTa: mahendraStatus === PoruthamStatus.UTTHAMAM
-      ? 'உத்தமம்! புத்திர பாக்கியம், வம்ச விருத்தி மற்றும் சந்ததி மேன்மையை நல்கும்.'
+      ? 'புத்திர பாக்கியம், வம்ச விருத்தி மற்றும் சந்ததி மேன்மையை நல்கும்.'
       : 'பொருந்தாது! மகேந்திர ஆதரவு இல்லை; புத்திர பாக்கியம் இருவரின் தனிப்பட்ட ஜாதகத்தில் 5-ம் பாவகம் கொண்டு அறியப்படும்.',
     explanationEn: mahendraStatus === PoruthamStatus.UTTHAMAM
       ? 'Auspicious! Bestows blessed offspring, family lineage expansion, and prosperity.'
       : 'Not supportive - the star distance gives no Mahendra strength for progeny and lineage growth (each chart is judged separately from its 5th house).',
     explanationHi: mahendraStatus === PoruthamStatus.UTTHAMAM
-      ? 'उत्तम! संतान सुख और कुल वृद्धि के लिए अत्यंत शुभ।'
+      ? 'संतान सुख और कुल वृद्धि के लिए अत्यंत शुभ।'
       : 'सहायक नहीं - नक्षत्र दूरी से महेंद्र बल नहीं मिलता (संतान योग प्रत्येक कुंडली के पंचम भाव से अलग देखा जाता है)।',
     isCrucial: false
   });
@@ -322,9 +322,9 @@ export function calculateWeddingCompatibility(
     pointsEarned: sthreeStatus === PoruthamStatus.UTTHAMAM ? 1.0 : sthreeStatus === PoruthamStatus.MADHYAMAM ? 0.5 : 0.0,
     maxPoints: 1.0,
     explanationTa: sthreeStatus === PoruthamStatus.UTTHAMAM
-      ? 'உத்தமம்! பெண்ணிற்கு வாழ்நாள் முழுதும் மங்கலமும், ஐஸ்வர்யமும், நல்வாழ்வும் நிலைக்கும்.'
+      ? 'பெண்ணிற்கு வாழ்நாள் முழுதும் மங்கலமும், ஐஸ்வர்யமும், நல்வாழ்வும் நிலைக்கும்.'
       : sthreeStatus === PoruthamStatus.MADHYAMAM
-      ? 'மத்திமம்! மிதமான நட்சத்திர தூரம்; மணமகளுக்கு வலுவான வளர்ச்சி ஆதரவு இல்லை.'
+      ? 'மிதமான நட்சத்திர தூரம்; மணமகளுக்கு வலுவான வளர்ச்சி ஆதரவு இல்லை.'
       : 'பொருந்தாது! நட்சத்திர இடைவெளி குறைவு; மணமகளுக்கு நீண்ட ஆயுள் மற்றும் முழு வளர்ச்சி ஆதரவு இல்லை.',
     explanationEn: sthreeStatus === PoruthamStatus.UTTHAMAM
       ? 'Auspicious! Safeguards prosperity, health, happiness, and marital security for the bride.'
@@ -332,7 +332,7 @@ export function calculateWeddingCompatibility(
       ? 'Only a moderate star interval - long-term prosperity for the bride is weakly supported.'
       : 'No Stree Deergha support - the short star interval gives the bride neither full longevity nor all-round growth.',
     explanationHi: sthreeStatus === PoruthamStatus.UTTHAMAM
-      ? 'उत्तम! वधु के दीर्घ सौभाग्य और गृह समृद्धि की वृद्धि।'
+      ? 'वधु के दीर्घ सौभाग्य और गृह समृद्धि की वृद्धि।'
       : sthreeStatus === PoruthamStatus.MADHYAMAM
       ? 'मध्यम दूरी - वधू की दीर्घकालिक समृद्धि को सीमित समर्थन मात्र।'
       : 'स्त्री दीर्घ पोरुथम नहीं - कम नक्षत्र दूरी से वधू को दीर्घायु एवं सर्वांगीण विकास का बल नहीं मिलता।',
@@ -408,9 +408,9 @@ export function calculateWeddingCompatibility(
     pointsEarned: rasiStatus === PoruthamStatus.UTTHAMAM ? 1.0 : rasiStatus === PoruthamStatus.MADHYAMAM ? 0.5 : 0.0,
     maxPoints: 1.0,
     explanationTa: rasiStatus === PoruthamStatus.UTTHAMAM
-      ? 'உத்தமம்! குடும்ப ஒற்றுமை, வம்ச மேன்மை மற்றும் சுப காரிய வெற்றிகளை அருளும்.'
+      ? 'குடும்ப ஒற்றுமை, வம்ச மேன்மை மற்றும் சுப காரிய வெற்றிகளை அருளும்.'
       : rasiStatus === PoruthamStatus.MADHYAMAM
-      ? 'மத்திமம்! ராசி இணக்கம் மிதமானது; குடும்ப ஒற்றுமைக்கு முயற்சி தேவை.'
+      ? 'ராசி இணக்கம் மிதமானது; குடும்ப ஒற்றுமைக்கு முயற்சி தேவை.'
       : 'சஷ்டாஷ்டகம் (6/8 ராசி வித்தியாசம்). பிற கிரக பலம் கொண்டு சமன் செய்ய வேண்டும்.',
     explanationEn: rasiStatus === PoruthamStatus.UTTHAMAM
       ? 'Auspicious! Strengthens family unity, financial synergy, and long-term matrimonial joy.'
@@ -418,7 +418,7 @@ export function calculateWeddingCompatibility(
       ? 'Only moderate sign compatibility - mutual respect exists, but family unity needs conscious effort.'
       : 'Shashtashtaka (6/8 distance); relies on mitigating benefic planetary aspects.',
     explanationHi: rasiStatus === PoruthamStatus.UTTHAMAM
-      ? 'उत्तम! पारिवारिक सुख-शांति और कुल गौरव के लिए श्रेष्ठ।'
+      ? 'पारिवारिक सुख-शांति और कुल गौरव के लिए श्रेष्ठ।'
       : 'राशि मेल मध्यम है; पारिवारिक एकता हेतु प्रयास आवश्यक।',
     isCrucial: true
   });
@@ -449,7 +449,7 @@ export function calculateWeddingCompatibility(
     pointsEarned: rasiAdhipathiStatus === PoruthamStatus.UTTHAMAM ? 1.0 : rasiAdhipathiStatus === PoruthamStatus.MADHYAMAM ? 0.5 : 0.0,
     maxPoints: 1.0,
     explanationTa: `பெண் ராசி அதிபதி: ${RASI_INFO[bRasi].lordTa}, பிள்ளை ராசி அதிபதி: ${RASI_INFO[gRasi].lordTa}. ` +
-      (rasiAdhipathiStatus === PoruthamStatus.UTTHAMAM ? 'கிரக அதிபதிகள் நண்பர்கள்; மனமார்ந்த நட்பு தொடரும்.' : 'மத்திமம்! ராசி அதிபதிகள் பரஸ்பர நண்பர்கள் அல்ல; மன ஒற்றுமைக்கு முயற்சி தேவை.'),
+      (rasiAdhipathiStatus === PoruthamStatus.UTTHAMAM ? 'கிரக அதிபதிகள் நண்பர்கள்; மனமார்ந்த நட்பு தொடரும்.' : 'ராசி அதிபதிகள் பரஸ்பர நண்பர்கள் அல்ல; மன ஒற்றுமைக்கு முயற்சி தேவை.'),
     explanationEn: `Bride Lord: ${bLord}, Groom Lord: ${gLord}. ` +
       (rasiAdhipathiStatus === PoruthamStatus.UTTHAMAM ? 'Ruling planets are mutual friends, fostering deep lifelong companionship.' : 'Only neutral planetary affinity - the ruling planets are not mutual friends, so mental harmony needs conscious effort.'),
     explanationHi: `कन्या राश्याधिपति: ${RASI_INFO[bRasi].lordHi}, वर राश्याधिपति: ${RASI_INFO[gRasi].lordHi}। ` +
@@ -477,13 +477,13 @@ export function calculateWeddingCompatibility(
     pointsEarned: isVasiya ? 1.0 : 0.5,
     maxPoints: 1.0,
     explanationTa: isVasiya
-      ? 'உத்தமம்! தம்பதியரிடையே பிரியாத காதலும், ஒருவரை ஒருவர் கவரும் வசிய ஈர்ப்பும் உண்டாகும்.'
-      : 'மத்திமம்! இயல்பான அன்பு மட்டுமே; சிறப்பு வசிய ஈர்ப்பு இல்லை.',
+      ? 'தம்பதியரிடையே பிரியாத காதலும், ஒருவரை ஒருவர் கவரும் வசிய ஈர்ப்பும் உண்டாகும்.'
+      : 'இயல்பான அன்பு மட்டுமே; சிறப்பு வசிய ஈர்ப்பு இல்லை.',
     explanationEn: isVasiya
       ? 'Auspicious! Special magnetic bond, continuous adoration, and endearing mutual attraction.'
       : 'Only ordinary affection - the special Vasiya (mutual attraction) pull is absent.',
     explanationHi: isVasiya
-      ? 'उत्तम! परस्पर प्रगाढ़ प्रेम और आकर्षण का सूचक।'
+      ? 'परस्पर प्रगाढ़ प्रेम और आकर्षण का सूचक।'
       : 'सामान्य स्नेह मात्र - विशेष वश्य आकर्षण नहीं।',
     isCrucial: false
   });
@@ -503,13 +503,13 @@ export function calculateWeddingCompatibility(
     pointsEarned: !isSameRajju ? 1.0 : 0.0,
     maxPoints: 1.0,
     explanationTa: !isSameRajju
-      ? `உத்தமம்! வேறுபட்ட ரஜ்ஜு (பெண்: ${RAJJU_NAMES_TA[bRajju]}, பிள்ளை: ${RAJJU_NAMES_TA[gRajju]}). மாங்கல்ய பலமும் நீண்ட ஆயுளும் அருளும்.`
+      ? `வேறுபட்ட ரஜ்ஜு (பெண்: ${RAJJU_NAMES_TA[bRajju]}, பிள்ளை: ${RAJJU_NAMES_TA[gRajju]}). மாங்கல்ய பலமும் நீண்ட ஆயுளும் அருளும்.`
       : `ஏக ரஜ்ஜு தோஷம் (${RAJJU_NAMES_TA[bRajju]}). தம்பதியரின் தனி ஜாதக ஆய்வும், விசேஷ சுப பரிகாரங்களும் ஆலோசிக்கப்பட வேண்டும்.`,
     explanationEn: !isSameRajju
       ? `Auspicious! Different Rajjus (Bride: ${RAJJU_NAMES_EN[bRajju]}, Groom: ${RAJJU_NAMES_EN[gRajju]}). Confers unbroken marital security and longevity.`
       : `Same Rajju affliction (${RAJJU_NAMES_EN[bRajju]}). Classical Rajju affliction requires expert astrological review.`,
     explanationHi: !isSameRajju
-      ? `उत्तम! भिन्न रज्जु (वधु: ${RAJJU_NAMES_HI[bRajju]}, वर: ${RAJJU_NAMES_HI[gRajju]})। अखंड सौभाग्य एवं दीर्घायु का वरदान।`
+      ? `भिन्न रज्जु (वधु: ${RAJJU_NAMES_HI[bRajju]}, वर: ${RAJJU_NAMES_HI[gRajju]})। अखंड सौभाग्य एवं दीर्घायु का वरदान।`
       : `एक रज्जु दोष (${RAJJU_NAMES_HI[bRajju]})। कुंडली का गहन विश्लेषण आवश्यक।`,
     isCrucial: true
   });
@@ -527,13 +527,13 @@ export function calculateWeddingCompatibility(
     pointsEarned: !isVedhaAfflicted ? 1.0 : 0.0,
     maxPoints: 1.0,
     explanationTa: !isVedhaAfflicted
-      ? 'உத்தமம்! வேதை தோஷம் இல்லை. குடும்பத்தில் பகை, துன்பங்கள் மற்றும் தடைகளைத் தடுக்கும்.'
+      ? 'வேதை தோஷம் இல்லை. குடும்பத்தில் பகை, துன்பங்கள் மற்றும் தடைகளைத் தடுக்கும்.'
       : 'வேதை தோஷம் உள்ளது; நட்சத்திரங்களிடையே எதிர்மறை தொடர்பு உள்ளது.',
     explanationEn: !isVedhaAfflicted
       ? 'Auspicious! Free of Vedha obstruction. Shields against sorrow, dispute, and unnecessary friction.'
       : 'Vedha obstruction present between the chosen nakshatras.',
     explanationHi: !isVedhaAfflicted
-      ? 'उत्तम! वेध दोष से मुक्त। गृह कलह और बाधाओं से सुरक्षा।'
+      ? 'वेध दोष से मुक्त। गृह कलह और बाधाओं से सुरक्षा।'
       : 'वेध बाधा उपस्थित है।',
     isCrucial: true
   });

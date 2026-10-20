@@ -12,6 +12,11 @@ import { getGunam } from './gunamData';
 import { formatBirthDate, formatBirthPlace } from './formatUtils';
 import { normalizeReportLanguage } from './reportLanguage';
 import { formatBabyNameForReport } from './indicTransliteration';
+import {
+  GLOSSARY_PAGE_TEXT,
+  REPORT_GLOSSARY_CSS,
+  reportGlossaryHtml
+} from './reportGlossary';
 
 function escapeHtml(str: string | undefined | null): string {
   if (!str) return '';
@@ -289,6 +294,14 @@ export function buildBabyNamingHtml(result: BabyNamingResult, lang: AppLanguage 
   const particularsTitle = isTa ? 'குழந்தை விபரம் & ஜோதிட கணிப்புகள்' : isHi ? 'शिशु विवरण एवं ज्योतिषीय गणना' : 'Baby Particulars &amp; Astrological Coordinates';
   const padasTitle = isTa ? '4 நட்சத்திர பாத சுப ஒலிகள்' : isHi ? 'चारों नक्षत्र पाद नामाक्षर' : '4 Nakshatra Pada Auspicious Syllables';
   const virtuesTitle = isTa ? 'வேத குணநலன்கள் & பண்புகள்' : isHi ? 'वैदिक गुण एवं स्वभाव' : 'Vedic Gunam &amp; Core Virtues';
+  // The whole point of a naming report, and it was never said out loud: WHY the
+  // first sound is fixed. Without this the four syllables read as decoration.
+  const whySoundTitle = isTa ? 'ஏன் முதல் ஒலி முக்கியம்' : isHi ? 'पहली ध्वनि क्यों महत्वपूर्ण है' : 'Why the First Sound Matters';
+  const whySoundText = isTa
+    ? 'பெயர் ஒலியை மட்டும் வைத்துத் தேர்ந்தெடுப்பதல்ல — மரபு குழந்தையின் பிறந்த நட்சத்திரம் மற்றும் பாதத்திலிருந்து முதல் ஒலியை நிர்ணயிக்கிறது; அதனால் பெயர் குழந்தையின் நட்சத்திரம் தொடங்கும் இடத்திலிருந்தே தொடங்குகிறது. மேலே உள்ள நான்கு ஒலிகளில் ஒன்றில் தொடங்கும் எந்தப் பெயரையும் குடும்பம் தேர்ந்தெடுக்கலாம். இந்த அறிக்கையின் அனைத்துப் பெயர் பட்டியலும் அந்த ஒலிகளில் தொடங்குவதற்குக் காரணம் இதுவே: பொருள் உங்கள் தேர்வு, முதல் ஒலி ஆசி.'
+    : isHi
+    ? 'नाम केवल सुनने में अच्छा लगने से नहीं चुना जाता — परंपरा पहली ध्वनि शिशु के जन्म नक्षत्र और पाद से तय करती है, इसलिए नाम वहीं से शुरू होता है जहाँ शिशु का नक्षत्र शुरू होता है। परिवार ऊपर दी गई चार ध्वनियों में से किसी एक से शुरू होने वाला कोई भी नाम चुन सकता है। इस रिपोर्ट की हर नाम-सूची इन्हीं ध्वनियों से शुरू होती है: अर्थ आपकी पसंद, पहली ध्वनि आशीर्वाद।'
+    : 'A name is not chosen by sound alone — tradition fixes the FIRST sound from the birth star and pada, so the name begins where the child\'s star begins. The family then picks any name that starts with one of the four syllables printed above. That is why every name list in this report starts with those sounds: the meaning is your choice, the first sound is the blessing.';
   const certificationTitle = isTa ? 'வேத ஆசீர்வாதம் & சான்றிதழ்' : isHi ? 'वैदिक आशीर्वाद एवं प्रमाणीकरण' : 'Vedic Certification &amp; Divine Blessing';
   const verifiedLabel = isTa ? 'கணிப்பு சரிபார்க்கப்பட்டது' : isHi ? 'गणना सत्यापित' : 'CALCULATION VERIFIED';
 
@@ -756,6 +769,14 @@ ${REPORT_FONT_LINK_TAG}
     min-height: 0;
   }
   .particulars-panel { flex: 2 0 auto; min-height: 0; }
+  /* The "why the first sound" note: one short paragraph, never a second sheet. */
+  .why-sound-panel { flex: 0 0 auto; min-height: 0; }
+  .why-sound-panel p {
+    font-size: 9.5px;
+    line-height: 1.38;
+    color: var(--ink-light);
+    text-align: justify;
+  }
   .panel h2 {
     font-family: ${headerFont};
     color: var(--maroon);
@@ -1363,6 +1384,7 @@ ${REPORT_FONT_LINK_TAG}
     color: var(--ink-muted);
     font-style: italic;
   }
+${REPORT_GLOSSARY_CSS}
 </style>
 </head>
 <body>
@@ -1393,8 +1415,17 @@ ${REPORT_FONT_LINK_TAG}
       </div>
     </div>
 
+    <!-- 3b ─ Why the first sound matters: the purpose of the whole service.
+           Placed next to the syllables it explains, on the same sheet. -->
+    <div class="panel why-sound-panel" data-nk-why-sound>
+      <h2><span>${whySoundTitle}</span></h2>
+      <p>${txtHtml(whySoundText)}</p>
+    </div>
+
     <!-- 4 ─ Vedic gunam & core virtues (the block is omitted when there are none) -->
 ${virtuesHtml}
+
+    <p class="glossary-pointer">${escapeHtml(GLOSSARY_PAGE_TEXT[lang].pointer)}</p>
 
     <!-- 5 ─ Vedic certification & divine blessing -->
     <div class="certification-panel">
@@ -1639,6 +1670,17 @@ ${suggestionsPage}
   if (certStar) certStar.textContent = merge(data.nakshatra, certStar.textContent);
 })();
 </script>
+
+<!-- ============ PAGE 3: REPORT GUIDE & GLOSSARY ============ -->
+<!-- Namakaran, Nakshatra, Pada, Gunam… explained in one line each, in the
+     family's language. The wording is shared with api/astrology/report_views.php. -->
+<div class="page namakaran-certificate-page" id="namakaran-glossary">
+  <div class="royal-frame inner">
+    ${certificateHeader(isTa ? 'சொல் விளக்கம்' : isHi ? 'शब्दार्थ' : 'Plain-language guide to this report')}
+    <div class="modern-divider"></div>
+    ${reportGlossaryHtml('BABY_NAMING', lang)}
+  </div>
+</div>
 
 </body>
 </html>`;

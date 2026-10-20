@@ -223,8 +223,12 @@ assert.match(weddingHtml, /class="dosha-balance-summary"/);
 assert.equal((weddingHtml.match(/class="dosha-summary-value">N\/A<\/strong>/g) || []).length, 2,
   'Missing Mars placements keep each partner status explicitly unavailable in the compact summary');
 assert.match(weddingHtml, /FINAL RECOMMENDATION/);
-assert.match(weddingHtml, /N\/A \/ N\/A/,
-  'The report must not manufacture a score of zero or a 10-point denominator when those values are missing');
+// Page 1 now prints ONE number - the porutham count - so an unknown count is
+// "N/A / 10" (the 10 poruthams are fixed). The report must never swap that for
+// a manufactured score of zero or a 36-point denominator.
+assert.match(weddingHtml, /<strong class="score-value">N\/A \/ 10<\/strong>/,
+  'The report must not manufacture a score when the porutham count is missing');
+assert.doesNotMatch(weddingHtml, /\/ 35|\/ 36/, 'The report must not invent a point denominator');
 assert.doesNotMatch(weddingHtml, /House 1 \(N\/A\)/);
 
 const unavailableMatch = {

@@ -235,7 +235,7 @@ $sampleTaHtml = AstroReportViews::generateWeddingMatchingHtml(['language' => 'ta
 checkWeddingVerdict(
     strpos($sampleTaHtml, 'final-verdict-moderate') !== false &&
     strpos($sampleTaHtml, 'இறுதிப் பரிந்துரை') !== false &&
-    substr_count($sampleTaHtml, 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களைப் பரிசீலிக்கலாம்.') === 1 &&
+    substr_count($sampleTaHtml, 'ஒட்டுமொத்தமாக நல்ல பொருத்தம் — சில பொருத்தங்கள் பகுதியளவே.') === 1 &&
     strpos($sampleTaHtml, 'இந்த மதிப்பீட்டின்படி நல்ல பொருத்தம்') === false,
     'CASE 1: the report shows one concise Madhyamam recommendation, not repeated verdict copy'
 );
@@ -246,7 +246,9 @@ $poruthamTablePosition = strpos($sampleTaHtml, 'class="data-table"', $overviewGr
 checkWeddingVerdict(
     $overviewGridPosition !== false && $visualMeterPosition !== false && $kujaSummaryPosition !== false &&
     $poruthamTablePosition !== false && $visualMeterPosition < $kujaSummaryPosition && $kujaSummaryPosition < $poruthamTablePosition &&
-    strpos($sampleTaHtml, 'role="meter"') !== false && strpos($sampleTaHtml, 'aria-valuenow="68.6"') !== false &&
+    strpos($sampleTaHtml, 'role="meter"') !== false && strpos($sampleTaHtml, 'aria-valuenow="7"') !== false &&
+    strpos($sampleTaHtml, 'aria-valuetext="7 / 10 பொருத்தங்கள் பொருந்தின"') !== false &&
+    strpos($sampleTaHtml, '68.6%') === false &&
     strpos($sampleTaHtml, 'Mars: <b>House 5 (தோஷம் இல்லை') !== false &&
     strpos($sampleTaHtml, 'தோஷ சமநிலை') !== false &&
     strpos($sampleTaHtml, 'செவ்வாய் வழிகாட்டல்') !== false &&
@@ -361,10 +363,12 @@ $goodResult['overallVerdictEn'] = 'Acceptable with Remedies - Madhyama Porutham'
 $goodHtml = AstroReportViews::generateWeddingMatchingHtml(['language' => 'en'], $goodResult);
 checkWeddingVerdict(
     strpos($goodHtml, 'class="panel final-verdict-moderate"') !== false &&
-    strpos($goodHtml, 'Acceptable match; remedies may be considered.') !== false &&
+    strpos($goodHtml, 'Good match overall — a few poruthams are partial.') !== false &&
+    strpos($goodHtml, 'NEXT STEP') !== false &&
     strpos($goodHtml, 'FINAL RECOMMENDATION') !== false &&
-    strpos($goodHtml, 'The matching is good.') === false,
-    'A Madhyamam report ends with a concise amber recommendation rather than a green Uttamam recommendation'
+    strpos($goodHtml, 'The matching is good.') === false &&
+    strpos($goodHtml, 'remedies may be considered') === false,
+    'A Good report ends with a concise amber recommendation rather than a green Very Good recommendation'
 );
 $uttamamResult = $baseResult;
 $uttamamResult['verdictStatus'] = 'UTTHAMAM';
@@ -372,15 +376,17 @@ $uttamamResult['overallVerdictEn'] = 'Highly Recommended - Utthama Porutham';
 $uttamamHtml = AstroReportViews::generateWeddingMatchingHtml(['language' => 'ta'], $uttamamResult);
 checkWeddingVerdict(
     strpos($uttamamHtml, 'class="panel final-verdict-good"') !== false &&
-    substr_count($uttamamHtml, 'இந்த மதிப்பீட்டின்படி நல்ல பொருத்தம்.') === 1 &&
+    substr_count($uttamamHtml, 'இந்த மதிப்பீட்டின்படி மிக நல்ல பொருத்தம்.') === 1 &&
     strpos($uttamamHtml, 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்') === false,
-    'An Uttamam report presents one concise Tamil recommendation, not Madhyamam copy'
+    'A Very Good report presents one concise Tamil recommendation, not Good copy'
 );
 
 // ---------------------------------------------------------------------------
-// CASE 2: a partial score must be labelled Mathimam (MADHYAMAM), never
-// "Uttamam". Yoni 2/4 (a neutral animal pair) used to be promoted to
+// CASE 2: a partial score must be labelled Good (MADHYAMAM), never
+// "Very Good". Yoni 2/4 (a neutral animal pair) used to be promoted to
 // UTTHAMAM because the label followed the pass/fail flag instead of the marks.
+// The printed word is the plain grading label (see astro_porutham_verdict_label),
+// not the internal enum.
 // ---------------------------------------------------------------------------
 $yoniPartialResult = $baseResult;
 $yoniPartialResult['verdictStatus'] = 'MADHYAMAM';
@@ -391,8 +397,10 @@ $yoniPartialResult['poruthams'] = [[
 ]];
 $yoniPartialHtml = AstroReportViews::generateWeddingMatchingHtml(['language' => 'en'], $yoniPartialResult);
 checkWeddingVerdict(
-    strpos($yoniPartialHtml, 'MADHYAMAM') !== false && strpos($yoniPartialHtml, '2 / 4') !== false,
-    'CASE 2: a 2/4 Yoni row is labelled Mathimam (MADHYAMAM), not Uttamam'
+    strpos($yoniPartialHtml, '<td>Good</td>') !== false
+        && strpos($yoniPartialHtml, 'MADHYAMAM') === false
+        && strpos($yoniPartialHtml, '2 / 4') !== false,
+    'CASE 2: a 2/4 Yoni row is labelled Good, not Very Good and not the raw enum'
 );
 
 // The label comes from the engine's own scoring rule, not from the row above:
@@ -454,8 +462,10 @@ checkWeddingVerdict(
 
 $missingScoreHtml = AstroReportViews::generateWeddingMatchingHtml(['language' => 'en'], ['poruthams' => []]);
 checkWeddingVerdict(
-    strpos($missingScoreHtml, 'N/A / N/A') !== false && strpos($missingScoreHtml, '/ 36') === false,
-    'The PHP report displays N/A instead of inventing zero points or a 36-point denominator'
+    strpos($missingScoreHtml, 'N/A / 10') !== false
+        && strpos($missingScoreHtml, '/ 36') === false
+        && strpos($missingScoreHtml, '/ 35') === false,
+    'The PHP report prints an unknown porutham count as N/A / 10, never a fabricated score or denominator'
 );
 checkWeddingVerdict(
     strpos($missingScoreHtml, 'final-verdict-unavailable') !== false && strpos($missingScoreHtml, 'Not Recommended') === false,
@@ -495,17 +505,18 @@ foreach ($disclaimerHtml as $lang => $html) {
         strpos($html, '**') === false,
         "{$lang}: no raw ** emphasis markers survive into the HTML"
     );
-    $pageTag = $lang === 'ta' ? 'பக்கம் 1 / 2' : ($lang === 'hi' ? 'पृष्ठ 1 / 2' : 'Page 1 of 2');
+    // Three sheets now: the report, the disclaimer, and the Report Guide.
+    $pageTag = $lang === 'ta' ? 'பக்கம் 1 / 3' : ($lang === 'hi' ? 'पृष्ठ 1 / 3' : 'Page 1 of 3');
     checkWeddingVerdict(
-        substr_count($html, 'class="header-page-tag"') === 2 && strpos($html, $pageTag) !== false,
-        "{$lang}: page 1 is now numbered 1 of 2 (a second page follows)"
+        substr_count($html, 'class="header-page-tag"') === 3 && strpos($html, $pageTag) !== false,
+        "{$lang}: page 1 is now numbered 1 of 3 (a second page follows)"
     );
     checkWeddingVerdict(
-        substr_count($html, 'class="header-lockup"') === 2 &&
+        substr_count($html, 'class="header-lockup"') === 3 &&
         strpos($html, '.header-lockup { width: 100%; text-align: center;') !== false &&
         strpos($html, 'margin: 0 auto 1mm;') !== false &&
         strpos($html, 'class="header-order-ref">#ORD-DISC') !== false,
-        "{$lang}: both pages use the centered emblem lockup and retain the order reference"
+        "{$lang}: every sheet uses the centered emblem lockup and retains the order reference"
     );
 }
 

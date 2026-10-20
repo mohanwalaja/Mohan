@@ -95,6 +95,28 @@ const testFiles = [
   // and is bold, and every dosha card explains its dosha in exactly two
   // sentences in English, Tamil and Hindi. One JSON feeds both renderers.
   'tests/jathagam-page1-signs-and-doshas.test.ts',
+  // Reads every customer-facing report as a layperson would: no duplicated
+  // condition, every Sanskrit term glossed inline, no English fragment inside a
+  // Tamil/Hindi report, plain-English verdicts.
+  // The same readability work, second half: the marriage report printed
+  // "Utthamam", "Madhyamam" and "Incompatible" in one Status column. All three
+  // ranks must now read as one ladder, in the order's language, on both
+  // renderers - and the appended guide sheet must not leave a header at "of 2".
+  // Page 1 of the marriage report printed three measures of the same match
+  // (7.5 / 10, 75%, 8 / 10 Poruthams matched) with nothing saying what each
+  // measured. One number must survive, and the meter must agree with it.
+  // A verdict with no next step is a dead end. The marriage report must hand a
+  // matching couple to the Subha Muhurtham service (and a non-matching one to a
+  // human), and Baby Naming must say why the first sound matters at all.
+  'tests/report-next-steps.test.ts',
+  'tests/jathagam-chart-legend.test.ts',
+  'tests/wedding-single-score.test.ts',
+  'tests/wedding-verdict-labels.test.ts',
+  'tests/report-readability-guard.test.ts',
+  // One shared glossary (api/astrology/report_glossary.json) explains every
+  // specialist term in one line, in all three languages, in the PDF and the
+  // browser preview. See docs/REPORTS_READABILITY_AUDIT_2026-10-20.md.
+  'tests/report-glossary.test.ts',
   'tests/jathagam-card-rules.test.ts',
   'tests/jathagam-lucky-indicators.test.ts',
   'tests/vimshottari-dasha-timeline.test.ts',

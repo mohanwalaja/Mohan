@@ -565,9 +565,9 @@ check(
   const phpSummaryCssBlock = /public static function birthSummaryCss\(\)[\s\S]*?\n    \}/.exec(phpReport)?.[0] ?? '';
   const phpSummarySizes = Array.from(phpSummaryCssBlock.matchAll(/font-size:\s*([\d.]+)px/g), m => Number(m[1]));
   check(
-    'PHP 8. The Birth Jathagam total lives in one constant, used by all three headers',
-    /public const JATHAGAM_PAGE_TOTAL = 3;/.test(phpReport)
-      && (phpReport.match(/self::JATHAGAM_PAGE_TOTAL/g) || []).length === 3
+    'PHP 8. The Birth Jathagam total lives in one constant, used by all four headers',
+    /public const JATHAGAM_PAGE_TOTAL = 4;/.test(phpReport)
+      && (phpReport.match(/self::JATHAGAM_PAGE_TOTAL/g) || []).length === 4
       && !/topHeader\('ASTRO SIVAM', \$p[123]Sub, \$orderNumber, [123], 3, \$lang/.test(phpReport),
     'no scattered page totals'
   );

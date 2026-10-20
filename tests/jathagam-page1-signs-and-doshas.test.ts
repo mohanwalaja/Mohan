@@ -197,7 +197,7 @@ check('the PHP page-1 particulars print the dual bold rasi (English only) and th
   assert.match(reportViewsPhp, /\$rasiValueHtml = '<strong>' \. \(\(\$isTa \|\| \$isHi\) \? \$rasiName : \$rasiDualEn\) \. '<\/strong>';/, 'rasi bold/dual markup missing');
   assert.match(reportViewsPhp, /\$nakValueHtml = '<strong>' \. \$nakName \. '<\/strong>';/, 'nakshatra bold markup missing');
   assert.match(reportViewsPhp, /\{\$rasiValueHtml\} \(\{\$rasiLord\}\)/, 'the rasi cell does not use the new value');
-  assert.match(reportViewsPhp, /\{\$nakValueHtml\}, Pada \{\$pada\}/, 'the nakshatra cell does not use the new value');
+  assert.match(reportViewsPhp, /\{\$nakValueHtml\}, \{\$padaTextForPdf\}/, 'the nakshatra cell does not use the new value');
   assert.match(reportViewsPhp, /\$rasiDualEnRaw = \$zodiacEnForRasi !== '' \? \$rasiBaseEn \. '\/' \. \$zodiacEnForRasi : \$rasiBaseEn;/, 'PHP does not build "Mesham/Aries"');
 });
 
