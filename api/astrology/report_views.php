@@ -3633,35 +3633,27 @@ CSS;
         }
         $finalVerdictLabel = $isTa ? 'இறுதிப் பரிந்துரை' : ($isHi ? 'अंतिम अनुशंसा' : 'FINAL RECOMMENDATION');
         $finalVerdictText = $verdictText;
-        // A verdict with no next step is a dead end. When the charts match, the
-        // family's next action is picking the date with the Subha Muhurtham
-        // report (Tara Bala, Chandrashtama, Nalla Neram for both of them); when
-        // they do not match, the next step is a human review - never a vague
-        // "ask an astrologer".
+        // The next step exists only where there IS one. When the charts match,
+        // the family's next action is picking the date with the Subha Muhurtham
+        // report (Tara Bala, Chandrashtama, Nalla Neram for both of them). A
+        // non-matching verdict stands on its own - no upsell, no promised
+        // review line.
         $nextStepLabel = $isTa ? 'அடுத்த படி' : ($isHi ? 'अगला कदम' : 'NEXT STEP');
+        $nextStepText = '';
         if ($ratingTier === 'UTTHAMAM' || $ratingTier === 'MADHYAMAM') {
             $nextStepText = $isTa
                 ? 'திருமணத் தேதியை நமது சுப முகூர்த்த அறிக்கையுடன் தேர்ந்தெடுங்கள் — உங்கள் இருவருக்கும் தாரா பலம், சந்திராஷ்டமம், நல்ல நேரம் சரிபார்த்து சுப தேதிகளைப் பட்டியலிடும்: astrosivam.com/subha-muhurtham'
                 : ($isHi
                     ? 'विवाह की तिथि हमारी शुभ मुहूर्त रिपोर्ट से चुनें — यह आप दोनों के लिए तारा बल, चंद्राष्टम और नल्ला नेरम जाँचकर शुभ तिथियाँ देती है: astrosivam.com/subha-muhurtham'
                     : 'Choose the wedding date with our Subha Muhurtham report — it checks Tara Bala, Chandrashtama and Nalla Neram for both of you and lists the auspicious dates: astrosivam.com/subha-muhurtham');
-        } elseif ($ratingTier === 'PORUNDHADHU') {
-            $nextStepText = $isTa
-                ? 'முடிவெடுக்கும் முன் நிபுணர் இரு ஜாதகங்களையும் ஆய்வு செய்வார்கள்: astrosivam.com/contact'
-                : ($isHi
-                    ? 'निर्णय से पहले हमारे ज्योतिषी दोनों कुंडलियों की समीक्षा करेंगे: astrosivam.com/contact'
-                    : 'Before you decide, our astrologer will review both charts with you: astrosivam.com/contact');
-        } else {
-            $nextStepText = $isTa
-                ? 'நிபுணர் உங்கள் இரு ஜாதகங்களையும் பார்த்து விளக்க முடியும்: astrosivam.com/contact'
-                : ($isHi
-                    ? 'हमारे ज्योतिषी दोनों कुंडलियाँ देखकर समझा सकते हैं: astrosivam.com/contact'
-                    : 'Our astrologer can read both charts with you: astrosivam.com/contact');
         }
         $finalVerdictClass = $ratingTier === null ? 'final-verdict-unavailable' : ($ratingTier === 'UTTHAMAM' ? 'final-verdict-good' : ($ratingTier === 'MADHYAMAM' ? 'final-verdict-moderate' : 'final-verdict-not-good'));
         $finalVerdictColor = $ratingTier === null ? '#475569' : ($ratingTier === 'UTTHAMAM' ? '#166534' : ($ratingTier === 'MADHYAMAM' ? '#92400e' : '#991b1b'));
         $finalVerdictBackground = $ratingTier === null ? '#f1f5f9' : ($ratingTier === 'UTTHAMAM' ? '#ecfdf5' : ($ratingTier === 'MADHYAMAM' ? '#fffbeb' : '#fef2f2'));
         $finalVerdictBorder = $ratingTier === null ? '#cbd5e1' : ($ratingTier === 'UTTHAMAM' ? '#86efac' : ($ratingTier === 'MADHYAMAM' ? '#fcd34d' : '#fca5a5'));
+        $nextStepHtml = $nextStepText === ''
+            ? ''
+            : '<div style="font-size:9.5px; line-height:1.3; font-weight:normal; color:' . $finalVerdictColor . '; text-align:left; margin-top:1.2mm; padding-top:1.1mm; border-top:1px dotted ' . $finalVerdictColor . ';"><b style="letter-spacing:0.4px;">' . $nextStepLabel . '</b>&nbsp;&nbsp;' . $nextStepText . '</div>';
         if ($ratingTier === 'UTTHAMAM') {
             $meterBadgeText = astro_porutham_verdict_label('UTTHAMAM', $lang, true);
             $meterBadgeStyle = 'background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7;';
@@ -3849,7 +3841,7 @@ CSS;
 <div class="panel {$finalVerdictClass}" role="status" style="text-align:center; background:{$finalVerdictBackground}; border:1px solid {$finalVerdictBorder}; margin-top:1mm; margin-bottom:1mm; padding:3mm 4mm;">
   <div style="font-size:9.5px; font-weight:bold; letter-spacing:0.5px; color:{$finalVerdictColor};">{$finalVerdictLabel}</div>
   <div style="font-size:13px; line-height:1.25; font-weight:bold; color:{$finalVerdictColor}; margin-top:0.8mm;">{$finalVerdictText}</div>
-  <div style="font-size:9.5px; line-height:1.3; font-weight:normal; color:{$finalVerdictColor}; text-align:left; margin-top:1.2mm; padding-top:1.1mm; border-top:1px dotted {$finalVerdictColor};"><b style="letter-spacing:0.4px;">{$nextStepLabel}</b>&nbsp;&nbsp;{$nextStepText}</div>
+  {$nextStepHtml}
 </div>
 HTML;
 

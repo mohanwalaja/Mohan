@@ -178,9 +178,9 @@ In the other three reports there is no summary page at all.
     and lists the auspicious dates: astrosivam.com/subha-muhurtham"*
     (Tamil "தாரா பலம், சந்திராஷ்டமம், நல்ல நேரம்", Hindi "तारा बल, चंद्राष्टम
     और नल्ला नेरम").
-  - **Incompatible** → *"Before you decide, our astrologer will review both
-    charts with you: astrosivam.com/contact."* A named next action instead of a
-    dead end, and no push to book a date for a couple who do not match.
+  - **Incompatible** → **no NEXT STEP line at all.** The verdict stands on its
+    own: no upsell and no promised review line for a couple whose charts do not
+    match (owner's call, 20 Oct 2026).
   - The verdict sentence itself now reads *"Good match overall — a few poruthams
     are partial."* for the middle tier.
 - Kuja: "A mild imbalance is indicated; ask an astrologer about simple remedies."

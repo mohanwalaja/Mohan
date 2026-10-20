@@ -184,30 +184,22 @@ export function buildWeddingMatchHtml(
   const verdictTier = verdictKnown ? verdictTierFrom(result.verdictStatus) : null;
   const verdictBadgeText = verdictTier ? verdictTierHint(verdictTier, lang) : 'N/A';
 
-  // A verdict with no next step is a dead end. When the charts match (Very Good
-  // or Good), the report points the family at the ONE thing they do next: pick
-  // the wedding date with the Subha Muhurtham report, which checks Tara Bala,
-  // Chandrashtama and Nalla Neram for both of them. When the charts do not
-  // match, the next step is a human review - never "ask an astrologer" in the
-  // abstract.
+  // A verdict with no next step is a dead end - but only where there IS a next
+  // step. When the charts match (Very Good or Good), the report points the
+  // family at the one thing they do next: pick the wedding date with the Subha
+  // Muhurtham report, which checks Tara Bala, Chandrashtama and Nalla Neram for
+  // both of them. When they do not match, the verdict stands on its own: no
+  // upsell and no promised review line.
   const nextStepLabel = isTa ? 'அடுத்த படி' : isHi ? 'अगला कदम' : 'NEXT STEP';
   const nextStepText = !verdictKnown
-    ? (isTa
-        ? 'நிபுணர் உங்கள் இரு ஜாதகங்களையும் பார்த்து விளக்க முடியும்: astrosivam.com/contact'
-        : isHi
-        ? 'हमारे ज्योतिषी दोनों कुंडलियाँ देखकर समझा सकते हैं: astrosivam.com/contact'
-        : 'Our astrologer can read both charts with you: astrosivam.com/contact')
+    ? ''
     : isGood || isModerate
     ? (isTa
         ? 'திருமணத் தேதியை நமது சுப முகூர்த்த அறிக்கையுடன் தேர்ந்தெடுங்கள் — உங்கள் இருவருக்கும் தாரா பலம், சந்திராஷ்டமம், நல்ல நேரம் சரிபார்த்து சுப தேதிகளைப் பட்டியலிடும்: astrosivam.com/subha-muhurtham'
         : isHi
         ? 'विवाह की तिथि हमारी शुभ मुहूर्त रिपोर्ट से चुनें — यह आप दोनों के लिए तारा बल, चंद्राष्टम और नल्ला नेरम जाँचकर शुभ तिथियाँ देती है: astrosivam.com/subha-muhurtham'
         : 'Choose the wedding date with our Subha Muhurtham report — it checks Tara Bala, Chandrashtama and Nalla Neram for both of you and lists the auspicious dates: astrosivam.com/subha-muhurtham')
-    : (isTa
-        ? 'முடிவெடுக்கும் முன் நிபுணர் இரு ஜாதகங்களையும் ஆய்வு செய்வார்கள்: astrosivam.com/contact'
-        : isHi
-        ? 'निर्णय से पहले हमारे ज्योतिषी दोनों कुंडलियों की समीक्षा करेंगे: astrosivam.com/contact'
-        : 'Before you decide, our astrologer will review both charts with you: astrosivam.com/contact');
+    : '';
 
   const verdictBadgeClass = !verdictKnown ? 'badge-na' : isGood ? 'badge-good' : isModerate ? 'badge-moderate' : 'badge-bad';
   const scoreMeterFillClass = !verdictKnown ? 'score-meter-fill-na' : isGood ? 'score-meter-fill-good' : isModerate ? 'score-meter-fill-moderate' : 'score-meter-fill-bad';
@@ -1159,10 +1151,10 @@ ${REPORT_GLOSSARY_CSS}
     <div class="final-verdict ${finalVerdictClass}" role="status" aria-label="${finalVerdictLabel}">
       <div class="final-verdict-label">${finalVerdictLabel}</div>
       <div class="final-verdict-message">${finalVerdictText}</div>
-      <div class="final-verdict-next">
+      ${nextStepText ? `<div class="final-verdict-next">
         <span class="final-verdict-next-label">${nextStepLabel}</span>
         <span>${escapeHtml(nextStepText)}</span>
-      </div>
+      </div>` : ''}
     </div>
 
     <p class="glossary-pointer">${escapeHtml(GLOSSARY_PAGE_TEXT[lang].pointer)}</p>

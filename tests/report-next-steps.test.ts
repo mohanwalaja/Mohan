@@ -49,11 +49,12 @@ const NEXT_STEP_LABEL: Record<AppLanguage, string> = {
   hi: 'अगला कदम'
 };
 
-/** Just the final-verdict block of a rendered marriage report. */
+/** The final-verdict area of a rendered marriage report (page 1 only). */
 function verdictBlock(html: string): string {
   const start = html.indexOf('class="final-verdict ');
   assert.ok(start >= 0, 'the final verdict block is missing');
-  return html.slice(start, html.indexOf('</div>', html.indexOf('final-verdict-next', start)) + 6);
+  const end = html.indexOf('class="glossary-pointer"', start);
+  return html.slice(start, end > start ? end : html.indexOf('id="wedding-page-2"', start));
 }
 
 console.log('--- NO DEAD ENDS ---');
@@ -75,14 +76,15 @@ check('a matching couple is sent to the Subha Muhurtham service', () => {
   }
 });
 
-check('a non-matching couple gets a real person, not a vague referral', () => {
+check('a non-matching couple gets the verdict alone — no next step, no upsell', () => {
   for (const lang of LANGS) {
     const html = buildWeddingMatchHtml({ ...wedding, verdictStatus: 'PORUNDHADHU' } as any, lang);
     const block = verdictBlock(html);
-    assert.ok(block.includes(NEXT_STEP_LABEL[lang]), `${lang}: no next-step label`);
-    assert.ok(block.includes('astrosivam.com/contact'), `${lang}: the cautious verdict has no way to reach a person`);
+    assert.ok(!block.includes(NEXT_STEP_LABEL[lang]), `${lang}: an incompatible verdict still carries a next step`);
+    assert.ok(!block.includes('final-verdict-next'), `${lang}: the next-step block is still rendered`);
     assert.ok(!block.includes('subha-muhurtham'),
-      `${lang}: a couple who do not match must not be pushed straight to booking a date`);
+      `${lang}: a couple who do not match must not be pushed to booking a date`);
+    assert.ok(!block.includes('astrosivam.com/contact'), `${lang}: no referral line either`);
   }
 });
 
@@ -128,7 +130,7 @@ check('Baby Naming explains why the first sound matters, on page 1', () => {
 
 check('the PHP renderer carries the same copy', () => {
   assert.match(rendererPhp, /astrosivam\.com\/subha-muhurtham/, 'no Muhurtham URL in the PHP verdict');
-  assert.match(rendererPhp, /astrosivam\.com\/contact/, 'no contact URL in the PHP verdict');
+  assert.doesNotMatch(rendererPhp, /astrosivam\.com\/contact/, 'the retired contact line is still in the PHP verdict');
   assert.match(rendererPhp, /\$nextStepLabel = \$isTa \? 'அடுத்த படி' : \(\$isHi \? 'अगला कदम' : 'NEXT STEP'\);/);
   assert.match(rendererPhp, /\$nextStepText = \$isTa/);
   assert.match(rendererPhp, /class="bn-why"/);
