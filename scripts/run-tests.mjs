@@ -14,6 +14,13 @@ const testFiles = [
   // (claim the payment intent before inserting order rows) against silent
   // refactors that no runtime test in this sandbox can reach.
   'tests/checkout-idempotency-contract.test.ts',
+  // The family-order body limit (2026-10-20): ONE Subha Muhurtham report carries
+  // a ~1.1 MB panchangam scan, so a tray holding a Muhurtham report crossed
+  // config.php's 1 MiB getJsonBody() cap, the body was dropped, and the admin
+  // saw "At least one service chart item is required in the family tray." with
+  // four charts on screen. Pins the ORDER limit, the single body read and the
+  // explicit order-body errors that can never blame an empty tray again.
+  'tests/family-order-body-limit.test.ts',
   // Same reason, money leaving instead of entering: the 90% pre-approval
   // refund, its 3-working-day settlement promise and the refusal to refund an
   // approved (delivered) order must stay identical in the policy engine, the

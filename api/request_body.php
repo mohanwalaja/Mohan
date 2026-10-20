@@ -37,6 +37,28 @@ if (!defined('ASTRO_JSON_BODY_MAX_BYTES')) {
     define('ASTRO_JSON_BODY_MAX_BYTES', 1048576);
 }
 
+if (!defined('ASTRO_ORDER_JSON_MAX_BYTES')) {
+    /**
+     * Service-order routes (/api/services/order, /orders, /multi-order and the
+     * multi-person checkout).
+     *
+     * A single Subha Muhurtham report carries its panchangam scan inside the
+     * order body: six months of day records, each with the English / Tamil /
+     * Hindi tithi, nakshatra, yoga, karana and reason strings. Measured from the
+     * shipped scanner that scan alone is ~1.1 MB, so ONE Muhurtham report in a
+     * family tray already pushed the body past getJsonBody()'s 1 MiB cap. The
+     * body was then dropped and the family-tray route answered the misleading
+     * "At least one service chart item is required in the family tray." even
+     * though the tray was full.
+     *
+     * 16 MiB holds a full tray (6 reports, even if several are Muhurtham
+     * reports) with headroom, and stays far below post_max_size (128M in
+     * api/.user.ini) so PHP itself never discards a request this reader
+     * accepts. Pinned by tests/family-order-body-limit.test.ts.
+     */
+    define('ASTRO_ORDER_JSON_MAX_BYTES', 16 * 1048576);
+}
+
 if (!defined('ASTRO_DOCUMENT_JSON_MAX_BYTES')) {
     /**
      * Routes that carry PDFs. 64 MiB covers one maximum-size staged document
@@ -195,5 +217,104 @@ if (!function_exists('astro_document_json_body')) {
 
         $body = $read['body'];
         return $body;
+    }
+}
+
+if (!function_exists('astro_order_json_body')) {
+    /**
+     * Request body for a service-order route, read with the order limit.
+     *
+     * A checkout body is never silently emptied: an oversized tray, a body PHP
+     * or a proxy discarded, and malformed JSON each answer with their own code
+     * and message BEFORE any order row, mail or payment binding happens. A
+     * genuinely empty request still returns [] so the route can answer its own
+     * validation message.
+     *
+     * @return array Decoded JSON body.
+     */
+    function astro_order_json_body(string $purpose = 'order'): array
+    {
+        static $body = null;
+        if ($body !== null) {
+            return $body;
+        }
+
+        // Form-encoded / multipart requests are not JSON bodies: those routes
+        // read $_POST / $_FILES, exactly as before this reader existed.
+        $contentType = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? '')));
+        if ($contentType !== '' && strpos($contentType, 'json') === false) {
+            $body = [];
+            return $body;
+        }
+
+        $read = astro_read_json_request_body(ASTRO_ORDER_JSON_MAX_BYTES);
+        if ($read['ok']) {
+            $body = $read['body'];
+            return $body;
+        }
+
+        $mb = static function ($bytes): string {
+            return number_format(((int) $bytes) / 1048576, 1) . ' MB';
+        };
+        $received = max((int) $read['declaredBytes'], (int) $read['bytes']);
+        $nothingSaved = 'Nothing was charged, saved or emailed.';
+
+        switch ($read['error'] ?? null) {
+            case 'too_large':
+                $payload = [
+                    'success' => false,
+                    'code' => 'ORDER_BODY_TOO_LARGE',
+                    'bodyTooLarge' => true,
+                    'requestBytes' => $received,
+                    'maxBytes' => (int) $read['maxBytes'],
+                    'message' => 'This ' . $purpose . ' is ' . $mb($received) . ', larger than the '
+                        . $mb($read['maxBytes']) . ' the server accepts. Remove a report from the tray and try again. '
+                        . $nothingSaved
+                ];
+                $status = 413;
+                break;
+            case 'discarded':
+                $payload = [
+                    'success' => false,
+                    'code' => 'ORDER_BODY_DROPPED',
+                    'bodyTooLarge' => true,
+                    'bodyDiscarded' => true,
+                    'requestBytes' => $received,
+                    'postMaxSize' => (string) ini_get('post_max_size'),
+                    'message' => 'Your ' . $purpose . ' details (' . $mb($received) . ') did not reach the server'
+                        . ' (post_max_size is ' . ini_get('post_max_size') . ', or a proxy/firewall stripped them). '
+                        . $nothingSaved . ' Please retry, and remove a report from the tray if it keeps happening.'
+                ];
+                $status = 413;
+                break;
+            case 'invalid_json':
+                $payload = [
+                    'success' => false,
+                    'code' => 'ORDER_BODY_INVALID_JSON',
+                    'message' => 'The ' . $purpose . ' request body is not valid JSON (' . $mb($received) . ' received). '
+                        . $nothingSaved . ' Please reload the checkout page and submit again.'
+                ];
+                $status = 400;
+                break;
+            default:
+                $payload = [
+                    'success' => false,
+                    'code' => 'ORDER_BODY_UNREADABLE',
+                    'message' => 'The ' . $purpose . ' request body could not be read. ' . $nothingSaved
+                        . ' Please reload the checkout page and submit again.'
+                ];
+                $status = 400;
+                break;
+        }
+
+        error_log('ASTRO SIVAM: rejected ' . $purpose . ' body (' . ($read['error'] ?? 'unreadable') . ', '
+            . $received . ' bytes, limit ' . $read['maxBytes'] . ')');
+        if (function_exists('jsonResponse')) {
+            jsonResponse($payload, $status);
+        }
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($payload);
+        exit;
     }
 }
