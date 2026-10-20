@@ -27,10 +27,13 @@ import { calculateSampleResult } from '../src/services/sampleReports.js';
 import {
   GLOSSARY_PAGE_TEXT,
   GLOSSARY_TERM_KEYS,
+  QUICK_BOX_TEXT,
   REPORT_GLOSSARY_KEYS,
   inlineGloss,
   reportGlossaryEntries,
-  reportGlossaryHtml
+  reportGlossaryHtml,
+  reportGlossaryQuickEntries,
+  reportGlossaryQuickHtml
 } from '../src/services/reportGlossary.js';
 import type { AppLanguage } from '../src/lib/astrology/types.js';
 
@@ -92,6 +95,25 @@ check('every report knows which terms it uses, and they all resolve', () => {
   assert.ok(REPORT_GLOSSARY_KEYS.BIRTH_JATHAGAM.length >= 20, 'the Jathagam must list its 20+ terms');
 });
 
+check('the "5 words you\'ll meet" box is five real terms of that report', () => {
+  for (const kind of ['BIRTH_JATHAGAM', 'MARRIAGE_COMPATIBILITY', 'BABY_NAMING', 'MUHURTHAM'] as const) {
+    const quick = reportGlossaryQuickEntries(kind, 'en');
+    assert.equal(quick.length, 5, `${kind}: the box must hold exactly five words`);
+    for (const entry of quick) {
+      assert.ok(REPORT_GLOSSARY_KEYS[kind].includes(entry.key),
+        `${kind}: '${entry.key}' is in the box but not in that report's term list`);
+      assert.ok(entry.meaning.length > 25, `${kind}/${entry.key}: the box entry has no usable meaning`);
+    }
+    for (const lang of LANGS) {
+      const box = reportGlossaryQuickHtml(kind, lang);
+      assert.ok(box.includes(QUICK_BOX_TEXT[lang].title), `${kind}/${lang}: box title missing`);
+      assert.equal((box.match(/glossary-quick-row/g) || []).length, 5, `${kind}/${lang}: box rows`);
+      const escMore = QUICK_BOX_TEXT[lang].more.replace(/&/g, '&amp;').replace(/'/g, '&#039;');
+      assert.ok(box.includes(escMore), `${kind}/${lang}: the box must point at the full guide`);
+    }
+  }
+});
+
 check('inlineGloss gives a readable parenthesis for running prose', () => {
   const gloss = inlineGloss('neecha', 'en');
   assert.match(gloss, /^Neecha \(debilitated\) — .+\.$/);
@@ -117,10 +139,17 @@ check('the Birth Jathagam prints the glossary sheet in every language, after the
     for (const entry of reportGlossaryEntries('BIRTH_JATHAGAM', lang)) {
       assert.ok(html.includes(esc(entry.label)), `${lang}: term '${entry.label}' not printed`);
     }
-    // Page 1 tells the reader where the explanation lives.
+    // Page 1 carries the "5 words you'll meet" box, so the first terms are
+    // explained before the reader has to turn to the last page.
     const page1 = html.slice(html.indexOf('id="jathagam-page-1"'), summaryStart);
-    assert.ok(page1.includes(esc(GLOSSARY_PAGE_TEXT[lang].pointer)),
-      `${lang}: page 1 has no pointer to the glossary`);
+    assert.ok(page1.includes(QUICK_BOX_TEXT[lang].title), `${lang}: page 1 has no quick-words box`);
+    assert.equal((page1.match(/glossary-quick-row/g) || []).length, 5, `${lang}: page-1 box rows`);
+    for (const entry of reportGlossaryQuickEntries('BIRTH_JATHAGAM', lang)) {
+      assert.ok(page1.includes(esc(entry.label)), `${lang}: page-1 box is missing '${entry.label}'`);
+    }
+    // The guide sheet must not repeat a box page 1 already carries.
+    const guideSheet = html.slice(glossaryStart);
+    assert.ok(!guideSheet.includes('glossary-quick-row'), `${lang}: the guide sheet repeats the page-1 box`);
   }
 });
 
@@ -128,8 +157,8 @@ check('the PHP renderer reads the same file and appends the same sheet', () => {
   assert.match(rendererPhp, /report_glossary\.json/, 'PHP does not read the shared glossary');
   assert.match(rendererPhp, /function astro_report_glossary\(\)/);
   assert.match(rendererPhp, /function astro_report_glossary_entries\(string \$reportKind, string \$lang\)/);
-  assert.match(rendererPhp, /function astro_report_glossary_html\(string \$reportKind, string \$lang\)/);
-  assert.match(rendererPhp, /astro_report_glossary_html\('BIRTH_JATHAGAM', \$lang\)/, 'the Jathagam never prints the glossary');
+  assert.match(rendererPhp, /function astro_report_glossary_html\(\s*string \$reportKind, string \$lang/, 'the PHP guide builder changed shape');
+  assert.match(rendererPhp, /astro_report_glossary_html\('BIRTH_JATHAGAM', \$lang/, 'the Jathagam never prints the glossary');
   assert.match(rendererPhp, /public const JATHAGAM_PAGE_TOTAL = 4;/, 'the PHP page total was not updated');
   assert.match(rendererPhp, /id=\"birth-glossary-sheet\"/, 'the PHP glossary sheet has no id');
   // A missing/unreadable JSON must skip the sheet, never print a half-built one.
@@ -171,8 +200,22 @@ check('every report ends with the glossary page, in all three languages', () => 
       const esc = (value: string) => value.replace(/&/g, '&amp;').replace(/'/g, '&#039;');
       assert.ok(html.slice(0, start).includes(esc(GLOSSARY_PAGE_TEXT[lang].pointer)),
         `${report.name}/${lang}: no pointer to the glossary on the report pages`);
+      // Here the box opens the guide (page 1 of these reports is full to the
+      // A4 and has no self-fitting step, so the box cannot be added there).
+      const guide = html.slice(start);
+      assert.ok(guide.includes(QUICK_BOX_TEXT[lang].title), `${report.name}/${lang}: the guide has no quick-words box`);
+      assert.equal((guide.match(/glossary-quick-row/g) || []).length, 5, `${report.name}/${lang}: guide box rows`);
     }
   }
+});
+
+check('the PHP renderer prints the same quick box, and skips it where page 1 has it', () => {
+  assert.match(rendererPhp, /function astro_report_glossary_quick_html\(string \$reportKind, string \$lang\)/);
+  assert.match(rendererPhp, /function astro_report_glossary_quick_entries\(string \$reportKind, string \$lang\)/);
+  assert.match(rendererPhp, /'quickTerms' => is_array\(\$decoded\['quickTerms'\]/);
+  assert.match(rendererPhp, /\$quickGlossaryHtml = astro_report_glossary_quick_html\('BIRTH_JATHAGAM', \$lang\);/, 'page 1 has no box');
+  assert.match(rendererPhp, /\{\$quickGlossaryHtml\}/, 'the box is not placed on page 1');
+  assert.match(rendererPhp, /astro_report_glossary_html\('BIRTH_JATHAGAM', \$lang, false\)/, 'the guide sheet repeats the box');
 });
 
 check('the PHP renderer appends the same sheet for all four reports', () => {

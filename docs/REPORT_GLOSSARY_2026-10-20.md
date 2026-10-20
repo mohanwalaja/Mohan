@@ -32,9 +32,34 @@ language the order was placed in:
 └────────────────────────────────────────────────────────────┘
 ```
 
-Page 1 of each report also carries one line pointing at it:
-*"New to these words? Every term is explained in one line on the last page
-(Report Guide & Glossary)."*
+### The "5 words you'll meet" box
+
+A reader should not have to reach the last page to understand the first page, so
+each report also carries a compact box with the **five words that stop a
+first-time reader fastest** — the term in bold with its one-line meaning, closed
+by the line that points at the full guide.
+
+| Report | The five words |
+|---|---|
+| Birth Jathagam | Lagna · Rasi · Nakshatra · Bhava · Neecha |
+| Marriage | Porutham · Rajju · Gana · Kuja dosha · Yoni |
+| Baby Naming | Namakaran · Nakshatra · Pada · Gunam · Rasi |
+| Muhurtham | Muhurtham · Tara Bala · Chandrashtama · Nalla Neram · Nakshatra |
+
+**Where it sits**
+
+| Report | Box position | Why |
+|---|---|---|
+| Birth Jathagam | **page 1**, between the particulars and the charts | page 1 has ~50 mm of slack and a `fitPageToA4` safety net, so the box can live where the words are first used |
+| Marriage / Baby Naming / Muhurtham | **top of the Report Guide sheet** | their page 1 is already full to the A4 and has no self-fitting step; adding ~20 mm there could push a printed page, so the box opens the guide instead and page 1 keeps its one-line pointer |
+
+The Jathagam's box is printed once: page 1 has it, and its guide sheet is called
+with `includeQuick: false` so the same five rows are not repeated eight pages
+later.
+
+The five words are listed as `quickTerms` per report in
+`api/astrology/report_glossary.json`, and they must be a subset of that report's
+`reportTerms` — the test enforces it.
 
 | Report | Sheets before | Sheets now | Terms explained |
 |---|---|---|---|
@@ -116,6 +141,18 @@ second jargon word, and never a restatement of the label.
    ```
 2. Add its key to every report in `reportTerms` that prints the word.
 3. Nothing else — both renderers pick it up on the next build/deploy.
+
+**To change which five words the box shows**, edit only the `quickTerms` block:
+
+```json
+"quickTerms": {
+  "BIRTH_JATHAGAM": ["lagna", "rasi", "nakshatra", "bhava", "neecha"]
+}
+```
+
+Use keys that are already in that report's `reportTerms`. The box is printed
+from the same entries as the full guide, so the two can never disagree, and the
+test fails if a key is unknown or if a report stops showing five words.
 
 `tests/report-glossary.test.ts` (in `npm test`) fails the build if:
 

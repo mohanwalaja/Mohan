@@ -2,180 +2,574 @@
   "_comment": "Plain-language glossary for every report. ONE source of truth read by both renderers: src/services/reportGlossary.ts (browser preview + PDF) and api/astrology/report_views.php (admin preview, customer preview, emailed PDF). Every entry is a label plus ONE short line a customer who knows nothing about astrology can understand. Do not add a term here without all three languages.",
   "terms": {
     "graha": {
-      "en": { "label": "Graha (planet)", "meaning": "One of the nine Vedic planets. Rahu and Ketu are shadow points, not physical planets." },
-      "ta": { "label": "கிரகம் (Graha)", "meaning": "வேத ஜோதிடத்தின் ஒன்பது கிரகங்கள். ராகு, கேது நிழல் கிரகங்கள்; உண்மையான கோள்கள் அல்ல." },
-      "hi": { "label": "ग्रह (Graha)", "meaning": "वैदिक ज्योतिष के नौ ग्रह। राहु और केतु छाया-ग्रह हैं, वास्तविक ग्रह नहीं।" }
+      "en": {
+        "label": "Graha (planet)",
+        "meaning": "One of the nine Vedic planets. Rahu and Ketu are shadow points, not physical planets."
+      },
+      "ta": {
+        "label": "கிரகம் (Graha)",
+        "meaning": "வேத ஜோதிடத்தின் ஒன்பது கிரகங்கள். ராகு, கேது நிழல் கிரகங்கள்; உண்மையான கோள்கள் அல்ல."
+      },
+      "hi": {
+        "label": "ग्रह (Graha)",
+        "meaning": "वैदिक ज्योतिष के नौ ग्रह। राहु और केतु छाया-ग्रह हैं, वास्तविक ग्रह नहीं।"
+      }
     },
     "lagna": {
-      "en": { "label": "Lagna (Ascendant)", "meaning": "The sign rising on the eastern horizon at your birth. Read for your body and personality." },
-      "ta": { "label": "லக்னம் (Lagna)", "meaning": "பிறக்கும் நேரத்தில் கிழக்கில் உதிக்கும் ராசி. உடல் மற்றும் இயல்புக்கு படிக்கப்படும்." },
-      "hi": { "label": "लग्न (Lagna)", "meaning": "जन्म के समय पूर्व क्षितिज पर उदय होती राशि। शरीर और स्वभाव के लिए पढ़ी जाती है।" }
+      "en": {
+        "label": "Lagna (Ascendant)",
+        "meaning": "The sign rising on the eastern horizon at your birth. Read for your body and personality."
+      },
+      "ta": {
+        "label": "லக்னம் (Lagna)",
+        "meaning": "பிறக்கும் நேரத்தில் கிழக்கில் உதிக்கும் ராசி. உடல் மற்றும் இயல்புக்கு படிக்கப்படும்."
+      },
+      "hi": {
+        "label": "लग्न (Lagna)",
+        "meaning": "जन्म के समय पूर्व क्षितिज पर उदय होती राशि। शरीर और स्वभाव के लिए पढ़ी जाती है।"
+      }
     },
     "rasi": {
-      "en": { "label": "Rasi (Moon sign)", "meaning": "The sign the Moon was in at your birth. Read for your mind and emotions." },
-      "ta": { "label": "ராசி (சந்திர ராசி)", "meaning": "பிறக்கும் நேரத்தில் சந்திரன் இருந்த ராசி. மனம், உணர்வுகளுக்கு படிக்கப்படும்." },
-      "hi": { "label": "राशि (चंद्र राशि)", "meaning": "जन्म के समय चंद्रमा जिस राशि में था। मन और भावनाओं के लिए पढ़ी जाती है।" }
+      "en": {
+        "label": "Rasi (Moon sign)",
+        "meaning": "The sign the Moon was in at your birth. Read for your mind and emotions."
+      },
+      "ta": {
+        "label": "ராசி (சந்திர ராசி)",
+        "meaning": "பிறக்கும் நேரத்தில் சந்திரன் இருந்த ராசி. மனம், உணர்வுகளுக்கு படிக்கப்படும்."
+      },
+      "hi": {
+        "label": "राशि (चंद्र राशि)",
+        "meaning": "जन्म के समय चंद्रमा जिस राशि में था। मन और भावनाओं के लिए पढ़ी जाती है।"
+      }
     },
     "nakshatra": {
-      "en": { "label": "Nakshatra (birth star)", "meaning": "One of 27 star groups. Your star sets the first sound of your name and your personal good dates." },
-      "ta": { "label": "நட்சத்திரம் (Nakshatra)", "meaning": "27 நட்சத்திரங்களில் ஒன்று. உங்கள் பெயரின் முதல் ஒலியும், தனிப்பட்ட நல்ல நாட்களும் இதிலிருந்து வரும்." },
-      "hi": { "label": "नक्षत्र (Nakshatra)", "meaning": "27 नक्षत्रों में से एक। आपके नाम की पहली ध्वनि और व्यक्तिगत शुभ दिन इसी से तय होते हैं।" }
+      "en": {
+        "label": "Nakshatra (birth star)",
+        "meaning": "One of 27 star groups. Your star sets the first sound of your name and your personal good dates."
+      },
+      "ta": {
+        "label": "நட்சத்திரம் (Nakshatra)",
+        "meaning": "27 நட்சத்திரங்களில் ஒன்று. உங்கள் பெயரின் முதல் ஒலியும், தனிப்பட்ட நல்ல நாட்களும் இதிலிருந்து வரும்."
+      },
+      "hi": {
+        "label": "नक्षत्र (Nakshatra)",
+        "meaning": "27 नक्षत्रों में से एक। आपके नाम की पहली ध्वनि और व्यक्तिगत शुभ दिन इसी से तय होते हैं।"
+      }
     },
     "pada": {
-      "en": { "label": "Pada (quarter of a star)", "meaning": "Each star has four quarters. The pada decides the first sound of a baby's name." },
-      "ta": { "label": "பாதம் (Pada)", "meaning": "ஒவ்வொரு நட்சத்திரத்திற்கும் நான்கு பாதங்கள். பாதமே குழந்தையின் பெயரின் முதல் ஒலியை தீர்மானிக்கிறது." },
-      "hi": { "label": "पाद (Pada)", "meaning": "हर नक्षत्र के चार चरण होते हैं। पाद ही शिशु के नाम की पहली ध्वनि तय करता है।" }
+      "en": {
+        "label": "Pada (quarter of a star)",
+        "meaning": "Each star has four quarters. The pada decides the first sound of a baby's name."
+      },
+      "ta": {
+        "label": "பாதம் (Pada)",
+        "meaning": "ஒவ்வொரு நட்சத்திரத்திற்கும் நான்கு பாதங்கள். பாதமே குழந்தையின் பெயரின் முதல் ஒலியை தீர்மானிக்கிறது."
+      },
+      "hi": {
+        "label": "पाद (Pada)",
+        "meaning": "हर नक्षत्र के चार चरण होते हैं। पाद ही शिशु के नाम की पहली ध्वनि तय करता है।"
+      }
     },
     "bhava": {
-      "en": { "label": "Bhava (house)", "meaning": "One of twelve life areas. For example the 2nd is money, the 7th is marriage." },
-      "ta": { "label": "பாவம் (Bhava)", "meaning": "வாழ்க்கையின் பன்னிரண்டு பகுதிகளில் ஒன்று. எடுத்துக்காட்டாக 2-ஆம் பாவம் பணம், 7-ஆம் பாவம் திருமணம்." },
-      "hi": { "label": "भाव (Bhava)", "meaning": "जीवन के बारह क्षेत्रों में से एक। जैसे दूसरा भाव धन, सातवाँ भाव विवाह।" }
+      "en": {
+        "label": "Bhava (house)",
+        "meaning": "One of twelve life areas. For example the 2nd is money, the 7th is marriage."
+      },
+      "ta": {
+        "label": "பாவம் (Bhava)",
+        "meaning": "வாழ்க்கையின் பன்னிரண்டு பகுதிகளில் ஒன்று. எடுத்துக்காட்டாக 2-ஆம் பாவம் பணம், 7-ஆம் பாவம் திருமணம்."
+      },
+      "hi": {
+        "label": "भाव (Bhava)",
+        "meaning": "जीवन के बारह क्षेत्रों में से एक। जैसे दूसरा भाव धन, सातवाँ भाव विवाह।"
+      }
     },
     "lord": {
-      "en": { "label": "Lord (house ruler)", "meaning": "The planet that rules a house. '5th lord' means the planet ruling the 5th house." },
-      "ta": { "label": "அதிபதி (Lord)", "meaning": "ஒரு பாவத்தை ஆளும் கிரகம். '5-ஆம் அதிபதி' என்பது 5-ஆம் பாவத்தை ஆளும் கிரகம்." },
-      "hi": { "label": "स्वामी (Lord)", "meaning": "जो ग्रह किसी भाव का स्वामी हो। 'पंचमेश' का अर्थ पाँचवें भाव का स्वामी ग्रह।" }
+      "en": {
+        "label": "Lord (house ruler)",
+        "meaning": "The planet that rules a house. '5th lord' means the planet ruling the 5th house."
+      },
+      "ta": {
+        "label": "அதிபதி (Lord)",
+        "meaning": "ஒரு பாவத்தை ஆளும் கிரகம். '5-ஆம் அதிபதி' என்பது 5-ஆம் பாவத்தை ஆளும் கிரகம்."
+      },
+      "hi": {
+        "label": "स्वामी (Lord)",
+        "meaning": "जो ग्रह किसी भाव का स्वामी हो। 'पंचमेश' का अर्थ पाँचवें भाव का स्वामी ग्रह।"
+      }
     },
     "mahadasha": {
-      "en": { "label": "Mahadasha (planet period)", "meaning": "The long chapter of life ruled by one planet, lasting several years." },
-      "ta": { "label": "மகாதிசை (Mahadasha)", "meaning": "ஒரு கிரகம் ஆளும் நீண்ட காலகட்டம்; பல ஆண்டுகள் நீடிக்கும்." },
-      "hi": { "label": "महादशा (Mahadasha)", "meaning": "किसी एक ग्रह का लंबा कालखंड, जो कई वर्षों तक चलता है।" }
+      "en": {
+        "label": "Mahadasha (planet period)",
+        "meaning": "The long chapter of life ruled by one planet, lasting several years."
+      },
+      "ta": {
+        "label": "மகாதிசை (Mahadasha)",
+        "meaning": "ஒரு கிரகம் ஆளும் நீண்ட காலகட்டம்; பல ஆண்டுகள் நீடிக்கும்."
+      },
+      "hi": {
+        "label": "महादशा (Mahadasha)",
+        "meaning": "किसी एक ग्रह का लंबा कालखंड, जो कई वर्षों तक चलता है।"
+      }
     },
     "bhukti": {
-      "en": { "label": "Bhukti (sub-period)", "meaning": "A shorter phase inside a Mahadasha, ruled by another planet." },
-      "ta": { "label": "புக்தி (Bhukti)", "meaning": "மகாதிசைக்குள் அமையும் குறுகிய காலகட்டம்; வேறு கிரகம் ஆளும்." },
-      "hi": { "label": "भुक्ति (Bhukti)", "meaning": "महादशा के भीतर की छोटी अवधि, जिस पर दूसरा ग्रह शासन करता है।" }
+      "en": {
+        "label": "Bhukti (sub-period)",
+        "meaning": "A shorter phase inside a Mahadasha, ruled by another planet."
+      },
+      "ta": {
+        "label": "புக்தி (Bhukti)",
+        "meaning": "மகாதிசைக்குள் அமையும் குறுகிய காலகட்டம்; வேறு கிரகம் ஆளும்."
+      },
+      "hi": {
+        "label": "भुक्ति (Bhukti)",
+        "meaning": "महादशा के भीतर की छोटी अवधि, जिस पर दूसरा ग्रह शासन करता है।"
+      }
     },
     "karaka": {
-      "en": { "label": "Karaka (significator)", "meaning": "A planet that naturally stands for a topic, such as Venus for marriage." },
-      "ta": { "label": "காரகன் (Karaka)", "meaning": "ஒரு விஷயத்தை இயல்பாகக் குறிக்கும் கிரகம்; எடுத்துக்காட்டாக திருமணத்திற்கு சுக்கிரன்." },
-      "hi": { "label": "कारक (Karaka)", "meaning": "जो ग्रह स्वभाव से किसी विषय का सूचक हो, जैसे विवाह के लिए शुक्र।" }
+      "en": {
+        "label": "Karaka (significator)",
+        "meaning": "A planet that naturally stands for a topic, such as Venus for marriage."
+      },
+      "ta": {
+        "label": "காரகன் (Karaka)",
+        "meaning": "ஒரு விஷயத்தை இயல்பாகக் குறிக்கும் கிரகம்; எடுத்துக்காட்டாக திருமணத்திற்கு சுக்கிரன்."
+      },
+      "hi": {
+        "label": "कारक (Karaka)",
+        "meaning": "जो ग्रह स्वभाव से किसी विषय का सूचक हो, जैसे विवाह के लिए शुक्र।"
+      }
     },
     "neecha": {
-      "en": { "label": "Neecha (debilitated)", "meaning": "A planet sitting in its weakest sign. Results need extra effort and patience." },
-      "ta": { "label": "நீசம் (Neecha)", "meaning": "கிரகம் தன் வலிமை குறைந்த ராசியில் அமைவது. பலன்களுக்கு கூடுதல் முயற்சியும் பொறுமையும் தேவை." },
-      "hi": { "label": "नीच (Neecha)", "meaning": "ग्रह अपनी सबसे कमजोर राशि में होना। परिणाम के लिए अधिक परिश्रम और धैर्य चाहिए।" }
+      "en": {
+        "label": "Neecha (debilitated)",
+        "meaning": "A planet sitting in its weakest sign. Results need extra effort and patience."
+      },
+      "ta": {
+        "label": "நீசம் (Neecha)",
+        "meaning": "கிரகம் தன் வலிமை குறைந்த ராசியில் அமைவது. பலன்களுக்கு கூடுதல் முயற்சியும் பொறுமையும் தேவை."
+      },
+      "hi": {
+        "label": "नीच (Neecha)",
+        "meaning": "ग्रह अपनी सबसे कमजोर राशि में होना। परिणाम के लिए अधिक परिश्रम और धैर्य चाहिए।"
+      }
     },
     "vakri": {
-      "en": { "label": "Vakri (retrograde)", "meaning": "A planet that appears to move backwards. Its matters get reviewed, so results come late." },
-      "ta": { "label": "வக்கிரம் (Vakri)", "meaning": "கிரகம் பின்னோக்கி நகர்வது போல் தெரிவது. அதன் விஷயங்கள் மீள்பார்வைக்கு வரும்; பலன் தாமதம்." },
-      "hi": { "label": "वक्री (Vakri)", "meaning": "ग्रह का उलटा चलता प्रतीत होना। उसके विषय दोबारा जाँचे जाते हैं, इसलिए फल देर से मिलता है।" }
+      "en": {
+        "label": "Vakri (retrograde)",
+        "meaning": "A planet that appears to move backwards. Its matters get reviewed, so results come late."
+      },
+      "ta": {
+        "label": "வக்கிரம் (Vakri)",
+        "meaning": "கிரகம் பின்னோக்கி நகர்வது போல் தெரிவது. அதன் விஷயங்கள் மீள்பார்வைக்கு வரும்; பலன் தாமதம்."
+      },
+      "hi": {
+        "label": "वक्री (Vakri)",
+        "meaning": "ग्रह का उलटा चलता प्रतीत होना। उसके विषय दोबारा जाँचे जाते हैं, इसलिए फल देर से मिलता है।"
+      }
     },
     "astangata": {
-      "en": { "label": "Astangata (combust)", "meaning": "A planet too close to the Sun. Its voice in the chart becomes faint." },
-      "ta": { "label": "அஸ்தங்கதம் (Astangata)", "meaning": "சூரியனுக்கு மிக அருகில் உள்ள கிரகம். ஜாதகத்தில் அதன் வலிமை மங்கும்." },
-      "hi": { "label": "अस्तंगत (Astangata)", "meaning": "सूर्य के बहुत निकट का ग्रह। कुंडली में उसकी आवाज़ धीमी हो जाती है।" }
+      "en": {
+        "label": "Astangata (combust)",
+        "meaning": "A planet too close to the Sun. Its voice in the chart becomes faint."
+      },
+      "ta": {
+        "label": "அஸ்தங்கதம் (Astangata)",
+        "meaning": "சூரியனுக்கு மிக அருகில் உள்ள கிரகம். ஜாதகத்தில் அதன் வலிமை மங்கும்."
+      },
+      "hi": {
+        "label": "अस्तंगत (Astangata)",
+        "meaning": "सूर्य के बहुत निकट का ग्रह। कुंडली में उसकी आवाज़ धीमी हो जाती है।"
+      }
     },
     "navamsa": {
-      "en": { "label": "Navamsa (D9 chart)", "meaning": "A second chart from the same birth data, used to confirm marriage and inner strength." },
-      "ta": { "label": "நவாம்சம் (D9)", "meaning": "அதே பிறப்பு விவரங்களில் இருந்து உருவாகும் இரண்டாம் கட்டம்; திருமணம், உள் வலிமையை உறுதி செய்யும்." },
-      "hi": { "label": "नवांश (D9)", "meaning": "उसी जन्म विवरण से बना दूसरा चक्र, जो विवाह और आंतरिक शक्ति की पुष्टि करता है।" }
+      "en": {
+        "label": "Navamsa (D9 chart)",
+        "meaning": "A second chart from the same birth data, used to confirm marriage and inner strength."
+      },
+      "ta": {
+        "label": "நவாம்சம் (D9)",
+        "meaning": "அதே பிறப்பு விவரங்களில் இருந்து உருவாகும் இரண்டாம் கட்டம்; திருமணம், உள் வலிமையை உறுதி செய்யும்."
+      },
+      "hi": {
+        "label": "नवांश (D9)",
+        "meaning": "उसी जन्म विवरण से बना दूसरा चक्र, जो विवाह और आंतरिक शक्ति की पुष्टि करता है।"
+      }
     },
     "ayanamsa": {
-      "en": { "label": "Ayanamsa", "meaning": "The gap between the star-based and sun-based zodiac. This report uses Lahiri Chitra Paksha." },
-      "ta": { "label": "அயனாம்சம் (Ayanamsa)", "meaning": "நட்சத்திர அடிப்படை ராசிக்கும் சூரிய அடிப்படை ராசிக்கும் உள்ள இடைவெளி. இந்த அறிக்கை லஹிரி சித்ரா பக்ஷத்தைப் பயன்படுத்துகிறது." },
-      "hi": { "label": "अयनांश (Ayanamsa)", "meaning": "नक्षत्र-आधारित और सूर्य-आधारित राशिचक्र का अंतर। यह रिपोर्ट लाहिरी चित्रा पक्ष का उपयोग करती है।" }
+      "en": {
+        "label": "Ayanamsa",
+        "meaning": "The gap between the star-based and sun-based zodiac. This report uses Lahiri Chitra Paksha."
+      },
+      "ta": {
+        "label": "அயனாம்சம் (Ayanamsa)",
+        "meaning": "நட்சத்திர அடிப்படை ராசிக்கும் சூரிய அடிப்படை ராசிக்கும் உள்ள இடைவெளி. இந்த அறிக்கை லஹிரி சித்ரா பக்ஷத்தைப் பயன்படுத்துகிறது."
+      },
+      "hi": {
+        "label": "अयनांश (Ayanamsa)",
+        "meaning": "नक्षत्र-आधारित और सूर्य-आधारित राशिचक्र का अंतर। यह रिपोर्ट लाहिरी चित्रा पक्ष का उपयोग करती है।"
+      }
     },
     "rasi-chart": {
-      "en": { "label": "Rasi chart (Chakra)", "meaning": "The main birth chart: twelve signs, each planet shown in the sign it occupies." },
-      "ta": { "label": "ராசி கட்டம்", "meaning": "பிரதான ஜாதக கட்டம்: பன்னிரண்டு ராசிகள், ஒவ்வொரு கிரகமும் அது இருக்கும் ராசியில் காட்டப்படும்." },
-      "hi": { "label": "राशि चक्र", "meaning": "मुख्य जन्म कुंडली: बारह राशियाँ, हर ग्रह जिस राशि में है वहीं दिखाया जाता है।" }
+      "en": {
+        "label": "Rasi chart (Chakra)",
+        "meaning": "The main birth chart: twelve signs, each planet shown in the sign it occupies."
+      },
+      "ta": {
+        "label": "ராசி கட்டம்",
+        "meaning": "பிரதான ஜாதக கட்டம்: பன்னிரண்டு ராசிகள், ஒவ்வொரு கிரகமும் அது இருக்கும் ராசியில் காட்டப்படும்."
+      },
+      "hi": {
+        "label": "राशि चक्र",
+        "meaning": "मुख्य जन्म कुंडली: बारह राशियाँ, हर ग्रह जिस राशि में है वहीं दिखाया जाता है।"
+      }
     },
     "chart-tags": {
-      "en": { "label": "Chart letters (Su, Ch, Ma…)", "meaning": "Su Sun, Ch Moon, Ma Mars, Bu Mercury, Gu Jupiter, Sk Venus, Sa Saturn, Ra Rahu, Ke Ketu, Lagna Ascendant." },
-      "ta": { "label": "கட்ட எழுத்துகள் (Su, Ch, Ma…)", "meaning": "Su சூரியன், Ch சந்திரன், Ma செவ்வாய், Bu புதன், Gu குரு, Sk சுக்கிரன், Sa சனி, Ra ராகு, Ke கேது, Lagna லக்னம்." },
-      "hi": { "label": "चक्र के अक्षर (Su, Ch, Ma…)", "meaning": "Su सूर्य, Ch चंद्र, Ma मंगल, Bu बुध, Gu गुरु, Sk शुक्र, Sa शनि, Ra राहु, Ke केतु, Lagna लग्न।" }
+      "en": {
+        "label": "Chart letters (Su, Ch, Ma…)",
+        "meaning": "Su Sun, Ch Moon, Ma Mars, Bu Mercury, Gu Jupiter, Sk Venus, Sa Saturn, Ra Rahu, Ke Ketu, Lagna Ascendant."
+      },
+      "ta": {
+        "label": "கட்ட எழுத்துகள் (Su, Ch, Ma…)",
+        "meaning": "Su சூரியன், Ch சந்திரன், Ma செவ்வாய், Bu புதன், Gu குரு, Sk சுக்கிரன், Sa சனி, Ra ராகு, Ke கேது, Lagna லக்னம்."
+      },
+      "hi": {
+        "label": "चक्र के अक्षर (Su, Ch, Ma…)",
+        "meaning": "Su सूर्य, Ch चंद्र, Ma मंगल, Bu बुध, Gu गुरु, Sk शुक्र, Sa शनि, Ra राहु, Ke केतु, Lagna लग्न।"
+      }
     },
     "dosha": {
-      "en": { "label": "Dosha (affliction)", "meaning": "A combination that tradition says needs care. It is a caution, never a curse." },
-      "ta": { "label": "தோஷம் (Dosha)", "meaning": "பாரம்பரியத்தில் கவனம் தேவை எனக் கருதப்படும் அமைப்பு. இது எச்சரிக்கை; சாபம் அல்ல." },
-      "hi": { "label": "दोष (Dosha)", "meaning": "परंपरा में जिस संयोजन पर ध्यान देना कहा गया है। यह चेतावनी है, श्राप नहीं।" }
+      "en": {
+        "label": "Dosha (affliction)",
+        "meaning": "A combination that tradition says needs care. It is a caution, never a curse."
+      },
+      "ta": {
+        "label": "தோஷம் (Dosha)",
+        "meaning": "பாரம்பரியத்தில் கவனம் தேவை எனக் கருதப்படும் அமைப்பு. இது எச்சரிக்கை; சாபம் அல்ல."
+      },
+      "hi": {
+        "label": "दोष (Dosha)",
+        "meaning": "परंपरा में जिस संयोजन पर ध्यान देना कहा गया है। यह चेतावनी है, श्राप नहीं।"
+      }
     },
     "sani-dosha": {
-      "en": { "label": "Sani dosha / Sade Sati", "meaning": "Saturn passing over sensitive signs counted from your Moon. Brings delay and hard lessons." },
-      "ta": { "label": "சனி தோஷம் / ஏழரை சனி", "meaning": "உங்கள் சந்திர ராசியிலிருந்து கணக்கிடப்படும் முக்கிய ராசிகளில் சனி சஞ்சரிப்பது. தாமதமும் கடின பாடங்களும் தரும்." },
-      "hi": { "label": "शनि दोष / साढ़े साती", "meaning": "आपकी चंद्र राशि से गिनी जाने वाली संवेदनशील राशियों पर शनि का गोचर। विलंब और कठिन पाठ देता है।" }
+      "en": {
+        "label": "Sani dosha / Sade Sati",
+        "meaning": "Saturn passing over sensitive signs counted from your Moon. Brings delay and hard lessons."
+      },
+      "ta": {
+        "label": "சனி தோஷம் / ஏழரை சனி",
+        "meaning": "உங்கள் சந்திர ராசியிலிருந்து கணக்கிடப்படும் முக்கிய ராசிகளில் சனி சஞ்சரிப்பது. தாமதமும் கடின பாடங்களும் தரும்."
+      },
+      "hi": {
+        "label": "शनि दोष / साढ़े साती",
+        "meaning": "आपकी चंद्र राशि से गिनी जाने वाली संवेदनशील राशियों पर शनि का गोचर। विलंब और कठिन पाठ देता है।"
+      }
     },
     "kala-sarpa": {
-      "en": { "label": "Kala Sarpa dosha", "meaning": "All seven planets lying between Rahu and Ketu. Read as repeated delays." },
-      "ta": { "label": "காலசர்ப தோஷம்", "meaning": "ஏழு கிரகங்களும் ராகு–கேது இடையே அமைவது. தொடர் தாமதங்களாகப் படிக்கப்படும்." },
-      "hi": { "label": "काल सर्प दोष", "meaning": "सातों ग्रह राहु और केतु के बीच होना। इसे बार-बार होने वाले विलंब के रूप में पढ़ा जाता है।" }
+      "en": {
+        "label": "Kala Sarpa dosha",
+        "meaning": "All seven planets lying between Rahu and Ketu. Read as repeated delays."
+      },
+      "ta": {
+        "label": "காலசர்ப தோஷம்",
+        "meaning": "ஏழு கிரகங்களும் ராகு–கேது இடையே அமைவது. தொடர் தாமதங்களாகப் படிக்கப்படும்."
+      },
+      "hi": {
+        "label": "काल सर्प दोष",
+        "meaning": "सातों ग्रह राहु और केतु के बीच होना। इसे बार-बार होने वाले विलंब के रूप में पढ़ा जाता है।"
+      }
     },
     "pitru": {
-      "en": { "label": "Pitru dosha", "meaning": "An ancestral-debt combination. Read as delays in family matters." },
-      "ta": { "label": "பித்ரு தோஷம்", "meaning": "முன்னோர் கடன் தொடர்பான அமைப்பு. குடும்ப விஷயங்களில் தாமதமாகப் படிக்கப்படும்." },
-      "hi": { "label": "पितृ दोष", "meaning": "पूर्वजों के ऋण से जुड़ा संयोजन। पारिवारिक विषयों में विलंब के रूप में पढ़ा जाता है।" }
+      "en": {
+        "label": "Pitru dosha",
+        "meaning": "An ancestral-debt combination. Read as delays in family matters."
+      },
+      "ta": {
+        "label": "பித்ரு தோஷம்",
+        "meaning": "முன்னோர் கடன் தொடர்பான அமைப்பு. குடும்ப விஷயங்களில் தாமதமாகப் படிக்கப்படும்."
+      },
+      "hi": {
+        "label": "पितृ दोष",
+        "meaning": "पूर्वजों के ऋण से जुड़ा संयोजन। पारिवारिक विषयों में विलंब के रूप में पढ़ा जाता है।"
+      }
     },
     "guru-chandala": {
-      "en": { "label": "Guru Chandala dosha", "meaning": "Jupiter joined with or seen by Rahu/Ketu. Read as clouded judgement." },
-      "ta": { "label": "குரு சண்டாள தோஷம்", "meaning": "குரு ராகு/கேதுவுடன் இணைவது அல்லது அவர்கள் பார்வையில் இருப்பது. தெளிவற்ற முடிவுகளாகப் படிக்கப்படும்." },
-      "hi": { "label": "गुरु चांडाल दोष", "meaning": "गुरु का राहु/केतु के साथ या उनकी दृष्टि में होना। अस्पष्ट निर्णय के रूप में पढ़ा जाता है।" }
+      "en": {
+        "label": "Guru Chandala dosha",
+        "meaning": "Jupiter joined with or seen by Rahu/Ketu. Read as clouded judgement."
+      },
+      "ta": {
+        "label": "குரு சண்டாள தோஷம்",
+        "meaning": "குரு ராகு/கேதுவுடன் இணைவது அல்லது அவர்கள் பார்வையில் இருப்பது. தெளிவற்ற முடிவுகளாகப் படிக்கப்படும்."
+      },
+      "hi": {
+        "label": "गुरु चांडाल दोष",
+        "meaning": "गुरु का राहु/केतु के साथ या उनकी दृष्टि में होना। अस्पष्ट निर्णय के रूप में पढ़ा जाता है।"
+      }
     },
     "porutham": {
-      "en": { "label": "Porutham (Kuta)", "meaning": "One of the ten traditional checks between a bride's and groom's charts." },
-      "ta": { "label": "பொருத்தம் (கூடம்)", "meaning": "மணமகன், மணமகள் ஜாதகங்களுக்கு இடையேயான பத்து பாரம்பரிய பொருத்தங்களில் ஒன்று." },
-      "hi": { "label": "पोरुथम (कूट)", "meaning": "वर और वधू की कुंडलियों के बीच दस पारंपरिक मिलानों में से एक।" }
+      "en": {
+        "label": "Porutham (Kuta)",
+        "meaning": "One of the ten traditional checks between a bride's and groom's charts."
+      },
+      "ta": {
+        "label": "பொருத்தம் (கூடம்)",
+        "meaning": "மணமகன், மணமகள் ஜாதகங்களுக்கு இடையேயான பத்து பாரம்பரிய பொருத்தங்களில் ஒன்று."
+      },
+      "hi": {
+        "label": "पोरुथम (कूट)",
+        "meaning": "वर और वधू की कुंडलियों के बीच दस पारंपरिक मिलानों में से एक।"
+      }
     },
     "rajju": {
-      "en": { "label": "Rajju", "meaning": "The critical longevity check. Tradition avoids matching the same Rajju." },
-      "ta": { "label": "ரஜ்ஜு", "meaning": "முக்கியமான தாம்பத்ய ஆயுள் பொருத்தம். ஒரே ரஜ்ஜு வருவதை பாரம்பரியம் தவிர்க்கிறது." },
-      "hi": { "label": "रज्जु", "meaning": "महत्वपूर्ण दाम्पत्य-आयु परीक्षा। परंपरा एक ही रज्जु वाले मिलान से बचती है।" }
+      "en": {
+        "label": "Rajju",
+        "meaning": "The critical longevity check. Tradition avoids matching the same Rajju."
+      },
+      "ta": {
+        "label": "ரஜ்ஜு",
+        "meaning": "முக்கியமான தாம்பத்ய ஆயுள் பொருத்தம். ஒரே ரஜ்ஜு வருவதை பாரம்பரியம் தவிர்க்கிறது."
+      },
+      "hi": {
+        "label": "रज्जु",
+        "meaning": "महत्वपूर्ण दाम्पत्य-आयु परीक्षा। परंपरा एक ही रज्जु वाले मिलान से बचती है।"
+      }
     },
     "gana": {
-      "en": { "label": "Gana", "meaning": "Temperament check: Deva (gentle), Manushya (human), Rakshasa (intense)." },
-      "ta": { "label": "கணம்", "meaning": "இயல்பு பொருத்தம்: தேவ (மென்மை), மனுஷ்ய (மனித), ராக்ஷச (தீவிரம்)." },
-      "hi": { "label": "गण (Gana)", "meaning": "स्वभाव मिलान: देव (कोमल), मनुष्य (मानवीय), राक्षस (तीव्र)।" }
+      "en": {
+        "label": "Gana",
+        "meaning": "Temperament check: Deva (gentle), Manushya (human), Rakshasa (intense)."
+      },
+      "ta": {
+        "label": "கணம்",
+        "meaning": "இயல்பு பொருத்தம்: தேவ (மென்மை), மனுஷ்ய (மனித), ராக்ஷச (தீவிரம்)."
+      },
+      "hi": {
+        "label": "गण (Gana)",
+        "meaning": "स्वभाव मिलान: देव (कोमल), मनुष्य (मानवीय), राक्षस (तीव्र)।"
+      }
     },
     "yoni": {
-      "en": { "label": "Yoni", "meaning": "Instinctive-harmony check, based on the animal symbol of each star." },
-      "ta": { "label": "யோனி", "meaning": "ஒவ்வொரு நட்சத்திரத்தின் விலங்கு அடையாளத்தை அடிப்படையாகக் கொண்ட இயல்பு ஒற்றுமை பொருத்தம்." },
-      "hi": { "label": "योनि", "meaning": "हर नक्षत्र के पशु-प्रतीक पर आधारित सहज तालमेल की परीक्षा।" }
+      "en": {
+        "label": "Yoni",
+        "meaning": "Instinctive-harmony check, based on the animal symbol of each star."
+      },
+      "ta": {
+        "label": "யோனி",
+        "meaning": "ஒவ்வொரு நட்சத்திரத்தின் விலங்கு அடையாளத்தை அடிப்படையாகக் கொண்ட இயல்பு ஒற்றுமை பொருத்தம்."
+      },
+      "hi": {
+        "label": "योनि",
+        "meaning": "हर नक्षत्र के पशु-प्रतीक पर आधारित सहज तालमेल की परीक्षा।"
+      }
     },
     "kuja-dosha": {
-      "en": { "label": "Kuja dosha (Sevvay)", "meaning": "Mars in a sensitive house for marriage. Read as friction that can be remedied." },
-      "ta": { "label": "செவ்வாய் தோஷம் (செவ்வை)", "meaning": "திருமணத்திற்கு உணர்திறன் உள்ள பாவத்தில் செவ்வாய். பரிகாரத்தால் தணியும் உராய்வாகப் படிக்கப்படும்." },
-      "hi": { "label": "मंगल दोष (सेव्वै)", "meaning": "विवाह के लिए संवेदनशील भाव में मंगल। इसे उपाय से घटने वाले मतभेद के रूप में पढ़ा जाता है।" }
+      "en": {
+        "label": "Kuja dosha (Sevvay)",
+        "meaning": "Mars in a sensitive house for marriage. Read as friction that can be remedied."
+      },
+      "ta": {
+        "label": "செவ்வாய் தோஷம் (செவ்வை)",
+        "meaning": "திருமணத்திற்கு உணர்திறன் உள்ள பாவத்தில் செவ்வாய். பரிகாரத்தால் தணியும் உராய்வாகப் படிக்கப்படும்."
+      },
+      "hi": {
+        "label": "मंगल दोष (सेव्वै)",
+        "meaning": "विवाह के लिए संवेदनशील भाव में मंगल। इसे उपाय से घटने वाले मतभेद के रूप में पढ़ा जाता है।"
+      }
     },
     "tara-bala": {
-      "en": { "label": "Tara Bala", "meaning": "The strength of a date for YOU, counted from your own birth star." },
-      "ta": { "label": "தாரா பலம்", "meaning": "உங்கள் சொந்த ஜன்ம நட்சத்திரத்திலிருந்து கணக்கிடப்படும் நாளின் பலம்." },
-      "hi": { "label": "तारा बल", "meaning": "आपके अपने जन्म नक्षत्र से गिनी जाने वाली तिथि की शक्ति।" }
+      "en": {
+        "label": "Tara Bala",
+        "meaning": "The strength of a date for YOU, counted from your own birth star."
+      },
+      "ta": {
+        "label": "தாரா பலம்",
+        "meaning": "உங்கள் சொந்த ஜன்ம நட்சத்திரத்திலிருந்து கணக்கிடப்படும் நாளின் பலம்."
+      },
+      "hi": {
+        "label": "तारा बल",
+        "meaning": "आपके अपने जन्म नक्षत्र से गिनी जाने वाली तिथि की शक्ति।"
+      }
     },
     "chandrashtama": {
-      "en": { "label": "Chandrashtama", "meaning": "Days when the Moon is eighth from your Moon sign. Traditionally avoided." },
-      "ta": { "label": "சந்திராஷ்டமம்", "meaning": "உங்கள் சந்திர ராசியிலிருந்து சந்திரன் 8-ஆம் இடத்தில் இருக்கும் நாட்கள். பாரம்பரியமாக தவிர்க்கப்படும்." },
-      "hi": { "label": "चंद्राष्टम", "meaning": "वे दिन जब चंद्रमा आपकी राशि से आठवें स्थान पर हो। परंपरा में इन्हें टाला जाता है।" }
+      "en": {
+        "label": "Chandrashtama",
+        "meaning": "Days when the Moon is eighth from your Moon sign. Traditionally avoided."
+      },
+      "ta": {
+        "label": "சந்திராஷ்டமம்",
+        "meaning": "உங்கள் சந்திர ராசியிலிருந்து சந்திரன் 8-ஆம் இடத்தில் இருக்கும் நாட்கள். பாரம்பரியமாக தவிர்க்கப்படும்."
+      },
+      "hi": {
+        "label": "चंद्राष्टम",
+        "meaning": "वे दिन जब चंद्रमा आपकी राशि से आठवें स्थान पर हो। परंपरा में इन्हें टाला जाता है।"
+      }
     },
     "nalla-neram": {
-      "en": { "label": "Nalla Neram", "meaning": "The auspicious time windows of a day, printed in your local time." },
-      "ta": { "label": "நல்ல நேரம்", "meaning": "ஒரு நாளின் சுபமான நேரப் பகுதிகள்; உங்கள் உள்ளூர் நேரத்தில் காட்டப்படும்." },
-      "hi": { "label": "नल्ल नेरम", "meaning": "दिन की शुभ समय-अवधि, आपके स्थानीय समय में दी गई।" }
+      "en": {
+        "label": "Nalla Neram",
+        "meaning": "The auspicious time windows of a day, printed in your local time."
+      },
+      "ta": {
+        "label": "நல்ல நேரம்",
+        "meaning": "ஒரு நாளின் சுபமான நேரப் பகுதிகள்; உங்கள் உள்ளூர் நேரத்தில் காட்டப்படும்."
+      },
+      "hi": {
+        "label": "नल्ल नेरम",
+        "meaning": "दिन की शुभ समय-अवधि, आपके स्थानीय समय में दी गई।"
+      }
     },
     "muhurtham": {
-      "en": { "label": "Muhurtham", "meaning": "An auspicious date and time chosen for a ceremony." },
-      "ta": { "label": "முகூர்த்தம்", "meaning": "ஒரு சுப நிகழ்விற்குத் தேர்ந்தெடுக்கப்படும் நல்ல தேதியும் நேரமும்." },
-      "hi": { "label": "मुहूर्त", "meaning": "किसी शुभ कार्य के लिए चुना गया शुभ दिन और समय।" }
+      "en": {
+        "label": "Muhurtham",
+        "meaning": "An auspicious date and time chosen for a ceremony."
+      },
+      "ta": {
+        "label": "முகூர்த்தம்",
+        "meaning": "ஒரு சுப நிகழ்விற்குத் தேர்ந்தெடுக்கப்படும் நல்ல தேதியும் நேரமும்."
+      },
+      "hi": {
+        "label": "मुहूर्त",
+        "meaning": "किसी शुभ कार्य के लिए चुना गया शुभ दिन और समय।"
+      }
     },
     "gunam": {
-      "en": { "label": "Gunam (virtues)", "meaning": "The traditional qualities read from the birth star." },
-      "ta": { "label": "குணம்", "meaning": "ஜன்ம நட்சத்திரத்திலிருந்து படிக்கப்படும் பாரம்பரிய குணநலன்கள்." },
-      "hi": { "label": "गुण", "meaning": "जन्म नक्षत्र से पढ़े जाने वाले पारंपरिक स्वभाव-गुण।" }
+      "en": {
+        "label": "Gunam (virtues)",
+        "meaning": "The traditional qualities read from the birth star."
+      },
+      "ta": {
+        "label": "குணம்",
+        "meaning": "ஜன்ம நட்சத்திரத்திலிருந்து படிக்கப்படும் பாரம்பரிய குணநலன்கள்."
+      },
+      "hi": {
+        "label": "गुण",
+        "meaning": "जन्म नक्षत्र से पढ़े जाने वाले पारंपरिक स्वभाव-गुण।"
+      }
     },
     "namakaran": {
-      "en": { "label": "Namakaran", "meaning": "The Vedic naming ceremony of a newborn baby." },
-      "ta": { "label": "நாமகரணம்", "meaning": "பிறந்த குழந்தைக்கு பெயர் சூட்டும் வேத சடங்கு." },
-      "hi": { "label": "नामकरण", "meaning": "नवजात शिशु के नामकरण की वैदिक रस्म।" }
+      "en": {
+        "label": "Namakaran",
+        "meaning": "The Vedic naming ceremony of a newborn baby."
+      },
+      "ta": {
+        "label": "நாமகரணம்",
+        "meaning": "பிறந்த குழந்தைக்கு பெயர் சூட்டும் வேத சடங்கு."
+      },
+      "hi": {
+        "label": "नामकरण",
+        "meaning": "नवजात शिशु के नामकरण की वैदिक रस्म।"
+      }
     },
     "dasha": {
-      "en": { "label": "Dasha (period)", "meaning": "The planet-period system that maps which planet influences your life now." },
-      "ta": { "label": "தசை (Dasha)", "meaning": "இப்போது எந்த கிரகம் உங்கள் வாழ்க்கையை பாதிக்கிறது என்பதைக் காட்டும் கால அமைப்பு." },
-      "hi": { "label": "दशा (Dasha)", "meaning": "वह काल-प्रणाली जो बताती है कि अभी कौन-सा ग्रह आपके जीवन को प्रभावित कर रहा है।" }
+      "en": {
+        "label": "Dasha (period)",
+        "meaning": "The planet-period system that maps which planet influences your life now."
+      },
+      "ta": {
+        "label": "தசை (Dasha)",
+        "meaning": "இப்போது எந்த கிரகம் உங்கள் வாழ்க்கையை பாதிக்கிறது என்பதைக் காட்டும் கால அமைப்பு."
+      },
+      "hi": {
+        "label": "दशा (Dasha)",
+        "meaning": "वह काल-प्रणाली जो बताती है कि अभी कौन-सा ग्रह आपके जीवन को प्रभावित कर रहा है।"
+      }
     }
   },
   "reportTerms": {
-    "BIRTH_JATHAGAM": ["lagna", "rasi", "nakshatra", "pada", "bhava", "lord", "karaka", "mahadasha", "bhukti", "dasha", "neecha", "vakri", "astangata", "graha", "navamsa", "rasi-chart", "chart-tags", "ayanamsa", "dosha", "sani-dosha", "kala-sarpa", "pitru", "guru-chandala"],
-    "MARRIAGE_COMPATIBILITY": ["porutham", "rajju", "gana", "yoni", "kuja-dosha", "rasi", "nakshatra", "lagna", "graha", "dosha", "neecha", "lord"],
-    "BABY_NAMING": ["namakaran", "nakshatra", "pada", "rasi", "lagna", "gunam", "rajju", "yoni", "gana", "graha"],
-    "MUHURTHAM": ["muhurtham", "tara-bala", "chandrashtama", "nalla-neram", "nakshatra", "rasi", "lagna", "dosha"]
-  }
+    "BIRTH_JATHAGAM": [
+      "lagna",
+      "rasi",
+      "nakshatra",
+      "pada",
+      "bhava",
+      "lord",
+      "karaka",
+      "mahadasha",
+      "bhukti",
+      "dasha",
+      "neecha",
+      "vakri",
+      "astangata",
+      "graha",
+      "navamsa",
+      "rasi-chart",
+      "chart-tags",
+      "ayanamsa",
+      "dosha",
+      "sani-dosha",
+      "kala-sarpa",
+      "pitru",
+      "guru-chandala"
+    ],
+    "MARRIAGE_COMPATIBILITY": [
+      "porutham",
+      "rajju",
+      "gana",
+      "yoni",
+      "kuja-dosha",
+      "rasi",
+      "nakshatra",
+      "lagna",
+      "graha",
+      "dosha",
+      "neecha",
+      "lord"
+    ],
+    "BABY_NAMING": [
+      "namakaran",
+      "nakshatra",
+      "pada",
+      "rasi",
+      "lagna",
+      "gunam",
+      "rajju",
+      "yoni",
+      "gana",
+      "graha"
+    ],
+    "MUHURTHAM": [
+      "muhurtham",
+      "tara-bala",
+      "chandrashtama",
+      "nalla-neram",
+      "nakshatra",
+      "rasi",
+      "lagna",
+      "dosha"
+    ]
+  },
+  "quickTerms": {
+    "BIRTH_JATHAGAM": [
+      "lagna",
+      "rasi",
+      "nakshatra",
+      "bhava",
+      "neecha"
+    ],
+    "MARRIAGE_COMPATIBILITY": [
+      "porutham",
+      "rajju",
+      "gana",
+      "kuja-dosha",
+      "yoni"
+    ],
+    "BABY_NAMING": [
+      "namakaran",
+      "nakshatra",
+      "pada",
+      "gunam",
+      "rasi"
+    ],
+    "MUHURTHAM": [
+      "muhurtham",
+      "tara-bala",
+      "chandrashtama",
+      "nalla-neram",
+      "nakshatra"
+    ]
+  },
+  "_quickTermsComment": "The five words a reader meets first. Rendered as the '5 words you'll meet' box on page 1 (Birth Jathagam) and at the top of every glossary sheet, so the reader gets help before turning to the last page."
 }

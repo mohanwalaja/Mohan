@@ -40,6 +40,7 @@ export interface GlossaryEntry {
 const DATA = glossaryData as unknown as {
   terms: Record<string, Record<AppLanguage, { label?: string; meaning?: string }>>;
   reportTerms: Record<ReportKind, string[]>;
+  quickTerms?: Record<ReportKind, string[]>;
 };
 
 /** Every term in the glossary (used by the web glossary page and tests). */
@@ -67,6 +68,45 @@ export function reportGlossaryEntries(kind: ReportKind, lang: AppLanguage): Glos
 }
 
 /**
+ * The five words a reader meets first, for the "5 words you'll meet" box.
+ * They are a subset of REPORT_GLOSSARY_KEYS — same wording, so the box and the
+ * full page can never disagree — and they are chosen for the terms that stop a
+ * first-time reader fastest (Lagna, Rasi, Nakshatra, Bhava, Neecha for the
+ * Jathagam; Porutham, Rajju, Gana, Kuja dosha, Yoni for marriage; …).
+ */
+export function reportGlossaryQuickEntries(kind: ReportKind, lang: AppLanguage): GlossaryEntry[] {
+  const keys = (DATA.quickTerms || {})[kind] || [];
+  const entries: GlossaryEntry[] = [];
+  for (const key of keys) {
+    const entry = glossaryEntry(key, lang);
+    if (entry) entries.push(entry);
+  }
+  return entries;
+}
+
+/**
+ * The compact box printed where the reader first meets the words — page 1 of
+ * the Birth Jathagam, and the top of every Report Guide sheet. Each row is the
+ * term plus its one-line meaning, so the box is a self-contained answer and not
+ * just a table of contents.
+ */
+export function reportGlossaryQuickHtml(kind: ReportKind, lang: AppLanguage): string {
+  const entries = reportGlossaryQuickEntries(kind, lang);
+  const text = QUICK_BOX_TEXT[lang];
+  if (!entries.length) return '';
+  const rows = entries.map(entry => `
+        <div class="glossary-quick-row">
+          <span class="glossary-quick-term">${escapeHtml(entry.label)}</span>
+          <span class="glossary-quick-meaning">${escapeHtml(entry.meaning)}</span>
+        </div>`).join('');
+  return `
+    <div class="glossary-quick">
+      <div class="glossary-quick-title">${escapeHtml(text.title)}</div>${rows}
+      <div class="glossary-quick-more">${escapeHtml(text.more)}</div>
+    </div>`;
+}
+
+/**
  * `inlineGloss('neecha', 'en')` -> "debilitated — a planet in its weakest sign…"
  * Used where a term appears in running prose for the first time.
  */
@@ -74,6 +114,22 @@ export function inlineGloss(key: string, lang: AppLanguage): string {
   const entry = glossaryEntry(key, lang);
   return entry ? `${entry.label} — ${entry.meaning}` : '';
 }
+
+/** Wording of the compact box; the meanings themselves come from the JSON. */
+export const QUICK_BOX_TEXT: Record<AppLanguage, { title: string; more: string }> = {
+  en: {
+    title: '5 words you will meet in this report',
+    more: 'All the other words are explained in one line on the last page (Report Guide & Glossary).'
+  },
+  ta: {
+    title: 'இந்த அறிக்கையில் சந்திக்கும் 5 சொற்கள்',
+    more: 'மற்ற அனைத்துச் சொற்களும் கடைசிப் பக்கத்தில் ஒரு வரியில் விளக்கப்பட்டுள்ளன (அறிக்கை வழிகாட்டி & சொல் விளக்கம்).'
+  },
+  hi: {
+    title: 'इस रिपोर्ट में मिलने वाले 5 शब्द',
+    more: 'बाकी सभी शब्द अंतिम पृष्ठ पर एक पंक्ति में समझाए गए हैं (रिपोर्ट मार्गदर्शिका एवं शब्दार्थ)।'
+  }
+};
 
 export const GLOSSARY_PAGE_TEXT: Record<AppLanguage, {
   /** Page title and its one-line invitation to read it. */
@@ -116,10 +172,17 @@ const escapeHtml = (value: string): string => String(value ?? '')
  * meaning, and the closing note. Callers drop this inside their own page shell
  * (header + footer), so each report keeps its own branding and page numbering.
  */
-export function reportGlossaryHtml(kind: ReportKind, lang: AppLanguage): string {
+export function reportGlossaryHtml(
+  kind: ReportKind,
+  lang: AppLanguage,
+  options: { includeQuick?: boolean } = {}
+): string {
   const entries = reportGlossaryEntries(kind, lang);
   const text = GLOSSARY_PAGE_TEXT[lang];
   if (!entries.length) return '';
+  // The Birth Jathagam prints the quick box on page 1, so its guide sheet skips
+  // it; every other report opens its guide with it.
+  const quick = options.includeQuick === false ? '' : reportGlossaryQuickHtml(kind, lang);
   const items = entries.map(entry => `
       <div class="glossary-item">
         <div class="glossary-term">${escapeHtml(entry.label)}</div>
@@ -130,6 +193,7 @@ export function reportGlossaryHtml(kind: ReportKind, lang: AppLanguage): string 
       <h2 class="glossary-title">${escapeHtml(text.title)}</h2>
       <p class="glossary-intro">${escapeHtml(text.intro)}</p>
     </div>
+    ${quick}
     <div class="glossary-grid">${items}
     </div>
     <p class="glossary-note">${escapeHtml(text.note)}</p>`;
@@ -183,6 +247,43 @@ export const REPORT_GLOSSARY_CSS = `
     border-top: 1px dotted var(--gold, #b45309);
     padding-top: 1.6mm;
     margin: 2mm 0 0;
+  }
+  /* "5 words you'll meet" — a self-contained answer box, not a teaser. */
+  .glossary-quick {
+    border: 1px solid var(--slate-border, #e2e8f0);
+    border-left: 3px solid var(--gold, #b45309);
+    background: #fffdf7;
+    border-radius: 4px;
+    padding: 1.6mm 2.6mm 1.4mm;
+    margin: 1.6mm 0 2mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .glossary-quick-title {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--maroon, #881337);
+    margin-bottom: 1mm;
+    letter-spacing: 0.2px;
+  }
+  .glossary-quick-row {
+    font-size: 9.5px;
+    line-height: 1.32;
+    color: var(--ink, #0f172a);
+    margin: 0 0 0.7mm;
+  }
+  .glossary-quick-term {
+    font-weight: 800;
+    color: var(--maroon, #881337);
+  }
+  .glossary-quick-meaning { color: var(--ink-light, #334155); }
+  .glossary-quick-more {
+    font-size: 8.5px;
+    line-height: 1.3;
+    color: var(--ink-muted, #64748b);
+    border-top: 1px dotted var(--gold, #b45309);
+    padding-top: 0.8mm;
+    margin-top: 0.6mm;
   }
   .glossary-pointer {
     font-size: 9px;

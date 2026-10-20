@@ -190,6 +190,7 @@ function astro_report_glossary(): array
     $cache = [
         'terms' => is_array($decoded['terms'] ?? null) ? $decoded['terms'] : [],
         'reportTerms' => is_array($decoded['reportTerms'] ?? null) ? $decoded['reportTerms'] : [],
+        'quickTerms' => is_array($decoded['quickTerms'] ?? null) ? $decoded['quickTerms'] : [],
     ];
     return $cache;
 }
@@ -218,15 +219,76 @@ function astro_report_glossary_entries(string $reportKind, string $lang): array
 }
 
 /**
+ * The five words a reader meets first (quickTerms in report_glossary.json).
+ * Same lines as the full guide, so the box and the page can never disagree.
+ */
+function astro_report_glossary_quick_entries(string $reportKind, string $lang): array
+{
+    $glossary = astro_report_glossary();
+    $keys = $glossary['quickTerms'][$reportKind] ?? [];
+    $entries = [];
+    foreach ((array) $keys as $key) {
+        $row = $glossary['terms'][$key] ?? null;
+        if (!is_array($row)) { continue; }
+        $copy = is_array($row[$lang] ?? null) ? $row[$lang] : ($row['en'] ?? null);
+        if (!is_array($copy)) { continue; }
+        $label = trim((string) ($copy['label'] ?? ''));
+        $meaning = trim((string) ($copy['meaning'] ?? ''));
+        if ($label === '' || $meaning === '') { continue; }
+        $entries[] = ['label' => $label, 'meaning' => $meaning];
+    }
+    return $entries;
+}
+
+/**
+ * The compact "5 words you'll meet in this report" box: term + one line each,
+ * closed by the pointer to the full guide. Printed on page 1 of the Birth
+ * Jathagam and at the top of every Report Guide sheet.
+ */
+function astro_report_glossary_quick_html(string $reportKind, string $lang): string
+{
+    $entries = astro_report_glossary_quick_entries($reportKind, $lang);
+    if ($entries === []) {
+        return '';
+    }
+    $e = static function (string $value): string {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    };
+    $text = [
+        'en' => [
+            'title' => '5 words you will meet in this report',
+            'more' => 'All the other words are explained in one line on the last page (Report Guide & Glossary).',
+        ],
+        'ta' => [
+            'title' => 'இந்த அறிக்கையில் சந்திக்கும் 5 சொற்கள்',
+            'more' => 'மற்ற அனைத்துச் சொற்களும் கடைசிப் பக்கத்தில் ஒரு வரியில் விளக்கப்பட்டுள்ளன (அறிக்கை வழிகாட்டி & சொல் விளக்கம்).',
+        ],
+        'hi' => [
+            'title' => 'इस रिपोर्ट में मिलने वाले 5 शब्द',
+            'more' => 'बाकी सभी शब्द अंतिम पृष्ठ पर एक पंक्ति में समझाए गए हैं (रिपोर्ट मार्गदर्शिका एवं शब्दार्थ)।',
+        ],
+    ];
+    $copy = $text[$lang] ?? $text['en'];
+    $rows = '';
+    foreach ($entries as $entry) {
+        $rows .= '<div class="glossary-quick-row"><b>' . $e($entry['label']) . '</b> — '
+            . '<span class="glossary-quick-meaning">' . $e($entry['meaning']) . '</span></div>';
+    }
+    return '<div class="glossary-quick"><div class="glossary-quick-title">' . $e($copy['title']) . '</div>'
+        . $rows . '<div class="glossary-quick-more">' . $e($copy['more']) . '</div></div>';
+}
+
+/**
  * The "Report Guide & Glossary" sheet body for one report: title, two-column
  * list of term + one-line meaning, and the closing reassurance.
  */
-function astro_report_glossary_html(string $reportKind, string $lang): string
+function astro_report_glossary_html(string $reportKind, string $lang, bool $includeQuick = true): string
 {
     $entries = astro_report_glossary_entries($reportKind, $lang);
     if ($entries === []) {
         return '';
     }
+    $quickHtml = $includeQuick ? astro_report_glossary_quick_html($reportKind, $lang) : '';
     $e = static function (string $value): string {
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     };
@@ -260,6 +322,7 @@ function astro_report_glossary_html(string $reportKind, string $lang): string
     return '<div class="glossary-sheet-body">'
         . '<div class="glossary-title">' . $e($copy['title']) . '</div>'
         . '<div class="glossary-intro">' . $e($copy['intro']) . '</div>'
+        . $quickHtml
         . '<table class="glossary-columns"><tr><td class="glossary-col">' . $left
         . '</td><td class="glossary-col">' . $right . '</td></tr></table>'
         . '<div class="glossary-note">' . $e($copy['note']) . '</div>'
@@ -852,6 +915,11 @@ class AstroReportViews {
     /* Report Guide & Glossary sheet — the last page of every report.
        Two side-by-side columns because a print renderer has no CSS columns. */
     .glossary-sheet { padding: 5.5mm 7mm 5.5mm; }
+    .glossary-quick { border: 1px solid #e2e8f0; border-left: 3px solid #c9962c; background: #fffdf7; border-radius: 4px; padding: 1.6mm 2.6mm 1.4mm; margin: 1.6mm 0 2mm; page-break-inside: avoid; }
+    .glossary-quick-title { font-size: 10px; font-weight: bold; color: #7a1230; margin-bottom: 1mm; }
+    .glossary-quick-row { font-size: 9.5px; line-height: 1.32; color: #2b1d14; margin: 0 0 0.7mm; }
+    .glossary-quick-row b { color: #7a1230; }
+    .glossary-quick-more { font-size: 8.5px; line-height: 1.3; color: #64748b; border-top: 0.6px dotted #c9962c; padding-top: 0.8mm; margin-top: 0.6mm; }
     .glossary-title { font-size: 14px; font-weight: bold; color: #7a1230; margin-bottom: 1mm; }
     .glossary-intro { font-size: 10px; color: #2b1d14; line-height: 1.4; margin-bottom: 2.5mm; }
     table.glossary-columns { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -1471,6 +1539,11 @@ HTML;
         }
 
         $page1Html = self::topHeader('ASTRO SIVAM', $p1Sub, $orderNumber, 1, self::JATHAGAM_PAGE_TOTAL, $lang, '', true, $preparedLabel);
+        // The five words a reader meets first, right under the particulars and
+        // above the charts/doshas. The wording comes from report_glossary.json;
+        // the full guide is the last sheet (and its box is skipped there).
+        $quickGlossaryHtml = astro_report_glossary_quick_html('BIRTH_JATHAGAM', $lang);
+
         $page1Html .= <<<HTML
 <div class="panel">
   <div class="panel-title">{$panelDevoteeTitle}</div>
@@ -1494,6 +1567,7 @@ HTML;
 </div>
 
 {$rasiNavamsaRowHtml}
+{$quickGlossaryHtml}
 <div class="panel">
   <div class="panel-title">{$doshaSecTitle}</div>
   {$doshaCardsHtml}
@@ -2096,7 +2170,7 @@ HTML;
         $page3Html .= '<div class="summary-reassurance">' . self::e($summaryText['reassurance']) . '</div>';
 
         $glossarySubtitle = $isTa ? 'சொல் விளக்கம்' : ($isHi ? 'शब्दार्थ' : 'Plain-language guide to this report');
-        $glossaryBody = astro_report_glossary_html('BIRTH_JATHAGAM', $lang);
+        $glossaryBody = astro_report_glossary_html('BIRTH_JATHAGAM', $lang, false);
         $glossarySheetHtml = $glossaryBody === ''
             ? ''
             : '<div class="sheet glossary-sheet" id="birth-glossary-sheet">'
