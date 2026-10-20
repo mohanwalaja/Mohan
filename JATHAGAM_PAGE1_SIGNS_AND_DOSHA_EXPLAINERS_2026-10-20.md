@@ -1,24 +1,36 @@
 # Birth Jathagam page 1 — Mesham/Aries + two-line dosha explanations
 
-**Requested:** 2026-10-20 — from the admin panel, English report only; Tamil and
-Hindi must not change (except that their dosha text must be short too).
+**Requested:** 2026-10-20 — from the admin panel. The new wording is English
+layout; Tamil and Hindi keep their single-name rows (and, per the follow-up
+request, now print those rows **bold** as well). The dosha text is short in all
+three languages.
 
 | # | Request | Where it now lives |
 |---|---|---|
-| 1 | Janma Rasi row shows the sign **and** the zodiac — `Mesham/Aries` for all twelve rasis — in **bold** | page-1 User Particulars, English |
-| 2 | Janma Nakshatra row keeps the star name, in **bold** | page-1 User Particulars, English |
+| 1 | Janma Rasi row shows the sign **and** the zodiac — `Mesham/Aries` for all twelve rasis — in **bold** (English; Tamil/Hindi keep the single name, bold) | page-1 User Particulars |
+| 2 | Janma Nakshatra row keeps the star name, in **bold** in every language | page-1 User Particulars |
 | 3 | Dosha Analysis: Sani, Kala Sarpa, Pitru and Guru Chandala each **explain the dosha in two lines** ("no big" in Tamil and Hindi too) | every dosha card, all three languages |
 
 ## What changed
 
-### 1. Page-1 particulars (English only)
+### 1. Page-1 particulars
 
-* Heading `Janma Rasi` → **`Janma Rasi / Zodiac Sign`**, value
-  `Mesham` → **`Thulam/Libra`** (bold), built from the chart's Moon sign.
-* Heading `Janma Nakshatra` → **`Janma Nakshatra / Star Sign`**, value keeps the
-  star name and padas but the name is now **bold** (`**Swati** — Pada 2`).
-* Tamil (`ராசி`, `நட்சத்திரம்`) and Hindi (`राशि (Moon Sign)`,
-  `नक्षत्र (Nakshatra)`) rows are byte-for-byte unchanged — no bold, no zodiac.
+| Language | Rasi row | Nakshatra row |
+|---|---|---|
+| English | `Janma Rasi / Zodiac Sign` → **Thulam/Libra** | `Janma Nakshatra / Star Sign` → **Swati** — Pada 2 |
+| Tamil | `ராசி` → **துலாம்** | `நட்சத்திரம்` → **சுவாதி** — 2-ஆம் பாதம் |
+| Hindi | `राशि (Moon Sign)` → **तुला** | `नक्षत्र (Nakshatra)` → **स्वाति** — पाद 2 |
+
+* The English row prints the zodiac twin (`Mesham/Aries` … `Meenam/Pisces`);
+  Tamil and Hindi keep the single rasi name they always printed. Nothing else in
+  those two reports changes.
+* The star name is **bold in all three languages**; the pada wording stays as it
+  was.
+* Hindi PDFs used to print `N/A` for the star: `api/astrology/engine.php` had no
+  Hindi nakshatra list, so `generateBirthJathagamHtml()` fell through to `N/A`
+  even though the browser engine knew the name. `$NAKSHATRAS_HI` (same 27 names
+  as `NAKSHATRAM_NAMES_HI`) now feeds `janmaNakshatraHi` and
+  `nakshatram.nameHi`, so the Hindi preview and the Hindi PDF agree.
 
 ### 2. Dosha cards — two-line explanations
 
@@ -66,7 +78,8 @@ and the emailed PDF together — impossible to drift.
    unknown signs still `N/A`;
 2. the English page prints the bold dual rasi under `Janma Rasi / Zodiac Sign`
    and the bold star under `Janma Nakshatra / Star Sign`;
-3. Tamil and Hindi keep their previous markup (no `<strong>`, single sign name);
+3. Tamil and Hindi print the same single rasi name, bold, without the English
+   zodiac twin, and the bold star;
 4. each of the four explanations is **exactly two sentences**, under 900
    characters, in `en` / `ta` / `hi`, and the JSON and renderers agree;
 5. the old long Sade Sati / remedy paragraphs never return to page 1;

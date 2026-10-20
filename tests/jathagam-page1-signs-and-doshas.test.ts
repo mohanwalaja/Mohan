@@ -20,7 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { calculatePrecisionHoroscope } from '../src/lib/astrology/astronomy.js';
+import { NAKSHATRAM_NAMES_HI, calculatePrecisionHoroscope } from '../src/lib/astrology/astronomy.js';
 import {
   RASI_NAMES_REPORT,
   ZODIAC_SIGN_EN,
@@ -35,6 +35,7 @@ const read = (relative: string) => fs.readFileSync(path.join(projectRoot, relati
 
 const page1Json = JSON.parse(read('api/astrology/jathagam_page1.json'));
 const reportViewsPhp = read('api/astrology/report_views.php');
+const enginePhp = read('api/astrology/engine.php');
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -113,15 +114,18 @@ check('English page 1 keeps the nakshatra name, in BOLD', () => {
   assert.equal(shown![1], chart.janmaNakshatraEn, 'the star name must not be changed, only bolded');
 });
 
-check('Tamil and Hindi page 1 keep their previous single-name markup', () => {
+check('Tamil and Hindi page 1 print the same single name, now in BOLD', () => {
   const ta = particulars('ta');
-  assert.match(ta, /ராசி<\/span><span class="value">[^<]+<\/span>/, 'Tamil rasi row changed');
-  assert.match(ta, /நட்சத்திரம்<\/span><span class="value">[^<]+ — /, 'Tamil nakshatra row changed');
+  assert.match(ta, /ராசி<\/span><span class="value"><strong>[^<]+<\/strong><\/span>/, 'Tamil rasi row is not bold');
+  assert.match(ta, /நட்சத்திரம்<\/span><span class="value"><strong>[^<]+<\/strong> — /, 'Tamil nakshatra row is not bold');
   const hi = particulars('hi');
-  assert.match(hi, /राशि \(Moon Sign\)<\/span><span class="value">[^<]+<\/span>/, 'Hindi rasi row changed');
-  assert.match(hi, /नक्षत्र \(Nakshatra\)<\/span><span class="value">[^<]+ — /, 'Hindi nakshatra row changed');
+  assert.match(hi, /राशि \(Moon Sign\)<\/span><span class="value"><strong>[^<]+<\/strong><\/span>/, 'Hindi rasi row is not bold');
+  assert.match(hi, /नक्षत्र \(Nakshatra\)<\/span><span class="value"><strong>[^<]+<\/strong> — /, 'Hindi nakshatra row is not bold');
   for (const lang of ['ta', 'hi'] as AppLanguage[]) {
-    assert.doesNotMatch(particulars(lang), /<strong>/, `${lang} must not gain the new bold markup`);
+    const rasi = /(?:ராசி|राशि \(Moon Sign\))<\/span><span class="value"><strong>([^<]+)<\/strong>/.exec(particulars(lang));
+    assert.ok(rasi, `${lang}: bold rasi value missing`);
+    assert.equal(rasi![1], RASI_NAMES_REPORT[Number(chart.chandraRasi)][lang], `${lang}: the sign name itself must not change`);
+    assert.doesNotMatch(particulars(lang), /\/Aries|\/Taurus|\/Libra/, `${lang} must not gain the English zodiac twin`);
   }
 });
 
@@ -182,14 +186,24 @@ check('the PHP renderer reads the same JSON and uses it for every dosha card', (
   assert.doesNotMatch(reportViewsPhp, /saniRemedyFullForPdf/, 'the long Sani remedy paragraph is still in the renderer');
 });
 
-check('the PHP page-1 particulars print the dual bold rasi and the bold star (English only)', () => {
+check('the PHP page-1 particulars print the dual bold rasi (English only) and the bold star (all languages)', () => {
   assert.match(reportViewsPhp, /Janma Rasi \/ Zodiac Sign &amp; Lord:/, 'English rasi heading missing');
   assert.match(reportViewsPhp, /Janma Nakshatra \/ Star Sign:/, 'English nakshatra heading missing');
-  assert.match(reportViewsPhp, /\$rasiValueHtml = \(\$isTa \|\| \$isHi\) \? \$rasiName : '<strong>' \. \$rasiDualEn \. '<\/strong>';/, 'rasi bold/dual markup missing');
-  assert.match(reportViewsPhp, /\$nakValueHtml = \(\$isTa \|\| \$isHi\) \? \$nakName : '<strong>' \. \$nakName \. '<\/strong>';/, 'nakshatra bold markup missing');
+  assert.match(reportViewsPhp, /\$rasiValueHtml = '<strong>' \. \(\(\$isTa \|\| \$isHi\) \? \$rasiName : \$rasiDualEn\) \. '<\/strong>';/, 'rasi bold/dual markup missing');
+  assert.match(reportViewsPhp, /\$nakValueHtml = '<strong>' \. \$nakName \. '<\/strong>';/, 'nakshatra bold markup missing');
   assert.match(reportViewsPhp, /\{\$rasiValueHtml\} \(\{\$rasiLord\}\)/, 'the rasi cell does not use the new value');
   assert.match(reportViewsPhp, /\{\$nakValueHtml\}, Pada \{\$pada\}/, 'the nakshatra cell does not use the new value');
   assert.match(reportViewsPhp, /\$rasiDualEnRaw = \$zodiacEnForRasi !== '' \? \$rasiBaseEn \. '\/' \. \$zodiacEnForRasi : \$rasiBaseEn;/, 'PHP does not build "Mesham/Aries"');
+});
+
+check('the PHP engine names the Hindi star like the browser engine (no more N/A)', () => {
+  const block = /public static \$NAKSHATRAS_HI = \[([\s\S]*?)\];/.exec(enginePhp);
+  assert.ok(block, 'engine.php has no Hindi nakshatra list');
+  const names = [...block![1].matchAll(/'([^']+)'/g)].map(m => m[1]);
+  assert.deepEqual(names, NAKSHATRAM_NAMES_HI, 'the Hindi star list must match the browser list index for index');
+  assert.match(enginePhp, /'janmaNakshatraHi' => self::\$NAKSHATRAS_HI\[\$nakshatraIndex\]/);
+  assert.match(enginePhp, /'nameHi' => self::\$NAKSHATRAS_HI\[\$nakshatraIndex\]/);
+  assert.match(reportViewsPhp, /\$result\['nakshatram'\]\['nameHi'\]/);
 });
 
 console.log(`\n${passed} Birth Jathagam page-1 checks passed.`);

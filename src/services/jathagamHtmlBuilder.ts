@@ -1939,8 +1939,8 @@ ${REPORT_FONT_LINK_TAG}
         <div class="item"><span class="label">${isTa ? 'பிறந்த இடம்' : isHi ? 'जन्म स्थान (Place)' : 'Place of Birth'}</span><span class="value">${birthPlaceStr}</span></div>
         <div class="item"><span class="label">${isTa ? 'பிறந்த நேர மண்டலம்' : isHi ? 'जन्म समय क्षेत्र' : 'Birth Time Zone'}</span><span class="value">${birthTimeZone}</span></div>
         <div class="item"><span class="label">${isTa ? 'லக்னம்' : isHi ? 'लग्न (Ascendant)' : 'Lagna'}</span><span class="value">${lagnaSignName} (${lagnaDegreeText})</span></div>
-        <div class="item"><span class="label">${isTa ? 'ராசி' : isHi ? 'राशि (Moon Sign)' : 'Janma Rasi / Zodiac Sign'}</span><span class="value">${isTa || isHi ? rasiSignName : `<strong>${escapeHtml(rasiWithZodiacEn(chandraRasi))}</strong>`}</span></div>
-        <div class="item"><span class="label">${isTa ? 'நட்சத்திரம்' : isHi ? 'नक्षत्र (Nakshatra)' : 'Janma Nakshatra / Star Sign'}</span><span class="value">${isTa || isHi ? `${nakshatraName} — ${padaText}` : `<strong>${escapeHtml(nakshatraName)}</strong> — ${padaText}`}</span></div>
+        <div class="item"><span class="label">${isTa ? 'ராசி' : isHi ? 'राशि (Moon Sign)' : 'Janma Rasi / Zodiac Sign'}</span><span class="value"><strong>${escapeHtml(isTa || isHi ? rasiSignName : rasiWithZodiacEn(chandraRasi))}</strong></span></div>
+        <div class="item"><span class="label">${isTa ? 'நட்சத்திரம்' : isHi ? 'नक्षत्र (Nakshatra)' : 'Janma Nakshatra / Star Sign'}</span><span class="value"><strong>${escapeHtml(nakshatraName)}</strong> — ${padaText}</span></div>
         <div class="item"><span class="label">${isTa ? 'அயனாம்சம்' : isHi ? 'अयनांश' : 'Ayanamsa'}</span><span class="value">${escapeHtml(ayanamsaText)}</span></div>
         <div class="item"><span class="label">${isTa ? 'ராகு நிலை (Node)' : isHi ? 'राहु नोड (Node)' : 'Rahu Node'}</span><span class="value">${escapeHtml(nodeTypeText)}</span></div>
       </div>

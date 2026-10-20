@@ -1303,8 +1303,9 @@ HTML;
         $lblPLagna = $isTa ? 'லக்னம்:' : ($isHi ? 'लग्न:' : 'Lagna (Ascendant):');
         // Page-1 values: the English report prints the sign ("Mesham/Aries") and
         // the star in BOLD. Tamil and Hindi keep their exact previous markup.
-        $rasiValueHtml = ($isTa || $isHi) ? $rasiName : '<strong>' . $rasiDualEn . '</strong>';
-        $nakValueHtml = ($isTa || $isHi) ? $nakName : '<strong>' . $nakName . '</strong>';
+        // Bold in every language; only the English row adds the zodiac twin.
+        $rasiValueHtml = '<strong>' . (($isTa || $isHi) ? $rasiName : $rasiDualEn) . '</strong>';
+        $nakValueHtml = '<strong>' . $nakName . '</strong>';
         $lblPRasi = $isTa ? 'ராசி & அதிபதி:' : ($isHi ? 'राशि एवं स्वामी:' : 'Janma Rasi / Zodiac Sign &amp; Lord:');
         $lblPNak = $isTa ? 'நட்சத்திரம் & பாதம்:' : ($isHi ? 'नक्षत्र एवं पद:' : 'Janma Nakshatra / Star Sign:');
         $lblPAyanNode = $isTa ? 'அயனாம்சம் / ராகு நிலை:' : ($isHi ? 'अयनांश / राहु नोड:' : 'Ayanamsa / Rahu Node:');
