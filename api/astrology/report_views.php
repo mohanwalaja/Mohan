@@ -279,6 +279,70 @@ function astro_report_glossary_quick_html(string $reportKind, string $lang): str
 }
 
 /**
+ * The marriage verdict ladder, in the customer's own words.
+ *
+ * The porutham table used to print "Utthamam", "Madhyamam" and "Incompatible"
+ * in one column - two Sanskrit words and one English word in the same list, so
+ * a reader who does not know the Sanskrit could not rank them. All three tiers
+ * now read as plain grading words, and the same ladder is used for the score
+ * badge and the recommendation, so one row can never look like it came from a
+ * different table:
+ *
+ *   UTTHAMAM    -> Very Good / மிக நன்று / बहुत अच्छा
+ *   MADHYAMAM   -> Good      / நன்று     / अच्छा
+ *   PORUNDHADHU -> Incompatible / பொருந்தாது / मेल नहीं
+ *
+ * $withHint adds the one-glance hint used where the verdict stands alone.
+ */
+function astro_porutham_verdict_label(?string $tier, string $lang, bool $withHint = false): string
+{
+    $label = [
+        'UTTHAMAM' => ['en' => 'Very Good', 'ta' => 'மிக நன்று', 'hi' => 'बहुत अच्छा'],
+        'MADHYAMAM' => ['en' => 'Good', 'ta' => 'நன்று', 'hi' => 'अच्छा'],
+        'PORUNDHADHU' => ['en' => 'Incompatible', 'ta' => 'பொருந்தாது', 'hi' => 'मेल नहीं'],
+    ];
+    $hint = [
+        'UTTHAMAM' => ['en' => 'Very Good (highly favourable)', 'ta' => 'மிக நன்று (மிகச் சாதகம்)', 'hi' => 'बहुत अच्छा (अत्यंत अनुकूल)'],
+        'MADHYAMAM' => ['en' => 'Good (remedies may help)', 'ta' => 'நன்று (பரிகாரங்கள் உதவும்)', 'hi' => 'अच्छा (उपाय सहायक)'],
+        'PORUNDHADHU' => ['en' => 'Incompatible', 'ta' => 'பொருந்தாது', 'hi' => 'मेल नहीं'],
+    ];
+    $key = strtoupper(trim((string) $tier));
+    $map = $withHint ? $hint : $label;
+    if (!isset($map[$key])) {
+        return 'N/A';
+    }
+    return $map[$key][$lang] ?? $map[$key]['en'];
+}
+
+/**
+ * Reads a verdict tier out of anything an older saved order may carry: the
+ * enum itself, the engine's legacy labels ("Uthama (Excellent)",
+ * "Madhyama (Good)", "Porundhadhu (Not Compatible)") or the plain wording.
+ */
+function astro_porutham_verdict_tier($value): ?string
+{
+    $raw = trim((string) $value);
+    if ($raw === '') {
+        return null;
+    }
+    $upper = strtoupper($raw);
+    if (in_array($upper, ['UTTHAMAM', 'MADHYAMAM', 'PORUNDHADHU'], true)) {
+        return $upper;
+    }
+    $lower = strtolower($raw);
+    if (preg_match('/very good|utthama|uthama|uttama|excellent|highly/', $lower)) {
+        return 'UTTHAMAM';
+    }
+    if (preg_match('/^good\b|madhyam|mathimam|moderate|acceptable|partial/', $lower)) {
+        return 'MADHYAMAM';
+    }
+    if (preg_match('/incompatible|porundh|not compatible|not recommended|adhamam/', $lower)) {
+        return 'PORUNDHADHU';
+    }
+    return null;
+}
+
+/**
  * The "Report Guide & Glossary" sheet body for one report: title, two-column
  * list of term + one-line meaning, and the closing reassurance.
  */
@@ -351,6 +415,16 @@ class AstroReportViews {
      * never be introduced without this number changing too.
      */
     public const JATHAGAM_PAGE_TOTAL = 4;
+
+    /**
+     * The other three reports each carry their body/disclaimer sheets plus the
+     * Report Guide & Glossary sheet. The totals live here so a page header can
+     * never say "of 2" on a three-sheet document again - the glossary sheet was
+     * appended without these totals changing, and the printed headers drifted.
+     */
+    public const WEDDING_PAGE_TOTAL = 3;
+    public const MUHURTHAM_PAGE_TOTAL = 3;
+    public const BABY_PAGE_TOTAL = 3;
 
     public static function e($str): string {
         return htmlspecialchars((string)$str, ENT_QUOTES, 'UTF-8');
@@ -3551,7 +3625,7 @@ CSS;
             }
         }
         if ($ratingTier === 'UTTHAMAM') {
-            $verdictText = $isTa ? 'இந்த மதிப்பீட்டின்படி நல்ல பொருத்தம்.' : ($isHi ? 'इस आकलन के अनुसार अच्छा मेल है।' : 'Good match based on this assessment.');
+            $verdictText = $isTa ? 'இந்த மதிப்பீட்டின்படி மிக நல்ல பொருத்தம்.' : ($isHi ? 'इस आकलन के अनुसार बहुत अच्छा मेल है।' : 'Very good match based on this assessment.');
         } elseif ($ratingTier === 'MADHYAMAM') {
             $verdictText = $isTa ? 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களைப் பரிசீலிக்கலாம்.' : ($isHi ? 'स्वीकार्य मेल; उपायों पर विचार किया जा सकता है।' : 'Acceptable match; remedies may be considered.');
         } elseif ($ratingTier === 'PORUNDHADHU') {
@@ -3570,15 +3644,15 @@ CSS;
         $finalVerdictBackground = $ratingTier === null ? '#f1f5f9' : ($ratingTier === 'UTTHAMAM' ? '#ecfdf5' : ($ratingTier === 'MADHYAMAM' ? '#fffbeb' : '#fef2f2'));
         $finalVerdictBorder = $ratingTier === null ? '#cbd5e1' : ($ratingTier === 'UTTHAMAM' ? '#86efac' : ($ratingTier === 'MADHYAMAM' ? '#fcd34d' : '#fca5a5'));
         if ($ratingTier === 'UTTHAMAM') {
-            $meterBadgeText = $isTa ? 'உத்தமம்' : ($isHi ? 'उत्तम' : 'Utthamam');
+            $meterBadgeText = astro_porutham_verdict_label('UTTHAMAM', $lang, true);
             $meterBadgeStyle = 'background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7;';
             $meterFillColor = '#059669';
         } elseif ($ratingTier === 'MADHYAMAM') {
-            $meterBadgeText = $isTa ? 'மத்திமம்' : ($isHi ? 'मध्यम' : 'Madhyamam');
+            $meterBadgeText = astro_porutham_verdict_label('MADHYAMAM', $lang, true);
             $meterBadgeStyle = 'background:#fef3c7;color:#92400e;border:1px solid #fcd34d;';
             $meterFillColor = '#d97706';
         } elseif ($ratingTier === 'PORUNDHADHU') {
-            $meterBadgeText = $isTa ? 'பொருந்தாது' : ($isHi ? 'अनुशंसित नहीं' : 'Not Recommended');
+            $meterBadgeText = astro_porutham_verdict_label('PORUNDHADHU', $lang, true);
             $meterBadgeStyle = 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;';
             $meterFillColor = '#be123c';
         } else {
@@ -3655,7 +3729,14 @@ CSS;
             $hasEarned = $earnedRaw !== null && $earnedRaw !== '' && is_numeric($earnedRaw) && (float) $earnedRaw >= 0;
             $hasMaximum = $maxRaw !== null && $maxRaw !== '' && is_numeric($maxRaw) && (float) $maxRaw > 0;
             $pts = ($hasEarned ? (string) $earnedRaw : 'N/A') . ' / ' . ($hasMaximum ? (string) $maxRaw : 'N/A');
-            $status = $isTa ? ($p['statusTa'] ?? $p['status'] ?? 'N/A') : ($isHi ? ($p['statusHi'] ?? $p['status'] ?? 'N/A') : ($p['status'] ?? 'N/A'));
+            // The engine stores the tier in status2 / status; older saved
+            // orders only carry the legacy English label. Both are read and
+            // printed as the same plain grading word in the order's language.
+            $statusTier = astro_porutham_verdict_tier($p['status2'] ?? null);
+            if ($statusTier === null) {
+                $statusTier = astro_porutham_verdict_tier($p['status'] ?? null);
+            }
+            $status = astro_porutham_verdict_label($statusTier, $lang);
             $expl = $isTa ? ($p['explanationTa'] ?? $p['explanationEn'] ?? '') : ($isHi ? ($p['explanationHi'] ?? $p['explanationEn'] ?? '') : ($p['explanationEn'] ?? ''));
 
             $rows .= '<tr><td>' . $idx . '</td><td><b>' . self::e($pName) . '</b></td><td>' . self::e($pts) . '</td><td>' . self::e($status) . '</td><td>' . self::e($expl) . '</td></tr>';
@@ -3673,7 +3754,7 @@ CSS;
         // "Prepared on" stamp: first page only, on the LEFT of the reference
         // line — never centred with the page tag (owner request, Oct 2026).
         $preparedLabel = self::preparedOnLabel($result, $lang);
-        $body = self::topHeader('ASTRO SIVAM', $headerSub, $orderNumber, 1, 2, $lang, '', false, $preparedLabel);
+        $body = self::topHeader('ASTRO SIVAM', $headerSub, $orderNumber, 1, self::WEDDING_PAGE_TOTAL, $lang, '', false, $preparedLabel);
         $body .= <<<HTML
 <div class="panel" style="padding:3.5mm 4mm;">
   <table style="width:100%; font-size:10px; line-height:1.5;"><tr>
@@ -3776,7 +3857,7 @@ HTML;
         }
         $disclaimerTitle = self::e($disclaimer['title']);
         $disclaimerHeading = self::e($disclaimer['heading']);
-        $disclaimerBody = self::topHeader('ASTRO SIVAM', $disclaimer['pageSubtitle'], $orderNumber, 2, 2, $lang);
+        $disclaimerBody = self::topHeader('ASTRO SIVAM', $disclaimer['pageSubtitle'], $orderNumber, 2, self::WEDDING_PAGE_TOTAL, $lang);
         $disclaimerBody .= <<<HTML
 <div class="panel disclaimer-panel" style="{$disclaimerPanelStyle} margin:0 auto;">
   <div class="disclaimer-title">{$disclaimerTitle}</div>
@@ -3834,7 +3915,7 @@ HTML;
         $glossarySheetWedding = $glossaryBodyWedding === ''
             ? ''
             : '<pagebreak /><div class="sheet glossary-sheet" id="wedding-glossary-sheet">'
-                . self::topHeader('ASTRO SIVAM', $glossarySubtitleWedding, $orderNumber, 3, 3, $lang)
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitleWedding, $orderNumber, 3, self::WEDDING_PAGE_TOTAL, $lang)
                 . $glossaryBodyWedding . self::footerBand($lang) . '</div>';
 
         $css = self::sharedCss($lang);
@@ -3971,8 +4052,8 @@ HTML;
             'datesSub' => $isTa ? 'தேதி · கிழமை · நட்சத்திரம் (சூரிய உதயம்) · நல்ல நேரம்' : ($isHi ? 'दिनांक · वार · नक्षत्र (सूर्योदय) · शुभ समय' : 'Date · Weekday · Nakshatra (at sunrise) · Nalla Neram'),
             'continued' => $isTa ? '1-வது பக்கத்தின் தொடர்ச்சி' : ($isHi ? 'पृष्ठ 1 से जारी' : 'Continued from page 1'),
             'certified' => $isTa ? 'சான்றளித்தவர்: ASTRO SIVAM' : ($isHi ? 'प्रमाणित: ASTRO SIVAM' : 'Certified by ASTRO SIVAM'),
-            'page1' => $isTa ? 'பக்கம் 1 / 2' : ($isHi ? 'पृष्ठ 1 / 2' : 'Page 1 of 2'),
-            'page2Fixed' => $isTa ? 'பக்கம் 2 / 2' : ($isHi ? 'पृष्ठ 2 / 2' : 'Page 2 of 2'),
+            'page1' => ($isTa ? 'பக்கம்' : ($isHi ? 'पृष्ठ' : 'Page')) . ' 1 / ' . self::MUHURTHAM_PAGE_TOTAL,
+            'page2Fixed' => ($isTa ? 'பக்கம்' : ($isHi ? 'पृष्ठ' : 'Page')) . ' 2 / ' . self::MUHURTHAM_PAGE_TOTAL,
             'secParticulars' => $isTa ? 'பயனர் விவரம்' : ($isHi ? 'उपयोगकर्ता विवरण' : 'USER PARTICULARS'),
             'lblName' => $isTa ? 'பெயர்' : ($isHi ? 'नाम' : 'NAME'),
             'lblDob' => $isTa ? 'பிறந்த தேதி' : ($isHi ? 'जन्म तिथि' : 'DATE OF BIRTH'),
@@ -4208,7 +4289,7 @@ HTML;
         // "Prepared on" stamp: first page only, on the LEFT of the reference
         // line — never centred with the page tag (owner request, Oct 2026).
         $preparedLabel = self::preparedOnLabel($result, $lang);
-        $coverHeader = self::topHeader('ASTRO SIVAM', $t['docTitle'], $orderNumberSafe, 1, 2, $lang, $coverMeta, false, $preparedLabel);
+        $coverHeader = self::topHeader('ASTRO SIVAM', $t['docTitle'], $orderNumberSafe, 1, self::MUHURTHAM_PAGE_TOTAL, $lang, $coverMeta, false, $preparedLabel);
 
         $page1DatesHtml = $renderCalendarTable($page1Rows);
 
@@ -4277,7 +4358,7 @@ HTML;
         // Longer continuations expand the cell and keep the guide below dates.
         $secondPage = '<div class="sheet muhurtham-sheet">'
             . '<table class="muhurtham-page2-upper"><tr><td style="height:100mm;padding:0;vertical-align:top;">'
-            . self::topHeader('ASTRO SIVAM', $t['docTitle'] . ' - ' . $t['continued'], $orderNumberSafe, 2, 2, $lang, $eventTitle . ' • Clean dates only')
+            . self::topHeader('ASTRO SIVAM', $t['docTitle'] . ' - ' . $t['continued'], $orderNumberSafe, 2, self::MUHURTHAM_PAGE_TOTAL, $lang, $eventTitle . ' • Clean dates only')
             . $upperHalf
             . '</td></tr></table>'
             . $selectionGuide
@@ -4347,7 +4428,7 @@ HTML;
         $glossarySheetMuh = $glossaryBodyMuh === ''
             ? ''
             : '<pagebreak /><div class="sheet glossary-sheet" id="muhurtham-glossary-sheet">'
-                . self::topHeader('ASTRO SIVAM', $glossarySubtitleMuh, $orderNumberSafe, 3, 3, $lang)
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitleMuh, $orderNumberSafe, 3, self::MUHURTHAM_PAGE_TOTAL, $lang)
                 . $glossaryBodyMuh . self::footerBand($lang) . '</div>';
 
         return '<!DOCTYPE html><html lang="' . self::e($lang) . '"><head><meta charset="UTF-8"><title>ASTRO SIVAM - Subha Muhurtham Report</title><style>' . $css . '</style></head><body>'
@@ -5048,7 +5129,7 @@ HTML;
         $glossarySheetBaby = $glossaryBodyBaby === ''
             ? ''
             : '<pagebreak /><div class="sheet glossary-sheet" id="namakaran-glossary-sheet">'
-                . self::topHeader('ASTRO SIVAM', $glossarySubtitleBaby, $orderNumber, 3, 3, $lang)
+                . self::topHeader('ASTRO SIVAM', $glossarySubtitleBaby, $orderNumber, 3, self::BABY_PAGE_TOTAL, $lang)
                 . $glossaryBodyBaby . self::footerBand($lang) . '</div>';
         return '<!DOCTYPE html><html lang="' . self::e($lang) . '"><head><meta charset="UTF-8"><title>ASTRO SIVAM - Baby Naming Certificate</title><style>' . $css . '</style></head><body>'
             . $body . self::footerBand($lang)

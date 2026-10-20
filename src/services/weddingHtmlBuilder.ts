@@ -12,6 +12,7 @@ import {
   REPORT_GLOSSARY_CSS,
   reportGlossaryHtml
 } from './reportGlossary';
+import { TIER_FROM_STATUS, verdictTierFrom, verdictTierHint, verdictTierLabel } from './poruthamVerdict';
 
 const WEDDING_RASI_NAMES: Record<number, { en: string; ta: string; hi: string }> = {
   1: { en: 'Mesham', ta: 'மேஷம்', hi: 'मेष' },
@@ -166,7 +167,7 @@ export function buildWeddingMatchHtml(
   const finalVerdictText = !verdictKnown
     ? notAvailableLabel
     : isGood
-    ? (isTa ? 'இந்த மதிப்பீட்டின்படி நல்ல பொருத்தம்.' : isHi ? 'इस आकलन के अनुसार अच्छा मेल है।' : 'Good match based on this assessment.')
+    ? (isTa ? 'இந்த மதிப்பீட்டின்படி மிக நல்ல பொருத்தம்.' : isHi ? 'इस आकलन के अनुसार बहुत अच्छा मेल है।' : 'Very good match based on this assessment.')
     : isModerate
     ? (isTa ? 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களைப் பரிசீலிக்கலாம்.' : isHi ? 'स्वीकार्य मेल; उपायों पर विचार किया जा सकता है।' : 'Acceptable match; remedies may be considered.')
     : (isTa
@@ -178,13 +179,10 @@ export function buildWeddingMatchHtml(
     ? 'final-verdict-unavailable'
     : isGood ? 'final-verdict-good' : isModerate ? 'final-verdict-moderate' : 'final-verdict-not-good';
 
-  const verdictBadgeText = !verdictKnown
-    ? 'N/A'
-    : isGood
-    ? (isTa ? 'உத்தமம் (மிக நன்று)' : isHi ? 'उत्तम (अति शुभ)' : 'Utthamam (Highly Auspicious)')
-    : isModerate
-    ? (isTa ? 'மத்திமம் (பரிகாரங்களுடன்)' : isHi ? 'मध्यम (उपाय सहित)' : 'Madhyamam (with remedies)')
-    : (isTa ? 'பொருந்தாது' : isHi ? 'अशुभ' : 'Not Recommended');
+  // One grading ladder, one set of words (see poruthamVerdict.ts):
+  // Very Good / Good / Incompatible, in the order's language.
+  const verdictTier = verdictKnown ? verdictTierFrom(result.verdictStatus) : null;
+  const verdictBadgeText = verdictTier ? verdictTierHint(verdictTier, lang) : 'N/A';
 
   const verdictBadgeClass = !verdictKnown ? 'badge-na' : isGood ? 'badge-good' : isModerate ? 'badge-moderate' : 'badge-bad';
   const scoreMeterFillClass = !verdictKnown ? 'score-meter-fill-na' : isGood ? 'score-meter-fill-good' : isModerate ? 'score-meter-fill-moderate' : 'score-meter-fill-bad';
@@ -302,13 +300,10 @@ export function buildWeddingMatchHtml(
     const pStatusClass = !pStatusKnown
       ? 'status-na'
       : p.status === PoruthamStatus.UTTHAMAM ? 'status-good' : p.status === PoruthamStatus.MADHYAMAM ? 'status-moderate' : 'status-bad';
-    const pStatusLabel = !pStatusKnown
-      ? 'N/A'
-      : p.status === PoruthamStatus.UTTHAMAM
-      ? (isTa ? 'உத்தமம்' : isHi ? 'उत्तम' : 'Utthamam')
-      : p.status === PoruthamStatus.MADHYAMAM
-      ? (isTa ? 'மத்திமம்' : isHi ? 'मध्यम' : 'Madhyamam')
-      : (isTa ? 'பொருந்தாது' : isHi ? 'अशुभ' : 'Incompatible');
+    // Status column: the plain grading word only. Mixing "Utthamam",
+    // "Madhyamam" and "Incompatible" in one column made the rows look like they
+    // came from different tables; all three now read on the same ladder.
+    const pStatusLabel = pStatusKnown ? verdictTierLabel(TIER_FROM_STATUS[p.status as PoruthamStatus], lang) : 'N/A';
     // `??` (not `||`) so a genuine ZERO earned score still prints "0 / 4":
     // `0 || fallback` would blank the numerator and leave a bare "/ 4".
     // The legacy `points` key is accepted because the PHP engine and old saved

@@ -98,6 +98,11 @@ const testFiles = [
   // Reads every customer-facing report as a layperson would: no duplicated
   // condition, every Sanskrit term glossed inline, no English fragment inside a
   // Tamil/Hindi report, plain-English verdicts.
+  // The same readability work, second half: the marriage report printed
+  // "Utthamam", "Madhyamam" and "Incompatible" in one Status column. All three
+  // ranks must now read as one ladder, in the order's language, on both
+  // renderers - and the appended guide sheet must not leave a header at "of 2".
+  'tests/wedding-verdict-labels.test.ts',
   'tests/report-readability-guard.test.ts',
   // One shared glossary (api/astrology/report_glossary.json) explains every
   // specialist term in one line, in all three languages, in the PDF and the

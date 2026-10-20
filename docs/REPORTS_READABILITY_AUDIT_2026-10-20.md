@@ -106,11 +106,31 @@ Terms are used as if the customer already knows them. The inventory:
 | Nalla Neram | Muhurtham | The day's auspicious hours. |
 | Gunam | Baby naming | The traditional virtues read from the birth star. |
 
-**6. Verdict words are in Sanskrit, half-translated.**
-The Marriage porutham table prints **Utthamam**, **Madhyamam** and
-**Incompatible** in the same column. The overall score uses
-"Madhyamam (with remedies)" but table rows use bare "Madhyamam". A customer
-cannot rank these.
+**6. Verdict words are in Sanskrit, half-translated. ✅ FIXED (20 Oct 2026)**
+The Marriage porutham table printed **Utthamam**, **Madhyamam** and
+**Incompatible** in the same column. The overall score used
+"Madhyamam (with remedies)" but table rows used bare "Madhyamam". A customer
+could not rank these.
+
+One ladder now, in the order's language, on both renderers:
+
+| Tier (stored) | English | Tamil | Hindi |
+|---|---|---|---|
+| UTTHAMAM | **Very Good** | **மிக நன்று** | **बहुत अच्छा** |
+| MADHYAMAM | **Good** | **நன்று** | **अच्छा** |
+| PORUNDHADHU | **Incompatible** | **பொருந்தாது** | **मेल नहीं** |
+
+- TypeScript: `src/services/poruthamVerdict.ts` (`verdictTierLabel`,
+  `verdictTierHint`, `verdictTierFrom`) — used by the porutham Status column,
+  the score badge and the recommendation.
+- PHP: `astro_porutham_verdict_label()` / `astro_porutham_verdict_tier()` in
+  `api/astrology/report_views.php`. The table used to echo the engine's raw
+  English `status` field, so Tamil and Hindi orders saw English words; it now
+  resolves `status2`/legacy labels to a tier and prints the local word.
+- The redundant Sanskrit prefix inside the explanations ("உத்தமம்!",
+  "उत्तम!") is gone — the Status column already carries the rank.
+- Old saved orders still resolve: `verdictTierFrom('Madhyama (Good)')` → Good.
+- Guarded by `tests/wedding-verdict-labels.test.ts` (8 checks).
 
 **7. Three different numbers for one score.**
 Page 1 of the Marriage report shows **7.5 / 10**, **75%** and **8 / 10 Poruthams
@@ -236,8 +256,11 @@ page 1 points to it.
 1. Every caution line gets one **action** sentence (max 12 words) — the life
    cards already have this shape, the dosha cards and porutham rows do not.
 2. Marriage: explain the three numbers (score / percentage / poruthams matched)
-   in one line each, and rename the verdicts to **Best / Moderate / Not met**
-   with the Sanskrit in brackets.
+   in one line each. ~~Rename the verdicts to Best / Moderate / Not met.~~
+   **Done differently (owner's wording, 20 Oct 2026):** the ladder is
+   **Very Good / Good / Incompatible** in English, **மிக நன்று / நன்று /
+   பொருந்தாது** in Tamil and **बहुत अच्छा / अच्छा / मेल नहीं** in Hindi, with the
+   Sanskrit only on the glossary page. See finding 6.
 3. Marriage: per-porutham remedy line when a porutham scores 0 — replacing
    "ask an astrologer".
 4. Muhurtham: explain the one-line Tara Bala note ("Groom: Vadha Tara — avoid
@@ -249,6 +272,12 @@ page 1 points to it.
 7. Chart legend: add a compact key under the Rasi/Navamsa charts
    (Su=Sun, Ch=Moon, Ma=Mars, Bu=Mercury, Gu=Jupiter, Sk=Venus, Sa=Saturn,
    Ra=Rahu, Ke=Ketu) and show "Thulam (Libra)" in English.
+
+**Fixed while doing this:** the Report Guide sheet made every report three
+sheets, but the PHP marriage and Muhurtham headers still printed "of 2" (Tamil
+"1 / 2" too). `WEDDING_PAGE_TOTAL`, `MUHURTHAM_PAGE_TOTAL` and
+`BABY_PAGE_TOTAL` now own those numbers in `report_views.php`, exactly like
+`JATHAGAM_PAGE_TOTAL`, so appending a sheet can no longer leave a header wrong.
 
 **Effort:** large (mostly copy, 3 languages).
 **Acceptance:** every page that states a difficulty also states an action.
