@@ -332,6 +332,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
   });
   // Team photo upload (the admin picks a file instead of pasting a URL).
   const [isTeamPhotoUploading, setIsTeamPhotoUploading] = useState(false);
+  // Guards the Add/Update button: a second click while the first save is in
+  // flight used to send a duplicate create and leave the modal open.
+  const [isSavingTeamMember, setIsSavingTeamMember] = useState(false);
+  // Shown directly above the Add/Update button, where the admin is looking when
+  // a save fails (the photo error lives under the photo picker instead).
+  const [teamSaveError, setTeamSaveError] = useState('');
   const [teamPhotoError, setTeamPhotoError] = useState('');
   const [teamPhotoInfo, setTeamPhotoInfo] = useState<{ bytes: number; width: number; height: number } | null>(null);
   const [showPhotoUrlField, setShowPhotoUrlField] = useState(false);
@@ -1177,6 +1183,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       isActive: true,
       order: teamMembers.length + 1
     });
+    setTeamSaveError('');
     setIsTeamModalOpen(true);
   };
 
@@ -1200,8 +1207,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       bioEn: member.bioEn || '',
       bioTa: member.bioTa || '',
       isActive: member.isActive,
-      order: member.order
+      order: member.displayOrder ?? member.order ?? 1
     });
+    setTeamSaveError('');
     setIsTeamModalOpen(true);
   };
 
@@ -1243,6 +1251,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
   const handleSaveTeamMember = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingTeamMember) return;
     if (isTeamPhotoUploading) {
       setTeamPhotoError('Please wait for the photo to finish uploading.');
       return;
@@ -1251,6 +1260,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
       setTeamPhotoError('Add a photo first: upload one from your phone or computer, or paste an image link.');
       return;
     }
+    setTeamPhotoError('');
+    setTeamSaveError('');
+    setIsSavingTeamMember(true);
     try {
       const payload = {
         nameEn: memberFormData.nameEn,
@@ -1269,24 +1281,28 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         order: Number(memberFormData.order)
       };
 
-      if (editingMember) {
-        const res = await api.updateTeamMember(editingMember.id, payload);
-        if (res.success) {
-          setSuccessMessage(`Team member ${res.member?.nameEn} updated successfully!`);
-          setIsTeamModalOpen(false);
-          fetchAdminData();
-        }
-      } else {
-        const res = await api.createTeamMember(payload);
-        if (res.success) {
-          setSuccessMessage(`New team member ${res.member?.nameEn} added successfully!`);
-          setIsTeamModalOpen(false);
-          fetchAdminData();
-        }
+      const res = editingMember
+        ? await api.updateTeamMember(editingMember.id, payload)
+        : await api.createTeamMember(payload);
+      // Never fail silently: this used to only act when success was true, so a
+      // rejected save (or a 500 from the server) left the button looking dead.
+      if (!res || res.success === false) {
+        throw new Error((res && (res as any).message) || 'The team member could not be saved. Please try again.');
       }
+      setSuccessMessage(
+        editingMember
+          ? `Team member ${res.member?.nameEn || memberFormData.nameEn} updated successfully!`
+          : `New team member ${res.member?.nameEn || memberFormData.nameEn} added successfully!`
+      );
+      setIsTeamModalOpen(false);
+      fetchAdminData();
       setTimeout(() => setSuccessMessage(''), 4000);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to save team member');
+      const message = err?.message || 'Failed to save team member';
+      setTeamSaveError(message);
+      setErrorMessage(message);
+    } finally {
+      setIsSavingTeamMember(false);
     }
   };
 
@@ -4762,6 +4778,16 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                 </div>
               </div>
 
+              {teamSaveError && (
+                <div
+                  data-testid="team-member-save-error"
+                  className="flex items-start gap-2 rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-[11px] font-semibold text-rose-700 dark:text-rose-300 leading-relaxed"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{teamSaveError}</span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-4">
                   <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
@@ -4795,9 +4821,16 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md"
+                    data-testid="team-member-save"
+                    disabled={isSavingTeamMember}
+                    className="px-5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 disabled:cursor-not-allowed text-slate-950 font-bold text-xs rounded-xl shadow-md inline-flex items-center gap-1.5"
                   >
-                    {editingMember ? 'Update Member' : 'Add Member'}
+                    {isSavingTeamMember && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    {isSavingTeamMember
+                      ? 'Saving…'
+                      : editingMember
+                      ? 'Update Member'
+                      : 'Add Member'}
                   </button>
                 </div>
               </div>
