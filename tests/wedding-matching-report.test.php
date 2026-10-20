@@ -246,7 +246,9 @@ $poruthamTablePosition = strpos($sampleTaHtml, 'class="data-table"', $overviewGr
 checkWeddingVerdict(
     $overviewGridPosition !== false && $visualMeterPosition !== false && $kujaSummaryPosition !== false &&
     $poruthamTablePosition !== false && $visualMeterPosition < $kujaSummaryPosition && $kujaSummaryPosition < $poruthamTablePosition &&
-    strpos($sampleTaHtml, 'role="meter"') !== false && strpos($sampleTaHtml, 'aria-valuenow="68.6"') !== false &&
+    strpos($sampleTaHtml, 'role="meter"') !== false && strpos($sampleTaHtml, 'aria-valuenow="7"') !== false &&
+    strpos($sampleTaHtml, 'aria-valuetext="7 / 10 பொருத்தங்கள் பொருந்தின"') !== false &&
+    strpos($sampleTaHtml, '68.6%') === false &&
     strpos($sampleTaHtml, 'Mars: <b>House 5 (தோஷம் இல்லை') !== false &&
     strpos($sampleTaHtml, 'தோஷ சமநிலை') !== false &&
     strpos($sampleTaHtml, 'செவ்வாய் வழிகாட்டல்') !== false &&
@@ -458,8 +460,10 @@ checkWeddingVerdict(
 
 $missingScoreHtml = AstroReportViews::generateWeddingMatchingHtml(['language' => 'en'], ['poruthams' => []]);
 checkWeddingVerdict(
-    strpos($missingScoreHtml, 'N/A / N/A') !== false && strpos($missingScoreHtml, '/ 36') === false,
-    'The PHP report displays N/A instead of inventing zero points or a 36-point denominator'
+    strpos($missingScoreHtml, 'N/A / 10') !== false
+        && strpos($missingScoreHtml, '/ 36') === false
+        && strpos($missingScoreHtml, '/ 35') === false,
+    'The PHP report prints an unknown porutham count as N/A / 10, never a fabricated score or denominator'
 );
 checkWeddingVerdict(
     strpos($missingScoreHtml, 'final-verdict-unavailable') !== false && strpos($missingScoreHtml, 'Not Recommended') === false,

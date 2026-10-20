@@ -231,37 +231,8 @@ export function buildWeddingMatchHtml(
   const lblDoshaTitle = isTa ? 'செவ்வாய் தோஷச் சுருக்கம்' : isHi ? 'मंगल दोष सारांश' : 'Kuja (Mars) Dosha Summary';
   const lblGuidance = isTa ? 'செவ்வாய் வழிகாட்டல்' : isHi ? 'मंगल मार्गदर्शन' : 'Kuja Guidance';
   const lblVisualMeter = isTa ? 'பொருத்த ஒத்திசைவு அளவுகோல்' : isHi ? 'विवाह अनुकूलता मीटर' : 'Visual Compatibility Meter';
-  const lblPoints = isTa ? 'புள்ளிகள்' : isHi ? 'अंक' : 'Points';
   const lblPoruthamsMatched = isTa ? 'பொருத்தங்கள் பொருந்தின' : isHi ? 'गुण मेल खाते हैं' : 'Poruthams matched';
   const lblRajju = isTa ? 'ரஜ்ஜு நிலை' : isHi ? 'रज्जु स्थिति' : 'Rajju Status';
-  const scoreRows = Array.isArray(result.poruthams) ? result.poruthams : [];
-  const scoreRowsComplete = scoreRows.length === 10 && scoreRows.every((p: any) => {
-    const earned = p?.pointsEarned ?? p?.points;
-    const maximum = p?.maxPoints;
-    return earned !== undefined && earned !== null && earned !== '' && Number.isFinite(Number(earned)) && Number(earned) >= 0 &&
-      maximum !== undefined && maximum !== null && maximum !== '' && Number.isFinite(Number(maximum)) && Number(maximum) > 0;
-  });
-  const derivedScore = scoreRowsComplete
-    ? scoreRows.reduce((sum: number, p: any) => sum + Number(p.pointsEarned ?? p.points), 0)
-    : undefined;
-  const derivedMaxScore = scoreRowsComplete
-    ? scoreRows.reduce((sum: number, p: any) => sum + Number(p.maxPoints), 0)
-    : undefined;
-  const rawScore = result.totalScore ?? resAny.score ?? resAny.totalPointsEarned ?? derivedScore;
-  const rawMaxScore = result.maxScore ?? resAny.maxScore ?? resAny.maxPossiblePoints ?? derivedMaxScore;
-  const scoreValue = rawScore !== undefined && rawScore !== null && rawScore !== '' ? Number(rawScore) : Number.NaN;
-  const maxScoreValue = rawMaxScore !== undefined && rawMaxScore !== null && rawMaxScore !== '' ? Number(rawMaxScore) : Number.NaN;
-  const scoreDisplay = Number.isFinite(scoreValue) && scoreValue >= 0 ? String(Number(scoreValue.toFixed(1))) : 'N/A';
-  const maxScoreDisplay = Number.isFinite(maxScoreValue) && maxScoreValue > 0 ? String(Number(maxScoreValue.toFixed(1))) : 'N/A';
-  const rawScorePercent = resAny.matchPercentage ?? resAny.percentage;
-  const scorePercentRaw = rawScorePercent !== undefined && rawScorePercent !== null && rawScorePercent !== '' && Number.isFinite(Number(rawScorePercent))
-    ? Number(rawScorePercent)
-    : Number.isFinite(scoreValue) && scoreValue >= 0 && Number.isFinite(maxScoreValue) && maxScoreValue > 0
-    ? (scoreValue / maxScoreValue) * 100
-    : Number.NaN;
-  const scorePercentValue = Number.isFinite(scorePercentRaw) ? Math.min(100, Math.max(0, scorePercentRaw)) : null;
-  const scorePercentWidth = scorePercentValue === null ? 0 : Number(scorePercentValue.toFixed(1));
-  const scorePercentDisplay = scorePercentValue === null ? 'N/A' : `${Number(scorePercentValue.toFixed(1))}%`;
   const rawMatchedCount = result.totalPoruthamsMatched ?? resAny.matchedCount;
   const poruthamsForCount = Array.isArray(result.poruthams) ? result.poruthams : [];
   const poruthamRowsCountable = poruthamsForCount.length === 10 && poruthamsForCount.every((p: any) => {
@@ -284,6 +255,12 @@ export function buildWeddingMatchHtml(
   const matchedCountDisplay = Number.isInteger(matchedCountValue) && matchedCountValue >= 0 && matchedCountValue <= 10
     ? String(matchedCountValue)
     : 'N/A';
+  // ONE number on page 1 (owner request, Oct 2026): "8 / 10 Poruthams matched".
+  // The panel used to print 7.5 / 10, 75% and 8 / 10 side by side - three
+  // different measures with nothing saying so - and the reader could not tell
+  // which one was the verdict. Only the porutham count survives, and the meter
+  // now fills from that same number so the bar and the text cannot disagree.
+  const matchedMeterWidth = matchedCountDisplay === 'N/A' ? 0 : Number(matchedCountDisplay) * 10;
   const rajjuKnown = typeof (result as any).rajjuMatch === 'boolean';
   const rajjuStatusText = !rajjuKnown
     ? 'N/A'
@@ -1082,15 +1059,11 @@ ${REPORT_GLOSSARY_CSS}
           <div class="score-badge ${verdictBadgeClass}">${verdictBadgeText}</div>
         </div>
         <div class="score-value-row">
-          <strong class="score-value">${scoreDisplay} / ${maxScoreDisplay}</strong>
-          <span class="score-percent">${scorePercentDisplay}</span>
+          <strong class="score-value">${matchedCountDisplay} / 10</strong>
+          <span class="score-percent">${lblPoruthamsMatched}</span>
         </div>
-        <div class="score-meter-track" role="meter" aria-label="${lblVisualMeter}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${scorePercentValue ?? 0}" aria-valuetext="${scorePercentDisplay}">
-          <div class="score-meter-fill ${scoreMeterFillClass}" style="width:${scorePercentWidth}%"></div>
-        </div>
-        <div class="score-meter-meta">
-          <span><strong>${matchedCountDisplay} / 10</strong> ${lblPoruthamsMatched}</span>
-          <span>${lblPoints}</span>
+        <div class="score-meter-track" role="meter" aria-label="${lblVisualMeter}" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${matchedCountDisplay}" aria-valuetext="${matchedCountDisplay} / 10 ${lblPoruthamsMatched}">
+          <div class="score-meter-fill ${scoreMeterFillClass}" style="width:${matchedMeterWidth}%"></div>
         </div>
         <div class="score-meter-meta">
           <span>${lblRajju}: <strong style="color: ${rajjuStatusColor}">${rajjuStatusText}</strong></span>

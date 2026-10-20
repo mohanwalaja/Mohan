@@ -132,10 +132,33 @@ One ladder now, in the order's language, on both renderers:
 - Old saved orders still resolve: `verdictTierFrom('Madhyama (Good)')` → Good.
 - Guarded by `tests/wedding-verdict-labels.test.ts` (8 checks).
 
-**7. Three different numbers for one score.**
-Page 1 of the Marriage report shows **7.5 / 10**, **75%** and **8 / 10 Poruthams
-matched** side by side. They are three different measures, but nothing says so —
-so it reads as contradictory.
+**7. Three different numbers for one score. ✅ FIXED (20 Oct 2026)**
+Page 1 of the Marriage report showed **7.5 / 10**, **75%** and **8 / 10 Poruthams
+matched** side by side. They are three different measures, but nothing said so,
+so it read as contradictory.
+
+**Decision (owner):** keep only the porutham count and drop the other two.
+
+```
+┌────────────────────────────────────────────┐
+│ Visual Compatibility Meter      [ Good ]   │
+│                                            │
+│ 8 / 10   Poruthams matched                 │
+│ ████████████████████████░░░░               │  ← bar fills 8 × 10%
+│ Rajju Status: Auspicious Match             │
+└────────────────────────────────────────────┘
+```
+
+- The headline is **`N / 10` + "Poruthams matched"** in the order's language
+  (Tamil "பொருத்தங்கள் பொருந்தின", Hindi "गुण मेल खाते हैं").
+- The point score (`7.5 / 10`), the percentage (`75%`) and the "Points" label are
+  gone from the panel, in both renderers.
+- The meter now fills from the **count** (`N × 10 %`) and its
+  `aria-valuenow`/`aria-valuetext` say the same thing, so the bar can never
+  disagree with the only number beside it.
+- Missing data still fails honestly: an unknown count prints **`N/A / 10`** with
+  an empty bar — never a manufactured score.
+- Guarded by `tests/wedding-single-score.test.ts` (5 checks).
 
 **8. The chart on page 1 is unreadable without a legend.**
 Cells contain strings like **"GuSa"**, **"LagnaCh"**, **"SuBu"**, **"Sk"** with no
@@ -255,8 +278,10 @@ page 1 points to it.
 ### Phase 3 — "What this means and what to do"
 1. Every caution line gets one **action** sentence (max 12 words) — the life
    cards already have this shape, the dosha cards and porutham rows do not.
-2. Marriage: explain the three numbers (score / percentage / poruthams matched)
-   in one line each. ~~Rename the verdicts to Best / Moderate / Not met.~~
+2. Marriage: ~~explain the three numbers (score / percentage / poruthams
+   matched) in one line each~~ **Done differently (owner, 20 Oct 2026): only
+   "8 / 10 Poruthams matched" is printed; the score and percentage are
+   removed.** ~~Rename the verdicts to Best / Moderate / Not met.~~
    **Done differently (owner's wording, 20 Oct 2026):** the ladder is
    **Very Good / Good / Incompatible** in English, **மிக நன்று / நன்று /
    பொருந்தாது** in Tamil and **बहुत अच्छा / अच्छा / मेल नहीं** in Hindi, with the

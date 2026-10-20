@@ -102,6 +102,10 @@ const testFiles = [
   // "Utthamam", "Madhyamam" and "Incompatible" in one Status column. All three
   // ranks must now read as one ladder, in the order's language, on both
   // renderers - and the appended guide sheet must not leave a header at "of 2".
+  // Page 1 of the marriage report printed three measures of the same match
+  // (7.5 / 10, 75%, 8 / 10 Poruthams matched) with nothing saying what each
+  // measured. One number must survive, and the meter must agree with it.
+  'tests/wedding-single-score.test.ts',
   'tests/wedding-verdict-labels.test.ts',
   'tests/report-readability-guard.test.ts',
   // One shared glossary (api/astrology/report_glossary.json) explains every

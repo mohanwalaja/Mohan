@@ -3562,19 +3562,12 @@ CSS;
         $scoreRaw = $result['totalPointsEarned'] ?? $result['score'] ?? null;
         $maxScoreRaw = $result['maxPossiblePoints'] ?? $result['maxScore'] ?? null;
         $percentRaw = $result['matchPercentage'] ?? $result['percentage'] ?? null;
-        $score = self::e(is_numeric($scoreRaw) && (float) $scoreRaw >= 0 ? (string) $scoreRaw : 'N/A');
-        $maxScore = self::e(is_numeric($maxScoreRaw) && (float) $maxScoreRaw > 0 ? (string) $maxScoreRaw : 'N/A');
-        $scorePercentForMeter = is_numeric($percentRaw)
-            ? (float) $percentRaw
-            : (is_numeric($scoreRaw) && is_numeric($maxScoreRaw) && (float) $maxScoreRaw > 0
-                ? ((float) $scoreRaw / (float) $maxScoreRaw) * 100.0
-                : null);
-        $scorePercentForMeter = $scorePercentForMeter !== null && is_finite($scorePercentForMeter)
-            ? max(0.0, min(100.0, $scorePercentForMeter))
-            : null;
-        $scoreMeterPercent = $scorePercentForMeter === null ? 'N/A' : (rtrim(rtrim(number_format($scorePercentForMeter, 1, '.', ''), '0'), '.') . '%');
-        $scoreMeterWidth = $scorePercentForMeter === null ? '0%' : number_format($scorePercentForMeter, 1, '.', '') . '%';
-        $scoreMeterValue = $scorePercentForMeter === null ? 0 : round($scorePercentForMeter, 1);
+        // ONE number on page 1 (owner request, Oct 2026): "8 / 10 Poruthams
+        // matched". The panel used to print the point score, the percentage AND
+        // the porutham count side by side - three different measures with
+        // nothing saying so - and the reader could not tell which was the
+        // verdict. Only the porutham count survives; the meter fills from that
+        // same number, so the bar and the text cannot disagree.
 
         $matchedCountRaw = $result['totalPoruthamsMatched'] ?? $result['matchedCount'] ?? null;
         $matchedCountValue = null;
@@ -3604,6 +3597,7 @@ CSS;
             }
         }
         $matchedCountDisplay = $matchedCountValue === null ? 'N/A' : (string) $matchedCountValue;
+        $matchedMeterWidth = $matchedCountValue === null ? '0%' : (($matchedCountValue * 10)) . '%';
 
         $verdictStatus = strtoupper(trim((string) ($result['verdictStatus'] ?? '')));
         $ratingTier = in_array($verdictStatus, ['UTTHAMAM', 'MADHYAMAM', 'PORUNDHADHU'], true) ? $verdictStatus : null;
@@ -3704,7 +3698,6 @@ CSS;
         $lblDoshaBalance = $isTa ? 'தோஷ சமநிலை' : ($isHi ? 'दोष संतुलन' : 'Dosha Balance');
         $lblDoshaGuidance = $isTa ? 'செவ்வாய் வழிகாட்டல்' : ($isHi ? 'मंगल मार्गदर्शन' : 'Kuja Guidance');
         $lblVisualMeter = $isTa ? 'பொருத்த ஒத்திசைவு அளவுகோல்' : ($isHi ? 'विवाह अनुकूलता मीटर' : 'Visual Compatibility Meter');
-        $lblMeterPoints = $isTa ? 'புள்ளிகள்' : ($isHi ? 'अंक' : 'Points');
         $lblPoruthamsMatched = $isTa ? 'பொருத்தங்கள் பொருந்தின' : ($isHi ? 'गुण मेल खाते हैं' : 'Poruthams matched');
         $lblRajju = $isTa ? 'ரஜ்ஜு நிலை' : ($isHi ? 'रज्जु स्थिति' : 'Rajju status');
         $rajjuMatch = $result['rajjuMatch'] ?? null;
@@ -3789,13 +3782,11 @@ CSS;
           </tr>
         </table>
         <div style="font-size:15px; line-height:1.2; color:#0f172a; font-weight:bold; margin-bottom:1.2mm;">
-          {$score} / {$maxScore}<span style="font-size:8px; color:#64748b; font-weight:normal;"> {$lblMeterPoints}</span>
-          <span style="float:right; font-size:9px; color:#334155;">{$scoreMeterPercent}</span>
+          {$matchedCountDisplay} / 10<span style="font-size:8px; color:#64748b; font-weight:normal;"> {$lblPoruthamsMatched}</span>
         </div>
-        <div role="meter" aria-label="{$lblVisualMeter}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{$scoreMeterValue}" aria-valuetext="{$scoreMeterPercent}" style="width:100%; height:2.5mm; overflow:hidden; border-radius:20px; background:#e2e8f0; margin-bottom:1.2mm;">
-          <div style="width:{$scoreMeterWidth}; height:2.5mm; background:{$meterFillColor}; border-radius:20px;"></div>
+        <div role="meter" aria-label="{$lblVisualMeter}" aria-valuemin="0" aria-valuemax="10" aria-valuenow="{$matchedCountDisplay}" aria-valuetext="{$matchedCountDisplay} / 10 {$lblPoruthamsMatched}" style="width:100%; height:2.5mm; overflow:hidden; border-radius:20px; background:#e2e8f0; margin-bottom:1.2mm;">
+          <div style="width:{$matchedMeterWidth}; height:2.5mm; background:{$meterFillColor}; border-radius:20px;"></div>
         </div>
-        <div style="font-size:8px; line-height:1.35; color:#475569; margin-bottom:0.8mm;"><b>{$matchedCountDisplay} / 10</b> {$lblPoruthamsMatched}</div>
         <div style="font-size:8px; line-height:1.35; color:#475569;">{$lblRajju}: <b style="color:{$rajjuStatusColor};">{$rajjuStatusText}</b></div>
       </div>
     </td>
