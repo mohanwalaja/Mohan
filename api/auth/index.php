@@ -450,7 +450,7 @@ if ($isFacebookRoute) {
         $_SESSION['user_role'] = $user['role'];
         $token = astro_issue_auth_token($user);
 
-        $bpStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? LIMIT 1");
+        $bpStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
         $bpStmt->execute([$user['id']]);
         $bp = $bpStmt->fetch();
 
@@ -582,7 +582,7 @@ if ($isGoogleRoute) {
         $_SESSION['user_role'] = $user['role'];
         $token = astro_issue_auth_token($user);
 
-        $bpStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? LIMIT 1");
+        $bpStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
         $bpStmt->execute([$user['id']]);
         $bp = $bpStmt->fetch();
 
@@ -721,7 +721,7 @@ if ($isRegisterRoute) {
         // Save/refresh the pending birth profile (only actually usable once verified)
         $savedBp = null;
         if (is_array($birthProfile) && count($birthProfile) > 0) {
-            $bpCheck = $pdo->prepare("SELECT id FROM birth_profiles WHERE user_id = ? LIMIT 1");
+            $bpCheck = $pdo->prepare("SELECT id FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
             $bpCheck->execute([$id]);
             $bpExisting = $bpCheck->fetch();
             if ($bpExisting) {
@@ -825,7 +825,7 @@ if ($isRegisterRoute) {
         $token = astro_issue_auth_token($user);
         logAudit($pdo, $user['id'], $user['name'], $user['role'], 'USER_EMAIL_VERIFIED', "Email verified via OTP: {$email}");
 
-        $bpStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? LIMIT 1");
+        $bpStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
         $bpStmt->execute([$user['id']]);
         $bp = $bpStmt->fetch();
 
@@ -906,7 +906,7 @@ if ($isRegisterRoute) {
     }
 } elseif ($isMeRoute) {
     $user = requireAuth($pdo);
-    $bpStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? LIMIT 1");
+    $bpStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
     $bpStmt->execute([$user['id']]);
     $birthProfile = $bpStmt->fetch();
 
@@ -1057,7 +1057,7 @@ if ($isRegisterRoute) {
         $token = astro_issue_auth_token($user);
 
         // Fetch birth profile if exists
-        $bpStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? LIMIT 1");
+        $bpStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
         $bpStmt->execute([$user['id']]);
         $birthProfile = $bpStmt->fetch();
 

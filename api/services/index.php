@@ -7,6 +7,7 @@ require_once __DIR__ . '/../config.php';
 // fixed-window rate limiting lives in api/rate_limit.php.
 require_once __DIR__ . '/../rate_limit.php';
 require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../birth_profiles.php';
 require_once __DIR__ . '/../astrology/engine.php';
 require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../chat_alerts.php';
@@ -534,8 +535,12 @@ if ((preg_match('#/services/team/?$#', $path) || $action === 'team') && $method 
 // 3. GET & POST /api/services/profile
 if (preg_match('#/services/profile/?$#', $path) || $action === 'profile' || $action === 'get-profile' || $action === 'save-profile') {
     $user = requireAuth($pdo);
+    // Self-heal first: legacy duplicate profile rows (one per old order)
+    // collapse to the single newest row, so every LIMIT-1 read below is
+    // deterministic and the family budget counts the holder once.
+    astro_birth_profiles_dedupe($pdo, (string)$user['id']);
     if ($method === 'GET' || $action === 'get-profile') {
-        $stmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
         $stmt->execute([$user['id']]);
         $bp = $stmt->fetch();
         jsonResponse(['success' => true, 'profile' => $bp ?: null]);
@@ -546,7 +551,7 @@ if (preg_match('#/services/profile/?$#', $path) || $action === 'profile' || $act
             jsonResponse(['success' => false, 'message' => 'A valid past birth date, birth time, birth place, coordinates and time zone are required to save a birth profile. ' . $birthProblem], 400);
         }
         $body['tob'] = AstroEngine::normalizeBirthTime($body['tob']);
-        $stmt = $pdo->prepare("SELECT id FROM birth_profiles WHERE user_id = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
         $stmt->execute([$user['id']]);
         $existing = $stmt->fetch();
 
@@ -582,7 +587,7 @@ if (preg_match('#/services/profile/?$#', $path) || $action === 'profile' || $act
             ]);
         }
 
-        $stmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
         $stmt->execute([$user['id']]);
         $profile = $stmt->fetch();
 
@@ -726,13 +731,19 @@ if (preg_match('#/services/family-members/?$#', $path)
             }
         } else {
             // Maximum 6 saved people per customer IN TOTAL: the account
-            // holder's own birth profile counts as one of the six, so there is
+            // holder's own birth profile counts as ONE of the six, so there is
             // no seventh slot for a separate "saved birth profile".
+            //
+            // Their profile is a boolean slot, never a row count: legacy
+            // order rows could leave duplicate birth_profiles rows behind
+            // (an order a day kept the whole budget). Duplicates are
+            // collapsed to the newest row first, then the profile counts
+            // once — a customer with many past orders can still add their
+            // family.
+            astro_birth_profiles_dedupe($pdo, (string)$user['id']);
             $count = $pdo->prepare("SELECT COUNT(*) FROM family_members WHERE user_id = ?");
             $count->execute([$user['id']]);
-            $ownProfile = $pdo->prepare("SELECT COUNT(*) FROM birth_profiles WHERE user_id = ?");
-            $ownProfile->execute([$user['id']]);
-            $savedPeople = (int)$count->fetchColumn() + (int)$ownProfile->fetchColumn();
+            $savedPeople = (int)$count->fetchColumn() + (astro_birth_profile_exists($pdo, (string)$user['id']) ? 1 : 0);
             if ($savedPeople >= 6) {
                 jsonResponse(['success' => false, 'message' => 'You can save up to 6 people including yourself. Please remove one before adding another.'], 400);
             }
@@ -1999,7 +2010,7 @@ if ($method === 'POST' && (
         $bpTarget = ($user['gender'] ?? 'M') === 'F' ? $inputPayload['bride'] : ($inputPayload['groom'] ?? $inputPayload['bride']);
     }
     if ($saveAsProfile && !empty($bpTarget['dob']) && !empty($bpTarget['birthPlace'])) {
-        $bpCheck = $pdo->prepare("SELECT id FROM birth_profiles WHERE user_id = ? LIMIT 1");
+        $bpCheck = $pdo->prepare("SELECT id FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
         $bpCheck->execute([$user['id']]);
         $hasExistingBp = (bool)$bpCheck->fetch();
 

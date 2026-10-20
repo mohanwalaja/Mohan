@@ -191,11 +191,48 @@ check('the account-alert settings live in the dashboard header, not a profile ta
 
 check('the server counts the account holder toward the same six-person cap', () => {
   const src = read('api/services/index.php');
-  assert.match(src, /SELECT COUNT\(\*\) FROM birth_profiles WHERE user_id = \?/,
-    'the family cap must include the account holder');
-  assert.match(src, /\$savedPeople = \(int\)\$count->fetchColumn\(\) \+ \(int\)\$ownProfile->fetchColumn\(\);/);
+  // Customer report (Oct 2026): two saved members blocked a third — legacy
+  // duplicate birth_profiles rows (one per old order) were counted as extra
+  // people. The holder's own profile is a BOOLEAN slot now, never a row
+  // count, and duplicates are collapsed before counting.
+  assert.match(src, /astro_birth_profiles_dedupe\(\$pdo, \(string\)\$user\['id'\]\)/,
+    'legacy duplicate profile rows are collapsed before the budget is checked');
+  assert.match(src, /\(astro_birth_profile_exists\(\$pdo, \(string\)\$user\['id'\]\) \? 1 : 0\)/,
+    'the account holder counts once, however many legacy rows exist');
+  assert.doesNotMatch(src, /\$ownProfile->fetchColumn\(\)/,
+    'counting raw birth_profiles rows must never come back');
+  assert.match(src, /SELECT COUNT\(\*\) FROM family_members WHERE user_id = \?/);
   assert.match(src, />= 6/);
   assert.match(src, /including yourself/);
+});
+
+check('birth profile helpers: boolean slot, self-healing dedupe, one row per user', () => {
+  const helpers = read('api/birth_profiles.php');
+  assert.match(helpers, /function astro_birth_profile_exists\(\$pdo, string \$userId\): bool/);
+  assert.match(helpers, /function astro_birth_profiles_dedupe\(\$pdo, string \$userId\): int/);
+  assert.match(helpers, /ORDER BY updated_at DESC, id DESC/, 'the newest row always wins');
+  assert.match(helpers, /DELETE FROM birth_profiles WHERE user_id = \? AND id IN/);
+  const services = read('api/services/index.php');
+  assert.match(services, /require_once __DIR__ \. '[^']*birth_profiles\.php'/, 'the services router loads the helpers');
+  // Every LIMIT-1 read names the newest row explicitly - a duplicate-poisoned
+  // table can never hydrate a login or profile page from a random row.
+  assert.ok(
+    (services.match(/FROM birth_profiles WHERE user_id = \? ORDER BY updated_at DESC, id DESC LIMIT 1/g) || []).length >= 4,
+    'all services LIMIT-1 reads pick the newest row deterministically'
+  );
+  const auth = read('api/auth/index.php');
+  assert.ok(
+    (auth.match(/FROM birth_profiles WHERE user_id = \? ORDER BY updated_at DESC, id DESC LIMIT 1/g) || []).length >= 6,
+    'all auth LIMIT-1 reads pick the newest row deterministically'
+  );
+  assert.doesNotMatch(auth + services, /FROM birth_profiles WHERE user_id = \? LIMIT 1/,
+    'no non-deterministic LIMIT-1 read remains');
+  const migration = read('api/migrations/018_birth_profiles_one_row_per_user.sql');
+  assert.match(migration, /DELETE bp FROM `birth_profiles` bp/, 'production duplicates are removed once');
+  assert.match(migration, /ADD UNIQUE KEY `uq_birth_profiles_user_id` \(`user_id`\)/);
+  const schema = read('api/schema.sql');
+  assert.match(schema, /UNIQUE KEY `uq_birth_profiles_user_id` \(`user_id`\)/,
+    'fresh installs are born with the one-row-per-user guarantee');
 });
 
 // -------------------------------------------------------------- backend ---
@@ -353,6 +390,22 @@ try {
   $live = AstroReportViews::renderFullReportHtml($babyOrder, ['babyNamingAlgorithmVersion' => 1, 'generatedAt' => '2023-01-01 00:00:00']);
   ok(strpos($live, 'ORD-PREVIEW2') !== false, 'the preview render still recalculates a legacy baby result');
 } catch (Throwable $e) { ok(false, 'the preview render still recalculates a legacy baby result'); }
+// Family budget regression (customer report, Oct 2026): legacy duplicate
+// birth_profiles rows must never spend the "6 saved people" budget.
+require_once __DIR__ . '/../api/birth_profiles.php';
+$pdo = new PDO('sqlite::memory:');
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$pdo->exec("CREATE TABLE birth_profiles (id TEXT PRIMARY KEY, user_id TEXT, name TEXT, dob TEXT, tob TEXT, birth_place TEXT, country TEXT, latitude REAL, longitude REAL, timezone_offset_hours REAL, gender TEXT, updated_at TEXT)");
+$ins = $pdo->prepare("INSERT INTO birth_profiles (id, user_id, name, dob, tob, birth_place, country, latitude, longitude, timezone_offset_hours, gender, updated_at) VALUES (?, 'u1', 'Self', '1990-01-01', '10:00', 'Chennai', 'India', 13.08, 80.27, 5.5, 'M', ?)");
+foreach (['bp_old1' => '2026-01-01 10:00:00', 'bp_old2' => '2026-02-01 10:00:00', 'bp_old3' => '2026-03-01 10:00:00', 'bp_new' => '2026-04-01 10:00:00'] as $legacyId => $legacyTs) {
+    $ins->execute([$legacyId, $legacyTs]);
+}
+ok(astro_birth_profile_exists($pdo, 'u1') === true, 'holder with four legacy rows still counts as ONE slot');
+ok(astro_birth_profiles_dedupe($pdo, 'u1') === 3, 'dedupe removes exactly the legacy duplicate rows');
+$left = $pdo->query("SELECT id FROM birth_profiles WHERE user_id = 'u1'")->fetchAll(PDO::FETCH_COLUMN);
+ok($left === ['bp_new'], 'the single newest profile row survives the dedupe');
+ok(astro_birth_profiles_dedupe($pdo, 'u1') === 0, 'dedupe is a no-op once the row is unique');
+ok(astro_birth_profile_exists($pdo, 'u_missing') === false, 'a customer without a profile never spends the slot');
 exit(($GLOBALS['fails'] ?? 0) > 0 ? 1 : 0);
 `);
   try {

@@ -44,7 +44,9 @@ CREATE TABLE IF NOT EXISTS `birth_profiles` (
   `timezone_offset_hours` DECIMAL(4, 2) NOT NULL,
   `gender` ENUM('M', 'F', 'O') NOT NULL DEFAULT 'M',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX `idx_birth_profiles_user_id` (`user_id`),
+  -- One own-profile row per customer, enforced at the database (legacy
+  -- per-order rows are cleaned by migration 018 on existing databases).
+  UNIQUE KEY `uq_birth_profiles_user_id` (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
