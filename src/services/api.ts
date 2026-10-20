@@ -1124,7 +1124,7 @@ export const api = {
    * The FROZEN report source for the dashboard's print-quality download.
    *
    * The dashboard renders the PDF in the browser with the same preview-exact
-   * pipeline (same HTML builders, same ~300 dpi capture) that produced the
+   * pipeline (same HTML builders, same print capture) that produced the
    * emailed document and the admin's approved preview. That renderer needs the
    * report exactly as prepared on the order date, and the orders list does not
    * carry it: `calculated_result` is a fulfilment cache the admin may refresh,

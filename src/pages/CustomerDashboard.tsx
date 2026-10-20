@@ -525,7 +525,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
    *
    * The dashboard fetches the immutable snapshot (never the mutable
    * calculated_result), rebuilds the report with the shared HTML builders and
-   * captures it at the email profile (300 dpi, JPEG 0.95) — the exact pipeline
+   * captures it at the email profile (200 dpi A4 floor, JPEG 0.88) — the exact pipeline
    * that produced the customer's emailed PDF and the admin's approved preview.
    * There is no server-side renderer to fall back to, so a device that cannot
    * capture the canvas is told plainly instead of being handed a thinner file.

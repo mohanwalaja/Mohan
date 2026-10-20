@@ -47,10 +47,11 @@ const testFiles = [
   // the retention rotation and the "a failed dump cannot look like a backup"
   // failure path, none of which a code-reading review would catch.
   'tests/backup-and-health-contract.test.ts',
-  // Also early: the render densities (~300 dpi email capture, JPEG 0.95) are a
-  // contract. A "performance" commit that lowers them to shave bytes would
-  // still pass every other test in this suite.
+  // Also early: the render density (200 dpi A4 floor, 2.2× capture, JPEG 0.88
+  // with a 0.80 floor) and the per-document byte budget are a contract. A
+  // "quality" commit that quietly raises them would double every email again.
   'tests/pdf-pipeline-integrity.test.ts',
+  'tests/report-pdf-size.test.ts',
   // The other half of the same contract: the CUSTOMER's dashboard download
   // must render the frozen snapshot at that same print density (the emailed
   // document), with no server-side renderer left to substitute a thinner one.
