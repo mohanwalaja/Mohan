@@ -14,11 +14,17 @@ require_once __DIR__ . '/../chat_alerts.php';
 // Payment primitives: the idempotency ledger + structured DB retry that make
 // a repeated checkout submission replay instead of duplicating an order.
 require_once __DIR__ . '/../payments.php';
+// Checkout bodies are bigger than config.php's 1 MiB getJsonBody() cap: ONE
+// Subha Muhurtham report carries its ~1.1 MB panchangam scan inside the order
+// payload. Read this router's body once, with the order limit, so a full family
+// tray is never silently emptied (which used to answer "At least one service
+// chart item is required in the family tray." while the tray was full).
+require_once __DIR__ . '/../request_body.php';
 
 $pdo = getDbConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
-$jsonBody = getJsonBody();
+$jsonBody = astro_order_json_body('order');
 $action = $_GET['action'] ?? $jsonBody['action'] ?? $_POST['action'] ?? '';
 
 /**
@@ -1270,7 +1276,7 @@ if ($method === 'POST' && (
 )) {
     require_once __DIR__ . '/multi_person_order.php';
     $orderUser = requireAuth($pdo);
-    astro_create_multi_person_order($pdo, $orderUser, !empty($jsonBody) ? $jsonBody : getJsonBody());
+    astro_create_multi_person_order($pdo, $orderUser, $jsonBody);
 }
 
 // 5c. POST /api/services/multi-order or services.php?action=multi-order (Unified batch family checkout)
@@ -1286,11 +1292,22 @@ if ($method === 'POST' && (
 )) {
     $user = requireAuth($pdo);
     $isAdmin = strtolower((string)($user['role'] ?? 'customer')) === 'admin';
-    $body = !empty($jsonBody) ? $jsonBody : getJsonBody();
+    // The router already read this body with the ORDER limit (see the top of
+    // this file); re-reading it through getJsonBody() would cap it at 1 MiB.
+    $body = $jsonBody;
 
     $items = $body['items'] ?? [];
     if (!is_array($items) || empty($items)) {
-        jsonResponse(['success' => false, 'message' => 'At least one service chart item is required in the family tray.'], 400);
+        // The body reader at the top of this file already answers an oversized,
+        // dropped or malformed body with its own ORDER_BODY_* error, so an empty
+        // tray here really means the client sent no chart items. Keep the code
+        // so the app can tell the two apart, and never blame the tray for a
+        // request that simply arrived without one.
+        jsonResponse([
+            'success' => false,
+            'code' => 'FAMILY_TRAY_EMPTY',
+            'message' => 'At least one service chart item is required in the family tray.'
+        ], 400);
     }
     if (count($items) > 6) {
         jsonResponse(['success' => false, 'message' => 'A family order can contain at most 6 reports.'], 400);
@@ -1802,7 +1819,9 @@ if ($method === 'POST' && (
 )) {
     $user = requireAuth($pdo);
     $isAdmin = strtolower((string)($user['role'] ?? 'customer')) === 'admin';
-    $body = !empty($jsonBody) ? $jsonBody : getJsonBody();
+    // The router already read this body with the ORDER limit (see the top of
+    // this file); re-reading it through getJsonBody() would cap it at 1 MiB.
+    $body = $jsonBody;
 
     $serviceType = $body['serviceType'] ?? 'BIRTH_JATHAGAM';
     if (!in_array($serviceType, ['BIRTH_JATHAGAM', 'MARRIAGE_COMPATIBILITY', 'BABY_NAMING', 'MUHURTHAM'], true)) {

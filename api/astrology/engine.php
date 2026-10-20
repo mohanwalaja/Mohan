@@ -1655,6 +1655,20 @@ class AstroEngine {
         'பூரட்டாதி', 'உத்திரட்டாதி', 'ரேவதி'
     ];
 
+    /**
+     * Hindi nakshatra names, index-aligned with $NAKSHATRAS_EN. Same list the
+     * browser engine uses (NAKSHATRAM_NAMES_HI in src/lib/astrology/astronomy.ts),
+     * so a Hindi preview and a Hindi PDF name the same star. Without it the
+     * Hindi page-1 "Nakshatra" row fell back to "N/A".
+     */
+    public static $NAKSHATRAS_HI = [
+        'अश्विनी', 'भरणी', 'कृत्तिका', 'रोहिणी', 'मृगशिरा', 'आर्द्रा',
+        'पुनर्वसु', 'पुष्य', 'आश्लेषा', 'मघा', 'पूर्वाफाल्गुनी', 'उत्तराफाल्गुनी',
+        'हस्त', 'चित्रा', 'स्वाति', 'विशाखा', 'अनुराधा', 'ज्येष्ठा',
+        'मूल', 'पूर्वाषाढ़ा', 'उत्तराषाढ़ा', 'श्रवण', 'धनिष्ठा', 'शतभिषा',
+        'पूर्वाभाद्रपद', 'उत्तराभाद्रपद', 'रेवती'
+    ];
+
     public static $RASIS = [
         ['en' => 'Mesham (Aries)', 'ta' => 'மேஷம்', 'lord' => 'Mars', 'lordTa' => 'செவ்வாய்', 'hi' => 'मेष (Aries)'],
         ['en' => 'Rishabam (Taurus)', 'ta' => 'ரிஷபம்', 'lord' => 'Venus', 'lordTa' => 'சுக்கிரன்', 'hi' => 'वृषभ (Taurus)'],
@@ -2868,6 +2882,7 @@ class AstroEngine {
             'janmaNakshatraIndex' => $nakshatraIndex,
             'janmaNakshatraEn' => self::$NAKSHATRAS_EN[$nakshatraIndex],
             'janmaNakshatraTa' => self::$NAKSHATRAS_TA[$nakshatraIndex],
+            'janmaNakshatraHi' => self::$NAKSHATRAS_HI[$nakshatraIndex],
             'janmaPada' => $padaIndex,
             'birthDetails' => [
                 'dob' => $dob,
@@ -2896,6 +2911,7 @@ class AstroEngine {
             'nakshatram' => [
                 'name' => self::$NAKSHATRAS_EN[$nakshatraIndex],
                 'nameTa' => self::$NAKSHATRAS_TA[$nakshatraIndex],
+                'nameHi' => self::$NAKSHATRAS_HI[$nakshatraIndex],
                 'pada' => $padaIndex
             ],
             'planets' => $planets,
