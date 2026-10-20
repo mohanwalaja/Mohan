@@ -323,7 +323,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {user ? (
                 <div className="space-y-2.5">
                   {/* Authenticated User Header Card */}
-                  <div className="flex items-center justify-between rounded-2xl border border-amber-500/25 bg-gradient-to-r from-amber-500/[0.12] via-slate-900/70 to-slate-900/50 p-3 backdrop-blur-md shadow-lg shadow-black/30">
+                  <div className="nav-account-card flex items-center justify-between rounded-2xl border border-amber-500/25 bg-gradient-to-r from-amber-500/[0.12] via-slate-900/70 to-slate-900/50 p-3 backdrop-blur-md shadow-lg shadow-black/30">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black text-base shadow-[0_2px_12px_rgba(245,158,11,0.25)]">
                         {displayName ? displayName.charAt(0).toUpperCase() : 'U'}

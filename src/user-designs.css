@@ -241,3 +241,80 @@
   [data-user-design="ivory"] .ai-astrologer-panel { max-height:78vh; border-radius:20px; }
   [data-user-design="ivory"] .ai-astrologer-panel-shell { right:12px; width:calc(100vw - 24px); }
 }
+
+/* ── Dark-only blocks that the ivory canvas used to inherit ────────────────
+   The navbar's account card, the checkout modal and the order-review strip are
+   written dark and carry no `dark:` variants, so the light rules above could
+   never reach their gradients or scrims: a white page showed a navy checkout
+   header, a charcoal account card and an opaque white modal backdrop. Each
+   surface now has a named hook and a deliberate light treatment. */
+
+/* A modal or drawer backdrop is a scrim, not a card: keep the page behind it
+   dimmed instead of turning every full-bleed black overlay into a white panel. */
+[data-user-design] :is(.fixed,.absolute).inset-0[class*="bg-black"] { background:rgba(52,39,29,.55)!important; }
+[data-user-design] .checkout-modal-overlay { background:rgba(52,39,29,.55)!important; }
+
+/* Signed-in account card in the mobile drawer. */
+[data-user-design] .nav-account-card {
+  background:linear-gradient(120deg,#fff6e6 0%,#fffdf9 62%,#fff 100%)!important;
+  border-color:var(--line)!important;
+  box-shadow:0 6px 18px #34271d0d;
+  backdrop-filter:none;
+}
+[data-user-design] .nav-account-card :is(h4,[class*="text-white"]) { color:var(--heading)!important; }
+[data-user-design] .nav-account-card p { color:var(--muted)!important; }
+[data-user-design] .nav-account-card [class*="bg-slate-900"] { background:#fff!important; }
+[data-user-design] .nav-account-card [class*="ring-slate-900"] { --tw-ring-color:#fffaf2; }
+
+/* Checkout modal: shell, header and the free/admin confirmation card. */
+[data-user-design] .checkout-modal-shell {
+  background:var(--surface)!important;
+  border-color:var(--line)!important;
+  color:var(--heading)!important;
+  color-scheme:light;
+}
+[data-user-design] .checkout-modal-header {
+  background:linear-gradient(115deg,#fff7e8 0%,#f7ecdc 68%,#fffdf9 100%)!important;
+  border-color:var(--line)!important;
+}
+[data-user-design] .checkout-modal-header :is(h2,[class*="text-white"]) { color:var(--heading)!important; }
+
+/* Payment tiles, brand chips and the instruction panel use dark 900/950 fills.
+   This modal has no `dark:` variants, so every such fill is a dark surface. */
+[data-user-design] .checkout-modal-shell :is(
+  [class*="bg-blue-950"],[class*="bg-indigo-950"],[class*="bg-emerald-950"],
+  [class*="bg-sky-950"],[class*="bg-purple-950"],[class*="bg-orange-950"],
+  [class*="bg-rose-950"],[class*="bg-red-950"],[class*="bg-amber-950"],
+  [class*="bg-slate-950"]) { background:#faf6ef!important; }
+[data-user-design] .checkout-modal-shell .checkout-method[aria-pressed="true"] {
+  background:var(--tint)!important;
+  border-color:var(--accent)!important;
+}
+
+[data-user-design] .checkout-modal-shell .checkout-free-card {
+  background:linear-gradient(120deg,#eaf6ef 0%,#f7fbf8 60%,#fffdf9 100%)!important;
+  border-color:#bfdccb!important;
+  box-shadow:0 8px 20px #23725c12;
+}
+[data-user-design] .checkout-modal-shell .checkout-free-card p { color:#3d4b45!important; }
+
+/* Review prompt on a delivered order in the customer dashboard. */
+[data-user-design] .order-review-strip {
+  background:linear-gradient(120deg,#fff7e8 0%,#fffdf9 100%)!important;
+  border-color:var(--line)!important;
+}
+[data-user-design] .order-review-strip p { color:var(--muted)!important; }
+
+/* Status chips and brand pills that still shipped dark 900/950 fills without a
+   `dark:` variant: payment brands, review states and error notes. A colon in
+   the class list means the fill is a variant (hover:, dark:, group-hover:) and
+   the element already has a base surface, so those are left alone. */
+[data-user-design] :is(
+  [class*="bg-blue-950"],[class*="bg-sky-950"],[class*="bg-cyan-950"],[class*="bg-teal-950"],
+  [class*="bg-violet-950"],[class*="bg-fuchsia-950"],[class*="bg-orange-950"],
+  [class*="bg-blue-900"],[class*="bg-sky-900"],[class*="bg-orange-900"]
+):not([class*=":bg-"]) { background:#f3f7fb!important; }
+[data-user-design] :is(
+  [class*="bg-rose-950"],[class*="bg-rose-900"],[class*="bg-red-950"],[class*="bg-red-900"]
+):not([class*=":bg-"]) { background:#fdf2f3!important; }
+[data-user-design] [class*="hover:bg-rose-950"]:hover { background:#fdf2f3!important; }

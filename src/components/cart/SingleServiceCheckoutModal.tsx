@@ -192,10 +192,10 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
   };
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Single service checkout" className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
-      <div className="bg-[#0f172a] border border-amber-500/30 text-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
+    <div role="dialog" aria-modal="true" aria-label="Single service checkout" className="checkout-modal-overlay fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+      <div className="checkout-modal-shell bg-[#0f172a] border border-amber-500/30 text-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-white/10 bg-gradient-to-r from-slate-950 via-[#161b33] to-slate-950 flex items-center justify-between">
+        <div className="checkout-modal-header p-5 sm:p-6 border-b border-white/10 bg-gradient-to-r from-slate-950 via-[#161b33] to-slate-950 flex items-center justify-between">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-inner">
               <FileText className="w-6 h-6" />
@@ -426,7 +426,7 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
 
                 {orderWillBeFree ? (
                   /* Admin or Free Beta Card */
-                  <div className="p-4 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border border-emerald-500/30 rounded-2xl text-xs text-emerald-300 space-y-2 shadow-lg">
+                  <div className="checkout-free-card p-4 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border border-emerald-500/30 rounded-2xl text-xs text-emerald-300 space-y-2 shadow-lg">
                     <div className="flex items-center justify-between">
                       <div className="font-bold flex items-center gap-2 text-emerald-400 text-sm">
                         <Sparkles className="w-4 h-4 text-emerald-400" />
@@ -454,7 +454,8 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
                       <button
                         type="button"
                         onClick={() => handleSelectMethod('PAYPAL')}
-                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        aria-pressed={paymentMethod === 'PAYPAL'}
+                        className={`checkout-method p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                           paymentMethod === 'PAYPAL'
                             ? 'bg-blue-950/40 border-blue-500 text-white ring-2 ring-blue-500/40 shadow-lg'
                             : 'bg-slate-950/60 border-white/10 text-slate-400 hover:border-white/20'
@@ -474,7 +475,8 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
                       <button
                         type="button"
                         onClick={() => handleSelectMethod('CARD')}
-                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        aria-pressed={paymentMethod === 'CARD'}
+                        className={`checkout-method p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                           paymentMethod === 'CARD'
                             ? 'bg-indigo-950/40 border-indigo-500 text-white ring-2 ring-indigo-500/40 shadow-lg'
                             : 'bg-slate-950/60 border-white/10 text-slate-400 hover:border-white/20'
@@ -494,7 +496,8 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
                       <button
                         type="button"
                         onClick={() => handleSelectMethod('GPAY')}
-                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        aria-pressed={paymentMethod === 'GPAY'}
+                        className={`checkout-method p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                           paymentMethod === 'GPAY'
                             ? 'bg-emerald-950/40 border-emerald-500 text-white ring-2 ring-emerald-500/40 shadow-lg'
                             : 'bg-slate-950/60 border-white/10 text-slate-400 hover:border-white/20'
