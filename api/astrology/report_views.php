@@ -951,6 +951,13 @@ HTML;
             : ($result['nakshatram']['name'] ?? $result['janmaNakshatraEn'] ?? 'N/A'))
         );
         $pada = self::e($result['nakshatram']['pada'] ?? $result['janmaPada'] ?? 'N/A');
+        // Readability (Oct 2026): the particulars row must not print English
+        // fragments inside a Tamil/Hindi report. "at" and "Pada" used to be
+        // hard-coded here while the rest of the page was translated.
+        $dobAtJoiner = $isTa ? ' அன்று ' : ($isHi ? ' को ' : ' at ');
+        $padaTextForPdf = ($pada === '' || $pada === 'N/A')
+            ? 'N/A'
+            : ($isTa ? "{$pada}-ஆம் பாதம்" : ($isHi ? "पाद {$pada}" : "Pada {$pada}"));
 
         $lagnaRasi = self::e($lagnaRasiInfo[$lang] ?? 'N/A');
         $lagnaLord = self::e($lagnaRasiInfo[$lang === 'ta' ? 'lordTa' : ($lang === 'hi' ? 'lordHi' : 'lordEn')] ?? 'N/A');
@@ -1177,7 +1184,7 @@ HTML;
         }
         $saniCardsHtml = '';
         // Show only the active Sani dosha; if none is active, show a single
-        // "There is no active any of Sani Dosha" card. Every Sani card carries
+        // "No Sani dosha is active" card. Every Sani card carries
         // the same two-line explanation (astro_jathagam_dosha_explainer) and the
         // badge carries the verdict, mirroring src/services/jathagamHtmlBuilder.ts.
         if (is_array($saniStatusData)) {
@@ -1212,14 +1219,14 @@ HTML;
             $hasAnySaniForPdf = $isEzharaiForPdf || $isAshtamaForPdf || $isKandakaForPdf;
             if (!$hasAnySaniForPdf) {
                 $noSaniTitleForPdf = $isTa ? 'சனி தோஷ நிலை' : ($isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status');
-                $noSaniBadgeForPdf = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha');
+                $noSaniBadgeForPdf = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'No Sani dosha is active in your chart');
                 $noSaniDescForPdf = astro_jathagam_dosha_explainer('sani', $lang);
                 $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($noSaniTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge badge-clean">' . self::e($noSaniBadgeForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($noSaniDescForPdf) . '</div></div>';
             }
         } else {
             // No saniStatus (legacy payload) — show the same "no active" card as fallback
             $fallbackTitle = $isTa ? 'சனி தோஷ நிலை' : ($isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status');
-            $fallbackBadge = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha');
+            $fallbackBadge = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'No Sani dosha is active in your chart');
             $fallbackDesc = astro_jathagam_dosha_explainer('sani', $lang);
             $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($fallbackTitle) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge badge-clean">' . self::e($fallbackBadge) . '</span></td></tr></table><div class="dosha-desc">' . self::e($fallbackDesc) . '</div></div>';
         }
@@ -1354,8 +1361,8 @@ HTML;
       <td><div class="det-box"><span class="det-lbl">{$lblPRasi}</span><span class="det-val">{$rasiValueHtml} ({$rasiLord})</span></div></td>
     </tr>
     <tr>
-      <td><div class="det-box"><span class="det-lbl">{$lblPDob}</span><span class="det-val">{$dob} at {$tob}</span></div></td>
-      <td><div class="det-box"><span class="det-lbl">{$lblPNak}</span><span class="det-val">{$nakValueHtml}, Pada {$pada}</span></div></td>
+      <td><div class="det-box"><span class="det-lbl">{$lblPDob}</span><span class="det-val">{$dob}{$dobAtJoiner}{$tob}</span></div></td>
+      <td><div class="det-box"><span class="det-lbl">{$lblPNak}</span><span class="det-val">{$nakValueHtml}, {$padaTextForPdf}</span></div></td>
     </tr>
     <tr>
       <td><div class="det-box"><span class="det-lbl">{$lblPPlace}</span><span class="det-val">{$place}</span></div></td>
@@ -4463,6 +4470,11 @@ HTML;
         $lblLagna = $isTa ? 'லக்னம்' : ($isHi ? 'लग्न' : 'LAGNAM (ASCENDANT)');
         $lblNak = $isTa ? 'ஜன்ம நட்சத்திரம்' : ($isHi ? 'जन्म नक्षत्र' : 'JANMA NAKSHATRA');
         $lblPada = $isTa ? 'பாதம்' : ($isHi ? 'पाद / चरण' : 'JANMA PADA');
+        // Same fix as the Jathagam particulars: "Pada 2" is an English fragment
+        // inside a Tamil/Hindi Namakaran report.
+        $padaValue = ($pada === '' || $pada === 'N/A')
+            ? 'N/A'
+            : ($isTa ? "{$pada}-ஆம் பாதம்" : ($isHi ? "पाद {$pada}" : "Pada {$pada}"));
         $lblRasi = $isTa ? 'சந்திர ராசி' : ($isHi ? 'चंद्र राशि' : 'CHANDRA RASI (MOON)');
         $lblLord = $isTa ? 'நட்சத்திர அதிபதி' : ($isHi ? 'नक्षत्र स्वामी' : 'NAKSHATRA LORD');
         $lblGana = $isTa ? 'கணம்' : ($isHi ? 'गण' : 'GANA');
@@ -4696,7 +4708,7 @@ CSS;
                 . '<div class="bn-title-band bn-sug-title-band">'
                 . '<div class="bn-doc-title">' . $sugDocTitle . '</div>'
                 . '<div class="bn-doc-sub">' . $sugDocSub . '</div>'
-                . '<div class="bn-doc-meta"><b>' . $babyName . '</b> &nbsp;&bull;&nbsp; ' . $nak . ', Pada ' . $pada
+                . '<div class="bn-doc-meta"><b>' . $babyName . '</b> &nbsp;&bull;&nbsp; ' . $nak . ', ' . $padaValue
                 . ' &nbsp;&bull;&nbsp; ' . $gender . ' &nbsp;&bull;&nbsp; <b>' . $lblReportNo . ':</b> ' . $certId . '</div>'
                 . '</div>'
                 . '<table class="sug-cols" width="100%"><tr>'
@@ -4735,11 +4747,11 @@ CSS;
   <table class="bn-details">
     <tr>
       <td class="bn-lbl">{$lblBabyName}</td><td class="bn-val">{$babyName} ({$gender})</td>
-      <td class="bn-lbl">{$lblNak}</td><td class="bn-val">{$nak}, Pada {$pada}</td>
+      <td class="bn-lbl">{$lblNak}</td><td class="bn-val">{$nak}, {$padaValue}</td>
     </tr>
     <tr>
       <td class="bn-lbl">{$lblDob}</td><td class="bn-val">{$dob}</td>
-      <td class="bn-lbl">{$lblPada}</td><td class="bn-val">Pada {$pada}</td>
+      <td class="bn-lbl">{$lblPada}</td><td class="bn-val">{$padaValue}</td>
     </tr>
     <tr>
       <td class="bn-lbl">{$lblTob}</td><td class="bn-val">{$tob}</td>

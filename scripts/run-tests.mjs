@@ -95,6 +95,10 @@ const testFiles = [
   // and is bold, and every dosha card explains its dosha in exactly two
   // sentences in English, Tamil and Hindi. One JSON feeds both renderers.
   'tests/jathagam-page1-signs-and-doshas.test.ts',
+  // Reads every customer-facing report as a layperson would: no duplicated
+  // condition, every Sanskrit term glossed inline, no English fragment inside a
+  // Tamil/Hindi report, plain-English verdicts.
+  'tests/report-readability-guard.test.ts',
   'tests/jathagam-card-rules.test.ts',
   'tests/jathagam-lucky-indicators.test.ts',
   'tests/vimshottari-dasha-timeline.test.ts',

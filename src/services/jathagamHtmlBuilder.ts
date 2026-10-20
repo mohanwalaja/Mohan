@@ -12,7 +12,6 @@ import {
 import { classifyJathagamPlanetsForSummary } from './jathagamPlanetSummary';
 import { withDerivedNavamsa } from './navamsa';
 import {
-  dignityCardLine,
   debilitationSign,
   EXALTATION_SIGN,
   OWN_SIGNS
@@ -301,37 +300,46 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
     const isChallenging = isDusthana || isDebilitated || isCombust || conjunctMalefics.length > 0;
     const reasonsEn = [
       isDusthana ? `placed in a challenging ${enOrdinal(bhava)} house` : '',
-      isDebilitated ? 'debilitated' : '',
-      isCombust ? 'combust/too close to Sun' : '',
+      isDebilitated ? 'debilitated (Neecha)' : '',
+      isCombust ? 'combust (Astangata), too close to the Sun' : '',
       conjunctMalefics.length ? `joined within ${MALEFIC_CONJUNCTION_ORB_DEG}° with ${conjunctMalefics.join('/')}` : '',
       offsetMaleficNames.length ? `exalted/own-sign lord offsets one malefic conjunction (${offsetMaleficNames.join('/')})` : '',
       weakMaleficNames.length ? `${weakMaleficNames.join('/')} is debilitated, so not counted as a strong malefic` : '',
-      isRetrograde ? 'retrograde, requiring review and patience' : ''
+      isRetrograde ? 'retrograde (Vakri), so results need patience' : ''
     ].filter(Boolean);
     const reasonsTa = [
       isDusthana ? `${bhava}-ஆம் சவாலான பாவத்தில்` : '',
-      isDebilitated ? 'நீச நிலையில்' : '',
-      isCombust ? 'சூரியனுக்கு அருகில் அஸ்தமன நிலையில்' : '',
+      isDebilitated ? 'நீச நிலையில் (நீசம்)' : '',
+      isCombust ? 'சூரியனுக்கு அருகில் அஸ்தமன நிலையில் (அஸ்தங்கதம்)' : '',
       conjunctMalefics.length ? `${MALEFIC_CONJUNCTION_ORB_DEG}°-க்குள் ${conjunctMalefics.join('/')} சேர்க்கையுடன்` : '',
       offsetMaleficNames.length ? `உச்ச/சொந்த ராசி அதிபதி ஒரு பாவச் சேர்க்கையை ஈடுசெய்கிறார் (${offsetMaleficNames.join('/')})` : '',
       weakMaleficNames.length ? `${weakMaleficNames.join('/')} நீச நிலையில் உள்ளதால் வலுவான பாவ கிரகமாகக் கணக்கிடப்படவில்லை` : '',
-      isRetrograde ? 'வக்கிரமாக இருப்பதால் பொறுமை தேவை' : ''
+      isRetrograde ? 'வக்கிரமாக (வக்கிரம்) இருப்பதால் பொறுமை தேவை' : ''
     ].filter(Boolean);
     const reasonsHi = [
       isDusthana ? `${hiOrdinal(bhava)} चुनौतीपूर्ण भाव में` : '',
-      isDebilitated ? 'नीच राशि में' : '',
-      isCombust ? 'सूर्य के निकट अस्त' : '',
+      isDebilitated ? 'नीच राशि में (नीच)' : '',
+      isCombust ? 'सूर्य के निकट अस्त (अस्तंगत)' : '',
       conjunctMalefics.length ? `${MALEFIC_CONJUNCTION_ORB_DEG}° के भीतर ${conjunctMalefics.join('/')} के साथ` : '',
       offsetMaleficNames.length ? `उच्च/स्वराशि का स्वामी एक पाप-युति की भरपाई करता है (${offsetMaleficNames.join('/')})` : '',
       weakMaleficNames.length ? `${weakMaleficNames.join('/')} नीच होने से प्रबल पाप ग्रह नहीं माना गया` : '',
-      isRetrograde ? 'वक्री होने से धैर्य आवश्यक' : ''
+      isRetrograde ? 'वक्री (वक्री) होने से धैर्य आवश्यक' : ''
     ].filter(Boolean);
     // Item 3: when the card's lord is debilitated (e.g. Mars as the Lagna lord
     // in the Health card, or the 10th lord in the Career card) the card names
     // the Neecha Bhanga rule that applies and carries the caveat.
-    const dignityNote = dignityCardLine(lordPos.dignity, lang);
+    //
+    // Readability (Oct 2026): the dignity status WORD is already carried by the
+    // reasons above ("debilitated (Neecha)", "retrograde (Vakri)"), so the card
+    // must not print the dignity tag line again — that produced
+    // "Caution: debilitated, retrograde, requiring review and patience,
+    //  Debilitated (Neecha), Retrograde (Vakri); …". Only the extra
+    // Neecha Bhanga explanation is appended, and only when it applies.
+    const neechaBhangaNote = lordPos.dignity && lordPos.dignity.isNeechaBhanga
+      ? (isTa ? lordPos.dignity.neechaBhangaTa : isHi ? lordPos.dignity.neechaBhangaHi : lordPos.dignity.neechaBhangaEn)
+      : '';
     const reasons = isTa ? reasonsTa : isHi ? reasonsHi : reasonsEn;
-    if (dignityNote) reasons.push(dignityNote);
+    if (neechaBhangaNote) reasons.push(neechaBhangaNote);
     return {
       targetSign,
       lordGraha,
@@ -344,7 +352,6 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
       isRetrograde,
       isSupportive,
       isChallenging,
-      dignityNote,
       reason: reasons.join(', ')
     };
   };
@@ -935,7 +942,7 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
 
   const hasAnySaniDosha = Boolean(isEzharaiSani || isAshtamaSani || isKandakaSani);
   const noSaniTitle = isTa ? 'சனி தோஷ நிலை' : isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status';
-  const noSaniBadge = isTa ? 'எந்த சனி தோஷமும் இல்லை' : isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'There is no active any of Sani Dosha';
+  const noSaniBadge = isTa ? 'எந்த சனி தோஷமும் இல்லை' : isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'No Sani dosha is active in your chart';
   const noSaniDesc = saniStatus ? saniExplainer : unavailableDosha;
 
 
