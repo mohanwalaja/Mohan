@@ -3621,7 +3621,7 @@ CSS;
         if ($ratingTier === 'UTTHAMAM') {
             $verdictText = $isTa ? 'இந்த மதிப்பீட்டின்படி மிக நல்ல பொருத்தம்.' : ($isHi ? 'इस आकलन के अनुसार बहुत अच्छा मेल है।' : 'Very good match based on this assessment.');
         } elseif ($ratingTier === 'MADHYAMAM') {
-            $verdictText = $isTa ? 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களைப் பரிசீலிக்கலாம்.' : ($isHi ? 'स्वीकार्य मेल; उपायों पर विचार किया जा सकता है।' : 'Acceptable match; remedies may be considered.');
+            $verdictText = $isTa ? 'ஒட்டுமொத்தமாக நல்ல பொருத்தம் — சில பொருத்தங்கள் பகுதியளவே.' : ($isHi ? 'कुल मिलाकर अच्छा मेल — कुछ पोरुथम आंशिक हैं।' : 'Good match overall — a few poruthams are partial.');
         } elseif ($ratingTier === 'PORUNDHADHU') {
             $verdictText = $isTa
                 ? 'இந்த மதிப்பீட்டின்படி பரிந்துரைக்கப்படவில்லை; நிபுணர் ஆலோசனை பெறவும்.'
@@ -3633,6 +3633,31 @@ CSS;
         }
         $finalVerdictLabel = $isTa ? 'இறுதிப் பரிந்துரை' : ($isHi ? 'अंतिम अनुशंसा' : 'FINAL RECOMMENDATION');
         $finalVerdictText = $verdictText;
+        // A verdict with no next step is a dead end. When the charts match, the
+        // family's next action is picking the date with the Subha Muhurtham
+        // report (Tara Bala, Chandrashtama, Nalla Neram for both of them); when
+        // they do not match, the next step is a human review - never a vague
+        // "ask an astrologer".
+        $nextStepLabel = $isTa ? 'அடுத்த படி' : ($isHi ? 'अगला कदम' : 'NEXT STEP');
+        if ($ratingTier === 'UTTHAMAM' || $ratingTier === 'MADHYAMAM') {
+            $nextStepText = $isTa
+                ? 'திருமணத் தேதியை நமது சுப முகூர்த்த அறிக்கையுடன் தேர்ந்தெடுங்கள் — உங்கள் இருவருக்கும் தாரா பலம், சந்திராஷ்டமம், நல்ல நேரம் சரிபார்த்து சுப தேதிகளைப் பட்டியலிடும்: astrosivam.com/subha-muhurtham'
+                : ($isHi
+                    ? 'विवाह की तिथि हमारी शुभ मुहूर्त रिपोर्ट से चुनें — यह आप दोनों के लिए तारा बल, चंद्राष्टम और नल्ला नेरम जाँचकर शुभ तिथियाँ देती है: astrosivam.com/subha-muhurtham'
+                    : 'Choose the wedding date with our Subha Muhurtham report — it checks Tara Bala, Chandrashtama and Nalla Neram for both of you and lists the auspicious dates: astrosivam.com/subha-muhurtham');
+        } elseif ($ratingTier === 'PORUNDHADHU') {
+            $nextStepText = $isTa
+                ? 'முடிவெடுக்கும் முன் நிபுணர் இரு ஜாதகங்களையும் ஆய்வு செய்வார்கள்: astrosivam.com/contact'
+                : ($isHi
+                    ? 'निर्णय से पहले हमारे ज्योतिषी दोनों कुंडलियों की समीक्षा करेंगे: astrosivam.com/contact'
+                    : 'Before you decide, our astrologer will review both charts with you: astrosivam.com/contact');
+        } else {
+            $nextStepText = $isTa
+                ? 'நிபுணர் உங்கள் இரு ஜாதகங்களையும் பார்த்து விளக்க முடியும்: astrosivam.com/contact'
+                : ($isHi
+                    ? 'हमारे ज्योतिषी दोनों कुंडलियाँ देखकर समझा सकते हैं: astrosivam.com/contact'
+                    : 'Our astrologer can read both charts with you: astrosivam.com/contact');
+        }
         $finalVerdictClass = $ratingTier === null ? 'final-verdict-unavailable' : ($ratingTier === 'UTTHAMAM' ? 'final-verdict-good' : ($ratingTier === 'MADHYAMAM' ? 'final-verdict-moderate' : 'final-verdict-not-good'));
         $finalVerdictColor = $ratingTier === null ? '#475569' : ($ratingTier === 'UTTHAMAM' ? '#166534' : ($ratingTier === 'MADHYAMAM' ? '#92400e' : '#991b1b'));
         $finalVerdictBackground = $ratingTier === null ? '#f1f5f9' : ($ratingTier === 'UTTHAMAM' ? '#ecfdf5' : ($ratingTier === 'MADHYAMAM' ? '#fffbeb' : '#fef2f2'));
@@ -3824,6 +3849,7 @@ CSS;
 <div class="panel {$finalVerdictClass}" role="status" style="text-align:center; background:{$finalVerdictBackground}; border:1px solid {$finalVerdictBorder}; margin-top:1mm; margin-bottom:1mm; padding:3mm 4mm;">
   <div style="font-size:9.5px; font-weight:bold; letter-spacing:0.5px; color:{$finalVerdictColor};">{$finalVerdictLabel}</div>
   <div style="font-size:13px; line-height:1.25; font-weight:bold; color:{$finalVerdictColor}; margin-top:0.8mm;">{$finalVerdictText}</div>
+  <div style="font-size:9.5px; line-height:1.3; font-weight:normal; color:{$finalVerdictColor}; text-align:left; margin-top:1.2mm; padding-top:1.1mm; border-top:1px dotted {$finalVerdictColor};"><b style="letter-spacing:0.4px;">{$nextStepLabel}</b>&nbsp;&nbsp;{$nextStepText}</div>
 </div>
 HTML;
 
@@ -4749,6 +4775,14 @@ HTML;
         $sec2 = $isTa ? 'ஜோதிட கணிப்புகள்' : ($isHi ? 'ज्योतिषीय गणना' : 'ASTROLOGICAL COORDINATES');
         $sec3 = $isTa ? 'சுப நாமகரண அக்ஷரம்' : ($isHi ? 'शुभ नामकरण अक्षर' : 'PRIMARY NAMING SYLLABLE');
         $sec4 = $isTa ? 'நட்சத்திர பாத அக்ஷரங்கள்' : ($isHi ? 'नक्षत्र पाद अक्षर' : 'NAKSHATRA PADA SYLLABLES');
+        // The whole point of the naming report, said out loud: WHY the first
+        // sound is fixed to the birth star's pada.
+        $whySoundTitle = $isTa ? 'ஏன் முதல் ஒலி முக்கியம்' : ($isHi ? 'पहली ध्वनि क्यों महत्वपूर्ण है' : 'WHY THE FIRST SOUND MATTERS');
+        $whySoundText = $isTa
+            ? 'பெயர் ஒலியை மட்டும் வைத்துத் தேர்ந்தெடுப்பதல்ல — மரபு குழந்தையின் பிறந்த நட்சத்திரம் மற்றும் பாதத்திலிருந்து முதல் ஒலியை நிர்ணயிக்கிறது; அதனால் பெயர் குழந்தையின் நட்சத்திரம் தொடங்கும் இடத்திலிருந்தே தொடங்குகிறது. மேலே உள்ள நான்கு ஒலிகளில் ஒன்றில் தொடங்கும் எந்தப் பெயரையும் குடும்பம் தேர்ந்தெடுக்கலாம். இந்த அறிக்கையின் அனைத்துப் பெயர் பட்டியலும் அந்த ஒலிகளில் தொடங்குவதற்குக் காரணம் இதுவே: பொருள் உங்கள் தேர்வு, முதல் ஒலி ஆசி.'
+            : ($isHi
+                ? 'नाम केवल सुनने में अच्छा लगने से नहीं चुना जाता — परंपरा पहली ध्वनि शिशु के जन्म नक्षत्र और पाद से तय करती है, इसलिए नाम वहीं से शुरू होता है जहाँ शिशु का नक्षत्र शुरू होता है। परिवार ऊपर दी गई चार ध्वनियों में से किसी एक से शुरू होने वाला कोई भी नाम चुन सकता है। इस रिपोर्ट की हर नाम-सूची इन्हीं ध्वनियों से शुरू होती है: अर्थ आपकी पसंद, पहली ध्वनि आशीर्वाद।'
+                : 'A name is not chosen by sound alone - tradition fixes the FIRST sound from the birth star and pada, so the name begins where the child\'s star begins. The family then picks any name that starts with one of the four syllables printed above. That is why every name list in this report starts with those sounds: the meaning is your choice, the first sound is the blessing.');
         $sec5 = $isTa ? 'வேத குணநலன்கள்' : ($isHi ? 'वैदिक गुण' : 'VEDIC GUNAM & VIRTUES');
 
         $lblBabyName = $isTa ? 'குழந்தையின் பெயர்' : ($isHi ? 'शिशु का नाम' : 'BABY NAME');
@@ -4848,6 +4882,9 @@ HTML;
     .bn-doc-meta { font-size: 7.5px; color: #8a7c6c; font-weight: bold; margin-top: 1.2mm; letter-spacing: 0.3px; }
     .bn-doc-meta b { color: #7a2129; }
 
+    .bn-why { background: #fdfaf4; border: 1px solid #e5d9c5; border-left: 3px solid #b3862e; border-radius: 3px; padding: 2mm 2.6mm; margin: 1.5mm 0 0; page-break-inside: avoid; }
+    .bn-why-title { font-size: 9.5px; font-weight: bold; color: #7a2129; letter-spacing: 0.5px; margin-bottom: 1mm; }
+    .bn-why-text { font-size: 8.6px; line-height: 1.45; color: #5c5044; text-align: justify; }
     .sec-head { font-size: 9.5px; font-weight: bold; color: #7a2129; letter-spacing: 0.8px; margin: 2.5mm 0 1.5mm; padding-bottom: 0.8mm; border-bottom: 1px solid #e5d9c5; }
     .sec-no { display: inline-block; background: #7a2129; color: #ffffff; font-size: 7.5px; padding: 0.4mm 1.4mm; margin-right: 1.6mm; border-radius: 2px; }
 
@@ -5074,6 +5111,11 @@ CSS;
     <thead><tr><th width="30%">{$thPada}</th><th width="40%">{$thSound}</th><th>{$thRasi}</th></tr></thead>
     <tbody>{$padaRows}</tbody>
   </table>
+
+  <div class="bn-why">
+    <div class="bn-why-title">{$whySoundTitle}</div>
+    <div class="bn-why-text">{$whySoundText}</div>
+  </div>
 
   <div class="sec-head"><span class="sec-no">04</span>{$sec5}</div>
   <table class="bn-virtues">

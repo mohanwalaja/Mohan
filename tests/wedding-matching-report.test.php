@@ -235,7 +235,7 @@ $sampleTaHtml = AstroReportViews::generateWeddingMatchingHtml(['language' => 'ta
 checkWeddingVerdict(
     strpos($sampleTaHtml, 'final-verdict-moderate') !== false &&
     strpos($sampleTaHtml, 'இறுதிப் பரிந்துரை') !== false &&
-    substr_count($sampleTaHtml, 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களைப் பரிசீலிக்கலாம்.') === 1 &&
+    substr_count($sampleTaHtml, 'ஒட்டுமொத்தமாக நல்ல பொருத்தம் — சில பொருத்தங்கள் பகுதியளவே.') === 1 &&
     strpos($sampleTaHtml, 'இந்த மதிப்பீட்டின்படி நல்ல பொருத்தம்') === false,
     'CASE 1: the report shows one concise Madhyamam recommendation, not repeated verdict copy'
 );
@@ -363,9 +363,11 @@ $goodResult['overallVerdictEn'] = 'Acceptable with Remedies - Madhyama Porutham'
 $goodHtml = AstroReportViews::generateWeddingMatchingHtml(['language' => 'en'], $goodResult);
 checkWeddingVerdict(
     strpos($goodHtml, 'class="panel final-verdict-moderate"') !== false &&
-    strpos($goodHtml, 'Acceptable match; remedies may be considered.') !== false &&
+    strpos($goodHtml, 'Good match overall — a few poruthams are partial.') !== false &&
+    strpos($goodHtml, 'NEXT STEP') !== false &&
     strpos($goodHtml, 'FINAL RECOMMENDATION') !== false &&
-    strpos($goodHtml, 'The matching is good.') === false,
+    strpos($goodHtml, 'The matching is good.') === false &&
+    strpos($goodHtml, 'remedies may be considered') === false,
     'A Good report ends with a concise amber recommendation rather than a green Very Good recommendation'
 );
 $uttamamResult = $baseResult;

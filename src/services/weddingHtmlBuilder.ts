@@ -169,7 +169,7 @@ export function buildWeddingMatchHtml(
     : isGood
     ? (isTa ? 'இந்த மதிப்பீட்டின்படி மிக நல்ல பொருத்தம்.' : isHi ? 'इस आकलन के अनुसार बहुत अच्छा मेल है।' : 'Very good match based on this assessment.')
     : isModerate
-    ? (isTa ? 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களைப் பரிசீலிக்கலாம்.' : isHi ? 'स्वीकार्य मेल; उपायों पर विचार किया जा सकता है।' : 'Acceptable match; remedies may be considered.')
+    ? (isTa ? 'ஒட்டுமொத்தமாக நல்ல பொருத்தம் — சில பொருத்தங்கள் பகுதியளவே.' : isHi ? 'कुल मिलाकर अच्छा मेल — कुछ पोरुथम आंशिक हैं।' : 'Good match overall — a few poruthams are partial.')
     : (isTa
       ? 'இந்த மதிப்பீட்டின்படி பரிந்துரைக்கப்படவில்லை; நிபுணர் ஆலோசனை பெறவும்.'
       : isHi
@@ -183,6 +183,31 @@ export function buildWeddingMatchHtml(
   // Very Good / Good / Incompatible, in the order's language.
   const verdictTier = verdictKnown ? verdictTierFrom(result.verdictStatus) : null;
   const verdictBadgeText = verdictTier ? verdictTierHint(verdictTier, lang) : 'N/A';
+
+  // A verdict with no next step is a dead end. When the charts match (Very Good
+  // or Good), the report points the family at the ONE thing they do next: pick
+  // the wedding date with the Subha Muhurtham report, which checks Tara Bala,
+  // Chandrashtama and Nalla Neram for both of them. When the charts do not
+  // match, the next step is a human review - never "ask an astrologer" in the
+  // abstract.
+  const nextStepLabel = isTa ? 'அடுத்த படி' : isHi ? 'अगला कदम' : 'NEXT STEP';
+  const nextStepText = !verdictKnown
+    ? (isTa
+        ? 'நிபுணர் உங்கள் இரு ஜாதகங்களையும் பார்த்து விளக்க முடியும்: astrosivam.com/contact'
+        : isHi
+        ? 'हमारे ज्योतिषी दोनों कुंडलियाँ देखकर समझा सकते हैं: astrosivam.com/contact'
+        : 'Our astrologer can read both charts with you: astrosivam.com/contact')
+    : isGood || isModerate
+    ? (isTa
+        ? 'திருமணத் தேதியை நமது சுப முகூர்த்த அறிக்கையுடன் தேர்ந்தெடுங்கள் — உங்கள் இருவருக்கும் தாரா பலம், சந்திராஷ்டமம், நல்ல நேரம் சரிபார்த்து சுப தேதிகளைப் பட்டியலிடும்: astrosivam.com/subha-muhurtham'
+        : isHi
+        ? 'विवाह की तिथि हमारी शुभ मुहूर्त रिपोर्ट से चुनें — यह आप दोनों के लिए तारा बल, चंद्राष्टम और नल्ला नेरम जाँचकर शुभ तिथियाँ देती है: astrosivam.com/subha-muhurtham'
+        : 'Choose the wedding date with our Subha Muhurtham report — it checks Tara Bala, Chandrashtama and Nalla Neram for both of you and lists the auspicious dates: astrosivam.com/subha-muhurtham')
+    : (isTa
+        ? 'முடிவெடுக்கும் முன் நிபுணர் இரு ஜாதகங்களையும் ஆய்வு செய்வார்கள்: astrosivam.com/contact'
+        : isHi
+        ? 'निर्णय से पहले हमारे ज्योतिषी दोनों कुंडलियों की समीक्षा करेंगे: astrosivam.com/contact'
+        : 'Before you decide, our astrologer will review both charts with you: astrosivam.com/contact');
 
   const verdictBadgeClass = !verdictKnown ? 'badge-na' : isGood ? 'badge-good' : isModerate ? 'badge-moderate' : 'badge-bad';
   const scoreMeterFillClass = !verdictKnown ? 'score-meter-fill-na' : isGood ? 'score-meter-fill-good' : isModerate ? 'score-meter-fill-moderate' : 'score-meter-fill-bad';
@@ -800,6 +825,22 @@ ${REPORT_FONT_LINK_TAG}
     line-height: 1.25;
     font-weight: 900;
   }
+  /* The action under the verdict — one line, never a new sheet. */
+  .final-verdict-next {
+    margin-top: 1.2mm;
+    padding-top: 1.1mm;
+    border-top: 1px dotted currentColor;
+    font-size: 9.5px;
+    line-height: 1.3;
+    font-weight: 600;
+    text-align: left;
+  }
+  .final-verdict-next-label {
+    font-weight: 900;
+    letter-spacing: 0.4px;
+    margin-right: 1.4mm;
+    white-space: nowrap;
+  }
 
   /* ── Footer ──
      No auto top margin: the growing block owns the leftover height, so the
@@ -1118,6 +1159,10 @@ ${REPORT_GLOSSARY_CSS}
     <div class="final-verdict ${finalVerdictClass}" role="status" aria-label="${finalVerdictLabel}">
       <div class="final-verdict-label">${finalVerdictLabel}</div>
       <div class="final-verdict-message">${finalVerdictText}</div>
+      <div class="final-verdict-next">
+        <span class="final-verdict-next-label">${nextStepLabel}</span>
+        <span>${escapeHtml(nextStepText)}</span>
+      </div>
     </div>
 
     <p class="glossary-pointer">${escapeHtml(GLOSSARY_PAGE_TEXT[lang].pointer)}</p>

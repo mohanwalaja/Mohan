@@ -105,6 +105,10 @@ const testFiles = [
   // Page 1 of the marriage report printed three measures of the same match
   // (7.5 / 10, 75%, 8 / 10 Poruthams matched) with nothing saying what each
   // measured. One number must survive, and the meter must agree with it.
+  // A verdict with no next step is a dead end. The marriage report must hand a
+  // matching couple to the Subha Muhurtham service (and a non-matching one to a
+  // human), and Baby Naming must say why the first sound matters at all.
+  'tests/report-next-steps.test.ts',
   'tests/wedding-single-score.test.ts',
   'tests/wedding-verdict-labels.test.ts',
   'tests/report-readability-guard.test.ts',

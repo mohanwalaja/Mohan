@@ -169,17 +169,42 @@ the particulars two centimetres above now say "Thulam/Libra".
 The best-written page of the Jathagam (page 3) is the one customers reach last.
 In the other three reports there is no summary page at all.
 
-**10. "What do I do now?" is missing or vague.**
+**10. "What do I do now?" is missing or vague.** — *Marriage + Baby Naming ✅ FIXED (20 Oct 2026)*
 - Marriage: "Acceptable match; remedies may be considered." — which remedies?
+  **Fixed:** that sentence is gone. Every marriage report now ends its verdict
+  with a **NEXT STEP** line, inside the same block on page 1:
+  - **Very Good / Good** → *"Choose the wedding date with our Subha Muhurtham
+    report — it checks Tara Bala, Chandrashtama and Nalla Neram for both of you
+    and lists the auspicious dates: astrosivam.com/subha-muhurtham"*
+    (Tamil "தாரா பலம், சந்திராஷ்டமம், நல்ல நேரம்", Hindi "तारा बल, चंद्राष्टम
+    और नल्ला नेरम").
+  - **Incompatible** → *"Before you decide, our astrologer will review both
+    charts with you: astrosivam.com/contact."* A named next action instead of a
+    dead end, and no push to book a date for a couple who do not match.
+  - The verdict sentence itself now reads *"Good match overall — a few poruthams
+    are partial."* for the middle tier.
 - Kuja: "A mild imbalance is indicated; ask an astrologer about simple remedies."
 - Baby namaking: three numbered virtues and no instruction on choosing a name.
+  **Partly fixed:** page 1 now carries a **"Why the First Sound Matters"** panel
+  under the four pada syllables — tradition fixes the first sound from the birth
+  star and pada, any name starting with one of the four syllables is correct,
+  and every list on page 2 starts with those sounds. (The 4-step "how to
+  choose" walkthrough is still open.)
 - Muhurtham: no next step after the date table (nothing about booking/confirming).
 - Jathagam: remedies exist on page 3, but page 2's cautions never point to them.
 
-**11. Baby Naming is the thinnest report.**
+**11. Baby Naming is the thinnest report.** *✅ The central idea is now stated (20 Oct 2026)*
 444 words for two pages, and the central idea — *why* the first sound matters —
-is never stated. It says "The supplied name is for identification only, not a
-certified birth-pada name match", which raises a doubt without answering it.
+was never stated. It said "The supplied name is for identification only, not a
+certified birth-pada name match", which raised a doubt without answering it.
+
+The **"Why the First Sound Matters"** panel (EN / ஏன் முதல் ஒலி முக்கியம் /
+पहली ध्वनि क्यों महत्वपूर्ण है) now answers it on page 1, in one short paragraph
+next to the syllables it describes: the first sound is fixed by the birth star
+and pada, the family may choose any name that starts with one of the four
+printed syllables, the meaning is their choice and the first sound is the
+blessing. Page count stays at three, and the note is printed once, so it cannot
+drift onto a second sheet. Guarded by `tests/report-next-steps.test.ts`.
 
 **12. Negative conditions appear on "good" dates without explanation.**
 Muhurtham prints "03 Thursday | Uttara Phalguni | **Groom: Vadha Tara** | ✓ GOOD".

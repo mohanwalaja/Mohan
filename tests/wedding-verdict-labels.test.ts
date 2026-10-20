@@ -141,7 +141,8 @@ check('the badge and the recommendation use the same ladder as the rows', () => 
   // the recommendation must be the middle sentence, not the top one.
   assert.equal(String(weddingResult.verdictStatus), 'MADHYAMAM');
   assert.match(en, /class="score-badge badge-moderate">Good \(remedies may help\)</);
-  assert.match(en, /Acceptable match; remedies may be considered\./);
+  assert.match(en, /Good match overall — a few poruthams are partial\./);
+  assert.doesNotMatch(en, /remedies may be considered/, 'the dead-end remedy line came back');
   assert.doesNotMatch(en, /Utthamam|Madhyamam/);
 
   for (const lang of LANGS) {
