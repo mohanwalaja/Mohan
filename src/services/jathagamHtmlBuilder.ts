@@ -898,6 +898,44 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
       ${renderRasiBox(6, 'pos-4-4', source)}
     </div>`;
 
+  // ── Chart legend ────────────────────────────────────────────────────────
+  // The chart cells print short tags ("Su", "Ch", … and "Lagna"), and two
+  // planets in one rasi print side by side ("GuSa"). Until now nothing on the
+  // page said what a tag meant, so the chart was unreadable without a teacher.
+  // One compact key under the two charts, in the family's language.
+  const WESTERN_NAME_EN: Record<string, string> = {
+    [Graha.SURYA]: 'Sun', [Graha.CHANDRA]: 'Moon', [Graha.CHEVVAI]: 'Mars',
+    [Graha.BUDHA]: 'Mercury', [Graha.GURU]: 'Jupiter', [Graha.SUKRA]: 'Venus',
+    [Graha.SANI]: 'Saturn', [Graha.RAHU]: 'N. Node', [Graha.KETU]: 'S. Node'
+  };
+  const legendPlanets: Graha[] = [
+    Graha.SURYA, Graha.CHANDRA, Graha.CHEVVAI, Graha.BUDHA, Graha.GURU,
+    Graha.SUKRA, Graha.SANI, Graha.RAHU, Graha.KETU
+  ];
+  const chartLegendItems = [
+    ...legendPlanets.map(graha => {
+      const info = GRAHA_NAMES_REPORT[graha];
+      const tag = isTa ? info.tagTa : isHi ? info.tagHi : info.tagEn;
+      const name = isTa ? info.ta : isHi ? info.hi : `${info.en} (${WESTERN_NAME_EN[graha] || info.en})`;
+      return { tag, name };
+    }),
+    {
+      tag: isTa ? 'லக்' : isHi ? 'लग्न' : 'Lagna',
+      name: isTa ? 'லக்னம்' : isHi ? 'लग्न (उदय राशि)' : 'Ascendant (rising sign)'
+    }
+  ];
+  const chartLegendTitle = isTa ? 'கட்டக் குறியீடுகள்' : isHi ? 'चक्र के चिह्न' : 'Chart Symbols';
+  const chartLegendNote = isTa
+    ? 'ஒரே ராசியில் இரண்டு குறியீடுகள் (எ.கா. குருசனி) என்பது இரண்டு கிரகங்களும் அந்த ராசியில் அமைந்துள்ளன என்று பொருள்.'
+    : isHi
+    ? 'एक ही राशि में दो चिह्न (जैसे गुश) का अर्थ है कि दोनों ग्रह उसी राशि में हैं।'
+    : 'Two symbols in one sign (for example GuSa) mean both planets sit in that rasi.';
+  const chartLegendHtml = `<div class="chart-legend" role="note" aria-label="${escapeHtml(chartLegendTitle)}">
+      <span class="chart-legend-title">${escapeHtml(chartLegendTitle)}</span>
+      <span class="chart-legend-items">${chartLegendItems.map(item => `<span class="chart-legend-item"><b>${escapeHtml(item.tag)}</b> ${escapeHtml(item.name)}</span>`).join('')}</span>
+      <span class="chart-legend-note">${escapeHtml(chartLegendNote)}</span>
+    </div>`;
+
   // The Dasha timeline and planetary positions remain in the horoscope result.
   // They continue to power the page-2 predictions and chart placements; their
   // standalone tables and current-period summary are not printed on page 1.
@@ -1434,6 +1472,33 @@ ${REPORT_FONT_LINK_TAG}
     margin: 0;
     white-space: nowrap;
   }
+  /* Chart key: one compact line under the two squares. */
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6mm 2.4mm;
+    margin: 1mm 0 0;
+    padding: 1mm 2mm;
+    border: 1px solid var(--slate-border);
+    border-left: 2px solid var(--gold);
+    border-radius: 3px;
+    background: #fffdf7;
+    font-size: 7.6px;
+    line-height: 1.3;
+    color: var(--ink-light);
+  }
+  .chart-legend-title {
+    font-family: ${headerFont};
+    font-size: 8.2px;
+    font-weight: 800;
+    color: var(--maroon);
+    letter-spacing: 0.3px;
+  }
+  .chart-legend-items { display: inline-flex; flex-wrap: wrap; gap: 0.6mm 2.2mm; }
+  .chart-legend-item b { color: var(--maroon); font-weight: 900; }
+  .chart-legend-note { flex-basis: 100%; color: var(--ink-muted); font-size: 7.2px; }
+
   .rasi-chart-grid .planet-name.is-lagna {
     color: #b91c1c;
     font-weight: 900;
@@ -1977,6 +2042,8 @@ ${REPORT_GLOSSARY_CSS}
           : `<p class="mini-note">${isTa ? 'நவாம்ச நிலை தகவல் கிடைக்கவில்லை; N/A.' : isHi ? 'नवांश स्थिति उपलब्ध नहीं; N/A।' : 'Navamsa positions unavailable; N/A.'}</p>`}
       </div>
     </div>
+
+    ${chartLegendHtml}
 
     <div class="section-title">${isTa ? 'தோஷ பரிசீலனை' : isHi ? 'दोष विश्लेषण' : 'Dosha Analysis'}</div>
     ${isEzharaiSani ? `<div class="dosha-card"><div class="dosha-header"><span class="name">${isTa ? 'ஏழரை சனி — சனி பெயர்ச்சி (Sade Sati / Ezharai Sani)' : isHi ? 'साढ़े साती — शनि गोचर (Ezharai Sani)' : 'Ezharai Sani — Saturn Transit (Sade Sati)'}</span><span class="dosha-badge ${ezharaiBadgeClass}">${escapeHtml(ezharaiStatus)}</span></div><div class="desc">${escapeHtml(ezharaiDesc)}</div></div>` : ''}

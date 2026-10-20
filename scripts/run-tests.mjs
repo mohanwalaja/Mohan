@@ -109,6 +109,7 @@ const testFiles = [
   // matching couple to the Subha Muhurtham service (and a non-matching one to a
   // human), and Baby Naming must say why the first sound matters at all.
   'tests/report-next-steps.test.ts',
+  'tests/jathagam-chart-legend.test.ts',
   'tests/wedding-single-score.test.ts',
   'tests/wedding-verdict-labels.test.ts',
   'tests/report-readability-guard.test.ts',

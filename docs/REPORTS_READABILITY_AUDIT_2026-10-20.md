@@ -160,10 +160,24 @@ so it read as contradictory.
   an empty bar — never a manufactured score.
 - Guarded by `tests/wedding-single-score.test.ts` (5 checks).
 
-**8. The chart on page 1 is unreadable without a legend.**
+**8. The chart on page 1 is unreadable without a legend.** — *✅ FIXED (20 Oct 2026)*
 Cells contain strings like **"GuSa"**, **"LagnaCh"**, **"SuBu"**, **"Sk"** with no
 key. The rasi names are transliterated Tamil ("Mesham") even in English — while
 the particulars two centimetres above now say "Thulam/Libra".
+- **Fixed:** one compact **Chart Symbols** key (`div.chart-legend`) now sits
+  directly under the paired Rasi (D1) and Navamsa (D9) squares on page 1, in
+  English, Tamil and Hindi: `Su Surya (Sun) … Ke Ketu (S. Node) Lagna
+  Ascendant (rising sign)`, plus the note *"Two symbols in one sign (for example
+  GuSa) mean both planets sit in that rasi."*
+- The key is generated from the same `GRAHA_NAMES_REPORT` tags the cells print,
+  so an entry can never drift from a chart label; `api/astrology/report_views.php`
+  now prints the **same** tags (`Su/Ch/Ma/Bu/Gu/Sk/Sa/Ra/Ke`, `Lagna`) — it had
+  been drawing `Mo/Me/Ju/Ve/Lag`, a second set of abbreviations the customer
+  would have had to learn.
+- The key is 7.6px, two lines high, and the Jathagam stays 4 pages.
+- Guarded by `tests/jathagam-chart-legend.test.ts` (en/ta/hi, every drawn tag
+  covered, printed once, page 1, 4 pages, PHP tag parity). Rasi names in English
+  are still transliterated ("Mesham") — that remains open (finding 8b).
 
 **9. The plain-language summary is on the last page.**
 The best-written page of the Jathagam (page 3) is the one customers reach last.
@@ -313,15 +327,25 @@ page 1 points to it.
    Sanskrit only on the glossary page. See finding 6.
 3. Marriage: per-porutham remedy line when a porutham scores 0 — replacing
    "ask an astrologer".
-4. Muhurtham: explain the one-line Tara Bala note ("Groom: Vadha Tara — avoid
+4. Muhurtham: next step after the date table **✅ DONE (20 Oct 2026)** — the
+   page-2 selection guide now closes with *"What do I do next?"*: pick one date
+   (BEST before GOOD) and send it with the order number to
+   admin@astrosivam.com for a written date confirmation the family can show to
+   the hall and the priest; if two dates suit equally, confirm the earlier one
+   and keep the other as a backup. Same copy in en / ta / hi
+   (`api/astrology/muhurtham_report_notes.json`), unchanged page count (3).
+   Guarded by `tests/report-next-steps.test.ts`.
+5. Muhurtham: explain the one-line Tara Bala note ("Groom: Vadha Tara — avoid
    this date for him") or suppress it when the date is still GOOD for the couple.
-5. Baby naming: add a "How to choose the name" block (4 steps), and explain why
+6. Baby naming: add a "How to choose the name" block (4 steps), and explain why
    the pada sound matters.
-6. Jathagam: move the plain-language summary to **page 2, top** (page 3 stays as
+7. Jathagam: move the plain-language summary to **page 2, top** (page 3 stays as
    remedies + glossary).
-7. Chart legend: add a compact key under the Rasi/Navamsa charts
-   (Su=Sun, Ch=Moon, Ma=Mars, Bu=Mercury, Gu=Jupiter, Sk=Venus, Sa=Saturn,
-   Ra=Rahu, Ke=Ketu) and show "Thulam (Libra)" in English.
+8. ~~Chart legend: add a compact key under the Rasi/Navamsa charts~~
+   **✅ DONE (20 Oct 2026)** — key added in all three languages under both
+   squares; the English chart tags were also aligned with the PHP renderer
+   (`Su/Ch/Ma/Bu/Gu/Sk/Sa/Ra/Ke/Lagna`). Still open: show "Thulam (Libra)"
+   instead of the transliteration in English.
 
 **Fixed while doing this:** the Report Guide sheet made every report three
 sheets, but the PHP marriage and Muhurtham headers still printed "of 2" (Tamil

@@ -26,11 +26,13 @@ import { fileURLToPath } from 'node:url';
 
 import { buildWeddingMatchHtml } from '../src/services/weddingHtmlBuilder.js';
 import { buildBabyNamingHtml } from '../src/services/babyNamingHtmlBuilder.js';
+import { buildMuhurthamHtml } from '../src/services/muhurthamHtmlBuilder.js';
 import { calculateSampleResult } from '../src/services/sampleReports.js';
 import type { AppLanguage } from '../src/lib/astrology/types.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rendererPhp = fs.readFileSync(path.join(root, 'api/astrology/report_views.php'), 'utf8');
+const phpNotes = fs.readFileSync(path.join(root, 'api/astrology/muhurtham_report_notes.php'), 'utf8');
 const LANGS: AppLanguage[] = ['en', 'ta', 'hi'];
 
 let passed = 0;
@@ -42,6 +44,7 @@ function check(name: string, fn: () => void) {
 
 const wedding: any = await calculateSampleResult('MARRIAGE_COMPATIBILITY', { force: true });
 const baby: any = await calculateSampleResult('BABY_NAMING', { force: true });
+const muhurtham: any = await calculateSampleResult('MUHURTHAM', { force: true });
 
 const NEXT_STEP_LABEL: Record<AppLanguage, string> = {
   en: 'NEXT STEP',
@@ -128,6 +131,29 @@ check('Baby Naming explains why the first sound matters, on page 1', () => {
   }
 });
 
+check('Muhurtham tells the family what to do with the dates it just listed', () => {
+  const headings: Record<AppLanguage, string> = {
+    en: 'What do I do next?',
+    ta: 'அடுத்து என்ன செய்ய வேண்டும்?',
+    hi: 'अब आगे क्या करें?'
+  };
+  for (const lang of LANGS) {
+    const html = buildMuhurthamHtml(muhurtham, lang);
+    const step = /<p class="selection-next-step">[\s\S]*?<\/p>/.exec(html)?.[0] || '';
+    assert.ok(step.includes(headings[lang]), `${lang}: the date table has no next step`);
+    assert.ok(step.includes('admin@astrosivam.com'), `${lang}: the next step does not say where to send the date`);
+    // Confirmation in writing is the point: the family has to show it to others.
+    assert.ok(
+      lang === 'en' ? /confirmation/i.test(step) : true,
+      `${lang}: the next step never promises a written confirmation`
+    );
+    assert.equal((html.match(/class="selection-next-step"/g) || []).length, 1,
+      `${lang}: the next step is printed more than once`);
+    assert.equal((html.match(/<div class="page /g) || []).length, 3,
+      `${lang}: the Muhurtham report changed sheet count`);
+  }
+});
+
 check('the PHP renderer carries the same copy', () => {
   assert.match(rendererPhp, /astrosivam\.com\/subha-muhurtham/, 'no Muhurtham URL in the PHP verdict');
   assert.doesNotMatch(rendererPhp, /astrosivam\.com\/contact/, 'the retired contact line is still in the PHP verdict');
@@ -135,6 +161,9 @@ check('the PHP renderer carries the same copy', () => {
   assert.match(rendererPhp, /\$nextStepText = \$isTa/);
   assert.match(rendererPhp, /class="bn-why"/);
   assert.match(rendererPhp, /\$whySoundTitle = \$isTa \? 'ஏன் முதல் ஒலி முக்கியம்'/);
+  assert.match(rendererPhp, /class="selection-next-step"/, 'the PHP Muhurtham guide has no next step');
+  assert.match(rendererPhp, /\$notes\['nextStepText'\]/, 'the PHP Muhurtham guide never reads the next-step copy');
+  assert.match(phpNotes, /'nextStepHeading'/, 'the PHP notes builder returns no next-step copy');
 });
 
 console.log(`\n${passed} no-dead-end checks passed.`);

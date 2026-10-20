@@ -957,6 +957,11 @@ class AstroReportViews {
     .rasi-planets { font-size: 7.5px; color: #1e293b; font-weight: bold; line-height: 1.15; margin-top: 0.3mm; }
     .planet-name { color: #1e293b; font-size: 7.5px; font-weight: bold; display: inline-block; margin: 0.2mm 0.5mm; background: none; border: none; padding: 0; }
     .planet-name.lagna { color: #dc2626; font-size: 8px; font-weight: 900; background: none; border: none; padding: 0; }
+    .chart-legend { display: block; margin: 1.4mm 0 0; padding: 1.4mm 2mm; border: 1px solid #e2e8f0; border-left: 2px solid #c9a227; border-radius: 3px; background: #fffdf7; font-size: 7.6px; line-height: 1.3; color: #475569; }
+    .chart-legend-title { font-size: 8.2px; font-weight: 800; color: #7b1e3b; letter-spacing: 0.3px; margin-right: 2mm; }
+    .chart-legend-item { display: inline-block; margin: 0 2.2mm 0.4mm 0; }
+    .chart-legend-item b { color: #7b1e3b; font-weight: 900; }
+    .chart-legend-note { display: block; color: #64748b; font-size: 7.2px; margin-top: 0.6mm; }
     .rasi-center-om { background: #fdf8ee; color: #7a1f1f; font-size: 12px; font-weight: bold; vertical-align: middle; text-align: center; height: 23mm !important; }
     .rasi-center-om span { font-size: 7px; color: #a67c1f; }
 
@@ -989,6 +994,7 @@ class AstroReportViews {
     /* Report Guide & Glossary sheet — the last page of every report.
        Two side-by-side columns because a print renderer has no CSS columns. */
     .glossary-sheet { padding: 5.5mm 7mm 5.5mm; }
+    .muhurtham-selection-notes .selection-next-step { border-top: 1px solid #e8d9b8; padding-top: 1.6mm; }
     .glossary-quick { border: 1px solid #e2e8f0; border-left: 3px solid #c9962c; background: #fffdf7; border-radius: 4px; padding: 1.6mm 2.6mm 1.4mm; margin: 1.6mm 0 2mm; page-break-inside: avoid; }
     .glossary-quick-title { font-size: 10px; font-weight: bold; color: #7a1230; margin-bottom: 1mm; }
     .glossary-quick-row { font-size: 9.5px; line-height: 1.32; color: #2b1d14; margin: 0 0 0.7mm; }
@@ -1254,16 +1260,32 @@ HTML;
         // Short tags for planets in chart. Keys are the engine's graha values
         // (the lowercase Graha enum: sun, moon, ...). They were capitalised before,
         // so no planet ever matched and the Hindi chart lost every placement.
+        // The tags must match src/services/jathagamHtmlBuilder.ts
+        // (GRAHA_NAMES_REPORT) exactly: the same customer reads both renderers,
+        // and the legend below is printed from these same strings.
         $grahaTags = [
             'sun' => $isTa ? 'சூ' : ($isHi ? 'सू' : 'Su'),
-            'moon' => $isTa ? 'சந்' : ($isHi ? 'चं' : 'Mo'),
+            'moon' => $isTa ? 'சந்' : ($isHi ? 'चं' : 'Ch'),
             'mars' => $isTa ? 'செவ்' : ($isHi ? 'मं' : 'Ma'),
-            'mercury' => $isTa ? 'பு' : ($isHi ? 'बु' : 'Me'),
-            'jupiter' => $isTa ? 'குரு' : ($isHi ? 'गु' : 'Ju'),
-            'venus' => $isTa ? 'சுக்' : ($isHi ? 'शु' : 'Ve'),
+            'mercury' => $isTa ? 'பு' : ($isHi ? 'बु' : 'Bu'),
+            'jupiter' => $isTa ? 'குரு' : ($isHi ? 'गु' : 'Gu'),
+            'venus' => $isTa ? 'சுக்' : ($isHi ? 'शु' : 'Sk'),
             'saturn' => $isTa ? 'சனி' : ($isHi ? 'श' : 'Sa'),
             'rahu' => $isTa ? 'ரா' : ($isHi ? 'रा' : 'Ra'),
             'ketu' => $isTa ? 'கே' : ($isHi ? 'के' : 'Ke'),
+        ];
+        // What each tag means, in the family's language. Read from the same
+        // arrays as the chart so a legend entry can never go missing.
+        $grahaLegendNames = [
+            'sun' => $isTa ? 'சூரியன்' : ($isHi ? 'सूर्य' : 'Surya (Sun)'),
+            'moon' => $isTa ? 'சந்திரன்' : ($isHi ? 'चंद्र' : 'Chandra (Moon)'),
+            'mars' => $isTa ? 'செவ்வாய்' : ($isHi ? 'मंगल' : 'Mangal (Mars)'),
+            'mercury' => $isTa ? 'புதன்' : ($isHi ? 'बुध' : 'Budha (Mercury)'),
+            'jupiter' => $isTa ? 'குரு' : ($isHi ? 'गुरु' : 'Guru (Jupiter)'),
+            'venus' => $isTa ? 'சுக்கிரன்' : ($isHi ? 'शुक्र' : 'Sukra (Venus)'),
+            'saturn' => $isTa ? 'சனி' : ($isHi ? 'शनि' : 'Sani (Saturn)'),
+            'rahu' => $isTa ? 'ராகு' : ($isHi ? 'राहु' : 'Rahu (N. Node)'),
+            'ketu' => $isTa ? 'கேது' : ($isHi ? 'केतु' : 'Ketu (S. Node)'),
         ];
 
         $chartPlanetPositions = is_array($result['planetPositions'] ?? null) ? $result['planetPositions'] : [];
@@ -1281,7 +1303,8 @@ HTML;
                 $planetsByRasi[$r][] = '<span class="planet-name">' . self::e($tag) . '</span>';
             }
         }
-        $lagnaTag = '<span class="planet-name lagna">' . ($isTa ? 'லக்' : ($isHi ? 'लग्न' : 'Lag')) . '</span>';
+        $lagnaTagText = $isTa ? 'லக்' : ($isHi ? 'लग्न' : 'Lagna');
+        $lagnaTag = '<span class="planet-name lagna">' . $lagnaTagText . '</span>';
 
         $signOrder = [
             ['Pisces','Aries','Taurus','Gemini'],
@@ -1289,6 +1312,27 @@ HTML;
             ['Capricorn', null, null, 'Leo'],
             ['Sagittarius','Scorpio','Libra','Virgo'],
         ];
+        // Chart key: without it a cell reading "GuSa" or "LagnaCh" is unreadable.
+        // Same wording as the browser report's .chart-legend.
+        $chartLegendTitle = $isTa ? 'கட்டக் குறியீடுகள்' : ($isHi ? 'चक्र के चिह्न' : 'Chart Symbols');
+        $chartLegendNote = $isTa
+            ? 'ஒரே ராசியில் இரண்டு குறியீடுகள் (எ.கா. குருசனி) என்பது இரண்டு கிரகங்களும் அந்த ராசியில் அமைந்துள்ளன என்று பொருள்.'
+            : ($isHi
+                ? 'एक ही राशि में दो चिह्न (जैसे गुश) का अर्थ है कि दोनों ग्रह उसी राशि में हैं।'
+                : 'Two symbols in one sign (for example GuSa) mean both planets sit in that rasi.');
+        $chartLegendItemsHtml = '';
+        foreach ($grahaTags as $gKey => $gTag) {
+            $chartLegendItemsHtml .= '<span class="chart-legend-item"><b>' . self::e($gTag) . '</b> '
+                . self::e($grahaLegendNames[$gKey] ?? '') . '</span>';
+        }
+        $chartLegendItemsHtml .= '<span class="chart-legend-item"><b>' . self::e($lagnaTagText) . '</b> '
+            . self::e($isTa ? 'லக்னம்' : ($isHi ? 'लग्न (उदय राशि)' : 'Ascendant (rising sign)')) . '</span>';
+        $chartLegendHtml = '<div class="chart-legend">'
+            . '<span class="chart-legend-title">' . self::e($chartLegendTitle) . '</span>'
+            . '<span class="chart-legend-items">' . $chartLegendItemsHtml . '</span>'
+            . '<span class="chart-legend-note">' . self::e($chartLegendNote) . '</span>'
+            . '</div>';
+
         // Item 7: the same 4x4 South-Indian grid serves the Rasi chart and the
         // Navamsa (D9) confirmation chart. A closure keeps the two grids from
         // drifting apart (cell order, Lagna marker, center label).
@@ -1362,7 +1406,7 @@ HTML;
                 $navamsaLagnaRasi = ((int) floor($lagnaTotalForNavamsa / (360.0 / 108.0)) % 12) + 1;
             }
         }
-        $navamsaLagnaTag = '<span class="planet-name lagna">' . ($isTa ? 'லக்' : ($isHi ? 'लग्न' : 'Lag')) . '</span>';
+        $navamsaLagnaTag = '<span class="planet-name lagna">' . $lagnaTagText . '</span>';
         $navamsaRows = $navamsaTagged > 0
             ? $buildRasiRows($navamsaPlanetsByRasi, $navamsaLagnaRasi, $navamsaLagnaTag, ($isTa ? 'நவாம்சம் D9' : ($isHi ? 'नवांश D9' : 'NAVAMSA D9')))
             : '';
@@ -1388,6 +1432,7 @@ HTML;
     </div>
   </td>
 </tr></table>
+{$chartLegendHtml}
 HTML;
 
         $planetsList = $chartPlanetPositions;
@@ -4348,7 +4393,12 @@ HTML;
                 : '')
             . '<p><b>' . self::e($notes['selectionHeading']) . '</b><br/>'
             . ($notes['summaryText'] !== '' ? '<span class="selection-counts">' . self::e($notes['summaryText']) . '</span><br/>' : '')
-            . self::e($notes['selectionText']) . '</p></div>';
+            . self::e($notes['selectionText']) . '</p>'
+            // The report used to stop at the table. This is the step after it.
+            . (!empty($notes['nextStepText'])
+                ? '<p class="selection-next-step"><b>' . self::e($notes['nextStepHeading']) . '</b><br/>' . self::e($notes['nextStepText']) . '</p>'
+                : '')
+            . '</div>';
         $upperHalf = '';
         if ($datesContinueOnPage2) {
             $upperHalf = '<div class="sec-head"><span class="sec-no">02</span>' . self::e($t['datesTitle'])
