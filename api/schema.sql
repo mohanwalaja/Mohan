@@ -265,10 +265,14 @@ CREATE TABLE IF NOT EXISTS `banned_ips` (
 CREATE TABLE IF NOT EXISTS `team_members` (
   `id` VARCHAR(64) NOT NULL PRIMARY KEY,
   `name` VARCHAR(191) NOT NULL,
+  `name_ta` VARCHAR(191) NULL,
   `title` VARCHAR(191) NOT NULL,
   `title_ta` VARCHAR(191) NULL,
   `title_hi` VARCHAR(191) NULL,
   `bio` TEXT NOT NULL,
+  `bio_ta` TEXT NULL,
+  `education` VARCHAR(255) NULL,
+  `education_ta` VARCHAR(255) NULL,
   `location` VARCHAR(191) NOT NULL,
   `experience_years` INT NOT NULL DEFAULT 15,
   `specializations` TEXT NOT NULL,
@@ -277,7 +281,8 @@ CREATE TABLE IF NOT EXISTS `team_members` (
   `display_order` INT NOT NULL DEFAULT 0,
   `contact_phone` VARCHAR(64) NULL,
   `contact_email` VARCHAR(191) NULL,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 5. System Settings Table

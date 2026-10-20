@@ -1998,24 +1998,78 @@ if (strpos($path, 'admin/team') !== false) {
         jsonResponse(['success' => true, 'team' => $team]);
     } elseif ($method === 'POST') {
         $body = getJsonBody();
-        $id = $body['id'] ?? astro_random_id('tm_', 8);
-        $name = $body['fullName'] ?? $body['nameEn'] ?? $body['name'] ?? 'Team Scholar';
-        $name_ta = $body['nameTa'] ?? '';
-        $title = $body['titleEn'] ?? $body['title'] ?? 'Vedic Astrologer';
-        $title_ta = $body['titleTa'] ?? '';
-        $title_hi = $body['titleHi'] ?? '';
-        $bio = $body['bio'] ?? '';
-        $location = $body['location'] ?? 'Tamil Nadu, India';
-        $exp = intval($body['experienceYears'] ?? $body['yearsOfExperience'] ?? 10);
-        $specs = isset($body['specializations']) && is_array($body['specializations']) ? json_encode($body['specializations']) : '[]';
+        $id = (string)($body['id'] ?? astro_random_id('tm_', 8));
+        $name = trim((string)($body['fullName'] ?? $body['nameEn'] ?? $body['name'] ?? ''));
+        if ($name === '') {
+            jsonResponse(['success' => false, 'message' => 'Please enter the team member\'s name.'], 400);
+        }
+        $title = trim((string)($body['titleEn'] ?? $body['title'] ?? ''));
+        if ($title === '') {
+            $title = 'Vedic Astrologer';
+        }
+        $education = trim((string)($body['educationEn'] ?? $body['education'] ?? ''));
+        $bio = (string)($body['bioEn'] ?? $body['bio'] ?? '');
+        $specs = isset($body['specializations']) && is_array($body['specializations'])
+            ? json_encode(array_values($body['specializations']))
+            : '[]';
         // No pasted stock photo by default: without an upload (or an explicit
         // link) the public card shows the ASTRO SIVAM emblem, never a stranger.
         $photo = is_string($body['photoUrl'] ?? null) ? trim($body['photoUrl']) : '';
         $is_active = isset($body['isActive']) ? ($body['isActive'] ? 1 : 0) : 1;
-        $order = intval($body['displayOrder'] ?? 1);
+        // The panel sends `order`; older clients sent `displayOrder`.
+        $order = intval($body['order'] ?? $body['displayOrder'] ?? 1);
 
-        $stmt = $pdo->prepare("INSERT INTO team_members (id, name, name_ta, title, title_ta, title_hi, bio, location, experience_years, specializations, photo_url, is_active, display_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE name=VALUES(name), title=VALUES(title), updated_at=NOW()");
-        $stmt->execute([$id, $name, $name_ta, $title, $title_ta, $title_hi, $bio, $location, $exp, $specs, $photo, $is_active, $order]);
+        // Write ONLY the columns this database really has.
+        //
+        // This route used to INSERT `name_ta` and `updated_at` unconditionally,
+        // but api/schema.sql never declared them, so on a real MySQL database
+        // every "Add Member" click died with "Unknown column 'name_ta' in
+        // 'field list'" — a 500 with an empty body, which the panel quietly
+        // ignored. The columns now exist (api/migrations/019), but a database
+        // that has not run that migration must still accept a new member.
+        // Web requests never ALTER TABLE: they adapt to what is there.
+        $columns = astro_table_columns($pdo, 'team_members');
+        $stamp = date('Y-m-d H:i:s');
+        $values = [
+            'id' => $id,
+            'name' => $name,
+            'name_ta' => (string)($body['nameTa'] ?? ''),
+            'title' => $title,
+            'title_ta' => (string)($body['titleTa'] ?? ''),
+            'title_hi' => (string)($body['titleHi'] ?? ''),
+            'bio' => $bio,
+            'bio_ta' => (string)($body['bioTa'] ?? ''),
+            'education' => $education,
+            'education_ta' => (string)($body['educationTa'] ?? ''),
+            'location' => (string)($body['location'] ?? 'Tamil Nadu, India'),
+            'experience_years' => intval($body['experienceYears'] ?? $body['yearsOfExperience'] ?? 10),
+            'specializations' => $specs,
+            'photo_url' => $photo,
+            'is_active' => $is_active,
+            'display_order' => $order,
+            'created_at' => $stamp,
+            'updated_at' => $stamp,
+        ];
+        if (!empty($columns)) {
+            $values = array_intersect_key($values, array_flip(array_map('strval', $columns)));
+        }
+        $names = array_keys($values);
+        $upsert = 'name = VALUES(name), title = VALUES(title)';
+        if (in_array('updated_at', $names, true)) {
+            $upsert .= ', updated_at = VALUES(updated_at)';
+        }
+        $sql = 'INSERT INTO team_members (' . implode(', ', $names) . ') VALUES ('
+            . implode(', ', array_fill(0, count($names), '?')) . ') ON DUPLICATE KEY UPDATE ' . $upsert;
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(array_values($values));
+        } catch (Throwable $e) {
+            error_log('ASTRO SIVAM: saving team member failed: ' . $e->getMessage());
+            jsonResponse([
+                'success' => false,
+                'message' => 'The team member could not be saved on the server. Please try again — if it keeps happening, the database is missing a column (api/migrations/019).',
+            ], 500);
+        }
         jsonResponse(['success' => true, 'message' => 'Team member saved successfully', 'member' => array_merge($body, ['id' => $id])]);
     } elseif ($method === 'PUT') {
         $body = getJsonBody();
@@ -2025,28 +2079,64 @@ if (strpos($path, 'admin/team') !== false) {
             $id = $body['id'] ?? ($_GET['id'] ?? '');
         }
         if ($id) {
-            $sets = [];
-            $params = [];
+            // Same rule as POST: write only the columns this database has, so a
+            // database without migration 019 still updates instead of throwing
+            // "Unknown column 'updated_at'".
+            $existing = array_map('strval', astro_table_columns($pdo, 'team_members'));
+            $wants = [];
             if (isset($body['isActive'])) {
-                $sets[] = "is_active = ?";
-                $params[] = $body['isActive'] ? 1 : 0;
+                $wants['is_active'] = $body['isActive'] ? 1 : 0;
             }
             if (isset($body['fullName']) || isset($body['nameEn']) || isset($body['name'])) {
-                $sets[] = "name = ?";
-                $params[] = $body['fullName'] ?? $body['nameEn'] ?? $body['name'];
+                $wants['name'] = $body['fullName'] ?? $body['nameEn'] ?? $body['name'];
+            }
+            if (isset($body['nameTa'])) {
+                $wants['name_ta'] = (string)$body['nameTa'];
             }
             if (isset($body['titleEn']) || isset($body['title'])) {
-                $sets[] = "title = ?";
-                $params[] = $body['titleEn'] ?? $body['title'];
+                $wants['title'] = $body['titleEn'] ?? $body['title'];
+            }
+            if (isset($body['titleTa'])) {
+                $wants['title_ta'] = (string)$body['titleTa'];
+            }
+            if (isset($body['titleHi'])) {
+                $wants['title_hi'] = (string)$body['titleHi'];
+            }
+            if (isset($body['bioEn']) || isset($body['bio'])) {
+                $wants['bio'] = (string)($body['bioEn'] ?? $body['bio']);
+            }
+            if (isset($body['bioTa'])) {
+                $wants['bio_ta'] = (string)$body['bioTa'];
+            }
+            if (isset($body['educationEn']) || isset($body['education'])) {
+                $wants['education'] = (string)($body['educationEn'] ?? $body['education']);
+            }
+            if (isset($body['educationTa'])) {
+                $wants['education_ta'] = (string)$body['educationTa'];
+            }
+            if (isset($body['location'])) {
+                $wants['location'] = (string)$body['location'];
             }
             if (isset($body['experienceYears']) || isset($body['yearsOfExperience'])) {
-                $sets[] = "experience_years = ?";
-                $params[] = intval($body['experienceYears'] ?? $body['yearsOfExperience']);
+                $wants['experience_years'] = intval($body['experienceYears'] ?? $body['yearsOfExperience']);
             }
-            $previousPhoto = '';
+            if (isset($body['specializations']) && is_array($body['specializations'])) {
+                $wants['specializations'] = json_encode(array_values($body['specializations']));
+            }
             if (isset($body['photoUrl'])) {
-                $sets[] = "photo_url = ?";
-                $params[] = trim((string)$body['photoUrl']);
+                $wants['photo_url'] = trim((string)$body['photoUrl']);
+            }
+            // The panel sends `order`; older clients sent `displayOrder`.
+            if (isset($body['order']) || isset($body['displayOrder'])) {
+                $wants['display_order'] = intval($body['order'] ?? $body['displayOrder']);
+            }
+            $wants['updated_at'] = date('Y-m-d H:i:s');
+            if (!empty($existing)) {
+                $wants = array_intersect_key($wants, array_flip($existing));
+            }
+
+            $previousPhoto = '';
+            if (array_key_exists('photo_url', $wants)) {
                 // Read the old value first: a replaced upload is deleted from
                 // disk once the row points at the new one, so the folder never
                 // accumulates orphaned portraits.
@@ -2058,10 +2148,25 @@ if (strpos($path, 'admin/team') !== false) {
                     $previousPhoto = '';
                 }
             }
-            if (!empty($sets)) {
+
+            if (!empty($wants)) {
+                $sets = [];
+                $params = [];
+                foreach ($wants as $column => $value) {
+                    $sets[] = $column . ' = ?';
+                    $params[] = $value;
+                }
                 $params[] = $id;
-                $stmt = $pdo->prepare("UPDATE team_members SET " . implode(', ', $sets) . ", updated_at = NOW() WHERE id = ?");
-                $stmt->execute($params);
+                try {
+                    $stmt = $pdo->prepare("UPDATE team_members SET " . implode(', ', $sets) . " WHERE id = ?");
+                    $stmt->execute($params);
+                } catch (Throwable $e) {
+                    error_log('ASTRO SIVAM: updating team member failed: ' . $e->getMessage());
+                    jsonResponse([
+                        'success' => false,
+                        'message' => 'The team member could not be updated on the server. Please try again — if it keeps happening, the database is missing a column (api/migrations/019).',
+                    ], 500);
+                }
                 if ($previousPhoto !== '' && $previousPhoto !== trim((string)($body['photoUrl'] ?? ''))) {
                     astro_team_photo_delete($previousPhoto);
                 }

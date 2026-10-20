@@ -199,6 +199,10 @@ const testFiles = [
   // And the real routes end-to-end under PHP-WASM (upload -> member -> public
   // team card -> replace/delete cleanup), which is the flow the admin performs.
   'tests/team-photo-e2e.test.ts',
+  // "Add Member" looked dead because the insert named columns api/schema.sql
+  // never declared (HTTP 500, empty body, silently ignored). Runs the real
+  // create/update routes against both the current and the pre-migration table.
+  'tests/team-member-save.test.ts',
   // Saved family members + frozen report download: order forms must start
   // blank (explicit picker, never silent auto-fill), up to 6 family
   // members are saveable, and a dashboard re-download must render the
