@@ -11,14 +11,18 @@
  * not always available locally.
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   DEFAULT_SERVICE_PRICES,
+  MAX_USD_TO_INR_RATE,
+  MIN_USD_TO_INR_RATE,
   USD_TO_INR_RATE,
   cartTotalForPaymentMethod,
   getServicePrices,
+  normalizeUsdToInrRate,
   usdToInr
 } from '../src/services/pricing';
 
@@ -94,27 +98,130 @@ check('admin panel has no editable India price — INR is displayed, derived fro
   assert.doesNotMatch(admin, /setIndiaPrice/, 'no India price state');
   assert.doesNotMatch(admin, /inr: Number\(e\.target\.value\)/, 'no INR input fields');
   assert.match(admin, /indiaPriceINR: usdToInr\(/, 'saved indiaPriceINR is derived');
-  assert.match(admin, /\[key\]: \{ usd: nextUsd, inr: usdToInr\(nextUsd\) \}/, 'per-service INR follows USD');
+  assert.match(admin, /\[key\]: \{ usd: nextUsd, inr: usdToInr\(nextUsd, effectiveUsdToInrRate\) \}/, 'per-service INR follows USD at the live rate');
+  assert.match(admin, /data-testid="admin-usd-inr-rate-invalid"/, 'an out-of-band rate is called out, not silently applied');
 });
 
 check('PHP mirrors the rule: INR derived from USD everywhere the server prices an order', () => {
   const config = read('api/config.php');
   assert.match(config, /function astro_usd_to_inr\(/);
   assert.match(config, /function astro_normalize_service_pricing\(/);
-  assert.match(config, /\$row\['inr'\] = astro_usd_to_inr\(\$usd\);/);
+  assert.match(config, /\$row\['inr'\] = astro_usd_to_inr\(\$usd, \$rate\);/);
 
   const services = read('api/services/index.php');
   const rawPricingReads = services.match(/\$pricing = (?!astro_normalize_service_pricing)[^;]*json_decode\([^;]*'pricing'/g) || [];
   assert.equal(rawPricingReads.length, 0, 'every pricing read in services/index.php is normalised');
-  assert.match(services, /\$maxSessionAmount = in_array\(\$pm, \['GPAY', 'UPI'\], true\) \? 1000 \* USD_TO_INR_RATE : 1000;/,
+  assert.match(services, /\$maxSessionAmount = in_array\(\$pm, \['GPAY', 'UPI'\], true\) \? 1000 \* \$inrRate : 1000;/,
     'the payment-session ceiling is currency-aware so derived INR amounts are accepted');
+  assert.match(services, /\$inrRate = astro_usd_inr_rate\(\$general\);/,
+    'the session ceiling uses the admin-set rate, not a fixed constant');
 
   const multi = read('api/services/multi_person_order.php');
   assert.doesNotMatch(multi, /\$override = \$row\['inr'\]/, 'multi-person orders never trust a stored INR price');
 
   const admin = read('api/admin/index.php');
-  assert.match(admin, /\$pricing = astro_normalize_service_pricing\(isset\(\$body\['pricing'\]\)/, 'admin save normalises pricing');
+  assert.match(admin, /\$pricing = astro_normalize_service_pricing\(\s*isset\(\$body\['pricing'\]\)/, 'admin save normalises pricing');
   assert.match(admin, /\$body\['indiaPriceINR'\] = astro_usd_to_inr\(/, 'admin save derives indiaPriceINR');
 });
+
+console.log('--- ADMIN-SET USD → INR RATE ---');
+
+check('the shipped default rate is ₹95, not the stale ₹84', () => {
+  assert.equal(USD_TO_INR_RATE, 95, 'a hard-coded ₹84 was ~12% below the real rate');
+  assert.ok(MIN_USD_TO_INR_RATE < USD_TO_INR_RATE && USD_TO_INR_RATE < MAX_USD_TO_INR_RATE);
+});
+
+check('the rate is normalised: out-of-band or non-numeric values fall back', () => {
+  assert.equal(normalizeUsdToInrRate(95), 95);
+  assert.equal(normalizeUsdToInrRate('90'), 90);
+  assert.equal(normalizeUsdToInrRate(95.456), 95.46);
+  for (const bad of [0, -5, 9.5, 9500, 'abc', '', null, undefined, Number.NaN]) {
+    assert.equal(normalizeUsdToInrRate(bad), USD_TO_INR_RATE, `bad rate ${String(bad)} must fall back`);
+  }
+});
+
+check('an explicit rate is what usdToInr multiplies by', () => {
+  assert.equal(usdToInr(18, 90), 1620);
+  assert.equal(usdToInr(18, 95), 1710);
+  assert.equal(usdToInr(9.99, 95), 949);
+  assert.equal(usdToInr(18, 0), usdToInr(18), 'an unusable rate falls back to the default');
+});
+
+check('a saved admin rate flows through every service price and the cart', () => {
+  const settings = {
+    usdToInrRate: 90,
+    servicePricing: { BIRTH_JATHAGAM: { usd: 18, inr: 499 } }
+  };
+  assert.deepEqual(getServicePrices(settings, 'BIRTH_JATHAGAM'), { USD: 18, INR: 1620 });
+  assert.deepEqual(getServicePrices(settings, 'MUHURTHAM'), { USD: 20, INR: 1800 });
+  const cart = cartTotalForPaymentMethod([{ serviceType: 'BIRTH_JATHAGAM' }], settings, 'GPAY');
+  assert.equal(cart.currency, 'INR');
+  assert.equal(cart.total, 1620);
+  // A different method still charges US$ — the rate never changes the currency.
+  const paypal = cartTotalForPaymentMethod([{ serviceType: 'BIRTH_JATHAGAM' }], settings, 'PAYPAL');
+  assert.equal(paypal.currency, 'USD');
+  assert.equal(paypal.total, 18);
+});
+
+check('PHP derives at the admin rate and rejects an out-of-band save', () => {
+  const config = read('api/config.php');
+  assert.match(config, /define\('USD_TO_INR_RATE', 95\);/);
+  assert.match(config, /define\('MIN_USD_TO_INR_RATE', 40\);/);
+  assert.match(config, /define\('MAX_USD_TO_INR_RATE', 300\);/);
+  assert.match(config, /function astro_normalize_usd_to_inr_rate\(/);
+  assert.match(config, /function astro_usd_inr_rate\(/);
+  assert.match(config, /function astro_usd_inr_rate_for_row\(/);
+  assert.match(config, /function astro_usd_to_inr\(\$usd, \$rate = null\): int/);
+  assert.match(config, /function astro_normalize_service_pricing\(\$pricing, \$rate = null\): array/);
+
+  const admin = read('api/admin/index.php');
+  assert.match(admin, /array_key_exists\('usdToInrRate', \$body\)/, 'admin save accepts a rate');
+  assert.match(admin, /\$numericRate < MIN_USD_TO_INR_RATE \|\| \$numericRate > MAX_USD_TO_INR_RATE/,
+    'admin save rejects an out-of-band rate instead of storing it');
+  assert.match(admin, /\$mergedGeneral\['usdToInrRate'\] = \$savedInrRate;/, 'the rate is persisted');
+  assert.match(admin, /astro_normalize_service_pricing\([\s\S]{0,80}\$savedInrRate\)/,
+    'saving re-derives every INR price at the saved rate');
+
+  const services = read('api/services/index.php');
+  assert.match(services, /\$settings\['usdToInrRate'\] = \$inrRate;/, 'the public settings expose the rate');
+  assert.match(services, /'usdToInrRate' => \(float\)USD_TO_INR_RATE/, 'the no-row fallback states the default');
+  assert.doesNotMatch(services, /round\(\d+ \* USD_TO_INR_RATE\)/,
+    'no price table may bypass the resolved rate');
+
+  const multi = read('api/services/multi_person_order.php');
+  assert.match(multi, /function astro_multi_person_unit_price\(\$serviceCode, \$pricing, \$currency, \$rate = null\)/);
+  assert.match(multi, /astro_multi_person_unit_price\(\$item\['serviceCode'\], \$pricing, \$currency, \$inrRate\)/);
+});
+
+check('the admin panel has an exchange-rate field that re-derives every INR', () => {
+  const admin = read('src/pages/AdminPortal.tsx');
+  assert.match(admin, /data-testid="admin-usd-inr-rate"/, 'the rate input exists');
+  assert.match(admin, /setUsdToInrRate\(next\)/, 'the admin can change the rate');
+  assert.match(admin, /usdToInrRate: savedRate,/, 'the rate is sent on save');
+  assert.match(admin, /indiaPriceINR: usdToInr\(Number\(intlPrice\) \|\| 0, savedRate\)/,
+    'the saved India price uses the saved rate');
+  assert.match(admin, /inr: usdToInr\(nextUsd, effectiveUsdToInrRate\)/, 'per-service INR follows the live rate');
+
+  const checklist = read('src/components/admin/SetupChecklistPanel.tsx');
+  assert.match(checklist, /resolveUsdToInrRate\(settings/, 'the setup audit quotes the live rate');
+  assert.doesNotMatch(checklist, /USD_TO_INR_RATE/, 'the audit cannot quote a fixed rate');
+});
+
+// The arithmetic above is mirrored in PHP; run the real helpers in a real PHP
+// runtime when the dev-only wasm build is installed (CI runs the same file
+// natively via scripts/run-php-tests.sh).
+if (fs.existsSync(path.join(root, 'node_modules', '@php-wasm', 'node'))) {
+  check('tests/usd-inr-rate.test.php passes under PHP 8.1', () => {
+    const run = spawnSync(
+      process.execPath,
+      [path.join(root, 'scripts/php-wasm-run.mjs'), '--php', '8.1', 'tests/usd-inr-rate.test.php'],
+      { cwd: root, encoding: 'utf8', timeout: 180000 }
+    );
+    assert.equal(run.status, 0, `${run.stdout}\n${run.stderr}`);
+    assert.match(run.stdout, /USD\/INR rate tests passed \(\d+ checks\)/);
+  });
+} else {
+  console.log('  [SKIP] @php-wasm/node is not installed - tests/usd-inr-rate.test.php runs in CI (npm run test:php).');
+}
 
 console.log(`\nUSD base pricing contract passed (${passed} checks).`);

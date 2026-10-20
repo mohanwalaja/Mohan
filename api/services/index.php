@@ -379,7 +379,9 @@ if (($method === 'GET' || $method === 'HEAD') && (
     if ($row) {
         $general = json_decode($row['general_settings'] ?? '{}', true) ?: [];
         $email = json_decode($row['email_settings'] ?? '{}', true) ?: [];
-        $pricing = astro_normalize_service_pricing(json_decode($row['pricing'] ?? '{}', true) ?: []);
+        // The admin's USD -> INR rate drives every India price below.
+        $inrRate = astro_usd_inr_rate($general);
+        $pricing = astro_normalize_service_pricing(json_decode($row['pricing'] ?? '{}', true) ?: [], $inrRate);
         $paymentMethods = json_decode($row['payment_methods'] ?? '{}', true) ?: [];
 
         // Safe public email subset
@@ -419,9 +421,11 @@ if (($method === 'GET' || $method === 'HEAD') && (
         }
 
         if (!isset($settings['intlPriceUSD'])) $settings['intlPriceUSD'] = $general['intlPriceUSD'] ?? 5;
-        // USD is the base price; India (INR) is always auto-calculated from it.
-        $settings['servicePricing'] = astro_normalize_service_pricing($general['servicePricing'] ?? $pricing);
-        $settings['indiaPriceINR'] = astro_usd_to_inr($settings['intlPriceUSD']);
+        // USD is the base price; India (INR) is always auto-calculated from it
+        // at the admin's current rate (never a stored INR value).
+        $settings['usdToInrRate'] = $inrRate;
+        $settings['servicePricing'] = astro_normalize_service_pricing($general['servicePricing'] ?? $pricing, $inrRate);
+        $settings['indiaPriceINR'] = astro_usd_to_inr($settings['intlPriceUSD'], $inrRate);
         if (!isset($settings['googleLoginEnabled'])) $settings['googleLoginEnabled'] = $general['googleLoginEnabled'] ?? true;
         if (!isset($settings['googleClientId'])) $settings['googleClientId'] = $general['googleClientId'] ?? '';
         if (!isset($settings['facebookLoginEnabled'])) $settings['facebookLoginEnabled'] = $general['facebookLoginEnabled'] ?? true;
@@ -498,7 +502,8 @@ if (($method === 'GET' || $method === 'HEAD') && (
             'paypalMode' => 'sandbox',
             'supportEmail' => 'admin@astrosivam.com',
             'supportPhone' => '+679 999 8888',
-            'pricing' => ['BIRTH_JATHAGAM' => ['usd' => 18, 'inr' => (int)round(18 * USD_TO_INR_RATE)], 'MARRIAGE_COMPATIBILITY' => ['usd' => 22, 'inr' => (int)round(22 * USD_TO_INR_RATE)], 'BABY_NAMING' => ['usd' => 15, 'inr' => (int)round(15 * USD_TO_INR_RATE)], 'MUHURTHAM' => ['usd' => 20, 'inr' => (int)round(20 * USD_TO_INR_RATE)]],
+            'pricing' => astro_default_pricing(),
+            'usdToInrRate' => (float)USD_TO_INR_RATE,
             'paymentMethods' => ['mpaisa' => ['enabled' => true, 'accountName' => 'ASTRO SIVAM CONSULTING', 'mobileNumber' => '9998888']],
             'emailSettings' => ['fromEmail' => 'admin@astrosivam.com', 'fromName' => 'ASTRO SIVAM'],
             'generalSettings' => ['siteName' => 'ASTRO SIVAM', 'turnaroundHours' => 12],
@@ -889,19 +894,20 @@ if ((preg_match('#/services/payment/create-session/?$#', $path) || $action === '
     if (!in_array($pm, ['GPAY', 'UPI', 'PAYPAL', 'CARD'], true)) {
         jsonResponse(['success' => false, 'message' => 'This payment method does not support a verified online checkout.'], 400);
     }
+    $sStmt = $pdo->query("SELECT * FROM system_settings ORDER BY id ASC LIMIT 1");
+    $sRow = $sStmt->fetch();
+    $general = $sRow ? (json_decode($sRow['general_settings'] ?? '{}', true) ?: []) : [];
+
     // Client amount is display-only: the gateway intent is re-validated at
     // order bind + webhook against server pricing. Reject implausible values
     // here so a tampered amount can never reach a provider order.
     // The ceiling is US$1000; GPay/UPI sessions are in INR, so the same
-    // ceiling is converted (INR prices are USD x USD_TO_INR_RATE).
-    $maxSessionAmount = in_array($pm, ['GPAY', 'UPI'], true) ? 1000 * USD_TO_INR_RATE : 1000;
+    // ceiling is converted at the admin's rate (INR prices are USD x rate).
+    $inrRate = astro_usd_inr_rate($general);
+    $maxSessionAmount = in_array($pm, ['GPAY', 'UPI'], true) ? 1000 * $inrRate : 1000;
     if ($amount > $maxSessionAmount) {
         jsonResponse(['success' => false, 'message' => 'Payment amount looks incorrect. Please refresh pricing and try again.'], 400);
     }
-
-    $sStmt = $pdo->query("SELECT * FROM system_settings ORDER BY id ASC LIMIT 1");
-    $sRow = $sStmt->fetch();
-    $general = $sRow ? (json_decode($sRow['general_settings'] ?? '{}', true) ?: []) : [];
     try {
         $intentId = astro_new_payment_intent_id();
     } catch (Exception $e) {
@@ -1420,12 +1426,13 @@ if ($method === 'POST' && (
         $requiresGroupPayment = false;
     }
 
-    $pricing = astro_normalize_service_pricing($sRow ? json_decode($sRow['pricing'] ?? '{}', true) : []);
+    $inrRate = astro_usd_inr_rate_for_row($sRow);
+    $pricing = astro_normalize_service_pricing($sRow ? json_decode($sRow['pricing'] ?? '{}', true) : [], $inrRate);
     $priceMap = [
-        'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : 18),
-        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : 22),
-        'BABY_NAMING' => ($currency === 'INR' ? (int)round(15 * USD_TO_INR_RATE) : 15),
-        'MUHURTHAM' => ($currency === 'INR' ? (int)round(20 * USD_TO_INR_RATE) : 20)
+        'BIRTH_JATHAGAM' => ($currency === 'INR' ? astro_usd_to_inr(18, $inrRate) : 18),
+        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? astro_usd_to_inr(22, $inrRate) : 22),
+        'BABY_NAMING' => ($currency === 'INR' ? astro_usd_to_inr(15, $inrRate) : 15),
+        'MUHURTHAM' => ($currency === 'INR' ? astro_usd_to_inr(20, $inrRate) : 20)
     ];
     $currKey = strtolower($currency);
     $expectedAmount = 0.0;
@@ -1602,12 +1609,13 @@ if ($method === 'POST' && (
         }
     }
 
-    $pricing = astro_normalize_service_pricing($sRow ? json_decode($sRow['pricing'] ?? '{}', true) : []);
+    $inrRate = astro_usd_inr_rate_for_row($sRow);
+    $pricing = astro_normalize_service_pricing($sRow ? json_decode($sRow['pricing'] ?? '{}', true) : [], $inrRate);
     $priceMap = [
-        'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : 18),
-        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : 22),
-        'BABY_NAMING' => ($currency === 'INR' ? (int)round(15 * USD_TO_INR_RATE) : 15),
-        'MUHURTHAM' => ($currency === 'INR' ? (int)round(20 * USD_TO_INR_RATE) : 20)
+        'BIRTH_JATHAGAM' => ($currency === 'INR' ? astro_usd_to_inr(18, $inrRate) : 18),
+        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? astro_usd_to_inr(22, $inrRate) : 22),
+        'BABY_NAMING' => ($currency === 'INR' ? astro_usd_to_inr(15, $inrRate) : 15),
+        'MUHURTHAM' => ($currency === 'INR' ? astro_usd_to_inr(20, $inrRate) : 20)
     ];
     $currKey = strtolower($currency);
     $groupTotal = 0;
@@ -1925,12 +1933,13 @@ if ($method === 'POST' && (
     // intent below is verified against the server price: reading $pricing only
     // after that check silently compared every service against the 18-unit
     // fallback and rejected correctly-priced orders.
-    $pricing = astro_normalize_service_pricing($sRow ? json_decode($sRow['pricing'] ?? '{}', true) : []);
+    $inrRate = astro_usd_inr_rate_for_row($sRow);
+    $pricing = astro_normalize_service_pricing($sRow ? json_decode($sRow['pricing'] ?? '{}', true) : [], $inrRate);
     $priceMap = [
-        'BIRTH_JATHAGAM' => ($currency === 'INR' ? (int)round(18 * USD_TO_INR_RATE) : 18),
-        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? (int)round(22 * USD_TO_INR_RATE) : 22),
-        'BABY_NAMING' => ($currency === 'INR' ? (int)round(15 * USD_TO_INR_RATE) : 15),
-        'MUHURTHAM' => ($currency === 'INR' ? (int)round(20 * USD_TO_INR_RATE) : 20)
+        'BIRTH_JATHAGAM' => ($currency === 'INR' ? astro_usd_to_inr(18, $inrRate) : 18),
+        'MARRIAGE_COMPATIBILITY' => ($currency === 'INR' ? astro_usd_to_inr(22, $inrRate) : 22),
+        'BABY_NAMING' => ($currency === 'INR' ? astro_usd_to_inr(15, $inrRate) : 15),
+        'MUHURTHAM' => ($currency === 'INR' ? astro_usd_to_inr(20, $inrRate) : 20)
     ];
     $currKey = strtolower($currency);
 

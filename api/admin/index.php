@@ -1347,7 +1347,9 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
         if ($row) {
             $general = json_decode($row['general_settings'] ?? '{}', true) ?: [];
             $email = json_decode($row['email_settings'] ?? '{}', true) ?: [];
-            $pricing = astro_normalize_service_pricing(json_decode($row['pricing'] ?? '{}', true) ?: []);
+            // The admin's USD -> INR rate drives every India price below.
+            $inrRate = astro_usd_inr_rate($general);
+            $pricing = astro_normalize_service_pricing(json_decode($row['pricing'] ?? '{}', true) ?: [], $inrRate);
             $paymentMethods = json_decode($row['payment_methods'] ?? '{}', true) ?: [];
 
             // Merge all general settings into a unified full settings object
@@ -1362,9 +1364,11 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
 
             // Ensure specific keys exist with sensible defaults if not set
             if (!isset($settings['intlPriceUSD'])) $settings['intlPriceUSD'] = $general['intlPriceUSD'] ?? 5;
-            // USD is the base price; India (INR) is always auto-calculated from it.
-            $settings['servicePricing'] = astro_normalize_service_pricing($general['servicePricing'] ?? $pricing);
-            $settings['indiaPriceINR'] = astro_usd_to_inr($settings['intlPriceUSD']);
+            // USD is the base price; India (INR) is always auto-calculated from it
+            // at the admin's current rate (never a stored INR value).
+            $settings['usdToInrRate'] = $inrRate;
+            $settings['servicePricing'] = astro_normalize_service_pricing($general['servicePricing'] ?? $pricing, $inrRate);
+            $settings['indiaPriceINR'] = astro_usd_to_inr($settings['intlPriceUSD'], $inrRate);
             if (!isset($settings['googleLoginEnabled'])) $settings['googleLoginEnabled'] = $general['googleLoginEnabled'] ?? true;
             if (!isset($settings['googleClientId'])) $settings['googleClientId'] = $general['googleClientId'] ?? '';
             if (!isset($settings['facebookLoginEnabled'])) $settings['facebookLoginEnabled'] = $general['facebookLoginEnabled'] ?? true;
@@ -1407,6 +1411,9 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
                 'paypalMode' => 'sandbox',
                 'supportEmail' => 'admin@astrosivam.com',
                 'supportPhone' => '+679 999 8888',
+                'usdToInrRate' => (float)USD_TO_INR_RATE,
+                'servicePricing' => astro_default_pricing(),
+                'indiaPriceINR' => astro_usd_to_inr(5),
                 'emailSettings' => []
             ];
         }
@@ -1458,17 +1465,35 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
         $existingPricing = $existingRow ? (json_decode($existingRow['pricing'] ?? '{}', true) ?: []) : [];
         $existingPayment = $existingRow ? (json_decode($existingRow['payment_methods'] ?? '{}', true) ?: []) : [];
 
-        // USD is the only price the admin sets: re-derive every INR value from
-        // it so a client can never store an India price that disagrees.
-        foreach (['pricing', 'servicePricing'] as $pricingKey) {
-            if (isset($body[$pricingKey])) $body[$pricingKey] = astro_normalize_service_pricing($body[$pricingKey]);
-        }
-        if (isset($body['intlPriceUSD']) || isset($body['indiaPriceINR'])) {
-            $body['indiaPriceINR'] = astro_usd_to_inr($body['intlPriceUSD'] ?? ($existingGeneral['intlPriceUSD'] ?? 0));
+        // USD -> INR rate: the admin may change it. A non-numeric or
+        // out-of-band value is rejected rather than silently replaced, so a
+        // typo can never be saved as the price everyone is charged.
+        $savedInrRate = astro_usd_inr_rate($existingGeneral);
+        if (array_key_exists('usdToInrRate', $body)) {
+            $rawRate = $body['usdToInrRate'];
+            $numericRate = is_numeric($rawRate) ? (float)$rawRate : null;
+            if ($numericRate === null || !is_finite($numericRate) || $numericRate < MIN_USD_TO_INR_RATE || $numericRate > MAX_USD_TO_INR_RATE) {
+                jsonResponse([
+                    'success' => false,
+                    'message' => 'The exchange rate must be a number between ₹' . MIN_USD_TO_INR_RATE . ' and ₹' . MAX_USD_TO_INR_RATE . ' per US$. Nothing was saved.'
+                ], 400);
+            }
+            $savedInrRate = round($numericRate, 2);
+            $body['usdToInrRate'] = $savedInrRate;
         }
 
-        // Deep merge body into general settings
+        // USD is the only price the admin sets: re-derive every INR value from
+        // it at the saved rate so a client can never store an India price that
+        // disagrees with the amount the checkout charges.
+        foreach (['pricing', 'servicePricing'] as $pricingKey) {
+            if (isset($body[$pricingKey])) $body[$pricingKey] = astro_normalize_service_pricing($body[$pricingKey], $savedInrRate);
+        }
+        $body['indiaPriceINR'] = astro_usd_to_inr($body['intlPriceUSD'] ?? ($existingGeneral['intlPriceUSD'] ?? 0), $savedInrRate);
+
+        // Deep merge body into general settings. The rate is always written in
+        // its normalised form, so a legacy/blank stored value can never linger.
         $mergedGeneral = array_merge($existingGeneral, $body);
+        $mergedGeneral['usdToInrRate'] = $savedInrRate;
         // Remove any legacy model credentials the local-only chat no longer uses.
         unset($mergedGeneral['aiAstrologerSettings']);
 
@@ -1476,7 +1501,10 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
         $freeBetaActive = isset($body['freeBetaActive']) ? (!empty($body['freeBetaActive']) ? 1 : 0) : ($existingRow['free_beta_active'] ?? 0);
         $currency = $body['currency'] ?? $mergedGeneral['currency'] ?? ($existingRow['currency'] ?? DEFAULT_CURRENCY);
         
-        $pricing = astro_normalize_service_pricing(isset($body['pricing']) ? $body['pricing'] : ($body['servicePricing'] ?? $existingPricing));
+        $pricing = astro_normalize_service_pricing(
+            isset($body['pricing']) ? $body['pricing'] : ($body['servicePricing'] ?? $existingPricing),
+            $savedInrRate
+        );
         $paymentMethods = isset($body['paymentMethods']) ? $body['paymentMethods'] : $existingPayment;
         $emailSettings = isset($body['emailSettings']) ? array_merge($existingEmail, $body['emailSettings']) : $existingEmail;
 
@@ -1519,6 +1547,9 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
             'serviceMode' => $serviceMode,
             'freeBetaActive' => (bool)$freeBetaActive,
             'currency' => $currency,
+            'usdToInrRate' => $savedInrRate,
+            'indiaPriceINR' => astro_usd_to_inr($mergedGeneral['intlPriceUSD'] ?? 0, $savedInrRate),
+            'servicePricing' => astro_normalize_service_pricing($mergedGeneral['servicePricing'] ?? $pricing, $savedInrRate),
             'pricing' => $pricing,
             'paymentMethods' => $paymentMethods,
             'emailSettings' => $emailSettings

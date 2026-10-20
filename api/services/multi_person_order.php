@@ -63,12 +63,13 @@ if (!defined('ASTRO_MULTI_PERSON_MAX_ITEMS')) {
 /** The only service codes this API accepts, with their fallback prices. */
 function astro_multi_person_service_catalog(): array
 {
-    // USD is the base price; INR is auto-converted via USD_TO_INR_RATE.
+    // USD is the base price; INR is auto-converted at the admin's rate
+    // (system_settings.general_settings.usdToInrRate, else USD_TO_INR_RATE).
     return [
-        'BIRTH_JATHAGAM'      => ['INR' => (int)round(18 * USD_TO_INR_RATE), 'USD' => 18],
-        'MARRIAGE_COMPATIBILITY' => ['INR' => (int)round(22 * USD_TO_INR_RATE), 'USD' => 22],
-        'BABY_NAMING'         => ['INR' => (int)round(15 * USD_TO_INR_RATE), 'USD' => 15],
-        'MUHURTHAM'           => ['INR' => (int)round(20 * USD_TO_INR_RATE), 'USD' => 20],
+        'BIRTH_JATHAGAM'      => ['INR' => astro_usd_to_inr(18), 'USD' => 18],
+        'MARRIAGE_COMPATIBILITY' => ['INR' => astro_usd_to_inr(22), 'USD' => 22],
+        'BABY_NAMING'         => ['INR' => astro_usd_to_inr(15), 'USD' => 15],
+        'MUHURTHAM'           => ['INR' => astro_usd_to_inr(20), 'USD' => 20],
     ];
 }
 
@@ -83,7 +84,7 @@ function astro_multi_person_is_service($code): bool
  * Admin overrides in system_settings.pricing always win, then the currency's
  * built-in fallback price. Nothing here reads the client's submitted amount.
  */
-function astro_multi_person_unit_price($serviceCode, $pricing, $currency): float
+function astro_multi_person_unit_price($serviceCode, $pricing, $currency, $rate = null): float
 {
     $serviceCode = strtoupper(trim((string)$serviceCode));
     $currency = strtoupper(trim((string)$currency));
@@ -98,7 +99,7 @@ function astro_multi_person_unit_price($serviceCode, $pricing, $currency): float
         // is never trusted (the admin panel no longer sets one).
         if ($currency === 'INR') {
             $usd = $row['usd'] ?? ($row['USD'] ?? $catalog[$serviceCode]['USD'] ?? 0);
-            return (float)astro_usd_to_inr($usd);
+            return (float)astro_usd_to_inr($usd, $rate);
         }
         $override = $row[strtolower($currency)] ?? ($row[$currency] ?? null);
         if (is_numeric($override)) {
@@ -106,9 +107,9 @@ function astro_multi_person_unit_price($serviceCode, $pricing, $currency): float
         }
     }
 
-    // INR fallback: USD * USD_TO_INR_RATE.
+    // INR fallback: USD x the admin's rate.
     if ($currency === 'INR') {
-        return (float)astro_usd_to_inr($catalog[$serviceCode]['USD'] ?? 0);
+        return (float)astro_usd_to_inr($catalog[$serviceCode]['USD'] ?? 0, $rate);
     }
 
     // Defence in depth: an unrecognised currency must never resolve to a
@@ -524,6 +525,8 @@ function astro_create_multi_person_order($pdo, array $user, array $body): void
     // ---- 3. System settings, pricing, free beta ---------------------------
     $sStmt = $pdo->query("SELECT * FROM system_settings ORDER BY id ASC LIMIT 1");
     $sRow = $sStmt ? $sStmt->fetch() : null;
+    // The admin's USD -> INR rate: every India price in this request uses it.
+    $inrRate = astro_usd_inr_rate_for_row($sRow);
     $pricing = ($sRow && !empty($sRow['pricing'])) ? json_decode($sRow['pricing'], true) : [];
     if (!is_array($pricing)) $pricing = [];
 
@@ -532,7 +535,7 @@ function astro_create_multi_person_order($pdo, array $user, array $body): void
         : false;
 
     foreach ($items as $i => $item) {
-        $items[$i]['unitPrice'] = astro_multi_person_unit_price($item['serviceCode'], $pricing, $currency);
+        $items[$i]['unitPrice'] = astro_multi_person_unit_price($item['serviceCode'], $pricing, $currency, $inrRate);
     }
 
     $clientIp = getClientIpAddress();

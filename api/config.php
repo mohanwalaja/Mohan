@@ -161,8 +161,18 @@ define('ADMIN_EMAIL', 'admin@astrosivam.com');
 define('SUPPORT_EMAIL', 'admin@astrosivam.com');
 define('DEFAULT_CURRENCY', 'USD');
 // USD -> INR exchange rate used to auto-convert the USD base price for GPay/UPI.
-// 1 USD ≈ 84 INR. The admin never enters an INR price - it is always derived.
-define('USD_TO_INR_RATE', 84);
+// The admin never enters an INR price - it is ALWAYS derived from USD at the
+// rate stored in system_settings.general_settings.usdToInrRate, with this
+// constant as the default (and the fallback when nothing usable is stored).
+//
+// The rate is a setting, not code, because a fixed rate goes stale the moment
+// the rupee moves: the site shipped 1 USD = ₹84 while the real rate was ~₹95,
+// so every India price was ~12% too cheap while local prices looked fine.
+define('USD_TO_INR_RATE', 95);
+// Accepted band for an admin-entered rate. Anything outside it (a typo like
+// 950 or 9.5) is ignored in favour of the default instead of being applied.
+define('MIN_USD_TO_INR_RATE', 40);
+define('MAX_USD_TO_INR_RATE', 300);
 
 /** Built-in US$ base prices (mirrors DEFAULT_SERVICE_PRICES in src/services/pricing.ts). */
 if (!function_exists('astro_default_usd_prices')) {
@@ -173,15 +183,81 @@ if (!function_exists('astro_default_usd_prices')) {
 }
 
 /**
+ * A usable USD -> INR rate. Non-numeric, zero, negative or absurd values fall
+ * back to the default, so a bad stored setting can never price a report.
+ * Mirrors normalizeUsdToInrRate() in src/services/pricing.ts.
+ */
+if (!function_exists('astro_normalize_usd_to_inr_rate')) {
+    function astro_normalize_usd_to_inr_rate($value): float
+    {
+        if (!is_numeric($value)) return (float)USD_TO_INR_RATE;
+        $rate = (float)$value;
+        if (!is_finite($rate) || $rate < MIN_USD_TO_INR_RATE || $rate > MAX_USD_TO_INR_RATE) {
+            return (float)USD_TO_INR_RATE;
+        }
+        return round($rate, 2);
+    }
+}
+
+/**
+ * The rate that applies to this request.
+ *
+ * Pass the decoded general_settings array. The first call in a request also
+ * caches the value, so later calls with no argument (deep inside a price
+ * helper) still use the admin's rate instead of the default. Mirrors
+ * resolveUsdToInrRate() in src/services/pricing.ts.
+ */
+if (!function_exists('astro_usd_inr_rate')) {
+    function astro_usd_inr_rate($general = null): float
+    {
+        if (is_array($general) && array_key_exists('usdToInrRate', $general)) {
+            $rate = astro_normalize_usd_to_inr_rate($general['usdToInrRate']);
+            $GLOBALS['ASTRO_USD_INR_RATE'] = $rate;
+            return $rate;
+        }
+        return isset($GLOBALS['ASTRO_USD_INR_RATE']) ? (float)$GLOBALS['ASTRO_USD_INR_RATE'] : (float)USD_TO_INR_RATE;
+    }
+}
+
+/** The rate from a fetched system_settings row (general_settings JSON). */
+if (!function_exists('astro_usd_inr_rate_for_row')) {
+    function astro_usd_inr_rate_for_row($row): float
+    {
+        $general = [];
+        if (is_array($row) && isset($row['general_settings'])) {
+            $decoded = json_decode((string)$row['general_settings'], true);
+            if (is_array($decoded)) $general = $decoded;
+        }
+        return astro_usd_inr_rate($general);
+    }
+}
+
+/**
  * USD is the ONLY price the admin sets; the India (INR) price is always the
- * USD base x USD_TO_INR_RATE, rounded to whole rupees. Mirrors usdToInr() in
+ * USD base x the admin's rate, rounded to whole rupees. Mirrors usdToInr() in
  * src/services/pricing.ts so the checkout and the server agree to the rupee.
  */
 if (!function_exists('astro_usd_to_inr')) {
-    function astro_usd_to_inr($usd): int
+    function astro_usd_to_inr($usd, $rate = null): int
     {
         $n = is_numeric($usd) ? (float)$usd : 0.0;
-        return $n > 0 ? (int)round($n * USD_TO_INR_RATE) : 0;
+        $r = $rate === null ? astro_usd_inr_rate() : astro_normalize_usd_to_inr_rate($rate);
+        return $n > 0 ? (int)round($n * $r) : 0;
+    }
+}
+
+/**
+ * The built-in price table (US$ base + derived INR) for one request, used when
+ * no admin pricing is stored. Every INR figure follows the admin's rate.
+ */
+if (!function_exists('astro_default_pricing')) {
+    function astro_default_pricing($rate = null): array
+    {
+        $table = [];
+        foreach (astro_default_usd_prices() as $service => $usd) {
+            $table[$service] = ['usd' => $usd, 'inr' => astro_usd_to_inr($usd, $rate)];
+        }
+        return $table;
     }
 }
 
@@ -191,7 +267,7 @@ if (!function_exists('astro_usd_to_inr')) {
  * disagree with the amount the checkout shows and charges.
  */
 if (!function_exists('astro_normalize_service_pricing')) {
-    function astro_normalize_service_pricing($pricing): array
+    function astro_normalize_service_pricing($pricing, $rate = null): array
     {
         if (!is_array($pricing)) return [];
         $defaults = astro_default_usd_prices();
@@ -202,7 +278,7 @@ if (!function_exists('astro_normalize_service_pricing')) {
             $usd = round((float)$usd, 2);
             unset($row['USD'], $row['INR']);
             $row['usd'] = $usd;
-            $row['inr'] = astro_usd_to_inr($usd);
+            $row['inr'] = astro_usd_to_inr($usd, $rate);
             $pricing[$service] = $row;
         }
         return $pricing;
