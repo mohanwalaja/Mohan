@@ -308,6 +308,11 @@ export interface SystemSettings {
   betaFreeChartAvailable?: boolean;
   intlPriceUSD: number;
   indiaPriceINR?: number;
+  /**
+   * Admin-set USD → INR rate (₹ per US$). Every India price is US$ × this rate.
+   * Absent or out of range → the site default in src/services/pricing.ts.
+   */
+  usdToInrRate?: number;
   /** @deprecated Vodafone M-PAiSA / Digicel MyCash fields retained for legacy DB compatibility; these payment methods are no longer offered at checkout. */
   vodafoneMPaisaActive?: boolean;
   vodafoneMPaisaPaymentMode?: PaymentGatewayMode;

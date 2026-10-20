@@ -188,7 +188,9 @@ const testFiles = [
   'tests/initial-js-budget.test.ts',
   'tests/lockfile-drift.test.ts',
   // USD is the base price; INR is always auto-calculated (Services page,
-  // admin panel, checkout and the PHP order/payment checks).
+  // admin panel, checkout and the PHP order/payment checks). Also pins the
+  // USD → INR RATE as an admin setting (₹95 default, ₹40–₹300 accepted band):
+  // a hard-coded ₹84 silently under-charged every India price by ~12%.
   'tests/usd-base-pricing.test.ts',
   // Saved family members + frozen report download: order forms must start
   // blank (explicit picker, never silent auto-fill), up to 6 family

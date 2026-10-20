@@ -50,7 +50,8 @@ import {
   Calendar,
   MapPin,
   Palette,
-  Star
+  Star,
+  IndianRupee
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -76,7 +77,15 @@ import {
   prepareOrderItemsSendPayload
 } from '../services/orderItems';
 import { orderChartServiceType } from '../services/multiPersonOrder';
-import { DEFAULT_CURRENCY, DEFAULT_SERVICE_PRICES, USD_TO_INR_RATE, usdToInr } from '../services/pricing';
+import {
+  DEFAULT_CURRENCY,
+  DEFAULT_SERVICE_PRICES,
+  MAX_USD_TO_INR_RATE,
+  MIN_USD_TO_INR_RATE,
+  USD_TO_INR_RATE,
+  normalizeUsdToInrRate,
+  usdToInr
+} from '../services/pricing';
 import type { ServiceType } from '../types';
 
 /** Services priced in the admin panel. USD is entered; INR is derived. */
@@ -90,13 +99,16 @@ const ADMIN_PRICED_SERVICES: Array<{ key: ServiceType; label: string; pages: str
 type AdminServicePricing = Record<ServiceType, { usd: number; inr: number }>;
 
 /** Build the admin pricing table from stored settings: USD kept, INR always re-derived. */
-function buildAdminServicePricing(stored?: Partial<Record<ServiceType, { usd?: number; USD?: number }>> | null): AdminServicePricing {
+function buildAdminServicePricing(
+  stored?: Partial<Record<ServiceType, { usd?: number; USD?: number }>> | null,
+  rate: number = USD_TO_INR_RATE
+): AdminServicePricing {
   const table = {} as AdminServicePricing;
   for (const { key } of ADMIN_PRICED_SERVICES) {
     const raw = stored?.[key];
     const usd = Number(raw?.usd ?? raw?.USD ?? DEFAULT_SERVICE_PRICES[key].USD);
     const safeUsd = Number.isFinite(usd) && usd >= 0 ? usd : DEFAULT_SERVICE_PRICES[key].USD;
-    table[key] = { usd: safeUsd, inr: usdToInr(safeUsd) };
+    table[key] = { usd: safeUsd, inr: usdToInr(safeUsd, rate) };
   }
   return table;
 }
@@ -259,11 +271,25 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
   const [serviceMode, setServiceMode] = useState<'FREE_BETA' | 'PAID'>(authSettings?.serviceMode || 'FREE_BETA');
 
   const [intlPrice, setIntlPrice] = useState(authSettings?.intlPriceUSD || 5);
-  // India (INR) is never entered by the admin: it is always US$ × USD_TO_INR_RATE.
+  // The USD → INR rate is an admin setting: a fixed constant goes stale as soon
+  // as the rupee moves, and every India price is derived from it.
+  const [usdToInrRate, setUsdToInrRate] = useState<number>(() =>
+    normalizeUsdToInrRate((authSettings as any)?.usdToInrRate)
+  );
+  // India (INR) is never entered by the admin: it is always US$ × the rate above.
   const [servicePricing, setServicePricing] = useState<AdminServicePricing>(() =>
-    buildAdminServicePricing((authSettings?.servicePricing ?? (authSettings as any)?.pricing) as any)
+    buildAdminServicePricing(
+      (authSettings?.servicePricing ?? (authSettings as any)?.pricing) as any,
+      normalizeUsdToInrRate((authSettings as any)?.usdToInrRate)
+    )
   );
   const [autoEmail, setAutoEmail] = useState(authSettings?.autoEmailReports ?? true);
+  // What the field shows may be a half-typed number. Prices are only derived
+  // from a rate inside the accepted band; until the admin fixes it, the page
+  // keeps quoting the default so no price ever looks wildly wrong.
+  const usdToInrRateIsValid =
+    Number.isFinite(usdToInrRate) && usdToInrRate >= MIN_USD_TO_INR_RATE && usdToInrRate <= MAX_USD_TO_INR_RATE;
+  const effectiveUsdToInrRate = usdToInrRateIsValid ? usdToInrRate : USD_TO_INR_RATE;
 
   // Modal inspection
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -319,7 +345,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         setServiceMode(settingsRes.settings.serviceMode);
 
         setIntlPrice(settingsRes.settings.intlPriceUSD);
-        setServicePricing(buildAdminServicePricing((settingsRes.settings.servicePricing ?? (settingsRes.settings as any).pricing) as any));
+        const loadedRate = normalizeUsdToInrRate((settingsRes.settings as any).usdToInrRate);
+        setUsdToInrRate(loadedRate);
+        setServicePricing(buildAdminServicePricing(
+          (settingsRes.settings.servicePricing ?? (settingsRes.settings as any).pricing) as any,
+          loadedRate
+        ));
         setAutoEmail(settingsRes.settings.autoEmailReports);
       }
       if (usersRes.success && usersRes.users) setUsersList(Array.isArray(usersRes.users) ? usersRes.users : []);
@@ -1076,14 +1107,26 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
+    // An out-of-band rate is refused here as well as on the server, so the
+    // admin never walks away believing a typo was saved.
+    if (!usdToInrRateIsValid) {
+      setErrorMessage(
+        `Enter an exchange rate between ₹${MIN_USD_TO_INR_RATE} and ₹${MAX_USD_TO_INR_RATE} per US$. Nothing was saved.`
+      );
+      setTimeout(() => setErrorMessage(''), 6000);
+      return;
+    }
     try {
+      const savedRate = normalizeUsdToInrRate(usdToInrRate);
       const res = await api.updateAdminSettings({
         serviceMode,
         intlPriceUSD: Number(intlPrice),
-        // INR is derived from USD — saved only so the server-side order check
-        // and every reader see the same auto-calculated number.
-        indiaPriceINR: usdToInr(Number(intlPrice) || 0),
-        servicePricing: buildAdminServicePricing(servicePricing),
+        // The rate the server must price with (₹ per US$).
+        usdToInrRate: savedRate,
+        // INR is derived from USD at that rate — saved only so the server-side
+        // order check and every reader see the same auto-calculated number.
+        indiaPriceINR: usdToInr(Number(intlPrice) || 0, savedRate),
+        servicePricing: buildAdminServicePricing(servicePricing, savedRate),
         autoEmailReports: autoEmail
       });
       if (res.success) {
@@ -3654,10 +3697,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   onClick={() => {
                     const usd = Number(intlPrice) || 0;
                     setServicePricing({
-                      BIRTH_JATHAGAM: { usd, inr: usdToInr(usd) },
-                      MARRIAGE_COMPATIBILITY: { usd, inr: usdToInr(usd) },
-                      BABY_NAMING: { usd, inr: usdToInr(usd) },
-                      MUHURTHAM: { usd, inr: usdToInr(usd) }
+                      BIRTH_JATHAGAM: { usd, inr: usdToInr(usd, effectiveUsdToInrRate) },
+                      MARRIAGE_COMPATIBILITY: { usd, inr: usdToInr(usd, effectiveUsdToInrRate) },
+                      BABY_NAMING: { usd, inr: usdToInr(usd, effectiveUsdToInrRate) },
+                      MUHURTHAM: { usd, inr: usdToInr(usd, effectiveUsdToInrRate) }
                     });
                     setSuccessMessage('Base rate applied to all 4 astrological services! Click Save Settings below.');
                     setTimeout(() => setSuccessMessage(''), 4000);
@@ -3691,10 +3734,72 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                     data-testid="admin-base-inr"
                     className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400"
                   >
-                    ₹{usdToInr(Number(intlPrice) || 0).toLocaleString('en-IN')}
+                    ₹{usdToInr(Number(intlPrice) || 0, effectiveUsdToInrRate).toLocaleString('en-IN')}
                   </div>
-                  <span className="text-[10px] text-slate-400">US${Number(intlPrice) || 0} × {USD_TO_INR_RATE} • Google Pay / UPI</span>
+                  <span className="text-[10px] text-slate-400">US${Number(intlPrice) || 0} × ₹{effectiveUsdToInrRate} • Google Pay / UPI</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Exchange rate: the one number every India price is derived from */}
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <label
+                htmlFor="admin-usd-inr-rate"
+                className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase flex items-center gap-1.5"
+              >
+                <IndianRupee className="w-3.5 h-3.5 text-amber-600" />
+                <span>Exchange Rate (₹ per US$)</span>
+              </label>
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                <div className="w-full sm:max-w-40">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">₹</span>
+                    <input
+                      id="admin-usd-inr-rate"
+                      data-testid="admin-usd-inr-rate"
+                      type="number"
+                      min={MIN_USD_TO_INR_RATE}
+                      max={MAX_USD_TO_INR_RATE}
+                      step="0.01"
+                      value={usdToInrRate}
+                      onChange={e => {
+                        const next = Number(e.target.value);
+                        if (!Number.isFinite(next)) return;
+                        setUsdToInrRate(next);
+                        // Every derived India price follows immediately.
+                        setServicePricing(prev => {
+                          const table = {} as AdminServicePricing;
+                          for (const { key } of ADMIN_PRICED_SERVICES) {
+                            const usd = Number(prev[key]?.usd ?? DEFAULT_SERVICE_PRICES[key].USD) || 0;
+                            table[key] = { usd, inr: usdToInr(usd, normalizeUsdToInrRate(next)) };
+                          }
+                          return table;
+                        });
+                      }}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold"
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 block mt-1">
+                    per 1 US$ • allowed {MIN_USD_TO_INR_RATE}–{MAX_USD_TO_INR_RATE}
+                  </span>
+                  {!usdToInrRateIsValid && (
+                    <span data-testid="admin-usd-inr-rate-invalid" className="text-[10px] font-semibold text-rose-600 block mt-1">
+                      Enter ₹{MIN_USD_TO_INR_RATE}–₹{MAX_USD_TO_INR_RATE}. The prices below keep using
+                      ₹{USD_TO_INR_RATE} and nothing outside this range can be saved.
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed sm:flex-1">
+                  1 US$ = ₹{effectiveUsdToInrRate}. Every India price is US$ × this rate, so a
+                  US${Number(intlPrice) || 18} base price is charged as
+                  ₹{usdToInr(Number(intlPrice) || 18, effectiveUsdToInrRate).toLocaleString('en-IN')}.
+                  Change the rate when the rupee moves, then click <strong>Save Settings</strong>.
+                  {effectiveUsdToInrRate === USD_TO_INR_RATE && (
+                    <span className="block text-[10px] text-slate-400 mt-0.5">
+                      (site default is ₹{USD_TO_INR_RATE})
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
 
@@ -3706,7 +3811,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                   <span>Per-Service Pricing (US$ Base)</span>
                 </label>
                 <p className="text-[11px] text-slate-500">
-                  Enter the US$ base price for each service. The India (₹ INR) price is calculated automatically at 1 USD = ₹{USD_TO_INR_RATE} and is the exact amount charged via Google Pay / UPI.
+                  Enter the US$ base price for each service. The India (₹ INR) price is calculated automatically at 1 USD = ₹{effectiveUsdToInrRate} and is the exact amount charged via Google Pay / UPI.
                 </p>
               </div>
 
@@ -3731,7 +3836,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             const nextUsd = Number(e.target.value) || 0;
                             setServicePricing(prev => ({
                               ...prev,
-                              [key]: { usd: nextUsd, inr: usdToInr(nextUsd) }
+                              [key]: { usd: nextUsd, inr: usdToInr(nextUsd, effectiveUsdToInrRate) }
                             }));
                           }}
                           className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold"
@@ -3743,7 +3848,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                           data-testid={`admin-inr-${key}`}
                           className="w-full px-2.5 py-1.5 bg-slate-100 dark:bg-slate-900/60 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400"
                         >
-                          ₹{usdToInr(usd).toLocaleString('en-IN')}
+                          ₹{usdToInr(usd, effectiveUsdToInrRate).toLocaleString('en-IN')}
                         </div>
                       </div>
                     </div>

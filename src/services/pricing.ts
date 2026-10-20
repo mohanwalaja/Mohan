@@ -50,17 +50,51 @@ export const DEFAULT_PAYMENT_METHOD: PaymentMethod = 'PAYPAL';
 
 /**
  * USD -> INR conversion used when the admin has only set a USD price.
- * 1 USD ≈ 84 INR. The admin never enters an INR price; it is always derived.
+ *
+ * The admin never enters an INR price; it is always derived. The RATE itself is
+ * an admin setting ("Settings → Exchange Rate"), because a fixed constant goes
+ * stale the moment the rupee moves: the site shipped 1 USD = ₹84 while the real
+ * rate was ~₹95, so every India price was ~12% too cheap.
+ *
+ * The constant below is only the DEFAULT (used until the admin saves a rate, and
+ * by the public sample reports).
  */
-export const USD_TO_INR_RATE = 84;
+export const USD_TO_INR_RATE = 95;
+
+/** Accepted range for an admin-entered rate (guards typos like 950 or 9.5). */
+export const MIN_USD_TO_INR_RATE = 40;
+export const MAX_USD_TO_INR_RATE = 300;
+
+/**
+ * A usable rate from whatever the admin/stored settings return, or the default.
+ * Anything outside the accepted range is ignored rather than trusted — a stored
+ * `0` or `9500` must never price a report.
+ */
+export function normalizeUsdToInrRate(value: unknown): number {
+  const n = typeof value === 'string' ? Number(value) : (value as number);
+  if (typeof n !== 'number' || !Number.isFinite(n)) return USD_TO_INR_RATE;
+  if (n < MIN_USD_TO_INR_RATE || n > MAX_USD_TO_INR_RATE) return USD_TO_INR_RATE;
+  // Two decimals is enough for a currency conversion; the rupee is rounded.
+  return Math.round(n * 100) / 100;
+}
+
+/** The rate that applies to this settings object (admin rate, else default). */
+export function resolveUsdToInrRate(settings?: { usdToInrRate?: number | string | null } | null): number {
+  return normalizeUsdToInrRate(settings?.usdToInrRate);
+}
 
 /**
  * USD is the ONLY price the admin sets. The India (INR) price is always this
  * conversion, rounded to whole rupees. Mirrored by astro_usd_to_inr() in PHP.
+ *
+ * Pass the admin's rate as the second argument wherever settings are available
+ * (`usdToInr(usd, resolveUsdToInrRate(settings))`); the default rate is used
+ * otherwise.
  */
-export function usdToInr(usd: number): number {
+export function usdToInr(usd: number, rate: number = USD_TO_INR_RATE): number {
   const n = Number(usd);
-  return Number.isFinite(n) && n > 0 ? Math.round(n * USD_TO_INR_RATE) : 0;
+  const r = normalizeUsdToInrRate(rate);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * r) : 0;
 }
 
 /** Fallback retail prices: USD is the base, INR is auto-converted from it. */
@@ -88,6 +122,8 @@ export interface PricingSettingsSource {
   betaFreeChartAvailable?: boolean | null;
   intlPriceUSD?: number | null;
   indiaPriceINR?: number | null;
+  /** Admin-set USD → INR rate. Absent/out of range falls back to the default. */
+  usdToInrRate?: number | string | null;
   servicePricing?: PriceOverrideTable | null;
   pricing?: PriceOverrideTable | null;
 }
@@ -171,9 +207,10 @@ export function getServicePrices(
     toNumber(overrides?.USD) ??
     toNumber(settings?.intlPriceUSD) ??
     fallbacks.USD;
-  // USD is the base price: India (INR) is ALWAYS auto-calculated from USD.
-  // Admin never sets an India price; any stored INR value is ignored.
-  const inr = usdToInr(usd);
+  // USD is the base price: India (INR) is ALWAYS auto-calculated from USD, at
+  // the admin's current exchange rate. Admin never sets an India price; any
+  // stored INR value is ignored.
+  const inr = usdToInr(usd, resolveUsdToInrRate(settings));
 
   return { INR: inr, USD: usd };
 }
