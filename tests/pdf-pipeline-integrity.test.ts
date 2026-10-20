@@ -4,7 +4,7 @@
  * WHY THIS TEST EXISTS
  * --------------------
  * The emailed report is the BYTES the admin panel rendered in a browser at
- * print density (~300 dpi). Nothing re-renders it server-side, so the only
+ * print density. Nothing re-renders it server-side, so the only
  * thing standing between a paying customer and a blurry PDF is the pair of
  * numbers in `src/services/jathagamPdfExporter.ts` — capture `scale` and
  * `jpegQuality` — plus the guards that refuse to send a document that failed
@@ -58,50 +58,56 @@ function objectLiteral(name: string): string {
 
 console.log('--- PDF PIPELINE INTEGRITY ---');
 
-check('the print contract is 300 dpi: A4 = 2480 x 3508 px at scale 3.2', () => {
-  assert.match(exporter, /export const REPORT_PRINT_DPI = 300;/, 'the paid-report print density must stay 300 dpi');
-  assert.match(exporter, /export const A4_PRINT_MIN_WIDTH_PX = 2480;/, 'A4 at 300 dpi is 2480 px wide');
-  assert.match(exporter, /export const A4_PRINT_MIN_HEIGHT_PX = 3508;/, 'A4 at 300 dpi is 3508 px tall');
-  // dpi = 96 × scale, so 300 dpi needs ≥ 3.1246; 3.2 keeps a margin for
-  // html2canvas' integer canvas size (2540 × 3592 px ≈ 307 dpi).
-  assert.match(exporter, /export const PRINT_CAPTURE_SCALE = 3\.2;/, 'the print capture scale must stay 3.2');
+check('the print contract is 200 dpi A4 floor, captured at 2.2x (~211 dpi)', () => {
+  // Owner decision (20 Oct 2026): every report page is a raster, so a report's
+  // weight is pixels × compression and nothing else. 300 dpi + JPEG 0.95 made a
+  // four-page Jathagam ~3 MB and a report + invoice email ~5 MB, which cost an
+  // admin approving from a phone minutes of mobile data per order. The density
+  // is now the 200 dpi print floor; compression carries the rest of the win.
+  assert.match(exporter, /export const REPORT_PRINT_DPI = 200;/, 'the paid-report print density must be 200 dpi');
+  assert.match(exporter, /export const A4_PRINT_MIN_WIDTH_PX = 1654;/, 'A4 at 200 dpi is 1654 px wide');
+  assert.match(exporter, /export const A4_PRINT_MIN_HEIGHT_PX = 2339;/, 'A4 at 200 dpi is 2339 px tall');
+  // dpi = 96 × scale: 2.2 → 211 dpi, ~5% above the floor so canvas rounding
+  // cannot drop a page below it.
+  assert.match(exporter, /export const PRINT_CAPTURE_SCALE = 2\.2;/, 'the capture scale must stay 2.2');
+  assert.match(exporter, /export const PRINT_JPEG_QUALITY = 0\.88;/, 'the paid JPEG quality must stay 0.88');
 });
 
-check('the email profile renders at the print density and enforces the 300 dpi floor', () => {
+check('the email profile renders at the print density and enforces the A4 floor', () => {
   const body = objectLiteral('EMAIL_RENDER_OPTIONS');
   assert.match(body, /scale:\s*PRINT_CAPTURE_SCALE/, 'email capture density must be the print profile');
-  assert.match(body, /jpegQuality:\s*0\.95/, 'the email JPEG quality must stay at 0.95');
-  assert.match(body, /minimumCaptureWidthPx:\s*A4_PRINT_MIN_WIDTH_PX/, 'the A4 width floor must be the 300 dpi raster');
-  assert.match(body, /minimumCaptureHeightPx:\s*A4_PRINT_MIN_HEIGHT_PX/, 'the A4 height floor must be the 300 dpi raster');
+  assert.match(body, /jpegQuality:\s*PRINT_JPEG_QUALITY/, 'the email JPEG quality must come from the one constant');
+  assert.match(body, /minimumCaptureWidthPx:\s*A4_PRINT_MIN_WIDTH_PX/, 'the A4 width floor must be the print raster');
+  assert.match(body, /minimumCaptureHeightPx:\s*A4_PRINT_MIN_HEIGHT_PX/, 'the A4 height floor must be the print raster');
 });
 
 check('the desktop download profile matches the email profile', () => {
   const body = objectLiteral('DOWNLOAD_RENDER_OPTIONS');
-  assert.match(body, /scale:\s*PRINT_CAPTURE_SCALE/, 'a download is a paid report: same 300 dpi capture');
-  assert.match(body, /jpegQuality:\s*0\.95/);
+  assert.match(body, /scale:\s*PRINT_CAPTURE_SCALE/, 'a download is a paid report: same capture');
+  assert.match(body, /jpegQuality:\s*PRINT_JPEG_QUALITY/);
 });
 
-check('the only lighter profile is the public sample: exactly 40% below print', () => {
+check('the only lighter profile is the public sample, and it is one step below print', () => {
   // Owner's rule: paid reports, invoices, admin preview and dashboard downloads
-  // stay at the 300 dpi print contract; public samples may be 40% lighter.
+  // share one print profile; public samples stay lighter (never more than 40%).
   assert.doesNotMatch(exporter, /DOWNLOAD_RENDER_OPTIONS_MOBILE/, 'no reduced mobile profile may come back');
   assert.doesNotMatch(exporter, /deviceMemory|navigator\.userAgent/, 'a device sniff must not lower report quality');
   assert.doesNotMatch(exporter, /DOWNLOAD_RENDER_OPTIONS_SAFE/, 'the un-bounded reduced download density must stay deleted');
   assert.match(exporter, /export const PDF_RENDER_OPTIONS: HtmlPdfRenderOptions = EMAIL_RENDER_OPTIONS;/,
     'the public PDF profile must literally be the print-density email profile');
-  assert.match(exporter, /export const SAMPLE_QUALITY_REDUCTION = 0\.4;/,
-    'samples may be reduced by exactly 40%, never more');
+  assert.match(exporter, /export const SAMPLE_QUALITY_REDUCTION = 0\.13;/,
+    'samples stay 13% below the paid capture — never more than 40%');
   assert.match(exporter, /scale: Number\(\(PRINT_CAPTURE_SCALE \* \(1 - SAMPLE_QUALITY_REDUCTION\)\)\.toFixed\(2\)\)/,
     'the sample scale must be derived from the print scale, not a loose literal');
-  assert.match(exporter, /jpegQuality: 0\.95/,
+  assert.match(exporter, /jpegQuality: PRINT_JPEG_QUALITY/,
     'the sample keeps the print JPEG quality — only resolution is reduced');
 });
 
-check('the API enforces the same 300 dpi floor, independently of the client', () => {
-  assert.match(familyDocs, /define\('ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX', 2480\);/,
-    'the server width floor must be A4 at 300 dpi');
-  assert.match(familyDocs, /define\('ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX', 3508\);/,
-    'the server height floor must be A4 at 300 dpi');
+check('the API enforces the same print floor, independently of the client', () => {
+  assert.match(familyDocs, /define\('ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX', 1654\);/,
+    'the server width floor must be A4 at 200 dpi');
+  assert.match(familyDocs, /define\('ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX', 2339\);/,
+    'the server height floor must be A4 at 200 dpi');
   assert.match(familyDocs, /ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX \. ' × ' \. ASTRO_FAMILY_DOC_MIN_PREVIEW_HEIGHT_PX/,
     'the rejection message must quote the enforced floor, not a stale number');
 });
@@ -133,7 +139,7 @@ check('paid renders are clamped to print; downloads sit between sample and print
     /Math\.min\(Math\.max\(requestedScale, sampleScale\), printScale\)/,
     'a download capture must never go below the sample floor or above print');
   assert.match(downloadResolver, /if \(scale >= printScale\)/,
-    'the 300 dpi pixel floor applies only to the print profile');
+    'the A4 pixel floor applies only to the print profile');
 });
 
 check('the email path renders with the HIGH-quality profile', () => {
@@ -174,7 +180,7 @@ check('every PAID render goes through the one print-density email render', () =>
     `only the helper and its declaration may call the raw renderer (found ${rawCalls})`);
 });
 
-check('the deviceless rule holds: admin approval is 300 dpi from mobile and desktop alike', () => {
+check('the deviceless rule holds: admin approval is the same density from mobile and desktop', () => {
   // The exporter must not sniff the device to pick a profile any more.
   assert.doesNotMatch(exporter, /deviceMemory|userAgent|isPhone/,
     'no device sniff may choose a report profile');
@@ -205,7 +211,7 @@ check('the deviceless rule holds: admin approval is 300 dpi from mobile and desk
 check('a device that cannot capture at print density fails loudly, never lighter', () => {
   const message = exporter.slice(exporter.indexOf('export function emailPrintDensityFailureMessage'));
   const body = message.slice(0, message.indexOf('\n}'));
-  assert.match(body, /300 dpi/, 'the failure must name the density');
+  assert.match(body, /\$\{REPORT_PRINT_DPI\} dpi/, 'the failure must name the density');
   assert.match(body, /A4_PRINT_MIN_WIDTH_PX/, 'the failure must quote the pixel floor');
   assert.match(body, /A4_PRINT_MIN_HEIGHT_PX/);
   assert.match(body, /Nothing was emailed and the order/, 'the operator must know nothing shipped');

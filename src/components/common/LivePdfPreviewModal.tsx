@@ -354,10 +354,10 @@ export const LivePdfPreviewModal: React.FC<LivePdfPreviewModalProps> = ({
   const handleDownload = async () => {
     setIsDownloading(true);
     /**
-     * Paid documents and the admin preview keep the print density (3.2× ≈ 307
-     * dpi, JPEG 0.95). Public samples are the one documented exception: the
-     * owner allows them 40% below print (1.92× ≈ 184 dpi), still JPEG 0.95, so
-     * a phone can allocate the canvas. No paid path can request it.
+     * Paid documents and the admin preview keep the print profile (2.2× ≈ 211
+     * dpi, JPEG 0.88). Public samples are the one documented exception: they
+     * render 13% lighter (1.91× ≈ 183 dpi) at the same JPEG quality, so a phone
+     * can allocate the canvas. No paid path can request the sample profile.
      */
     setDownloadNote(sampleMode
       ? 'Downloading the sample report — this takes a few seconds…'

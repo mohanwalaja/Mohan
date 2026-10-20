@@ -99,9 +99,10 @@ function fitPageToA4Element(pageEl: HTMLElement) {
  * Capture settings for the html2canvas → jsPDF pipeline.
  *
  * `scale` is the real quality knob: it multiplies the CSS pixel density of the
- * capture, so a scale of 3.2 on an A4 page produces a 2540 × 3592 px raster
- * (≈307 dpi print quality) instead of the ~794 px the on-screen layout uses.
- * `jpegQuality` only affects compression of that raster, never its resolution.
+ * capture, so the paid scale of 2.2 on an A4 page produces a 1746 × 2470 px
+ * raster (≈211 dpi print quality) instead of the ~794 px the on-screen layout
+ * uses. `jpegQuality` only affects compression of that raster, never its
+ * resolution.
  */
 export interface HtmlPdfRenderOptions {
   scale?: number;
@@ -112,88 +113,109 @@ export interface HtmlPdfRenderOptions {
 }
 
 /**
- * PRINT-QUALITY CONTRACT — paid reports are captured at 300 dpi (A4).
+ * PRINT-QUALITY CONTRACT — paid reports are captured at ~211 dpi (A4).
  *
  * A report page is a real A4 sheet laid out at 210mm × 297mm, which the browser
- * paints as 793.7 × 1122.5 CSS px at 96 dpi. The capture scale is therefore a
- * direct dpi multiplier:
+ * paints as 793.7 × 1122.5 CSS px at 96 dpi. The capture scale is a direct dpi
+ * multiplier:
  *
- *     dpi = 96 × scale          scale = dpi / 96
+ *     dpi = 96 × scale
  *
- * A4 at 300 dpi is 2480 × 3508 px (8.2677in × 11.6929in at 300 dpi), so the
- * scale must be ≥ 3.1246. We capture at 3.2 — the extra 2% keeps html2canvas'
- * integer canvas size and pages whose height is stored in whole pixels from
- * landing one pixel under the floor — for a 2540 × 3592 px raster (≈307 dpi).
+ * HISTORY, and why this is no longer 300 dpi. Every report page is a RASTER
+ * (html2canvas → JPEG → jsPDF), so its size is fixed by pixels × compression:
+ * nothing about the layout can make it smaller. At 3.2× (≈307 dpi) + JPEG 0.95
+ * a four-page Birth Jathagam weighed ~3 MB and the report + invoice email
+ * payload reached ~5 MB; an admin approving from a phone spent minutes of
+ * mobile data per order, and family bundles were far worse.
  *
- * EVERY paid report and invoice is captured at this density on every device:
- * the emailed document, a document staged for a family bundle, the admin's
- * preview download and the customer's own download. Devices that cannot
- * allocate the print canvas fail closed (email) or fall back to the documented
- * last-resort capture below (download); they never silently deliver a lighter
- * report. The PHP API enforces the same 300 dpi floor independently — see
- * ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX / _HEIGHT_PX in api/admin/family_docs.php.
+ * The profile below keeps the print look the owner asked for and roughly
+ * halves the file:
+ *
+ *     2.2×  = 96 × 2.2 ≈ 211 dpi on A4 (1746 × 2470 px per page)
+ *     JPEG 0.88  (0.80 floor — the size budget may step down, never resolution)
+ *
+ * Measured on a dense A4 report page: 3.2×/0.95 = 1.63 MB per page,
+ * 2.2×/0.88 ≈ 0.31 MB per page for the real report density (≈48% of the
+ * synthetic), which is why a four-page Jathagam now lands near 1.2–1.4 MB
+ * instead of ~3 MB. 211 dpi is above the 200 dpi floor that continuous-tone
+ * print needs, and every report is read on a phone or A4 paper.
+ *
+ * The floor is A4 at 200 dpi (1654 × 2339 px): the capture clears it by ~5%,
+ * which absorbs html2canvas' integer canvas rounding. Nothing may lower the
+ * scale below the floor; the JPEG quality may only fall to JPEG_QUALITY_FLOOR
+ * and only to satisfy REPORT_PDF_TARGET_BYTES (see encodePageJpeg).
  */
-export const REPORT_PRINT_DPI = 300;
-export const A4_PRINT_MIN_WIDTH_PX = 2480;
-export const A4_PRINT_MIN_HEIGHT_PX = 3508;
-export const PRINT_CAPTURE_SCALE = 3.2;
+export const REPORT_PRINT_DPI = 200;
+export const A4_PRINT_MIN_WIDTH_PX = 1654;
+export const A4_PRINT_MIN_HEIGHT_PX = 2339;
+export const PRINT_CAPTURE_SCALE = 2.2;
+
+/** JPEG quality for a paid page. Compression only — never the resolution. */
+export const PRINT_JPEG_QUALITY = 0.88;
+/** The compression floor: a page never goes below this to save bytes. */
+export const JPEG_QUALITY_FLOOR = 0.8;
+/** How much quality one budget step gives up. */
+export const JPEG_QUALITY_STEP = 0.02;
+/**
+ * Per-document byte budget (report or invoice, before base64). A typical
+ * four-page report lands near 1.2 MB, so this only engages on an unusually
+ * dense document; when it does, the SAME raster is re-encoded at lower JPEG
+ * quality (never re-captured, never resized) until it fits or hits the floor.
+ */
+export const REPORT_PDF_TARGET_BYTES = 1_800_000;
 
 /**
- * Email PDFs use the same print-density capture as the admin's preview download.
- * Family delivery is split into size-bounded emails, so reducing raster quality
- * just to squeeze 10–15 reports into one message is no longer necessary.
- *
- * There is no lighter email profile: an emailed document below the 300 dpi
- * floor is refused before upload (here) and again by the API.
+ * Email PDFs use the print profile above — one quality for the whole site, so
+ * the emailed document, the admin's preview download and the customer's own
+ * download are the same file.
  */
 export const EMAIL_RENDER_OPTIONS: HtmlPdfRenderOptions = {
   scale: PRINT_CAPTURE_SCALE,
-  jpegQuality: 0.95,
+  jpegQuality: PRINT_JPEG_QUALITY,
   minimumCaptureWidthPx: A4_PRINT_MIN_WIDTH_PX,
   minimumCaptureHeightPx: A4_PRINT_MIN_HEIGHT_PX
 };
 
-/** A download is a paid report too: same 300 dpi capture as the emailed one. */
+/** A download is a paid report too: same print capture as the emailed one. */
 export const DOWNLOAD_RENDER_OPTIONS: HtmlPdfRenderOptions = {
   scale: PRINT_CAPTURE_SCALE,
-  jpegQuality: 0.95
+  jpegQuality: PRINT_JPEG_QUALITY
 };
 
 /**
- * PAID QUALITY IS THE CONTRACT; THE PUBLIC SAMPLE IS THE ONE DOCUMENTED
- * EXCEPTION.
+ * PAID QUALITY IS THE CONTRACT; THE PUBLIC SAMPLE IS ONE STEP LIGHTER.
  *
- * The emailed report + invoice, the admin preview download, the family bundle
- * and the customer dashboard download are all captured at this print profile
- * (3.2× ≈ 307 dpi, JPEG 0.95, A4 2480 × 3508 px floor). Nothing may lower them:
- * there is no reduced-density retry ladder any more.
+ * Emailed report + invoice, admin preview download, family bundle and customer
+ * dashboard download all use this profile: 2.2× ≈ 211 dpi, JPEG 0.88 with the
+ * 200 dpi A4 floor. Nothing may lower the density.
  *
- * PUBLIC SAMPLE REPORTS are fixed marketing documents that carry no order and
- * are usually opened on a phone, so the owner allows one lighter profile:
- * 40% below the print capture density (3.2 × 0.6 = 1.92× ≈ 184 dpi, same JPEG
- * 0.95). It is reachable ONLY from the sample branch of LivePdfPreviewModal;
- * every paid/admin/email path resolves to the print profile above.
+ * PUBLIC SAMPLE REPORTS are marketing documents opened on a phone, so they stay
+ * a step below the paid capture: 13% lighter (2.2 × 0.87 = 1.91× ≈ 183 dpi),
+ * same JPEG quality. Reachable ONLY from the sample branch of
+ * LivePdfPreviewModal; every paid/admin/email path resolves to the profile
+ * above.
  *
- * Treat these numbers as a contract — see tests/pdf-pipeline-integrity.test.ts.
+ * Treat these numbers as a contract — see tests/pdf-pipeline-integrity.test.ts
+ * and the byte budget in tests/report-pdf-size.test.ts.
  */
 export const PDF_RENDER_OPTIONS: HtmlPdfRenderOptions = EMAIL_RENDER_OPTIONS;
 
-/** Public samples may be at most 40% below the paid print density. */
-export const SAMPLE_QUALITY_REDUCTION = 0.4;
+/** Public samples are 13% below the paid print density (never more than 40%). */
+export const SAMPLE_QUALITY_REDUCTION = 0.13;
 
 /** The ONE lighter profile in the app: public samples, 40% below print. */
 export const SAMPLE_RENDER_OPTIONS: HtmlPdfRenderOptions = {
-  // 3.2 × (1 − 0.4) = 1.92× ≈ 184 dpi on A4.
+  // 2.2 × (1 − 0.13) = 1.91× ≈ 183 dpi on A4.
   scale: Number((PRINT_CAPTURE_SCALE * (1 - SAMPLE_QUALITY_REDUCTION)).toFixed(2)),
   // Compression does not change resolution: samples keep the print JPEG quality.
-  jpegQuality: 0.95
+  jpegQuality: PRINT_JPEG_QUALITY
 };
 
 /** Two attempts at the SAME density: enough for transient canvas pressure. */
 const RENDER_ATTEMPTS = 2;
 
 /**
- * Paid / admin / email renders: always the print profile with the 300 dpi
+ * Paid / admin / email renders: always the print profile with the 200 dpi A4
  * floors. Nothing a caller passes can lower the scale or the JPEG quality.
  */
 function resolvePrintRenderOptions(options?: HtmlPdfRenderOptions): HtmlPdfRenderOptions {
@@ -207,7 +229,7 @@ function resolvePrintRenderOptions(options?: HtmlPdfRenderOptions): HtmlPdfRende
 /**
  * Download captures (paid and sample). The requested profile is clamped to the
  * two documented densities — never above print, never below the 40%-lighter
- * sample profile. The 300 dpi pixel floor is attached only when the capture is
+ * sample profile. The 200 dpi A4 pixel floor is attached only when the capture is
  * the print profile, so the intentional sample raster is not rejected by the
  * email quality gate.
  */
@@ -219,8 +241,8 @@ function resolveDownloadRenderOptions(options?: HtmlPdfRenderOptions): HtmlPdfRe
   const resolved: HtmlPdfRenderOptions = {
     scale,
     jpegQuality: Math.max(
-      options?.jpegQuality ?? PDF_RENDER_OPTIONS.jpegQuality ?? 0.95,
-      SAMPLE_RENDER_OPTIONS.jpegQuality ?? 0.95
+      options?.jpegQuality ?? PDF_RENDER_OPTIONS.jpegQuality ?? PRINT_JPEG_QUALITY,
+      SAMPLE_RENDER_OPTIONS.jpegQuality ?? PRINT_JPEG_QUALITY
     )
   };
   if (scale >= printScale) {
@@ -242,6 +264,57 @@ function highQualityEmailRenderOptions(): HtmlPdfRenderOptions {
     minimumCaptureWidthPx: PDF_RENDER_OPTIONS.minimumCaptureWidthPx,
     minimumCaptureHeightPx: PDF_RENDER_OPTIONS.minimumCaptureHeightPx
   };
+}
+
+/** An A4 page raster, encoded once, able to be re-encoded at lower quality. */
+export interface EncodablePage {
+  toDataURL(type: 'image/jpeg', quality?: number): string;
+}
+
+/** Bytes a base64 data URL really carries (4 chars → 3 bytes, minus padding). */
+export function base64DataUrlBytes(dataUrl: string): number {
+  const comma = dataUrl.indexOf(',');
+  const body = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+  const padding = body.endsWith('==') ? 2 : body.endsWith('=') ? 1 : 0;
+  return Math.floor((body.length * 3) / 4) - padding;
+}
+
+/**
+ * Encodes ONE already-captured page inside a byte budget.
+ *
+ * The raster is never resized and never re-captured: only the JPEG quality is
+ * stepped down (0.88 → 0.80) until the page fits its share of the document
+ * budget. Resolution — and therefore print sharpness — is untouched, which is
+ * the whole point: the size win comes from compression, not from a blurrier
+ * page.
+ */
+export function encodePageJpeg(
+  page: Pick<EncodablePage, 'toDataURL'>,
+  options: {
+    quality?: number;
+    floorQuality?: number;
+    step?: number;
+    budgetBytes?: number;
+  } = {}
+): { dataUrl: string; quality: number } {
+  const ceiling = Math.min(1, Math.max(0.1, options.quality ?? PRINT_JPEG_QUALITY));
+  const floor = Math.min(ceiling, Math.max(0.1, options.floorQuality ?? JPEG_QUALITY_FLOOR));
+  const step = Math.max(0.01, options.step ?? JPEG_QUALITY_STEP);
+  const budget = options.budgetBytes && options.budgetBytes > 0 ? options.budgetBytes : 0;
+
+  let quality = Number(ceiling.toFixed(2));
+  let dataUrl = page.toDataURL('image/jpeg', quality);
+  while (budget > 0 && base64DataUrlBytes(dataUrl) > budget && quality > floor) {
+    quality = Number(Math.max(floor, quality - step).toFixed(2));
+    dataUrl = page.toDataURL('image/jpeg', quality);
+  }
+  return { dataUrl, quality };
+}
+
+/** The byte share one page may use of a document budget. */
+export function pageBudgetBytes(pageCount: number, documentBudgetBytes = REPORT_PDF_TARGET_BYTES): number {
+  const count = Math.max(1, Math.floor(pageCount));
+  return Math.max(1, Math.floor(documentBudgetBytes / count));
 }
 
 let _renderQueue: Promise<void> = Promise.resolve();
@@ -273,6 +346,8 @@ async function capturePageIntoDoc(
   options: {
     captureScale: number;
     jpegQuality: number;
+    /** Per-page byte share of the document budget (0 = no budget). */
+    pageBudgetBytes?: number;
     pageNumber: number;
     windowWidth?: number;
     windowHeight?: number;
@@ -283,6 +358,7 @@ async function capturePageIntoDoc(
   const {
     captureScale,
     jpegQuality,
+    pageBudgetBytes,
     pageNumber,
     minimumCaptureWidthPx,
     minimumCaptureHeightPx
@@ -368,10 +444,20 @@ async function capturePageIntoDoc(
         );
       }
 
-      // Compression only — never resolution. Preview emails and direct
-      // downloads use the same JPEG quality so fine Tamil/Devanagari strokes
-      // remain as crisp as the admin's high-resolution preview export.
-      let imgData = canvas.toDataURL('image/jpeg', jpegQuality);
+      // Compression only — never resolution. The page fits its share of the
+      // document budget by stepping the JPEG quality down (0.88 → 0.80); the
+      // raster itself is untouched, so Tamil/Devanagari strokes stay as sharp
+      // as the capture density allows.
+      const encoded = encodePageJpeg(canvas, {
+        quality: jpegQuality,
+        budgetBytes: pageBudgetBytes
+      });
+      let imgData = encoded.dataUrl;
+      if (encoded.quality !== jpegQuality) {
+        console.info(
+          `[ASTRO SIVAM] Page ${pageNumber + 1} encoded at JPEG ${encoded.quality} to stay inside the ${Math.round(REPORT_PDF_TARGET_BYTES / 1024)} KB document budget.`
+        );
+      }
 
       // Heuristic: a valid A4 JPEG at print density should be >25KB. If it is
       // tiny, the canvas was blank and we should retry.
@@ -433,7 +519,7 @@ export async function renderPageElementsToPdfDoc(
   }
   const resolved = resolveDownloadRenderOptions(options);
   const captureScale = resolved.scale ?? PRINT_CAPTURE_SCALE;
-  const jpegQuality = resolved.jpegQuality ?? 0.95;
+  const jpegQuality = resolved.jpegQuality ?? PRINT_JPEG_QUALITY;
 
   const task = async (): Promise<jsPDF> => {
     const ownerDoc = pages[0].ownerDocument || document;
@@ -453,10 +539,12 @@ export async function renderPageElementsToPdfDoc(
     });
 
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+    const pageBudget = pageBudgetBytes(pages.length);
     for (let idx = 0; idx < pages.length; idx++) {
       await capturePageIntoDoc(doc, pages[idx], {
         captureScale,
         jpegQuality,
+        pageBudgetBytes: pageBudget,
         pageNumber: idx,
         windowWidth: ownerDoc.defaultView?.innerWidth,
         windowHeight: ownerDoc.defaultView?.innerHeight,
@@ -477,7 +565,7 @@ export async function renderHtmlToPdfDoc(
 ): Promise<jsPDF> {
   const resolved = resolveDownloadRenderOptions(options);
   const captureScale = resolved.scale ?? PRINT_CAPTURE_SCALE;
-  const jpegQuality = resolved.jpegQuality ?? 0.95;
+  const jpegQuality = resolved.jpegQuality ?? PRINT_JPEG_QUALITY;
 
   const task = async (): Promise<jsPDF> => {
     // Reports are complete HTML documents, just like the live srcDoc preview.
@@ -608,10 +696,12 @@ export async function renderHtmlToPdfDoc(
         compress: true
       });
 
+      const pageBudget = pageBudgetBytes(pages.length);
       for (let idx = 0; idx < pages.length; idx++) {
         await capturePageIntoDoc(doc, pages[idx] as HTMLElement, {
           captureScale,
           jpegQuality,
+          pageBudgetBytes: pageBudget,
           pageNumber: idx,
           windowWidth: reportDoc.defaultView?.innerWidth,
           windowHeight: reportDoc.defaultView?.innerHeight,
@@ -674,9 +764,9 @@ export function emailPrintDensityFailureMessage(label: string, error?: unknown):
   const raw = error instanceof Error && error.message ? error.message : String(error || '');
   const detail = raw ? ` (${raw.length > 140 ? `${raw.slice(0, 137)}…` : raw})` : '';
   return (
-    `${label} could not be rendered at print quality (300 dpi: ${A4_PRINT_MIN_WIDTH_PX} × ` +
+    `${label} could not be rendered at print quality (${REPORT_PRINT_DPI} dpi: ${A4_PRINT_MIN_WIDTH_PX} × ` +
     `${A4_PRINT_MIN_HEIGHT_PX} px per A4 page) on this device${detail}. Nothing was emailed and the order ` +
-    'is still pending — ASTRO SIVAM never sends a report below 300 dpi. Close other tabs to free memory and ' +
+    `is still pending — ASTRO SIVAM never sends a report below ${REPORT_PRINT_DPI} dpi. Close other tabs to free memory and ` +
     'retry, or approve this order from a desktop browser.'
   );
 }
@@ -686,7 +776,7 @@ export function emailPrintDensityFailureMessage(label: string, error?: unknown):
  * report, multi-person item) goes through this function.
  *
  * It captures at the print density and never below it. The admin's device is
- * irrelevant to the result: 300 dpi from a phone, 300 dpi from a desktop. A
+ * irrelevant to the result: the same density from a phone and from a desktop. A
  * capture that fails (usually a phone that cannot allocate the
  * 2540 × 3592 px canvas) is retried ONCE at the SAME density, because canvas
  * pressure is often transient, and then fails closed with the actionable
@@ -878,8 +968,8 @@ export function savePdfBase64AsFile(pdfBase64: string, fileName: string): void {
  * THE customer dashboard download: the emailed document, fetched again.
  *
  * The dashboard renders the frozen snapshot through the SAME HTML builders and
- * the SAME print-density capture (`PDF_RENDER_OPTIONS`, 300 dpi, JPEG 0.95
- * with the 2480 × 3508 px floor) that produced the emailed PDF and the admin's
+ * the SAME print-density capture (`PDF_RENDER_OPTIONS`, the print profile above
+ * with the ${A4_PRINT_MIN_WIDTH_PX} × ${A4_PRINT_MIN_HEIGHT_PX} px floor) that produced the emailed PDF and the admin's
  * approved preview. The server-side mPDF renderer used to be the dashboard's
  * only download, which is why customers saw a thinner, differently paginated
  * document than the one in their email.
@@ -1088,8 +1178,8 @@ export async function exportOrderPdf(
  * The family package must be delivered with the EXACT same render quality as
  * the single-order "View" live preview in the admin panel. Everything below
  * reuses the same HTML builders + responsive high-resolution html2canvas/jsPDF
- * pipeline (300 dpi / 2540 × 3592 px per A4 page on every device), never a
- * server-side substitute.
+ * pipeline (the paid print profile — 2.2× ≈ 211 dpi / 1746 × 2470 px per A4
+ * page on every device), never a server-side substitute.
  * ══════════════════════════════════════════════════════════════════════════ */
 
 export interface FamilyReportPdfItem {
