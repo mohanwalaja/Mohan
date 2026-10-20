@@ -4646,9 +4646,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         </button>
                       </div>
 
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                        JPG, PNG or WebP. It is shrunk to {formatTeamPhotoBytes(TEAM_PHOTO_MAX_BYTES)} automatically — no
-                        editing needed, and it works straight from your phone.
+                      <p data-testid="team-photo-hint" className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                        JPG, PNG or WebP. It is cropped to a square from the middle and shrunk to{' '}
+                        {formatTeamPhotoBytes(TEAM_PHOTO_MAX_BYTES)} automatically — no editing needed, and it works
+                        straight from your phone.
                       </p>
                       {teamPhotoInfo && !isTeamPhotoUploading && (
                         <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">

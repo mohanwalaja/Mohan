@@ -76,6 +76,58 @@ checkPhoto(astro_team_photo_inspect(base64_decode('R0lGODlhAQABAIAAAAAAAP///ywAA
 checkPhoto(astro_team_photo_inspect("\x89PNG\r\n\x1a\n" . str_repeat('x', 200)) === null, 'A truncated PNG header is refused');
 
 // ---------------------------------------------------------------------------
+// 3b. Every stored portrait is a SQUARE, centre-cropped, and never upscaled.
+//     The admin does not crop or resize anything: choosing the file is enough.
+// ---------------------------------------------------------------------------
+if (function_exists('imagecreatetruecolor')) {
+    /** A 16:10 photo: the 300 px the square must drop on each side is red,
+     *  the middle 1000 px (the "face") is green. */
+    $wide = imagecreatetruecolor(1600, 1000);
+    imagefilledrectangle($wide, 0, 0, 299, 999, imagecolorallocate($wide, 255, 0, 0));
+    imagefilledrectangle($wide, 300, 0, 1299, 999, imagecolorallocate($wide, 0, 160, 0));
+    imagefilledrectangle($wide, 1300, 0, 1599, 999, imagecolorallocate($wide, 0, 0, 255));
+    ob_start();
+    imagepng($wide);
+    $widePng = (string) ob_get_clean();
+    imagedestroy($wide);
+
+    $wideInfo = astro_team_photo_inspect($widePng);
+    checkPhoto(is_array($wideInfo) && $wideInfo['width'] === 1600, 'A 1600x1000 photo is inspected as a wide image');
+    $square = astro_team_photo_normalize($widePng, $wideInfo);
+    checkPhoto(is_array($square), 'A wide photo is still accepted and stored');
+    checkPhoto($square['width'] === $square['height'], 'A wide photo is stored as a square, not a letterboxed strip');
+    checkPhoto($square['width'] === ASTRO_TEAM_PHOTO_SQUARE_EDGE, 'The square is the documented ' . ASTRO_TEAM_PHOTO_SQUARE_EDGE . ' px edge');
+    checkPhoto(strlen($square['binary']) <= ASTRO_TEAM_PHOTO_MAX_BYTES, 'The cropped square is still within 250 KB');
+
+    $croppedBack = imagecreatefromstring($square['binary']);
+    checkPhoto($croppedBack !== false, 'The stored square is a decodable image');
+    if ($croppedBack !== false) {
+        $centre = imagecolorsforindex($croppedBack, imagecolorat($croppedBack, intdiv($square['width'], 2), intdiv($square['height'], 2)));
+        checkPhoto($centre['green'] > $centre['red'] && $centre['green'] > $centre['blue'], 'The centre of the photo is kept (the crop removes the sides, not the face)');
+        $leftEdge = imagecolorsforindex($croppedBack, imagecolorat($croppedBack, 2, intdiv($square['height'], 2)));
+        $rightEdge = imagecolorsforindex($croppedBack, imagecolorat($croppedBack, $square['width'] - 3, intdiv($square['height'], 2)));
+        checkPhoto(
+            $leftEdge['green'] > 100 && $leftEdge['red'] < 60 && $rightEdge['green'] > 100 && $rightEdge['blue'] < 60,
+            'The red and blue side strips are cropped away, so the square really came from the middle'
+        );
+        imagedestroy($croppedBack);
+    }
+
+    // A small portrait must not be blown up: upscaling only adds blur and bytes.
+    $tiny = imagecreatetruecolor(120, 200);
+    imagefill($tiny, 0, 0, imagecolorallocate($tiny, 90, 90, 200));
+    ob_start();
+    imagepng($tiny);
+    $tinyPng = (string) ob_get_clean();
+    imagedestroy($tiny);
+    $tinyInfo = astro_team_photo_inspect($tinyPng);
+    $tinySquare = astro_team_photo_normalize($tinyPng, is_array($tinyInfo) ? $tinyInfo : []);
+    checkPhoto(is_array($tinySquare) && $tinySquare['width'] === 120 && $tinySquare['height'] === 120, 'A 120x200 portrait becomes a 120x120 square, never upscaled');
+} else {
+    checkPhoto(ASTRO_TEAM_PHOTO_SQUARE_EDGE >= 600 && ASTRO_TEAM_PHOTO_SQUARE_EDGE <= 1200, 'The square edge is a usable resolution');
+}
+
+// ---------------------------------------------------------------------------
 // 4. The stored name is the server's, and only this folder is ever touched.
 // ---------------------------------------------------------------------------
 $stored = astro_team_photo_store(['imageBase64' => base64_encode($png)]);

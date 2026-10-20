@@ -34,6 +34,12 @@ if (!defined('ASTRO_TEAM_PHOTO_MAX_EDGE')) {
     // the photo at ~64 px, so 1200 px is already more than a retina screen uses.
     define('ASTRO_TEAM_PHOTO_MAX_EDGE', 1200);
 }
+if (!defined('ASTRO_TEAM_PHOTO_SQUARE_EDGE')) {
+    // Every stored portrait is a SQUARE of this edge (or smaller, never
+    // upscaled). The browser already centre-crops; doing it again here means a
+    // photo posted by any other route cannot land as a letterboxed strip.
+    define('ASTRO_TEAM_PHOTO_SQUARE_EDGE', 800);
+}
 if (!defined('ASTRO_TEAM_PHOTO_MIN_EDGE')) {
     define('ASTRO_TEAM_PHOTO_MIN_EDGE', 60);
 }
@@ -140,7 +146,9 @@ if (!function_exists('astro_team_photo_normalize')) {
     {
         if (!function_exists('imagecreatefromstring') || !function_exists('imagejpeg')) {
             // No GD on this host: the sniffed original is still a real image
-            // and already within the budget (inspect() enforced that).
+            // and already within the budget (inspect() enforced that). It keeps
+            // its own shape — the browser has already cropped it to a square,
+            // and shipping a wrong crop is worse than shipping no crop.
             return [
                 'binary' => $binary,
                 'mime' => $info['mime'],
@@ -154,12 +162,20 @@ if (!function_exists('astro_team_photo_normalize')) {
         if ($source === false) {
             return null;
         }
-        $maxEdge = ASTRO_TEAM_PHOTO_MAX_EDGE;
-        $scale = min(1.0, $maxEdge / max(1, (int)$info['width']), $maxEdge / max(1, (int)$info['height']));
+        // Centre square of the original: crop first, then downscale, so the
+        // saved portrait keeps the resolution the card can use. A portrait or a
+        // panorama loses its sides, never its middle (that is where the face is).
+        $sourceW = max(1, (int)$info['width']);
+        $sourceH = max(1, (int)$info['height']);
+        $side = min($sourceW, $sourceH);
+        $cropX = max(0, (int)round(($sourceW - $side) / 2));
+        $cropY = max(0, (int)round(($sourceH - $side) / 2));
+        $squareEdge = min(ASTRO_TEAM_PHOTO_SQUARE_EDGE, ASTRO_TEAM_PHOTO_MAX_EDGE, $side);
+        $scale = 1.0;
 
         for ($attempt = 0; $attempt < 4; $attempt++) {
-            $width = max(1, (int)round((int)$info['width'] * $scale));
-            $height = max(1, (int)round((int)$info['height'] * $scale));
+            $width = max(1, (int)round($squareEdge * $scale));
+            $height = $width;
             $canvas = imagecreatetruecolor($width, $height);
             if ($canvas === false) {
                 break;
@@ -168,7 +184,7 @@ if (!function_exists('astro_team_photo_normalize')) {
             // turn black on the site's dark cards.
             $white = imagecolorallocate($canvas, 255, 255, 255);
             imagefilledrectangle($canvas, 0, 0, $width, $height, $white);
-            imagecopyresampled($canvas, $source, 0, 0, 0, 0, $width, $height, (int)$info['width'], (int)$info['height']);
+            imagecopyresampled($canvas, $source, 0, 0, $cropX, $cropY, $width, $height, $side, $side);
 
             foreach ([88, 82, 76, 70, 62] as $quality) {
                 ob_start();
