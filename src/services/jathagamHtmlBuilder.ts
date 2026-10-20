@@ -32,8 +32,7 @@ import jathagamPage1Data from '../../api/astrology/jathagam_page1.json';
 import {
   GLOSSARY_PAGE_TEXT,
   REPORT_GLOSSARY_CSS,
-  reportGlossaryHtml,
-  reportGlossaryQuickHtml
+  reportGlossaryHtml
 } from './reportGlossary';
 
 // Rasi names in 3 languages
@@ -1963,7 +1962,7 @@ ${REPORT_GLOSSARY_CSS}
       </div>
     </div>
 
-    ${reportGlossaryQuickHtml('BIRTH_JATHAGAM', lang)}
+    <p class="glossary-pointer">${escapeHtml(GLOSSARY_PAGE_TEXT[lang].pointer)}</p>
 
     <div class="chart-section">
       <div class="chart-box panel">
@@ -2133,7 +2132,7 @@ ${REPORT_GLOSSARY_CSS}
           ? 'शब्दार्थ (Report Guide)'
           : 'Plain-language guide to this report'
     })}
-    ${reportGlossaryHtml('BIRTH_JATHAGAM', lang, { includeQuick: false })}
+    ${reportGlossaryHtml('BIRTH_JATHAGAM', lang)}
     ${footerHtmlFor(4)}
   </div>
 </div>

@@ -46,16 +46,23 @@ by the line that points at the full guide.
 | Baby Naming | Namakaran · Nakshatra · Pada · Gunam · Rasi |
 | Muhurtham | Muhurtham · Tara Bala · Chandrashtama · Nalla Neram · Nakshatra |
 
-**Where it sits**
+**Where it sits — the last page only**
 
-| Report | Box position | Why |
-|---|---|---|
-| Birth Jathagam | **page 1**, between the particulars and the charts | page 1 has ~50 mm of slack and a `fitPageToA4` safety net, so the box can live where the words are first used |
-| Marriage / Baby Naming / Muhurtham | **top of the Report Guide sheet** | their page 1 is already full to the A4 and has no self-fitting step; adding ~20 mm there could push a printed page, so the box opens the guide instead and page 1 keeps its one-line pointer |
+| Report | Box position |
+|---|---|
+| Birth Jathagam | top of the Report Guide sheet (page 4) |
+| Marriage Compatibility | top of the Report Guide sheet (page 3) |
+| Baby Naming | top of the Report Guide sheet (page 3) |
+| Subha Muhurtham | top of the Report Guide sheet (page 3) |
 
-The Jathagam's box is printed once: page 1 has it, and its guide sheet is called
-with `includeQuick: false` so the same five rows are not repeated eight pages
-later.
+The box is part of the guide, never of the report body: it is printed **once**,
+on the last sheet, in every report. Page 1 of each report keeps a single line
+pointing there —
+
+*"New to these words? Every term is explained in one line on the last page
+(Report Guide & Glossary)."*
+
+so the reader knows help exists without page 1 growing any taller.
 
 The five words are listed as `quickTerms` per report in
 `api/astrology/report_glossary.json`, and they must be a subset of that report's
@@ -152,7 +159,8 @@ second jargon word, and never a restatement of the label.
 
 Use keys that are already in that report's `reportTerms`. The box is printed
 from the same entries as the full guide, so the two can never disagree, and the
-test fails if a key is unknown or if a report stops showing five words.
+test fails if a key is unknown, if a report stops showing five words, or if the
+rows ever appear anywhere except the last page.
 
 `tests/report-glossary.test.ts` (in `npm test`) fails the build if:
 

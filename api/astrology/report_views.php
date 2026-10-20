@@ -1539,11 +1539,6 @@ HTML;
         }
 
         $page1Html = self::topHeader('ASTRO SIVAM', $p1Sub, $orderNumber, 1, self::JATHAGAM_PAGE_TOTAL, $lang, '', true, $preparedLabel);
-        // The five words a reader meets first, right under the particulars and
-        // above the charts/doshas. The wording comes from report_glossary.json;
-        // the full guide is the last sheet (and its box is skipped there).
-        $quickGlossaryHtml = astro_report_glossary_quick_html('BIRTH_JATHAGAM', $lang);
-
         $page1Html .= <<<HTML
 <div class="panel">
   <div class="panel-title">{$panelDevoteeTitle}</div>
@@ -1567,7 +1562,6 @@ HTML;
 </div>
 
 {$rasiNavamsaRowHtml}
-{$quickGlossaryHtml}
 <div class="panel">
   <div class="panel-title">{$doshaSecTitle}</div>
   {$doshaCardsHtml}
@@ -2170,7 +2164,7 @@ HTML;
         $page3Html .= '<div class="summary-reassurance">' . self::e($summaryText['reassurance']) . '</div>';
 
         $glossarySubtitle = $isTa ? 'சொல் விளக்கம்' : ($isHi ? 'शब्दार्थ' : 'Plain-language guide to this report');
-        $glossaryBody = astro_report_glossary_html('BIRTH_JATHAGAM', $lang, false);
+        $glossaryBody = astro_report_glossary_html('BIRTH_JATHAGAM', $lang);
         $glossarySheetHtml = $glossaryBody === ''
             ? ''
             : '<div class="sheet glossary-sheet" id="birth-glossary-sheet">'

@@ -139,17 +139,22 @@ check('the Birth Jathagam prints the glossary sheet in every language, after the
     for (const entry of reportGlossaryEntries('BIRTH_JATHAGAM', lang)) {
       assert.ok(html.includes(esc(entry.label)), `${lang}: term '${entry.label}' not printed`);
     }
-    // Page 1 carries the "5 words you'll meet" box, so the first terms are
-    // explained before the reader has to turn to the last page.
+    // The "5 words you'll meet" box lives on the LAST page only (owner request):
+    // page 1 keeps a single line pointing at the guide.
     const page1 = html.slice(html.indexOf('id="jathagam-page-1"'), summaryStart);
-    assert.ok(page1.includes(QUICK_BOX_TEXT[lang].title), `${lang}: page 1 has no quick-words box`);
-    assert.equal((page1.match(/glossary-quick-row/g) || []).length, 5, `${lang}: page-1 box rows`);
-    for (const entry of reportGlossaryQuickEntries('BIRTH_JATHAGAM', lang)) {
-      assert.ok(page1.includes(esc(entry.label)), `${lang}: page-1 box is missing '${entry.label}'`);
-    }
-    // The guide sheet must not repeat a box page 1 already carries.
+    assert.ok(!page1.includes(QUICK_BOX_TEXT[lang].title), `${lang}: page 1 must not carry the quick-words box`);
+    assert.equal((page1.match(/class="glossary-quick-row"/g) || []).length, 0, `${lang}: page 1 must not list glossary rows`);
+    assert.ok(page1.includes(esc(GLOSSARY_PAGE_TEXT[lang].pointer)),
+      `${lang}: page 1 has no pointer to the glossary`);
     const guideSheet = html.slice(glossaryStart);
-    assert.ok(!guideSheet.includes('glossary-quick-row'), `${lang}: the guide sheet repeats the page-1 box`);
+    assert.ok(guideSheet.includes(QUICK_BOX_TEXT[lang].title), `${lang}: the guide sheet has no quick-words box`);
+    assert.equal((guideSheet.match(/class="glossary-quick-row"/g) || []).length, 5, `${lang}: guide box rows`);
+    for (const entry of reportGlossaryQuickEntries('BIRTH_JATHAGAM', lang)) {
+      assert.ok(guideSheet.includes(esc(entry.label)), `${lang}: the guide box is missing '${entry.label}'`);
+    }
+    // The box appears exactly once in the whole document (the CSS selector in
+    // the inline <style> block is not counted).
+    assert.equal((html.match(/class="glossary-quick-row"/g) || []).length, 5, `${lang}: the box is printed more than once`);
   }
 });
 
@@ -200,22 +205,27 @@ check('every report ends with the glossary page, in all three languages', () => 
       const esc = (value: string) => value.replace(/&/g, '&amp;').replace(/'/g, '&#039;');
       assert.ok(html.slice(0, start).includes(esc(GLOSSARY_PAGE_TEXT[lang].pointer)),
         `${report.name}/${lang}: no pointer to the glossary on the report pages`);
-      // Here the box opens the guide (page 1 of these reports is full to the
-      // A4 and has no self-fitting step, so the box cannot be added there).
+      // Same placement as the Jathagam: the box is on the last page only.
       const guide = html.slice(start);
       assert.ok(guide.includes(QUICK_BOX_TEXT[lang].title), `${report.name}/${lang}: the guide has no quick-words box`);
-      assert.equal((guide.match(/glossary-quick-row/g) || []).length, 5, `${report.name}/${lang}: guide box rows`);
+      assert.equal((guide.match(/class="glossary-quick-row"/g) || []).length, 5, `${report.name}/${lang}: guide box rows`);
+      assert.equal((html.match(/class="glossary-quick-row"/g) || []).length, 5,
+        `${report.name}/${lang}: the box must be printed once, on the last page`);
     }
   }
 });
 
-check('the PHP renderer prints the same quick box, and skips it where page 1 has it', () => {
+check('the PHP renderer prints the same quick box on the last page only', () => {
   assert.match(rendererPhp, /function astro_report_glossary_quick_html\(string \$reportKind, string \$lang\)/);
   assert.match(rendererPhp, /function astro_report_glossary_quick_entries\(string \$reportKind, string \$lang\)/);
   assert.match(rendererPhp, /'quickTerms' => is_array\(\$decoded\['quickTerms'\]/);
-  assert.match(rendererPhp, /\$quickGlossaryHtml = astro_report_glossary_quick_html\('BIRTH_JATHAGAM', \$lang\);/, 'page 1 has no box');
-  assert.match(rendererPhp, /\{\$quickGlossaryHtml\}/, 'the box is not placed on page 1');
-  assert.match(rendererPhp, /astro_report_glossary_html\('BIRTH_JATHAGAM', \$lang, false\)/, 'the guide sheet repeats the box');
+  // The Jathagam guide sheet prints the box like the other three reports, and
+  // page 1 never does.
+  assert.match(rendererPhp, /astro_report_glossary_html\('BIRTH_JATHAGAM', \$lang\)/);
+  assert.doesNotMatch(rendererPhp, /astro_report_glossary_html\('BIRTH_JATHAGAM', \$lang, false\)/,
+    'the Jathagam guide still suppresses the box');
+  assert.doesNotMatch(rendererPhp, /\$quickGlossaryHtml = astro_report_glossary_quick_html\('BIRTH_JATHAGAM'/,
+    'page 1 still renders the quick box');
 });
 
 check('the PHP renderer appends the same sheet for all four reports', () => {
