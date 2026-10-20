@@ -102,6 +102,15 @@ CREATE TABLE system_settings (
   id INTEGER PRIMARY KEY, email_settings TEXT, general_settings TEXT, payment_settings TEXT, service_pricing TEXT,
   service_mode TEXT DEFAULT 'FREE_BETA', updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE team_members (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL DEFAULT '', name_ta TEXT DEFAULT '', title TEXT DEFAULT '',
+  title_ta TEXT DEFAULT '', title_hi TEXT DEFAULT '', bio TEXT DEFAULT '', location TEXT DEFAULT '',
+  experience_years INTEGER NOT NULL DEFAULT 0, specializations TEXT DEFAULT '[]', photo_url TEXT DEFAULT '',
+  education TEXT DEFAULT '', education_ta TEXT DEFAULT '', specialization TEXT DEFAULT '',
+  is_active INTEGER NOT NULL DEFAULT 1, display_order INTEGER NOT NULL DEFAULT 1,
+  contact_phone TEXT DEFAULT '', contact_email TEXT DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE audit_logs (
   id TEXT PRIMARY KEY, user_id TEXT, user_name TEXT, user_role TEXT, action TEXT, details TEXT, ip_address TEXT, created_at TEXT
 );

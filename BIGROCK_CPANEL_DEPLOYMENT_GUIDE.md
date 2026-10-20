@@ -55,6 +55,8 @@ When you extract or upload `dist.zip` to your cPanel `public_html/`, it contains
 
 The package contains only the compiled static website, PHP API, and deployment notes. It does **not** include a Node server, Node bundle, or Node runtime dependencies.
 
+**Team portraits (admin uploads).** Adding an astrology team member takes a photo **file** — no image URL needed. PHP writes each portrait to `api/uploads/team/` (max **250 KB**, shrunk in the browser before it is sent) and stores `/api/uploads/team/<random>.jpg` on the member. The folder ships with its `.htaccess` guard, which refuses to execute anything inside it; keep that file in place. The folder must be writable by PHP (`755`, the cPanel default for your own files) — if it is not, the panel says *"The server cannot store photos right now (upload folder is not writable)"*. Portraits live only on the server (never in `dist.zip`), survive redeploys, and are archived by the Sunday backup as `uploads.tar.gz` alongside the database dump — restoring a dump alone would leave members pointing at missing images.
+
 ---
 
 ## 📁 Step 2: Uploading Files via cPanel File Manager

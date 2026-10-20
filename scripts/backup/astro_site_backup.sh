@@ -167,6 +167,28 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 3b. Admin-uploaded photos (api/uploads) - astrology team portraits.
+#     These live only on the server (never in dist.zip), so a database dump
+#     alone would restore members pointing at images that no longer exist.
+# ---------------------------------------------------------------------------
+UPLOADS_STATUS='{"included": false, "files": 0, "bytes": 0}'
+if [ -d "$API_DIR/uploads" ]; then
+  UPLOADS_TAR="$GENERATION_DIR/uploads.tar.gz"
+  if tar -czf "$UPLOADS_TAR" -C "$API_DIR/uploads" . 2>/dev/null; then
+    UPLOAD_FILES="$(find "$API_DIR/uploads" -type f -not -name '.htaccess' 2>/dev/null | wc -l | tr -d ' ')"
+    UPLOAD_BYTES="$(wc -c < "$UPLOADS_TAR" | tr -d ' ')"
+    UPLOADS_STATUS="{\"included\": true, \"files\": ${UPLOAD_FILES}, \"bytes\": ${UPLOAD_BYTES}, \"archive\": \"uploads.tar.gz\"}"
+    log "uploads archive: ${UPLOAD_FILES} file(s), $(numfmt --to=iec "$UPLOAD_BYTES" 2>/dev/null || echo "${UPLOAD_BYTES} bytes")"
+  else
+    UPLOADS_STATUS='{"included": false, "files": 0, "bytes": 0, "error": "tar failed"}'
+    log "WARNING: api/uploads could not be archived - the marker will say so"
+  fi
+else
+  UPLOADS_STATUS='{"included": false, "files": 0, "bytes": 0, "error": "api/uploads missing"}'
+  log "WARNING: api/uploads not found"
+fi
+
+# ---------------------------------------------------------------------------
 # 4. Credentials archive (optional, encrypted, deliberately outside the marker)
 #
 # Uncomment on the host and set ASTRO_BACKUP_PASSPHRASE in the cron
@@ -194,6 +216,7 @@ cat > "$BACKUP_DIR/last-backup.json" <<JSON
   "gitRevision": "$GIT_REVISION",
   "database": {"name": "$DB_NAME", "dump": "database.sql.gz", "dumpBytes": $DUMP_BYTES},
   "storage": $STORAGE_STATUS,
+  "uploads": $UPLOADS_STATUS,
   "retention": {"keep": $RETENTION, "directory": "$BACKUP_DIR"}
 }
 JSON

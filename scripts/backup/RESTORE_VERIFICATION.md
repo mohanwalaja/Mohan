@@ -17,6 +17,7 @@ verify it, then point the app at it.
 |---|---|
 | `database.sql.gz` | full MySQL dump: schema, data, routines, triggers |
 | `storage.tar.gz` | `api/storage/` — staged support PDFs / family documents |
+| `uploads.tar.gz` | `api/uploads/` — astrology team portraits uploaded in the admin panel |
 | `database.err` | mysqldump stderr when a run failed (an evidence file, not a backup) |
 | `../last-backup.json` | the marker `GET /api/admin/health.php` reads |
 
@@ -144,6 +145,8 @@ SELECT id, status FROM payment_intents WHERE order_id IS NOT NULL LIMIT 1;
 ```bash
 mkdir -p /tmp/astro-storage-restore
 tar -xzf "$BACKUP_DIR/$GEN/storage.tar.gz" -C /tmp/astro-storage-restore
+# Team portraits (create the folder first on a fresh host):
+#   mkdir -p api/uploads && tar -xzf "$BACKUP_DIR/$GEN/uploads.tar.gz" -C api/uploads
 find /tmp/astro-storage-restore -type f | head -20
 file /tmp/astro-storage-restore/family_docs/* 2>/dev/null | head -5   # expect PDF document
 ```

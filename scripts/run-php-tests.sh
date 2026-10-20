@@ -18,6 +18,7 @@ php_tests=(
   tests/report-dob-format.test.php
   tests/invoice-business-registration.test.php
   tests/usd-inr-rate.test.php
+  tests/team-photo-upload.test.php
 )
 
 for test_file in "${php_tests[@]}"; do

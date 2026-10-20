@@ -31,6 +31,10 @@ api/astrology/tmp/app_secret_key.txt
 # data + support documents). These live on the host only, under the directory
 # api/.htaccess already denies over HTTP.
 api/storage/backups/
+# Astrology team portraits uploaded through the admin panel live on the server
+# (api/uploads/team/), never in Git. Only the folder's execution guards ship.
+api/uploads/team/*
+!api/uploads/team/.htaccess
 
 # Python bytecode cache from the scripts/ asset builders
 __pycache__/

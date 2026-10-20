@@ -1,0 +1,23 @@
+# ASTRO SIVAM - astrology team portraits written by the admin panel.
+#
+# Same execution ban as the parent folder, plus a long cache: every upload gets
+# a new random file name, so a replaced photo is a new URL and a cached one can
+# never go stale.
+Options -Indexes -ExecCGI
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar .cgi .pl .py .sh
+RemoveType .php .phtml .phar
+
+<FilesMatch "\.(php|phtml|php[0-9]|phar|cgi|pl|py|sh|inc|shtml|htaccess)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Cache-Control "public, max-age=2592000"
+</IfModule>

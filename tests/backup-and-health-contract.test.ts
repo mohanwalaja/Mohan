@@ -87,6 +87,10 @@ check('the backup script dumps the database and the support documents', () => {
   assert.match(backup, /--skip-lock-tables/);
   assert.match(backup, /tar --exclude='\.\/backups' -czf "\$STORAGE_TAR" -C "\$API_DIR\/storage" \./);
   assert.match(backup, /STORAGE_STATUS=/, 'the marker must record whether storage was included');
+  // Admin-uploaded team portraits exist only on the server, so a database-only
+  // backup would restore members whose photos are gone.
+  assert.match(backup, /UPLOADS_TAR="\$GENERATION_DIR\/uploads\.tar\.gz"/, 'api/uploads must be archived');
+  assert.match(backup, /UPLOADS_STATUS=/, 'the marker must record whether uploads were included');
 });
 
 check('the backup script never prints credentials', () => {
@@ -198,6 +202,7 @@ check('the backup script produces a valid marker, then rotates', () => {
   assert.ok(Date.parse(marker.generatedAt) > 0, 'the marker must carry a parseable generatedAt');
   assert.ok(marker.database.dumpBytes > 4096, 'the marker must record the real dump size');
   assert.equal(marker.storage.included, true, 'api/storage must be part of the backup');
+  assert.equal(marker.uploads.included, true, 'uploaded team portraits must be part of the backup');
   assert.equal(marker.retention.keep, 2);
   assert.equal(marker.database.name, 'astro_test');
 
@@ -206,6 +211,7 @@ check('the backup script produces a valid marker, then rotates', () => {
   const files = fs.readdirSync(generation);
   assert.ok(files.includes('database.sql.gz'), `missing dump in ${files.join(', ')}`);
   assert.ok(files.includes('storage.tar.gz'), `missing storage archive in ${files.join(', ')}`);
+  assert.ok(files.includes('uploads.tar.gz'), `missing uploads archive in ${files.join(', ')}`);
 
   // Rotation: run three more generations with a 2-generation retention.
   for (let i = 0; i < 3; i++) {
