@@ -132,7 +132,10 @@ foreach ([['en', 'en'], ['ta', 'ta'], ['hi', 'hi']] as [$lang]) {
             $fixture['result']
         );
 
-        checkNamakaran(substr_count($html, '<pagebreak />') === 1, "PHP {$lang} {$gender} report breaks to a second page exactly once");
+        // Page 1 = certificate, page 2 = name sheet, page 3 = the plain-language
+        // glossary (added after this check was written): exactly two breaks.
+        checkNamakaran(substr_count($html, '<pagebreak />') === 2, "PHP {$lang} {$gender} report breaks to the name sheet and then the glossary, and no further");
+        checkNamakaran(substr_count($html, 'id="namakaran-glossary-sheet"') === 1, "PHP {$lang} {$gender} report ends with one glossary page");
         checkNamakaran(substr_count($html, 'class="bn-frame"') === 2, "PHP {$lang} {$gender} report prints the certificate and the name sheet");
         checkNamakaran(substr_count($html, 'class="sug-cols"') === 1, "PHP {$lang} {$gender} name sheet has one two-column name area");
         checkNamakaran(strpos($html, 'class="sug-col-head sug-south"') !== false && strpos($html, 'class="sug-col-head sug-north"') !== false, "PHP {$lang} {$gender} name sheet labels both styles");
