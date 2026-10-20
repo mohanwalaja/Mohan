@@ -31,6 +31,7 @@ import {
   describeTeamPhotoRejection,
   formatTeamPhotoBytes,
   teamPhotoFitsBudget,
+  teamPhotoSquareCrop,
   teamPhotoTargetEdge
 } from '../src/services/teamPhoto';
 
@@ -65,19 +66,54 @@ check('the quality ladder can always reach the budget', () => {
   assert.equal(teamPhotoFitsBudget(Number.NaN), false);
 });
 
-check('resizing never upscales and always keeps the aspect ratio', () => {
-  const wide = teamPhotoTargetEdge(4000, 3000);
-  assert.equal(Math.max(wide.width, wide.height), TEAM_PHOTO_MAX_EDGE);
-  assert.ok(Math.abs(wide.width / wide.height - 4000 / 3000) < 0.02);
+check('every photo is auto-cropped to a square from the middle', () => {
+  // 4000x3000: the square is 3000 wide, 500 px taken off each side.
+  const landscape = teamPhotoSquareCrop(4000, 3000);
+  assert.equal(landscape.sw, 3000);
+  assert.equal(landscape.sh, landscape.sw, 'the source rect is a square');
+  assert.equal(landscape.sx, 500, 'a landscape photo is cropped equally left and right');
+  assert.equal(landscape.sy, 0);
+  assert.equal(landscape.size, TEAM_PHOTO_MAX_EDGE, 'the saved square is the documented edge');
 
-  const portrait = teamPhotoTargetEdge(1200, 4800);
-  assert.equal(portrait.height, TEAM_PHOTO_MAX_EDGE);
+  // 1200x4800 portrait: 1800 px off the top and bottom, the face stays centred.
+  const portrait = teamPhotoSquareCrop(1200, 4800);
+  assert.equal(portrait.sw, 1200);
+  assert.equal(portrait.sy, 1800, 'a tall photo is cropped equally top and bottom');
+  assert.equal(portrait.sx, 0);
+  assert.equal(portrait.size, TEAM_PHOTO_MAX_EDGE, 'a tall photo is saved at the normal square size');
 
-  const small = teamPhotoTargetEdge(120, 160);
-  assert.deepEqual(small, { width: 120, height: 160 }, 'a small photo is never blown up');
+  // A small portrait keeps its own size: upscaling would only blur it.
+  const small = teamPhotoSquareCrop(120, 160);
+  assert.equal(small.size, 120);
+  assert.equal(small.sw, 120);
+  assert.equal(small.sy, 20);
 
-  const shrunk = teamPhotoTargetEdge(4000, 4000, 0.5);
-  assert.equal(Math.max(shrunk.width, shrunk.height), TEAM_PHOTO_MAX_EDGE / 2);
+  // An already-square photo is not moved at all.
+  assert.deepEqual(teamPhotoSquareCrop(900, 900), { sx: 0, sy: 0, sw: 900, sh: 900, size: 800 });
+
+  // The shrink ladder still produces a smaller square.
+  const shrunk = teamPhotoSquareCrop(4000, 4000, TEAM_PHOTO_MAX_EDGE / 2);
+  assert.equal(shrunk.size, TEAM_PHOTO_MAX_EDGE / 2);
+
+  // The old alias must agree: prepared portraits are square.
+  const legacy = teamPhotoTargetEdge(4000, 3000);
+  assert.equal(legacy.width, legacy.height, 'the prepared portrait is never a rectangle');
+  assert.equal(legacy.width, TEAM_PHOTO_MAX_EDGE);
+
+  // Degenerate input can never produce a zero-width canvas.
+  const broken = teamPhotoSquareCrop(0, 0);
+  assert.ok(broken.sw >= 1 && broken.size >= 1);
+});
+
+check('the browser draws the centre crop, not the whole photo', () => {
+  const module = read('src/services/teamPhoto.ts');
+  assert.match(
+    module,
+    /drawImage\(decoded\.source, crop\.sx, crop\.sy, crop\.sw, crop\.sh, 0, 0, width, height\)/,
+    'the canvas must receive the cropped source rect'
+  );
+  assert.match(module, /canvas\.width = width;/, 'the canvas is square');
+  assert.match(module, /const height = crop\.size;/, 'height comes from the same square size');
 });
 
 check('unsupported files are refused with advice the admin can act on', () => {
@@ -105,6 +141,8 @@ check('the admin form uploads a file instead of demanding a URL', () => {
   const admin = read('src/pages/AdminPortal.tsx');
   assert.match(admin, /data-testid="team-photo-input"/, 'there is a file input');
   assert.match(admin, /accept=\{TEAM_PHOTO_ACCEPT\}/, 'the picker only offers usable image types');
+  assert.match(admin, /data-testid="team-photo-hint"/, 'the panel tells the admin the photo is cropped for them');
+  assert.match(admin, /cropped to a square/i, 'the admin is told about the automatic crop');
   assert.match(admin, /prepareTeamPhoto\(file\)/, 'the photo is shrunk in the browser first');
   assert.match(admin, /api\.uploadTeamPhoto\(prepared\.base64\)/, 'the shrunk photo is uploaded');
   assert.match(admin, /data-testid="team-photo-upload-button"/, 'the upload button is identifiable');
@@ -153,6 +191,11 @@ check('the upload route is admin-only, rate-limited and cannot be mistaken for "
   assert.match(module, /imagejpeg\(\$canvas, null, \$quality\)/, 'GD re-encodes, which drops EXIF/GPS');
   assert.doesNotMatch(module, /move_uploaded_file/, 'no raw upload temp file is trusted');
   assert.match(module, /function astro_team_photo_delete\(/);
+  // The server squares the photo too, so no other route can store a strip.
+  assert.match(module, /define\('ASTRO_TEAM_PHOTO_SQUARE_EDGE', 800\)/);
+  assert.match(module, /\$side = min\(\$sourceW, \$sourceH\)/, 'the square side is the shorter edge');
+  assert.match(module, /imagecopyresampled\(\$canvas, \$source, 0, 0, \$cropX, \$cropY/, 'GD draws from the centre crop, not the whole photo');
+  assert.match(module, /\$height = \$width;/, 'the stored image is always square');
 
   const cleanup = admin.match(/astro_team_photo_delete\(/g) || [];
   assert.ok(cleanup.length >= 2, 'both a replaced photo and a deleted member clean up the file');

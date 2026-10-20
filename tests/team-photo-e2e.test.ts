@@ -95,6 +95,34 @@ const bridge = await createAdminApiBridge();
 await bridge.reset();
 
 const bytesOf = (res: any): Buffer => Buffer.from(res.bytes ?? res.body ?? []);
+
+/**
+ * Read width/height straight out of the stored file. Asserting on the JSON
+ * alone would let a server that reports a crop it never performed pass; this
+ * checks the bytes a browser actually downloads.
+ */
+function imageDimensions(buf: Buffer): { width: number; height: number; format: string } {
+  const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  if (buf.length > 24 && buf.subarray(0, 8).equals(PNG_MAGIC)) {
+    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20), format: 'png' };
+  }
+  if (buf.length > 4 && buf[0] === 0xff && buf[1] === 0xd8) {
+    let i = 2;
+    while (i + 8 < buf.length) {
+      if (buf[i] !== 0xff) {
+        i += 1;
+        continue;
+      }
+      const marker = buf[i + 1];
+      if (marker >= 0xc0 && marker <= 0xc3) {
+        return { width: buf.readUInt16BE(i + 7), height: buf.readUInt16BE(i + 5), format: 'jpeg' };
+      }
+      const length = buf.readUInt16BE(i + 2);
+      i += 2 + (length > 1 ? length : 2);
+    }
+  }
+  throw new Error('the stored portrait is not a JPEG or PNG');
+}
 const jsonOf = (res: any) => {
   const text = typeof res.text === 'string' ? res.text : bytesOf(res).toString('utf8');
   return JSON.parse(text);
@@ -122,6 +150,29 @@ await check('the stored photo is served to the browser as an image', async () =>
   assert.equal(res.status, 200, 'the public URL must resolve');
   assert.match(String(res.contentType || res.headers?.['content-type'] || ''), /image\/(png|jpeg|webp)/);
   assert.equal(bytesOf(res).length, uploadedBytes, 'the served bytes are the stored photo');
+});
+
+await check('a wide phone photo is auto-cropped to a square before it is stored', async () => {
+  // 900x600 landscape, i.e. what a normal phone camera produces. The admin does
+  // not crop anything: the stored file itself must already be square.
+  const res = await bridge.request({
+    method: 'POST',
+    url: '/api/admin/team/photo',
+    json: { imageBase64: makePng(900, 600).toString('base64') }
+  });
+  const body = jsonOf(res);
+  assert.equal(res.status, 200, bytesOf(res).toString('utf8').slice(0, 400));
+  assert.equal(body.success, true, body.message);
+  assert.equal(body.width, body.height, `the stored square is ${body.width}x${body.height}`);
+  assert.equal(body.width, Math.min(800, 600), 'the square is the shorter edge, capped at 800 px');
+  assert.ok(body.bytes <= 250 * 1024, `stored ${body.bytes} bytes`);
+
+  // Prove it from the stored bytes, not just from the JSON the server chose to
+  // send: the file a browser downloads must be square as well.
+  const served = await bridge.request({ method: 'GET', url: body.photoUrl, auth: false });
+  assert.equal(served.status, 200);
+  const size = imageDimensions(bytesOf(served));
+  assert.equal(size.width, size.height, `the served ${size.format} is ${size.width}x${size.height}, not square`);
 });
 
 await check('the member is created with the uploaded photo (no pasted URL)', async () => {

@@ -3,13 +3,19 @@
  *
  * The admin panel used to ask for a "Photo URL", which is impossible with a
  * photo that only exists on a phone. Now the admin picks a file and this module
- * does the rest in the browser: decode, crop-to-square-ish resize, re-encode as
- * JPEG and step the quality down until the result fits the budget. Only the
- * shrunken copy is sent, so the upload is quick even on mobile data.
+ * does the rest in the browser: decode, **centre-crop to a square**, resize,
+ * re-encode as JPEG and step the quality down until the result fits the budget.
+ * The admin never crops, resizes or compresses anything by hand — choosing the
+ * file is the whole job. Only the finished square is sent, so the upload is
+ * quick even on mobile data.
+ *
+ * A square is deliberate: the team cards show a small round/square portrait, so
+ * a fixed shape keeps every astrologer the same size instead of leaving a 3:2
+ * phone photo letterboxed with white bands.
  *
  * The numbers here are the contract with api/admin/team_photos.php:
  *   * 250 KB hard limit (server rejects anything larger)
- *   * 1000 px longest edge (a portrait card renders it at ~64 px)
+ *   * 800 × 800 square output (a card renders it at ~64 px)
  *   * JPEG / PNG / WebP input only (browsers cannot decode HEIC)
  */
 
@@ -17,8 +23,10 @@
 export const TEAM_PHOTO_MAX_BYTES = 250 * 1024;
 /** Aim slightly under the limit so JSON/base64 framing never trips it. */
 export const TEAM_PHOTO_TARGET_BYTES = 244 * 1024;
-/** Longest edge of the uploaded copy. */
-export const TEAM_PHOTO_MAX_EDGE = 1000;
+/** Edge of the square that is uploaded (and the largest accepted source square). */
+export const TEAM_PHOTO_MAX_EDGE = 800;
+/** Retained for readers of the old name: the uploaded copy is a square. */
+export const TEAM_PHOTO_SQUARE_EDGE = TEAM_PHOTO_MAX_EDGE;
 /** A portrait smaller than this is too blurry to publish. */
 export const TEAM_PHOTO_MIN_EDGE = 60;
 /** Largest file we will even try to decode (a 48 MP phone photo is ~12 MB). */
@@ -56,16 +64,39 @@ export function teamPhotoFitsBudget(bytes: number): boolean {
   return Number.isFinite(bytes) && bytes > 0 && bytes <= TEAM_PHOTO_MAX_BYTES;
 }
 
-/** Longest edge to decode at, never upscaling a small portrait. */
-export function teamPhotoTargetEdge(width: number, height: number, scale = 1): { width: number; height: number } {
+/**
+ * The centre square taken from a photo, in source pixels.
+ *
+ * `size` is the side of the square that will be saved: never larger than the
+ * source's shorter edge (no upscaling, which would only blur a small portrait)
+ * and never larger than TEAM_PHOTO_MAX_EDGE. A portrait or a panorama is
+ * cropped from the middle, which is where a face normally is, and the source
+ * rectangle keeps its full resolution so the downscale stays sharp.
+ */
+export function teamPhotoSquareCrop(
+  width: number,
+  height: number,
+  size: number = TEAM_PHOTO_MAX_EDGE
+): { sx: number; sy: number; sw: number; sh: number; size: number } {
   const w = Math.max(1, Math.round(Number(width) || 0));
   const h = Math.max(1, Math.round(Number(height) || 0));
-  const longest = Math.max(w, h);
-  const limit = TEAM_PHOTO_MAX_EDGE * Math.min(1, Math.max(0.1, scale));
-  const factor = longest > limit ? limit / longest : Math.min(1, scale);
-  const targetW = Math.max(1, Math.round(w * factor));
-  const targetH = Math.max(1, Math.round(h * factor));
-  return { width: targetW, height: targetH };
+  const side = Math.min(w, h);
+  const wanted = Math.round(Number(size) || 0);
+  const out = Math.max(1, Math.min(side, Math.min(TEAM_PHOTO_MAX_EDGE, wanted > 0 ? wanted : TEAM_PHOTO_MAX_EDGE)));
+  // Integer source rect, so the crop can never read past the edge of the image.
+  return {
+    sx: Math.max(0, Math.round((w - side) / 2)),
+    sy: Math.max(0, Math.round((h - side) / 2)),
+    sw: side,
+    sh: side,
+    size: out
+  };
+}
+
+/** Kept as a thin alias: a prepared portrait is always square. */
+export function teamPhotoTargetEdge(width: number, height: number, scale = 1): { width: number; height: number } {
+  const crop = teamPhotoSquareCrop(width, height, Math.round(TEAM_PHOTO_MAX_EDGE * Math.min(1, Math.max(0.1, scale))));
+  return { width: crop.size, height: crop.size };
 }
 
 /** The message an admin sees for a file we will not even try to decode. */
@@ -163,7 +194,15 @@ export async function prepareTeamPhoto(file: File): Promise<PreparedTeamPhoto> {
     }
 
     for (const scale of TEAM_PHOTO_SCALE_STEPS) {
-      const { width, height } = teamPhotoTargetEdge(decoded.width, decoded.height, scale);
+      // Centre-crop to a square first, then scale it: cropping after resizing
+      // would throw away resolution the card can actually use.
+      const crop = teamPhotoSquareCrop(
+        decoded.width,
+        decoded.height,
+        Math.round(TEAM_PHOTO_MAX_EDGE * Math.min(1, Math.max(0.1, scale)))
+      );
+      const width = crop.size;
+      const height = crop.size;
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
@@ -174,7 +213,7 @@ export async function prepareTeamPhoto(file: File): Promise<PreparedTeamPhoto> {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(decoded.source, 0, 0, width, height);
+      ctx.drawImage(decoded.source, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
 
       for (const quality of TEAM_PHOTO_QUALITY_LADDER) {
         const blob = await canvasToJpeg(canvas, quality);
