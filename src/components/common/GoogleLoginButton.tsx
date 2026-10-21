@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { X, ShieldAlert } from 'lucide-react';
+import type { User } from '../../types';
 
 declare global {
   interface Window {
@@ -9,7 +10,12 @@ declare global {
 }
 
 interface GoogleLoginButtonProps {
-  onSuccess?: () => void;
+  /**
+   * Called after Google has verified the sign-in. The signed-in account is
+   * passed along so a page can route by role (an admin belongs in the admin
+   * portal) without waiting for a context re-render.
+   */
+  onSuccess?: (user?: User) => void;
   onError?: (err: string) => void;
   mode?: 'signin' | 'register';
   className?: string;
@@ -68,7 +74,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
                 const res = await googleLogin({ accessToken: tokenResponse.access_token });
 
                 if (res.success) {
-                  onSuccess?.();
+                  onSuccess?.(res.user);
                 } else {
                   setModalError(res.message || 'Google sign in failed.');
                   setShowConfigModal(true);
@@ -94,7 +100,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
                 const res = await googleLogin({ credential: response.credential });
 
                 if (res.success) {
-                  onSuccess?.();
+                  onSuccess?.(res.user);
                 } else {
                   setModalError(res.message || 'Google login failed.');
                   setShowConfigModal(true);

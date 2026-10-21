@@ -7,6 +7,7 @@ import { SEO } from '../components/common/SEO';
 import { RouteLink } from '../components/common/RouteLink';
 import { BrandLockup } from '../components/common/BrandLockup';
 import { ForgotPasswordForm } from '../components/common/ForgotPasswordForm';
+import { postAuthRoute } from '../services/authReturnRoute';
 
 interface LoginPageProps {
   onNavigate: (route: string) => void;
@@ -31,8 +32,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
     try {
       const res = await login(email, password);
       if (res.success) {
-        // Routing follows the server-issued role; no email address is privileged client-side.
-        onNavigate(res.user?.role === 'admin' ? 'admin' : 'dashboard');
+        // Routing follows the server-issued role; no email address is privileged
+        // client-side. A customer who left a report page to sign in goes back to
+        // it — with their half-filled form restored — instead of the dashboard.
+        onNavigate(postAuthRoute(res.user?.role));
       } else {
         setErrorMessage(res.message || 'Invalid email or password');
       }
@@ -101,7 +104,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
         <div className="space-y-2.5">
           <GoogleLoginButton
             mode="signin"
-            onSuccess={() => onNavigate('dashboard')}
+            onSuccess={signedIn => onNavigate(postAuthRoute(signedIn?.role))}
             onError={msg => setErrorMessage(msg)}
           />
           <div className="relative flex items-center justify-center my-1 pt-1">

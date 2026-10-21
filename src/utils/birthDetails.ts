@@ -247,6 +247,19 @@ export const consumePendingOrderFor = (): string => {
   }
 };
 
+/**
+ * Is a dashboard "Order for <name>" hand-off waiting? Peeks without consuming,
+ * so a form draft can step aside: an explicit choice of a saved person always
+ * wins over the details a visitor typed earlier.
+ */
+export const peekPendingOrderFor = (): string => {
+  try {
+    return sessionStorage.getItem(ORDER_FOR_STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+};
+
 /** Normalize a YYYY-MM-DD profile value without letting malformed input through. */
 export const normalizeIsoBirthDate = (value: string): string => {
   const normalized = normalizeBirthDate(value);

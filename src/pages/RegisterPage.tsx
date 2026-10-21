@@ -7,6 +7,7 @@ import { normalizePersonName } from '../utils/birthDetails';
 import { SEO } from '../components/common/SEO';
 import { RouteLink } from '../components/common/RouteLink';
 import { BrandLockup } from '../components/common/BrandLockup';
+import { postAuthRoute } from '../services/authReturnRoute';
 
 function getPasswordStrength(value: string): { score: number; label: string } {
   let score = 0;
@@ -80,7 +81,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigate }) => {
         setOtpInfo(res.message || `We've sent a 6-digit code to ${normalizedEmail}.`);
         setOtpStep(true);
       } else if (res.success) {
-        onNavigate('dashboard');
+        // Back to the page they left to register, when there was one.
+        onNavigate(postAuthRoute(res.user?.role));
       } else {
         setErrorMessage(res.message || 'Registration failed');
       }
@@ -102,7 +104,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigate }) => {
     try {
       const res = await verifyRegisterOtp(otpEmail, otp.trim(), password);
       if (res.success) {
-        onNavigate('dashboard');
+        onNavigate(postAuthRoute(res.user?.role));
       } else {
         setOtpError(res.message || 'Verification failed');
       }
@@ -229,7 +231,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigate }) => {
         <div className="space-y-2.5">
           <GoogleLoginButton
             mode="register"
-            onSuccess={() => onNavigate('dashboard')}
+            onSuccess={signedIn => onNavigate(postAuthRoute(signedIn?.role))}
             onError={msg => setErrorMessage(msg)}
           />
           <div className="relative flex items-center justify-center my-1 pt-1">

@@ -62,6 +62,9 @@ import {
   type SavedPerson
 } from '../utils/birthDetails';
 import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
+import { FormDraftNotice, useFormDraft } from '../components/common/FormDraftNotice';
+import { restorableChoice, restorableLocation, restorableText } from '../services/formDraft';
+import type { LocationData as DraftLocationData } from '../components/common/GooglePlacesPicker';
 import { SaveBirthDetailsOption } from '../components/common/SaveBirthDetailsOption';
 import { saveBirthDetailsForNextTime } from '../services/saveBirthDetails';
 
@@ -164,6 +167,35 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
   const [traySuccessMessage, setTraySuccessMessage] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+
+  // A half-filled baby naming form survives the two routes that used to lose
+  // it: the navbar Login link and a browser refresh. What is kept is only this
+  // visitor's own typing, in this tab, for 30 minutes — never a saved profile,
+  // and never over a form they are already filling in. Consent to save details
+  // is deliberately NOT part of it.
+  const babyFormDraft = useFormDraft<{
+    babyName?: unknown;
+    dob?: unknown;
+    tob?: unknown;
+    gender?: unknown;
+    location?: unknown;
+    selectedLanguage?: unknown;
+  }>({
+    route: 'baby-naming',
+    snapshot: () => ({ babyName, dob, tob, gender, location, selectedLanguage }),
+    restore: draft => {
+      setBabyName(restorableText(draft.babyName, 80));
+      const draftDob = restorableText(draft.dob, 10);
+      setDob(isValidIsoBirthDate(draftDob) ? draftDob : '');
+      const draftTob = restorableText(draft.tob, 5);
+      setTob(isValidBirthTime(draftTob) ? draftTob : '');
+      setGender(restorableChoice(draft.gender, ['M', 'F'] as const, 'M'));
+      setLocation(restorableLocation<DraftLocationData>(draft.location));
+      setSelectedLanguage(restorableChoice(draft.selectedLanguage, ['en', 'ta', 'hi'] as const, 'en'));
+    },
+    isEmpty: () => !dob && !tob && !normalizePersonName(babyName),
+    deps: [babyName, dob, tob, gender, location, selectedLanguage]
+  });
 
   const validateBabyBirthDetails = (): string => {
     if (!dob) return 'Please enter the date of birth.';
@@ -296,6 +328,8 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
 
       if (res.success && res.order) {
         if (pickedPerson?.source !== 'self') persistBabyDetailsForNextTime();
+        // The order is placed: the draft has done its job.
+        babyFormDraft.discard();
         setOrderSuccess(res.order);
       } else {
         setErrorMessage(res.message || 'Failed to submit order');
@@ -428,6 +462,12 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
                   </button>
                 </div>
               )}
+
+              <FormDraftNotice
+                shown={babyFormDraft.restored}
+                onDismiss={babyFormDraft.dismiss}
+                subject="baby naming form"
+              />
 
               {errorMessage && (
                 <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
@@ -793,6 +833,7 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
         saveAsProfile={saveAsProfile && pickedPerson?.source === 'self'}
         onSuccess={ord => {
           if (pickedPerson?.source !== 'self') persistBabyDetailsForNextTime();
+          babyFormDraft.discard();
           setOrderSuccess(ord);
           setShowCheckoutModal(false);
         }}

@@ -60,6 +60,9 @@ import {
   type SavedPerson
 } from '../utils/birthDetails';
 import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
+import { FormDraftNotice, useFormDraft } from '../components/common/FormDraftNotice';
+import { restorableChoice, restorableLocation, restorableText } from '../services/formDraft';
+import type { LocationData as DraftLocationData } from '../components/common/GooglePlacesPicker';
 import { SaveBirthDetailsOption } from '../components/common/SaveBirthDetailsOption';
 import { saveBirthDetailsForNextTime } from '../services/saveBirthDetails';
 
@@ -130,6 +133,47 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
   const [traySuccessMessage, setTraySuccessMessage] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+
+  // Both partners' details survive the navbar Login link and a browser refresh.
+  // Only this visitor's own typing in this tab, for 30 minutes — never a saved
+  // profile, and never the consent to save one.
+  const matchFormDraft = useFormDraft<{
+    p1Role?: unknown;
+    p1Name?: unknown;
+    p1Dob?: unknown;
+    p1Tob?: unknown;
+    p1Location?: unknown;
+    p2Name?: unknown;
+    p2Dob?: unknown;
+    p2Tob?: unknown;
+    p2Location?: unknown;
+    selectedLanguage?: unknown;
+  }>({
+    route: 'marriage-compatibility',
+    snapshot: () => ({
+      p1Role, p1Name, p1Dob, p1Tob, p1Location,
+      p2Name, p2Dob, p2Tob, p2Location,
+      selectedLanguage
+    }),
+    restore: draft => {
+      setP1Role(restorableChoice(draft.p1Role, ['bride', 'groom'] as const, 'groom'));
+      setP1Name(restorableText(draft.p1Name, 80));
+      const p1DraftDob = restorableText(draft.p1Dob, 10);
+      setP1Dob(isValidIsoBirthDate(p1DraftDob) ? p1DraftDob : '');
+      const p1DraftTob = restorableText(draft.p1Tob, 5);
+      setP1Tob(isValidBirthTime(p1DraftTob) ? p1DraftTob : '');
+      setP1Location(restorableLocation<DraftLocationData>(draft.p1Location));
+      setP2Name(restorableText(draft.p2Name, 80));
+      const p2DraftDob = restorableText(draft.p2Dob, 10);
+      setP2Dob(isValidIsoBirthDate(p2DraftDob) ? p2DraftDob : '');
+      const p2DraftTob = restorableText(draft.p2Tob, 5);
+      setP2Tob(isValidBirthTime(p2DraftTob) ? p2DraftTob : '');
+      setP2Location(restorableLocation<DraftLocationData>(draft.p2Location));
+      setSelectedLanguage(restorableChoice(draft.selectedLanguage, ['en', 'ta', 'hi'] as const, 'en'));
+    },
+    isEmpty: () => !p1Dob && !p1Tob && !normalizePersonName(p1Name) && !p2Dob && !p2Tob && !normalizePersonName(p2Name),
+    deps: [p1Role, p1Name, p1Dob, p1Tob, p1Location, p2Name, p2Dob, p2Tob, p2Location, selectedLanguage]
+  });
 
   const person1Label = p1Role === 'bride' ? 'Bride' : 'Groom';
   const person2Label = p1Role === 'bride' ? 'Groom' : 'Bride';
@@ -427,6 +471,7 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
 
       if (res.success && res.order) {
         persistMarriageBirthDetails(false);
+        matchFormDraft.discard();
         setOrderSuccess(res.order);
       } else {
         setErrorMessage(res.message || 'Failed to submit order');
@@ -559,6 +604,12 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
                   </button>
                 </div>
               )}
+
+              <FormDraftNotice
+                shown={matchFormDraft.restored}
+                onDismiss={matchFormDraft.dismiss}
+                subject="marriage matching form"
+              />
 
               {errorMessage && (
                 <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
@@ -998,6 +1049,7 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
         saveAsProfile={saveAsProfile && (pickedPerson1?.source === 'self' || pickedPerson2?.source === 'self')}
         onSuccess={ord => {
           persistMarriageBirthDetails(false);
+          matchFormDraft.discard();
           setOrderSuccess(ord);
           setShowCheckoutModal(false);
         }}

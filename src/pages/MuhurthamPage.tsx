@@ -10,6 +10,8 @@ import { PersonNameField } from '../components/common/PersonNameField';
 import { ServicePageHeader } from '../components/common/ServicePageHeader';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
 import { AuthModal } from '../components/common/AuthModal';
+import { FormDraftNotice, useFormDraft } from '../components/common/FormDraftNotice';
+import { restorableChoice, restorableLocation, restorableText } from '../services/formDraft';
 import { PaymentGatewayCheckoutBox } from '../components/cart/PaymentGatewayCheckoutBox';
 import { SingleServiceCheckoutModal } from '../components/cart/SingleServiceCheckoutModal';
 import { SampleReportButton } from '../components/common/SampleReportButton';
@@ -195,6 +197,86 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
     }
   };
   useDashboardOrderFor(savedPeople, person => handlePickPerson(person, person.key));
+
+  // A half-filled Muhurtham form survives the navbar Login link and a browser
+  // refresh: the ceremony month, the event, both horoscopes and both places.
+  // Only this visitor's own typing in this tab, for 30 minutes — never a saved
+  // profile, and never the consent to save one.
+  const muhurthamFormDraft = useFormDraft<{
+    name?: unknown; dob?: unknown; dobText?: unknown;
+    tob?: unknown; tobText?: unknown; tobPeriod?: unknown;
+    birthPlace?: unknown; muhurthamPlace?: unknown;
+    partnerName?: unknown; partnerDob?: unknown; partnerDobText?: unknown;
+    partnerTob?: unknown; partnerTobText?: unknown; partnerTobPeriod?: unknown;
+    partnerBirthPlace?: unknown;
+    selectedEvent?: unknown; selectedMonth?: unknown; selectedLanguage?: unknown;
+  }>({
+    route: 'muhurtham',
+    snapshot: () => ({
+      name, dob, dobText, tob, tobText, tobPeriod, birthPlace, muhurthamPlace,
+      partnerName, partnerDob, partnerDobText, partnerTob, partnerTobText,
+      partnerTobPeriod, partnerBirthPlace,
+      selectedEvent, selectedMonth, selectedLanguage
+    }),
+    restore: draft => {
+      // One person's date: the ISO value wins, otherwise keep the text they
+      // were still typing so nothing they entered is thrown away.
+      const restoreDate = (iso: unknown, text: unknown, setIso: (v: string) => void, setText: (v: string) => void) => {
+        const candidate = restorableText(iso, 10);
+        if (isValidIsoBirthDate(candidate)) {
+          setIso(candidate);
+          setText(isoToDisplayDob(candidate));
+          return;
+        }
+        setIso('');
+        setText(restorableText(text, 20));
+      };
+      const restoreTime = (
+        tob24: unknown,
+        text: unknown,
+        period: unknown,
+        setIso: (v: string) => void,
+        setText: (v: string) => void,
+        setPeriod: (v: 'AM' | 'PM') => void
+      ) => {
+        const candidate = restorableText(tob24, 5);
+        if (isValidBirthTime(candidate)) {
+          applyTobFields(candidate, setIso, setText, setPeriod);
+          return;
+        }
+        setIso('');
+        setText(restorableText(text, 20));
+        setPeriod(restorableChoice(period, ['AM', 'PM'] as const, 'AM'));
+      };
+
+      setName(restorableText(draft.name, 80));
+      restoreDate(draft.dob, draft.dobText, setDob, setDobText);
+      restoreTime(draft.tob, draft.tobText, draft.tobPeriod, setTob, setTobText, setTobPeriod);
+      setBirthPlace(restorableLocation<LocationData>(draft.birthPlace));
+      setMuhurthamPlace(restorableLocation<LocationData>(draft.muhurthamPlace));
+
+      setPartnerName(restorableText(draft.partnerName, 80));
+      restoreDate(draft.partnerDob, draft.partnerDobText, setPartnerDob, setPartnerDobText);
+      restoreTime(
+        draft.partnerTob, draft.partnerTobText, draft.partnerTobPeriod,
+        setPartnerTob, setPartnerTobText, setPartnerTobPeriod
+      );
+      setPartnerBirthPlace(restorableLocation<LocationData>(draft.partnerBirthPlace));
+
+      setSelectedEvent(restorableChoice(draft.selectedEvent, EVENT_ORDER, 'wedding'));
+      const month = restorableText(draft.selectedMonth, 7);
+      setSelectedMonth(/^\d{4}-(0[1-9]|1[0-2])$/.test(month) ? month : defaultTargetMonth());
+      setSelectedLanguage(restorableChoice(draft.selectedLanguage, ['en', 'ta', 'hi'] as const, 'en'));
+    },
+    isEmpty: () => !dob && !dobText && !tob && !tobText &&
+      !normalizePersonName(name) && !birthPlace && !muhurthamPlace,
+    deps: [
+      name, dob, dobText, tob, tobText, tobPeriod, birthPlace, muhurthamPlace,
+      partnerName, partnerDob, partnerDobText, partnerTob, partnerTobText,
+      partnerTobPeriod, partnerBirthPlace,
+      selectedEvent, selectedMonth, selectedLanguage
+    ]
+  });
 
   const isAdmin = user?.role === 'admin';
   const isFreeBeta = settings?.serviceMode === 'FREE_BETA' && settings?.betaFreeChartAvailable !== false;
@@ -642,6 +724,7 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
       });
       if (response.success && response.order) {
         persistMuhurthamBirthDetails(false, true);
+        muhurthamFormDraft.discard();
         setSuccessOrder(response.order);
       } else {
         setError(response.message || 'We could not submit your request. Please try again.');
@@ -1010,6 +1093,11 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
                   </div>
                 )}
 
+                <FormDraftNotice
+                  shown={muhurthamFormDraft.restored}
+                  onDismiss={muhurthamFormDraft.dismiss}
+                  subject="Muhurtham form"
+                />
                 {error && <div role="alert" className="rounded-xl border border-rose-400/30 bg-rose-950/40 px-4 py-3 text-sm text-rose-200">{error}</div>}
 
                 {/* Primary Action Buttons: Add to Cart & Proceed to Checkout */}
@@ -1194,6 +1282,7 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
           saveAsProfile={saveAsProfile && pickedPerson?.source === 'self'}
           onSuccess={ord => {
             persistMuhurthamBirthDetails(false, true);
+            muhurthamFormDraft.discard();
             setSuccessOrder(ord);
             setShowCheckoutModal(false);
           }}
