@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { resolveDisplayName } from '../../utils/displayName';
 import { useLanguage } from '../../context/LanguageContext';
+import { PRIMARY_NAV_DESTINATIONS, buildMobileNavGroups } from '../../services/navigation';
 import { useCart } from '../../context/CartContext';
 import { BrandWordmark } from '../common/BrandLockup';
 import { RouteLink } from '../common/RouteLink';
@@ -33,6 +34,14 @@ interface NavbarProps {
   colorMode?: ColorMode;
   showColorModeToggle?: boolean;
   onToggleColorMode?: () => void;
+}
+
+/** One row in either menu. Both menus render the same destinations. */
+interface NavItem {
+  key: string;
+  label: string;
+  route: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -51,14 +60,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  const navLinks = [
-    { key: 'home', label: t('home'), route: 'home', icon: HomeIcon },
-    { key: 'birth_jathagam', label: t('birth_jathagam'), route: 'birth-jathagam', icon: Sparkles },
-    { key: 'marriage_compatibility', label: t('marriage_compatibility'), route: 'marriage-compatibility', icon: Heart },
-    { key: 'baby_naming', label: t('baby_naming'), route: 'baby-naming', icon: Baby },
-    { key: 'muhurtham', label: t('muhurtham') || 'Subha Muhurtham', route: 'muhurtham', icon: Calendar },
-    { key: 'team', label: 'Astrology Team', route: 'team', icon: Users }
-  ];
+  // Destinations come from services/navigation.ts so the desktop row and the
+  // phone menu can never drift apart; only the icon lives here.
+  const navIcons: Record<string, NavItem['icon']> = {
+    home: HomeIcon,
+    birth_jathagam: Sparkles,
+    marriage_compatibility: Heart,
+    baby_naming: Baby,
+    muhurtham: Calendar,
+    team: Users
+  };
+  const navLinks: NavItem[] = PRIMARY_NAV_DESTINATIONS.map(destination => ({
+    key: destination.key,
+    label: t(destination.labelKey),
+    route: destination.route,
+    icon: navIcons[destination.key] || Sparkles
+  }));
 
   /* The dark-mode switch is a VISITOR preference, not an admin design
      preview: it is icon-only (no visible "dark"/"light" text), carries a
@@ -77,12 +94,42 @@ export const Navbar: React.FC<NavbarProps> = ({
     </button>
   ) : null;
 
-  // Keep the phone menu focused on the core customer journey. Supporting
-  // company links remain available in the footer and on larger screens.
-  const mobileNavLinks = [
-    ...navLinks.filter(link => link.key !== 'team'),
+  /* The phone menu carries EVERY destination the desktop row offers — the
+     Astrology Team page included — plus "How It Works", which only the phone
+     menu shows. Services stay in one group; the company pages (Astrology Team,
+     How It Works) get their own. buildMobileNavGroups is shared with the tests,
+     so a page can no longer quietly disappear from the phone navigation. */
+  const mobileNavGroups = buildMobileNavGroups<NavItem>(navLinks, [
     { key: 'how_it_works', label: t('how_it_works'), route: 'how-it-works', icon: CircleHelp }
-  ];
+  ]);
+
+  /** One row of the phone menu (identical styling in both groups). */
+  const renderMobileLink = (link: NavItem) => {
+    const isActive = currentRoute === link.route;
+    const Icon = link.icon;
+    return (
+      <RouteLink
+        key={link.key}
+        route={link.route}
+        onNavigate={navTo}
+        aria-current={isActive ? 'page' : undefined}
+        data-testid={`mobile-nav-${link.key}`}
+        className={`flex min-h-12 w-full items-center gap-3.5 rounded-2xl border px-3.5 text-left text-[15px] transition-all duration-150 ${
+          isActive
+            ? 'border-amber-400/35 bg-gradient-to-r from-amber-400/15 to-amber-500/5 font-bold text-white shadow-[0_2px_12px_rgba(245,158,11,0.08)]'
+            : 'border-white/5 font-medium text-slate-200 hover:border-white/10 hover:bg-white/[0.05]'
+        }`}
+      >
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors ${
+          isActive ? 'bg-amber-400/20 text-amber-300' : 'bg-white/5 text-slate-400'
+        }`}>
+          <Icon className="h-4.5 w-4.5" strokeWidth={1.8} />
+        </div>
+        <span className="flex-1 font-semibold">{link.label}</span>
+        <ChevronRight className={`h-4 w-4 transition-transform ${isActive ? 'text-amber-300' : 'text-slate-600'}`} />
+      </RouteLink>
+    );
+  };
 
   const navTo = (route: string) => {
     onNavigate(route);
@@ -286,37 +333,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       {isMobileMenuOpen && (
         <div className="max-h-[calc(100vh-4rem)] overflow-y-auto border-b border-white/10 bg-[#0c0f24]/98 backdrop-blur-2xl shadow-2xl lg:hidden">
           <nav aria-label="Mobile navigation" className="mx-auto max-w-7xl px-3.5 py-3.5">
-            <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-              Vedic Services
-            </p>
-
-            <div className="space-y-1.5">
-              {mobileNavLinks.map(link => {
-                const isActive = currentRoute === link.route;
-                const Icon = link.icon;
-                return (
-                  <RouteLink
-                    key={link.key}
-                    route={link.route}
-                    onNavigate={navTo}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={`flex min-h-12 w-full items-center gap-3.5 rounded-2xl border px-3.5 text-left text-[15px] transition-all duration-150 ${
-                      isActive
-                        ? 'border-amber-400/35 bg-gradient-to-r from-amber-400/15 to-amber-500/5 font-bold text-white shadow-[0_2px_12px_rgba(245,158,11,0.08)]'
-                        : 'border-white/5 font-medium text-slate-200 hover:border-white/10 hover:bg-white/[0.05]'
-                    }`}
-                  >
-                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-colors ${
-                      isActive ? 'bg-amber-400/20 text-amber-300' : 'bg-white/5 text-slate-400'
-                    }`}>
-                      <Icon className="h-4.5 w-4.5" strokeWidth={1.8} />
-                    </div>
-                    <span className="flex-1 font-semibold">{link.label}</span>
-                    <ChevronRight className={`h-4 w-4 transition-transform ${isActive ? 'text-amber-300' : 'text-slate-600'}`} />
-                  </RouteLink>
-                );
-              })}
-            </div>
+            {mobileNavGroups.map((group, groupIndex) => (
+              <div key={group.title} className={groupIndex > 0 ? 'mt-4' : ''}>
+                <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  {group.title}
+                </p>
+                <div className="space-y-1.5">{group.links.map(renderMobileLink)}</div>
+              </div>
+            ))}
 
             {/* User Account / Auth Section */}
             <div className="mt-4 pt-3.5 border-t border-white/10">
