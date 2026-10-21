@@ -150,7 +150,7 @@ The package contains only the compiled static website, PHP API, and deployment n
 ## ⚡ Step 5: Initialize the Database & Provision an Administrator
 
 
-1. Import `api/schema.sql` into the newly created MySQL database using phpMyAdmin. The schema creates tables and non-user settings only; it does **not** create a default admin or demo customer. On an **existing** database (created before 2026-10), also import every newer file in `api/migrations/` in numeric order — currently `012_social_identity_columns.sql` through `019_team_members_columns.sql` (019 adds the columns the Astrology Team editor writes — without it, adding a member fails) — then revoke schema-change rights from the web user (`REVOKE ALTER ON <database>.* FROM '<webuser>'@'<host>'; FLUSH PRIVILEGES;`). The API verifies the migrated schema on each request and answers 503 with a log line naming the missing migration when one was skipped.
+1. Import `api/schema.sql` into the newly created MySQL database using phpMyAdmin. The schema creates tables and non-user settings only; it does **not** create a default admin or demo customer. On an **existing** database (created before 2026-10), also import every newer file in `api/migrations/` in numeric order — currently `012_social_identity_columns.sql` through `020_birthday_wishes.sql` (019 adds the columns the Astrology Team editor writes — without it, adding a member fails; 020 adds the birthday-wish consent + once-a-year send log — without it, the customer's opt-in switch and the birthday cron answer "apply migration 020 first") — then revoke schema-change rights from the web user (`REVOKE ALTER ON <database>.* FROM '<webuser>'@'<host>'; FLUSH PRIVILEGES;`). The API verifies the migrated schema on each request and answers 503 with a log line naming the missing migration when one was skipped.
 2. Provision the first admin with the CLI-only script from a trusted cPanel Terminal/SSH session. Set `ASTROSIVAM_ADMIN_EMAIL`, `ASTROSIVAM_ADMIN_NAME`, and `ASTROSIVAM_ADMIN_PASSWORD` in the shell environment (use a unique password of at least 12 characters), along with the database and `APP_SECRET_KEY` environment settings, then run:
 
    ```sh
@@ -392,7 +392,37 @@ are one-time host settings (the last one lives in the Cloudflare dashboard). Ful
    work through `scripts/backup/RESTORE_VERIFICATION.md` into a sandbox database
    (never over production) and record the result.
 
-4. **Uptime + certificate monitoring.** The GitHub monitoring workflow has
+4. **Birthday wishes (cron, daily 08:00 IST).** Customers who saved birth
+   details and switched "Birthday wishes" on in their profile get a WhatsApp or
+   Viber greeting on those birthdays — their own profile and their saved family
+   members. Nothing goes out unless that switch is on, the number was verified
+   in that app by OTP, and the feature is enabled in Admin Portal → **WhatsApp &
+   Viber Alerts**. The message is text only: reports and invoices stay on email.
+
+   ```cron
+   0 8 * * *  /usr/local/bin/php /home/astro287/public_html/api/cron/birthday_wishes.php >> /home/astro287/logs/birthday_wishes.log 2>&1
+   ```
+
+   On an existing database, import `api/migrations/020_birthday_wishes.sql` in
+   phpMyAdmin first (two new tables; it issues no `ALTER`, so it still works after
+   schema-change rights are revoked from the web user).
+
+   Check the exact path with `which php` in a cPanel Terminal; `php` may not be on
+   the cron PATH. Decide without sending first — it prints the wishes it would
+   send and messages nobody:
+
+   ```bash
+   php /home/astro287/public_html/api/cron/birthday_wishes.php --dry-run
+   php /home/astro287/public_html/api/cron/birthday_wishes.php --date=2026-03-14 --dry-run
+   ```
+
+   Two overlapping runs cannot double-message: the script takes a lock and exits
+   while another run holds it, and `birthday_wishes_log` has a unique key of
+   customer + person + year + channel. Admin Portal → **WhatsApp & Viber Alerts**
+   has the same two buttons (Preview Today / Send Today's Wishes) for a run by
+   hand, and it writes a `BIRTHDAY_WISH_RUN` audit line.
+
+5. **Uptime + certificate monitoring.** The GitHub monitoring workflow has
    been removed to keep Actions PHP-only. Configure an external monitor such as
    UptimeRobot or Uptime-Kuma for the homepage and TLS expiry, and manually
    verify that Cloudflare is in front (`cf-ray` present), HSTS is intact, and
@@ -400,7 +430,7 @@ are one-time host settings (the last one lives in the Cloudflare dashboard). Ful
    [HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md](HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md)
    for the operational checks.
 
-5. **CDN in front (Cloudflare, dashboard settings).** Put the domain behind
+6. **CDN in front (Cloudflare, dashboard settings).** Put the domain behind
    Cloudflare — DNS record **Proxied** (orange cloud), SSL/TLS **Full (strict)**,
    Rocket Loader and Email Obfuscation **OFF** (both rewrite the page and fight
    the CSP), Brotli **On**, HSTS left as-is, and a Cache Rule that **bypasses

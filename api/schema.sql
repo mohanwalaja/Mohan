@@ -95,6 +95,37 @@ CREATE TABLE IF NOT EXISTS `chat_number_otps` (
   PRIMARY KEY (`user_id`, `channel`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 2d. Birthday wishes on WhatsApp/Viber (migration 020). Reuses the saved birth
+-- dates (birth_profiles.dob, family_members.dob) and the OTP-verified number
+-- (user_chat_contacts); these two tables add the customer's CONSENT (default
+-- OFF, with the site language they opted in with) and the once-a-year DEDUPE
+-- log. A wish is text only - reports and invoices stay email-only.
+CREATE TABLE IF NOT EXISTS `birthday_wish_preferences` (
+  `user_id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `enabled` TINYINT(1) NOT NULL DEFAULT 0,
+  `language` VARCHAR(8) NOT NULL DEFAULT 'en',
+  `enabled_at` DATETIME NULL,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `birthday_wishes_log` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `user_id` VARCHAR(64) NOT NULL,
+  `person_key` VARCHAR(96) NOT NULL,
+  `person_name` VARCHAR(191) NOT NULL DEFAULT '',
+  `wish_year` INT NOT NULL,
+  `wish_date` VARCHAR(16) NOT NULL,
+  `channel` VARCHAR(16) NOT NULL,
+  `phone_e164` VARCHAR(32) NOT NULL DEFAULT '',
+  `status` VARCHAR(16) NOT NULL DEFAULT 'SENT',
+  `detail` VARCHAR(255) NOT NULL DEFAULT '',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uq_birthday_wish_once_per_year` (`user_id`, `person_key`, `wish_year`, `channel`),
+  INDEX `idx_birthday_wishes_user` (`user_id`),
+  INDEX `idx_birthday_wishes_date` (`wish_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 3. Orders TableCREATE TABLE IF NOT EXISTS `orders` (
   `id` VARCHAR(64) NOT NULL PRIMARY KEY,
   `order_number` VARCHAR(32) NOT NULL UNIQUE,

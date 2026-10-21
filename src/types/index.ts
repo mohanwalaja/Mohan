@@ -199,6 +199,45 @@ export interface ChatDeliveryState {
   viberAvailable: boolean;
 }
 
+/**
+ * The customer's own birthday-wish consent (default OFF). A wish is sent only
+ * to a number verified in that app, so `numberVerified` and `channels` say
+ * whether switching it on can actually deliver anything; `savedPeople` counts
+ * the birth profiles the wishes would cover (the account holder + saved family).
+ */
+export interface BirthdayWishState {
+  enabled: boolean;
+  language: AppLanguage;
+  enabledAt?: string | null;
+  /** The operator has switched the feature on for the site (and chat is on). */
+  available: boolean;
+  featureEnabled: boolean;
+  numberVerified: boolean;
+  channels: Array<'whatsapp' | 'viber'>;
+  savedPeople: number;
+}
+
+/** One run of the birthday dispatcher (the cron and the admin button share it). */
+export interface BirthdayWishRunSummary {
+  success: boolean;
+  date: string;
+  timezone: string;
+  due: number;
+  sent: number;
+  failed: number;
+  skipped: number;
+  dryRun: boolean;
+  message?: string;
+  details?: Array<{
+    person: string;
+    relation?: string;
+    channel?: string;
+    status: string;
+    reason?: string;
+    message?: string;
+  }>;
+}
+
 export interface FamilyMember {
   id: string;
   userId: string;
@@ -271,6 +310,18 @@ export interface ChatAlertConfig {
   };
   orderConfirmedMessage: string;
   orderCompletedMessage: string;
+  /**
+   * Birthday wishes (migration 020). Reuses the WhatsApp/Viber transports and
+   * the master switch above — this only decides whether a customer who opted in
+   * is wished on a saved birthday, in which timezone a "birthday" starts, and
+   * whether saved family members count as well as the account holder.
+   */
+  birthdayWishes?: {
+    enabled: boolean;
+    /** The zone whose calendar day decides whose birthday it is. */
+    timezone: string;
+    includeFamilyMembers: boolean;
+  };
 }
 
 export interface EmailTemplate {
