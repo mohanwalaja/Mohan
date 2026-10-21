@@ -263,7 +263,10 @@ const testFiles = [
   // Payment trust popup (owner request 2026-10-22): one tap at payment time
   // explains own-currency billing, PayPal-enabled cards without an account,
   // and card safety; top-right close, then continue to payment.
-  'tests/how-payment-works.test.ts'
+  'tests/how-payment-works.test.ts',
+  // RFC 9116: /.well-known/security.txt with a contact and a future Expires,
+  // served as text/plain and shipped inside the deploy zip.
+  'tests/security-txt.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 

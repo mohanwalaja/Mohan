@@ -1,0 +1,18 @@
+# ASTRO SIVAM — security.txt (RFC 9116)
+# Canonical location: https://astrosivam.com/.well-known/security.txt
+#
+# How to report a security issue in astrosivam.com (the web app, the api/
+# PHP backend, report delivery or checkout): email the contact below with a
+# description, the affected URL or endpoint, and steps to reproduce. We
+# acknowledge every report by email and will coordinate a fix with you
+# before any public disclosure — please allow a reasonable response window.
+#
+# Scope: astrosivam.com and its api/ backend only. Third-party services used
+# by the site (PayPal, Razorpay, Google Places) run their own disclosure
+# programmes; report issues in those platforms to them directly.
+
+Contact: mailto:admin@astrosivam.com
+Contact: https://astrosivam.com/contact
+Expires: 2027-10-22T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://astrosivam.com/.well-known/security.txt
