@@ -32,6 +32,7 @@ import { api } from '../../services/api';
 import { CURRENCY_INFO, getServicePrices } from '../../services/pricing';
 import { ServicePromiseStrip } from '../common/ServicePromiseStrip';
 import { CHAT_INCLUDED_LINE } from '../../services/servicePromise';
+import { checkoutPayloadProblem } from '../../services/checkoutReadiness';
 
 export interface CheckoutDevoteeSummary {
   name: string;
@@ -105,6 +106,11 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
 
   if (!isOpen) return null;
 
+  // A checkout may only be shown for an order that can actually be calculated.
+  // The service form validates first; this is the last line of defence so an
+  // empty payload can never reach a payment screen, even if a page forgets.
+  const payloadProblem = checkoutPayloadProblem(serviceType, inputPayload);
+
   // Admin access comes from the authenticated role, not the site's beta mode
   // or its one-free-report allowance. Every admin report is always free.
   const orderWillBeFree = isAdmin || (isFreeBeta && betaFreeChartAvailable);
@@ -135,6 +141,11 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
+
+    if (payloadProblem) {
+      setErrorMessage(payloadProblem);
+      return;
+    }
 
     if (!orderWillBeFree && paymentMethod !== 'NONE' && !paymentRef.trim()) {
       setErrorMessage(
@@ -309,7 +320,23 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
             </div>
           ) : (
             /* Checkout Form */
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6" data-checkout-ready={payloadProblem ? 'false' : 'true'}>
+              {payloadProblem && (
+                <div
+                  data-testid="checkout-missing-details"
+                  className="p-3.5 bg-amber-500/10 border border-amber-500/40 rounded-2xl text-xs text-amber-200 flex items-start gap-2.5"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-300" />
+                  <div className="space-y-1">
+                    <p className="font-bold">Your birth details are not complete yet.</p>
+                    <p className="text-amber-100/90">{payloadProblem}</p>
+                    <p className="text-[11px] text-amber-200/80">
+                      Close this window, fill in the form, then press the order button again — nothing has been charged.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {errorMessage && (
                 <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-xs text-rose-300 flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
@@ -612,7 +639,7 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
               <div className="space-y-3 pt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || Boolean(payloadProblem)}
                   className="w-full py-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black text-sm uppercase tracking-wider rounded-2xl shadow-xl shadow-amber-950/40 transition-all flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting ? (

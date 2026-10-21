@@ -750,6 +750,14 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
         onClose={() => setShowAuthModal(false)}
         onAuthenticated={() => {
           setShowAuthModal(false);
+          // Signing in from the guest banner is NOT proof the form is filled.
+          // Open the checkout only when the birth details are complete;
+          // otherwise explain what is missing and leave the form on screen.
+          const validationMessage = validateBabyBirthDetails();
+          if (validationMessage) {
+            setErrorMessage(validationMessage);
+            return;
+          }
           setShowCheckoutModal(true);
         }}
         title="Sign In to Place Baby Naming Order"

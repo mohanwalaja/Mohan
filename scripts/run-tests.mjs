@@ -219,6 +219,10 @@ const testFiles = [
   // PHP-WASM when installed.
   'tests/family-members-and-frozen-download.test.ts',
   'tests/service-form-save-details.test.ts',
+  // A brand-new user who signs in with Google must not be pushed into a
+  // checkout with an empty form. Every service page re-checks the form after
+  // sign-in, and the checkout modal refuses an incomplete payload outright.
+  'tests/checkout-requires-birth-details.test.ts',
   // WhatsApp/Viber alerts + the download-language rule: downloads render
   // ONLY the ordered language (never all three, never switchable by
   // parameter), customers verify one saved number per app by OTP, and

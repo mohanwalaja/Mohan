@@ -964,6 +964,13 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
         onClose={() => setShowAuthModal(false)}
         onAuthenticated={() => {
           setShowAuthModal(false);
+          // Both partners must be complete before a checkout can open — a
+          // Google sign-in alone does not fill the form.
+          const validationMessage = validateMarriageForm();
+          if (validationMessage) {
+            setErrorMessage(validationMessage);
+            return;
+          }
           setShowCheckoutModal(true);
         }}
         title="Sign In to Place Matrimonial Matching Order"
