@@ -11,7 +11,6 @@ import {
 import { getGunam } from './gunamData';
 import { formatBirthDate, formatBirthPlace } from './formatUtils';
 import { normalizeReportLanguage } from './reportLanguage';
-import { formatBabyNameForReport } from './indicTransliteration';
 import {
   GLOSSARY_PAGE_TEXT,
   REPORT_GLOSSARY_CSS,
@@ -480,7 +479,11 @@ ${reportData.virtues.map((point, index) => `        <div class="virtue-card">
       const rowCount = Math.max(1, Math.ceil(Math.max(column.south.length, column.north.length) / 2));
       const namesHtml = names.length
         ? names.map(entry => {
-            const { primary, isLocalized } = formatBabyNameForReport(entry.name, isTa ? 'ta' : isHi ? 'hi' : 'en');
+            // Every bank name carries its own hand-written Tamil and Hindi
+            // spelling, so the printed name never comes from a machine
+            // transliteration (which misspelt names such as Sunil and Suthanthira).
+            const primary = isTa ? (entry.nameTa || entry.name) : isHi ? (entry.nameHi || entry.name) : entry.name;
+            const isLocalized = isTa || isHi;
             const nameHtml = isLocalized
               ? `<span class="sug-name-primary" style="font-family: ${isTa ? "'Noto Sans Tamil', sans-serif" : "'Noto Sans Devanagari', sans-serif"};">${escapeHtml(primary)}</span>`
               : `<span class="sug-name-primary">${escapeHtml(entry.name)}</span>`;

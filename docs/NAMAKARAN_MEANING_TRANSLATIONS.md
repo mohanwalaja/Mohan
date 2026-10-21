@@ -26,7 +26,7 @@ mistakes" in the Tamil report.
 
 ## What it does now
 
-1. **One curated glossary** — `data/namakaran_meaning_glossary.tsv` holds the
+1. **One curated glossary** — `data/namakaran_meaning_glossary.psv` holds the
    English meaning of every name in the bank with its hand-written Tamil and
    Hindi text (1182 rows: 1141 cover the bank, the remaining 41 localize phrases
    printed outside the bank — the page-1 example-name table of the PHP engine
@@ -41,7 +41,7 @@ mistakes" in the Tamil report.
    carry the **same content hash**, so the preview and the delivered PDF can be
    proven to print an identical meaning.
 3. **The build fails on a gap** — the generator refuses to build if a single
-   meaning of `data/namakaran_name_bank.tsv` has no translation, if a Tamil line
+   meaning of `data/namakaran_name_bank.psv` has no translation, if a Tamil line
    contains Latin letters or non-Tamil script, or if a Hindi line is not
    Devanagari. A shipped name can therefore never fall back to word-by-word
    output again.
@@ -90,7 +90,7 @@ The Hindi column was audited row by row against the same checklist:
 
 ## Editing a meaning
 
-1. Open `data/namakaran_meaning_glossary.tsv` and edit (or add) the row for the
+1. Open `data/namakaran_meaning_glossary.psv` and edit (or add) the row for the
    English meaning. Columns are tab separated:
 
    ```
@@ -107,7 +107,7 @@ The Hindi column was audited row by row against the same checklist:
 3. Both report engines, the browser preview and the email/PDF delivery pick the
    new text up on the next render — no other file needs editing.
 
-Adding a name to `data/namakaran_name_bank.tsv` requires its meaning to be added
+Adding a name to `data/namakaran_name_bank.psv` requires its meaning to be added
 here as well; otherwise `scripts/build_namakaran_glossary.mjs` (and the test
 suite) fails with the missing English meaning named explicitly.
 

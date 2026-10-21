@@ -3,7 +3,7 @@
  * Builds the Namakaran (baby naming) page-2 MEANING glossary for BOTH report
  * engines from the single human-editable source of truth:
  *
- *     data/namakaran_meaning_glossary.tsv
+ *     data/namakaran_meaning_glossary.psv
  *
  *   node scripts/build_namakaran_glossary.mjs            # validate + regenerate
  *   node scripts/build_namakaran_glossary.mjs --check    # validate only (CI / tests)
@@ -17,9 +17,9 @@
  *
  * ---------------------------------------------------------------------------
  * VALIDATION RULES
- *   - every row is exactly three tab-separated columns: english, tamil, hindi
+ *   - every row is exactly three pipe-separated columns: english, tamil, hindi
  *   - the English key is unique and matches a meaning printed by the name bank
- *     (data/namakaran_name_bank.tsv) unless it is a documented extra
+ *     (data/namakaran_name_bank.psv) unless it is a documented extra
  *   - the Tamil column holds Tamil script only, the Hindi column Devanagari
  *     only — no Latin letters may leak into a localized meaning line
  *   - EVERY meaning of the current name bank must be present, so page 2 of the
@@ -32,8 +32,8 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const TSV_PATH = resolve(ROOT, 'data', 'namakaran_meaning_glossary.tsv');
-const BANK_PATH = resolve(ROOT, 'data', 'namakaran_name_bank.tsv');
+const TSV_PATH = resolve(ROOT, 'data', 'namakaran_meaning_glossary.psv');
+const BANK_PATH = resolve(ROOT, 'data', 'namakaran_name_bank.psv');
 const OUT_TS = resolve(ROOT, 'src', 'lib', 'astrology', 'namakaranMeaningData.ts');
 const OUT_PHP = resolve(ROOT, 'api', 'astrology', 'namakaran_meanings.php');
 
@@ -48,7 +48,7 @@ function readGlossary() {
   lines.forEach((line, index) => {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) return;
-    const cells = line.split('\t').map(cell => cell.trim());
+    const cells = line.split('|').map(cell => cell.trim());
     rows.push({ line: index + 1, english: cells[0], tamil: cells[1], hindi: cells[2], cellCount: cells.length });
   });
   return rows;
@@ -60,8 +60,8 @@ function readBankMeanings() {
   for (const line of readFileSync(BANK_PATH, 'utf8').split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
-    const cells = line.split('\t');
-    if (cells.length === 5) meanings.add(cells[4].trim());
+    const cells = line.split('|');
+    if (cells.length === 7) meanings.add(cells[6].trim());
   }
   return meanings;
 }
@@ -73,7 +73,7 @@ function validate(rows) {
   for (const row of rows) {
     const label = `line ${row.line} [${row.english || 'blank'}]`;
     if (row.cellCount !== 3) {
-      problems.push(`${label}: expected 3 tab-separated columns, found ${row.cellCount}`);
+      problems.push(`${label}: expected 3 pipe-separated columns, found ${row.cellCount}`);
       continue;
     }
     if (!row.english) {
@@ -125,7 +125,7 @@ function writeTs(rows, hash) {
   writeFileSync(OUT_TS, `/**
  * AUTO-GENERATED FILE — DO NOT EDIT BY HAND.
  *
- * Source of truth : data/namakaran_meaning_glossary.tsv
+ * Source of truth : data/namakaran_meaning_glossary.psv
  * Generator       : scripts/build_namakaran_glossary.mjs
  * Content hash    : ${hash}
  *
@@ -163,7 +163,7 @@ function writePhp(rows, hash) {
 /**
  * AUTO-GENERATED FILE — DO NOT EDIT BY HAND.
  *
- * Source of truth : data/namakaran_meaning_glossary.tsv
+ * Source of truth : data/namakaran_meaning_glossary.psv
  * Generator       : scripts/build_namakaran_glossary.mjs
  * Content hash    : ${hash}
  *
@@ -198,7 +198,7 @@ function main() {
   const { problems, glossaryCount, bankCount } = validate(rows);
 
   if (problems.length) {
-    console.error(`✖ ${problems.length} problem(s) found in data/namakaran_meaning_glossary.tsv:`);
+    console.error(`✖ ${problems.length} problem(s) found in data/namakaran_meaning_glossary.psv:`);
     for (const problem of problems.slice(0, 60)) console.error(`   - ${problem}`);
     if (problems.length > 60) console.error(`   ... and ${problems.length - 60} more`);
     process.exitCode = 1;

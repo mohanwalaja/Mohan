@@ -1,0 +1,878 @@
+# ============================================================================
+# ASTRO SIVAM — Namakaran (baby naming) NAME BANK
+# ----------------------------------------------------------------------------
+# Source of truth for page 2 of the Vedic Namakaran report. Rebuild both report
+# engines after any edit:
+#     node scripts/build_namakaran_bank.mjs
+#
+# One row = one name suggestion.
+#
+# COLUMNS (pipe separated, exactly 7):
+#   1. akshara  The pada letter of the birth star, exactly as printed by
+#               src/lib/astrology/babynames.ts (e.g. சு, சே, லா).
+#   2. gender   M = boy, F = girl
+#   3. style    S = South Indian style, N = North Indian style
+#   4. roman    Name in Roman script — printed by the English report
+#   5. tamil    Hand-written Tamil spelling — printed by the Tamil report.
+#               It MUST open with the exact letter of column 1 (சு -> சுதன்,
+#               not செந்தில், which is the short-e செ that no pada prints).
+#   6. hindi    Hand-written Devanagari spelling — printed by the Hindi report
+#   7. meaning  Short English meaning (max 30 chars). Tamil and Hindi text for
+#               every meaning lives in data/namakaran_meaning_glossary.psv.
+#
+# The old bank stored Roman spellings only and transliterated them when the
+# report was printed, which produced wrong Tamil (சுதந்த்ஹிர, சுநில்). Names are
+# now written by hand in all three scripts, and the generator rejects a row
+# whose Tamil spelling does not start with its pada letter.
+# ============================================================================
+## சு  (Chu / Su)
+சு|M|S|Suresh|சுரேஷ்|सुरेश|Lord of the celestials
+சு|M|S|Sudhan|சுதன்|सुधन|Wealth and virtue
+சு|M|S|Sundaram|சுந்தரம்|सुंदरम|Beautiful and auspicious
+சு|M|S|Sudharshan|சுதர்ஷன்|सुदर्शन|Beautiful vision
+சு|M|S|Suganthan|சுகந்தன்|सुगंधन|Fragrant and pleasing
+சு|M|S|Sugumar|சுகுமார்|सुकुमार|Noble and gentle
+சு|M|S|Suriyan|சுரியன்|सूरियन|The Sun god
+சு|M|S|Subramanian|சுப்பிரமணியன்|सुब्रमण्यन|Lord Murugan
+சு|M|N|Sumit|சுமித்|सुमित|A good friend
+சு|M|N|Sunil|சுனில்|सुनील|Deep blue, sapphire
+சு|M|N|Sudhir|சுதீர்|सुधीर|Resolute and wise
+சு|M|N|Sushant|சுஷாந்த்|सुशांत|Calm and peaceful
+சு|M|N|Suhas|சுஹாஸ்|सुहास|A pleasant smile
+சு|F|S|Suganya|சுகன்யா|सुगन्या|Sweet-natured
+சு|F|S|Sudha|சுதா|सुधा|Nectar, divine calm
+சு|F|S|Sumathi|சுமதி|सुमति|Pure and wise mind
+சு|F|S|Sundari|சுந்தரி|सुंदरी|A beautiful woman
+சு|F|S|Sujatha|சுஜாதா|सुजाता|Well-born and noble
+சு|F|S|Supriya|சுப்ரியா|सुप्रिया|Very dear
+சு|F|S|Sunitha|சுனிதா|सुनीता|Of good conduct
+சு|F|S|Subiksha|சுபிக்ஷா|सुभिक्षा|Prosperity and grace
+சு|F|N|Sushma|சுஷ்மா|सुष्मा|Beautiful, good nature
+சு|F|N|Suhani|சுஹானி|सुहानी|Pleasant and beautiful
+சு|F|N|Sumedha|சுமேதா|सुमेधा|Wise and intelligent
+சு|F|N|Surbhi|சுரபி|सुरभि|Fragrance
+## சே  (Che / Se)
+சே|M|S|Sekar|சேகர்|शेखर|Auspicious crest
+சே|M|S|Sekaran|சேகரன்|शेखरन|Lord Shiva
+சே|M|S|Sethupathi|சேதுபதி|सेतुपति|Master of the bridge
+சே|M|S|Sethuraman|சேதுராமன்|सेतुरामन|Lord Rama of the bridge
+சே|M|S|Senapathi|சேனாபதி|सेनापति|Commander of the army
+சே|M|S|Sethu|சேது|सेतु|The sacred bridge
+சே|M|N|Chetan|சேதன்|चेतन|Alive and conscious
+சே|M|N|Sevak|சேவக்|सेवक|A devoted servant
+சே|M|N|Sesh|சேஷ்|शेष|The eternal serpent
+சே|F|S|Sena|சேனா|सेना|An army, a host
+சே|F|S|Sethulakshmi|சேதுலக்ஷ்மி|सेतुलक्ष्मी|Goddess Lakshmi
+சே|F|N|Sejal|சேஜல்|सेजल|River water, pure
+சே|F|N|Seerat|சேரத்|सीरत|Inner virtue
+## சோ  (Cho / So)
+சோ|M|S|Somasundaram|சோமசுந்தரம்|सोमसुंदरम|Lord Shiva, beautiful
+சோ|M|S|Chozhan|சோழன்|चोलन|Ancient Chola king
+சோ|M|S|Somanathan|சோமநாதன்|सोमनाथन|Lord of the moon
+சோ|M|S|Chozharasan|சோழரசன்|चोलरसन|A Chola king
+சோ|M|S|Somasundar|சோமசுந்தர்|सोमसुंदर|Handsome as the moon
+சோ|M|N|Somesh|சோமேஷ்|सोमेश|Lord of the moon
+சோ|M|N|Sohan|சோகன்|सोहन|Pleasant and charming
+சோ|M|N|Somnath|சோம்நாத்|सोमनाथ|Lord of the moon
+சோ|M|N|Soham|சோஹம்|सोहम|Divine realisation
+சோ|M|N|Sohit|சோஹித்|सोहित|Handsome and virtuous
+சோ|F|S|Sobana|சோபனா|शोभना|Radiant and beautiful
+சோ|F|S|Sornaambika|சோர்ணாம்பிகா|स्वर्णांबिका|Goddess of gold
+சோ|F|S|Sona|சோனா|सोना|Golden
+சோ|F|N|Sonal|சோனல்|सोनल|Golden
+சோ|F|N|Sonali|சோனாலி|सोनाली|Golden and beautiful
+சோ|F|N|Somya|சோம்யா|सौम्य|Gentle and calm
+சோ|F|N|Sohana|சோஹானா|सोहाना|Pleasant and lovely
+சோ|F|N|Sonam|சோனம்|सोनम|Fortunate and blessed
+## லா  (La)
+லா|M|S|Lavanyan|லாவண்யன்|लावण्यन|Graceful and handsome
+லா|M|S|Lakshmanan|லாக்ஷ்மணன்|लक्ष्मणन|Auspicious and devoted
+லா|M|S|Lalithan|லாலிதன்|ललितन|Graceful and charming
+லா|M|S|Lakshan|லாக்ஷன்|लक्षण|An auspicious mark
+லா|M|S|Lakshminarayanan|லாக்ஷ்மிநாராயணன்|लक्ष्मीनारायणन|Vishnu with Lakshmi
+லா|M|S|Lavan|லாவன்|लवन|Grace and beauty
+லா|M|N|Lalit|லாலித்|ललित|Graceful and charming
+லா|M|N|Laxman|லாக்ஷ்மன்|लक्ष्मण|Auspicious
+லா|M|N|Lakshit|லாக்ஷித்|लक्षित|Aim and purpose
+லா|M|N|Lavith|லாவித்|लवित|Small and precious
+லா|F|S|Lavanya|லாவண்யா|लावण्या|Beauty and grace
+லா|F|S|Lakshmi|லாக்ஷ்மி|लक्ष्मी|Goddess of wealth
+லா|F|S|Lalitha|லாலிதா|ललिता|Playful and graceful
+லா|F|S|Lakshana|லாக்ஷணா|लक्षणा|Distinguished
+லா|F|S|Lathika|லாதிகா|लतिका|A delicate creeper
+லா|F|S|Lakshmipriya|லாக்ஷ்மிப்ரியா|लक्ष्मीप्रिया|Dear to Lakshmi
+லா|F|N|Lavisha|லாவிஷா|लवीशा|Loved and charming
+லா|F|N|Lakshita|லாக்ஷிதா|लक्षिता|Noted and distinguished
+லா|F|N|Lavina|லாவினா|लवीना|Beauty and charm
+லா|F|N|Lavni|லாவ்னி|लावणी|Grace and charm
+## லீ  (Lee / Li)
+லீ|M|S|Leelavarman|லீலாவர்மன்|लीलावर्मन|A playful prince
+லீ|M|S|Leelakumaran|லீலாகுமரன்|लीलाकुमारन|A graceful prince
+லீ|M|S|Leeshan|லீஷன்|लीशन|A learned soul
+லீ|M|N|Leeladhar|லீலாதர்|लीलाधर|Lord Vishnu
+லீ|M|N|Likhit|லீகித்|लीकित|Written and inscribed
+லீ|M|N|Liyansh|லீயான்ஷ்|लीयांश|A little part
+லீ|F|S|Leelamani|லீலாமணி|लीलामणि|Jewel of grace
+லீ|F|S|Leelavani|லீலாவாணி|लीलावाणी|Graceful speech
+லீ|F|N|Lipika|லீபிகா|लीपिका|A small script
+லீ|F|N|Lipi|லீபி|लीपि|Writing, script
+## லூ  (Loo / Lu)
+லூ|M|S|Luke|லூக்|लूक|Bringer of light
+லூ|M|S|Lourdu|லூர்து|लूर्दु|A holy place
+லூ|F|S|Lucy|லூசி|लूसी|Bringer of light
+லூ|F|S|Lucia|லூசியா|लूसिया|Radiant light
+லூ|F|N|Lubna|லூப்னா|लुब्ना|A precious tree
+## லே  (Le / Lay)
+லே|M|S|Lenin|லேனின்|लेनिन|A gentle leader
+லே|F|S|Lena|லேனா|लीना|A soft and tender soul
+லே|F|S|Leonila|லேயோனிலா|लेओनिला|A gentle name
+லே|F|N|Leela|லேலா|लेला|Divine play
+## லோ  (Lo / Low)
+லோ|M|S|Loganathan|லோகநாதன்|लोकनाथन|Lord of the three worlds
+லோ|M|S|Logesh|லோகேஷ்|लोकेश|Lord of the three worlds
+லோ|M|S|Logarajan|லோகராஜன்|लोकराजन|King of the world
+லோ|M|N|Lokesh|லோகேஷ்|लोकेश|Lord of the three worlds
+லோ|M|N|Loknath|லோக்நாத்|लोकनाथ|Lord of the world
+லோ|F|S|Logambika|லோகாம்பிகா|लोकाम्बिका|Goddess of the world
+லோ|F|S|Logavathi|லோகாவதி|लोकवती|Queen of the world
+லோ|F|N|Lopamudra|லோபாமுத்ரா|लोपामुद्रा|A sage and poetess
+## அ  (A)
+அ|M|S|Arun|அருண்|अरुण|The dawn, the Sun
+அ|M|S|Arjun|அர்ஜுன்|अर्जुन|Bright and pure
+அ|M|S|Aravind|அரவிந்த்|अरविंद|A lotus
+அ|M|S|Ashwin|அஸ்வின்|अश्विन|The first star of the sky
+அ|M|S|Anbu|அன்பு|अन्बु|Love and affection
+அ|M|S|Arul|அருள்|अरुल|Divine grace
+அ|M|S|Arasu|அரசு|अरसु|A king, a ruler
+அ|M|S|Adhi|அதி|अधि|The first, the beginning
+அ|M|N|Amit|அமித்|अमित|Boundless and wise
+அ|M|N|Abhay|அபய்|अभय|Fearless
+அ|M|N|Akshay|அக்ஷய்|अक्षय|Imperishable
+அ|M|N|Aman|அமன்|अमन|Peace
+அ|M|N|Arnav|அர்ணவ்|अर्णव|The ocean
+அ|F|S|Anitha|அனிதா|अनिता|Grace and favour
+அ|F|S|Anjali|அஞ்சலி|अंजलि|A humble offering
+அ|F|S|Anusuya|அனுசுயா|अनुसूया|Free from envy
+அ|F|S|Abirami|அபிராமி|अभिरामी|Goddess Abirami
+அ|F|S|Akila|அகிலா|अकिला|The whole world
+அ|F|S|Aruna|அருணா|अरुणा|Dawn, rosy light
+அ|F|S|Anbarasi|அன்பரசி|अन्बरसी|Queen of love
+அ|F|S|Amudha|அமுதா|अमुधा|Nectar of immortality
+அ|F|N|Ananya|அனன்யா|अनन्या|Matchless, unique
+அ|F|N|Anushka|அனுஷ்கா|अनुष्का|Grace and beauty
+அ|F|N|Aditi|அதிதி|अदिति|The boundless mother
+அ|F|N|Akshara|அக்ஷரா|अक्षरा|An imperishable letter
+அ|F|N|Avni|அவ்னி|अवनी|The earth
+## இ  (I / Ee)
+இ|M|S|Indiran|இந்திரன்|इंदिरन|King of the gods
+இ|M|S|Iniyan|இனியன்|इनियन|Sweet-natured
+இ|M|S|Ilango|இளங்கோ|इलंगो|A noble young prince
+இ|M|S|Ilamaran|இளமாறன்|इलामारन|A young and brave king
+இ|M|S|Isaimani|இசைமணி|इसैमणि|A jewel of music
+இ|M|N|Idhant|இதந்த்|इधंत|A reasoned truth
+இ|M|N|Ikshit|இக்ஷித்|इक्षित|Seen and protected
+இ|F|S|Indira|இந்திரா|इंदिरा|Goddess Lakshmi
+இ|F|S|Ilakkiya|இலக்கியா|इलक्किया|Literature and grace
+இ|F|S|Iniya|இனியா|इनिया|Sweet and pleasant
+இ|F|S|Isai|இசை|इसै|Music
+இ|F|S|Ilamathi|இளமதி|इलमति|The young moon
+இ|F|N|Ishita|இஷிதா|इशिता|Desired and blessed
+இ|F|N|Isha|இஷா|इशा|The divine one
+இ|F|N|Ira|இரா|इरा|The earth, a river
+## உ  (U / Oo)
+உ|M|S|Udhayan|உதயன்|उदयन|The rising sun
+உ|M|S|Ulaganathan|உலகநாதன்|उलगनाथन|Lord of the world
+உ|M|S|Uthaman|உத்தமன்|उत्तमन|A virtuous soul
+உ|M|S|Umapathi|உமாபதி|उमापति|Lord Shiva
+உ|M|S|Udhayakumar|உதயகுமார்|उदयकुमार|A rising prince
+உ|M|N|Uday|உதய்|उदय|Rising, dawn
+உ|M|N|Umesh|உமேஷ்|उमेश|Lord of Uma
+உ|M|N|Ujjwal|உஜ்ஜ்வல்|उज्ज्वल|Bright and radiant
+உ|M|N|Umang|உமங்|उमंग|Joy and enthusiasm
+உ|F|S|Uma|உமா|उमा|Goddess Parvati
+உ|F|S|Udhaya|உதயா|उदया|The dawn
+உ|F|S|Usharani|உஷாராணி|उषारानी|Queen of the dawn
+உ|F|S|Umadevi|உமாதேவி|उमादेवी|Goddess Uma
+உ|F|S|Uthira|உதிரா|उत्तरा|The north, later
+உ|F|N|Urvashi|உர்வஷி|उर्वशी|A celestial dancer
+உ|F|N|Urmila|உர்மிலா|उर्मिला|Enchanting
+உ|F|N|Ujjwala|உஜ்ஜ்வலா|उज्ज्वला|Bright and radiant
+உ|F|N|Urvi|உர்வி|उर्वी|The earth
+## எ  (E / Ae)
+எ|M|S|Ezhil|எழில்|एझिल|Beauty
+எ|M|S|Ezhilarasan|எழிலரசன்|एझिलरसन|A beautiful king
+எ|M|S|Elumalai|எழுமலை|एलुमलै|Lord of the seven hills
+எ|M|S|Ethiraj|எதிராஜ்|एधिराज|Lord of the east
+எ|M|S|Esakki|எசக்கி|एसक्कि|A beloved deity
+எ|F|S|Ezhilarasi|எழிலரசி|एझिलरसी|Queen of beauty
+எ|F|S|Ezhilvani|எழில்வாணி|एझिलवाणी|Beautiful speech
+எ|F|N|Eesha|எஷா|एषा|The divine one
+## ஒ  (O)
+ஒ|M|S|Oviyan|ஒவியன்|ओवियन|An artist
+ஒ|M|S|Ojas|ஒஜஸ்|ओजस|Vitality and light
+ஒ|F|S|Oviya|ஒவியா|ओविया|An artist
+ஒ|F|S|Ojasi|ஒஜஸி|ओजसी|Radiant and vital
+## வா  (Vaa)
+வா|M|S|Vaasan|வாசன்|वासन|Fragrant and pleasing
+வா|M|S|Vaasudevan|வாசுதேவன்|वासुदेवन|Lord Krishna
+வா|M|S|Vaamanan|வாமனன்|वामनन|Lord Vishnu as Vamana
+வா|M|S|Vaasavan|வாசவன்|वासवन|Lord Indra
+வா|M|S|Vaanan|வானன்|वानन|The sky
+வா|M|N|Vasu|வாசு|वासु|A bright gem
+வா|M|N|Vasudev|வாசுதேவ்|वासुदेव|Lord Krishna
+வா|F|S|Vaasavi|வாசவி|वासवी|Daughter of Indra
+வா|F|S|Vaasanthi|வாசந்தி|वासंती|The spring season
+வா|F|S|Vaathsalya|வாத்சல்யா|वात्सल्य|Motherly affection
+வா|F|N|Vaanya|வான்யா|वान्या|A gentle breeze
+## வீ  (Vee / Vi)
+வீ|M|S|Veeran|வீரன்|वीरन|A brave warrior
+வீ|M|S|Veeramani|வீரமணி|वीरमणि|A jewel of courage
+வீ|M|S|Veerasamy|வீரசாமி|वीरस्वामी|The brave Lord
+வீ|M|S|Veerappan|வீரப்பன்|वीरप्पन|A brave soul
+வீ|M|S|Veeraraghavan|வீரராகவன்|वीरराघवन|The brave Lord Rama
+வீ|M|N|Veer|வீர்|वीर|A hero
+வீ|M|N|Veerendra|வீரேந்திர|वीरेंद्र|King of the brave
+வீ|M|N|Veeresh|வீரேஷ்|वीरेश|Lord of the brave
+வீ|F|S|Veena|வீணா|वीणा|A stringed instrument
+வீ|F|S|Veenai|வீணை|वीणै|The veena
+வீ|F|S|Veeralakshmi|வீரலக்ஷ்மி|वीरलक्ष्मी|Goddess of courage
+வீ|F|N|Veera|வீரா|वीरा|Brave
+வீ|F|N|Veerika|வீரிகா|वीरिका|Brave and true
+## வு  (Vu / Woo)
+வு|M|S|Vuthan|வுதன்|वुधन|A wise and learned soul
+வு|F|S|Vuthika|வுதிகா|वुधिका|Wisdom
+## வே  (Ve / Way)
+வே|M|S|Velan|வேலன்|वेलन|Lord Murugan
+வே|M|S|Velmurugan|வேல்முருகன்|वेलमुरुगन|Lord Murugan
+வே|M|S|Velayutham|வேலாயுதம்|वेलायुधम|The divine spear
+வே|M|S|Vedaraman|வேதராமன்|वेदरामन|Lord of the Vedas
+வே|M|S|Vethanayagam|வேதநாயகம்|वेदनायकम|Lord of the Vedas
+வே|M|N|Vedant|வேதாந்த்|वेदांत|The end of the Vedas
+வே|M|N|Ved|வேத்|वेद|The sacred knowledge
+வே|M|N|Vedprakash|வேத்பிரகாஷ்|वेदप्रकाश|Light of the Vedas
+வே|F|S|Vethavalli|வேதவல்லி|वेदवल्ली|Daughter of the Vedas
+வே|F|S|Velammal|வேலம்மாள்|वेलम्माल|Goddess Velammal
+வே|F|N|Vedika|வேதிகா|वेदिका|The sacred altar
+வே|F|N|Veda|வேதா|वेदा|Sacred knowledge
+## வோ  (Vo / Woh)
+வோ|M|S|Vodhin|வோதின்|वोधिन|An awakened soul
+வோ|F|S|Voshika|வோஷிகா|वोषिका|A shining star
+## கா  (Kaa)
+கா|M|S|Karthik|கார்த்திக்|कार्तिक|A bright star
+கா|M|S|Karthikeyan|கார்த்திகேயன்|कार्तिकेयन|Lord Murugan
+கா|M|S|Kaaviyan|காவியன்|कावियन|A poet
+கா|M|S|Kaasi|காசி|काशी|The sacred city
+கா|M|S|Kalidass|காலிதாஸ்|कालिदास|Servant of Goddess Kali
+கா|M|S|Kaaleeswaran|காளீஸ்வரன்|कालीश्वरन|Lord of Goddess Kali
+கா|F|S|Kaaviya|காவியா|काविया|Poetry
+கா|F|S|Kaarthika|கார்த்திகா|कार्तिका|A star of light
+கா|F|S|Kaveri|காவேரி|कावेरी|The sacred river
+கா|F|S|Kamakshi|காமாக்ஷி|कामाक्षी|Goddess Kamakshi
+கா|F|S|Kanchana|காஞ்சனா|कांचना|Gold
+கா|F|S|Kaavya|காவ்யா|काव्या|Poetry
+கா|F|N|Kaajal|காஜல்|काजल|Kohl, dark beauty
+கா|F|N|Karishma|காரிஷ்மா|करिश्मा|A miracle
+## கீ  (Kee / Ki)
+கீ|M|S|Keerthan|கீர்த்தன்|कीर्तन|A song of praise
+கீ|M|S|Keerthik|கீர்த்திக்|कीर्तिक|Fame and glory
+கீ|M|S|Keerthivasan|கீர்த்திவாசன்|कीर्तिवासन|A home of fame
+கீ|M|S|Keerthigan|கீர்த்திகன்|कीर्तिगन|One who brings fame
+கீ|F|S|Keerthana|கீர்த்தனா|कीर्तना|A song of praise
+கீ|F|S|Keerthi|கீர்த்தி|कीर्ति|Fame and glory
+கீ|F|S|Keerthika|கீர்த்திகா|कीर्तिका|Fame and virtue
+கீ|F|S|Keesha|கீஷா|कीशा|A soft song
+கீ|F|N|Keerat|கீரத்|कीरत|A song of praise
+## கு  (Ku / Koo)
+கு|M|S|Kumar|குமார்|कुमार|A prince, a son
+கு|M|S|Kumaran|குமரன்|कुमारन|Lord Murugan
+கு|M|S|Kugan|குகன்|गुगन|Lord Murugan
+கு|M|S|Gunasekaran|குணசேகரன்|गुणशेखरन|Full of virtue
+கு|M|S|Kulothungan|குலோத்துங்கன்|कुलोत्तुंगन|A Chola emperor
+கு|M|S|Kumaravel|குமரவேல்|कुमारवेल|The spear of Murugan
+கு|M|S|Kuganesan|குகனேசன்|गुगनेशन|Lord Murugan
+கு|M|S|Kuppusamy|குப்புசாமி|कुप्पुस्वामी|A beloved Lord
+கு|M|N|Kunal|குனல்|कुणाल|A lotus, a prince
+கு|M|N|Kushal|குஷல்|कुशल|Skilled and happy
+கு|M|N|Gurpreet|குர்ப்ரீத்|गुरप्रीत|Love of the guru
+கு|M|N|Gulshan|குல்ஷன்|गुलशन|A flower garden
+கு|F|S|Kumari|குமாரி|कुमारी|A young maiden
+கு|F|S|Kuyili|குயிலி|कुयिलि|A brave Tamil warrior
+கு|F|S|Kundhavai|குந்தவை|कुंदवै|A learned princess
+கு|F|S|Kural|குரல்|कुरल|A voice, a verse
+கு|F|N|Kusum|குசும்|कुसुम|A flower
+கு|F|N|Kunjika|குஞ்ஜிகா|कुंजिका|A small flower
+## க  (Ka / Gha)
+க|M|S|Kannan|கண்ணன்|कण्णन|Lord Krishna
+க|M|S|Kamal|கமல்|कमल|A lotus
+க|M|S|Kavin|கவின்|कविन|Handsome and charming
+க|M|S|Kathir|கதிர்|कदिर|A ray of light
+க|M|S|Kalai|கலை|कलै|Art and skill
+க|M|S|Kalaimaran|கலைமாறன்|कलैमारन|A king of the arts
+க|M|N|Karan|கரண்|करण|A skilled soul
+க|M|N|Kabir|கபீர்|कबीर|The great one
+க|M|N|Kapil|கபில்|कपिल|A sage
+க|M|N|Kartikeya|கர்த்திகேயா|कार्तिकेय|Lord Murugan
+க|F|S|Kamala|கமலா|कमला|A lotus
+க|F|S|Kalyani|கல்யாணி|कल्याणी|Auspicious
+க|F|S|Kanmani|கண்மணி|कण्मणि|A precious gem of the eye
+க|F|S|Kavitha|கவிதா|कविता|Poetry
+க|F|S|Kalaiselvi|கலைச்செல்வி|कलैचेल्वि|A treasure of art
+க|F|N|Kajal|கஜல்|काजल|Kohl, dark beauty
+க|F|N|Kavisha|கவிஷா|कविशा|A poet
+க|F|N|Kalpana|கல்பனா|कल्पना|An imagination
+க|F|N|Karishma|கரிஷ்மா|करिश्मा|A miracle
+## ச  (Cha / Sa)
+ச|M|S|Saravanan|சரவணன்|सरवणन|Lord Murugan
+ச|M|S|Sathish|சதீஷ்|सतीश|Ruler of truth
+ச|M|S|Santhosh|சந்தோஷ்|संतोष|Contentment and joy
+ச|M|S|Chandran|சந்திரன்|चंद्रन|The moon
+ச|M|S|Sanjay|சஞ்சய்|संजय|Victorious
+ச|M|S|Saran|சரண்|सरण|A refuge
+ச|M|S|Sathya|சத்யா|सत्य|Truth
+ச|M|S|Sarathi|சரதி|सारथी|The charioteer
+ச|M|N|Chandan|சந்தன்|चंदन|Sandalwood
+ச|M|N|Charan|சரண்|चरण|The divine feet
+ச|M|N|Chatur|சதுர்|चतुर|Clever and skilful
+ச|M|N|Chaman|சமன்|चमन|A garden
+ச|F|S|Saranya|சரண்யா|सरण्या|A refuge
+ச|F|S|Saraswathi|சரஸ்வதி|सरस्वती|Goddess Saraswati
+ச|F|S|Santhiya|சந்தியா|संध्या|The evening twilight
+ச|F|S|Sarala|சரலா|सरला|Simple and honest
+ச|F|S|Sangeetha|சங்கீதா|संगीता|Music
+ச|F|S|Savitha|சவிதா|सविता|The Sun
+ச|F|S|Sasirekha|சசிரேகா|शशिरेखा|A beautiful crescent moon
+ச|F|S|Sakthi|சக்தி|शक्ति|Divine power
+ச|F|N|Chatura|சதுரா|चतुरा|Clever and charming
+ச|F|N|Chanchal|சஞ்சல்|चंचल|Playful and lively
+ச|F|N|Chandrika|சந்திரிகா|चंद्रिका|Moonlight
+## கே  (Ke / Kay)
+கே|M|S|Kesavan|கேசவன்|केशवन|Lord Vishnu
+கே|M|S|Ketharan|கேதாரன்|केदारन|Lord Shiva
+கே|M|S|Keyan|கேயன்|केयन|A learned soul
+கே|M|N|Keshav|கேஷவ்|केशव|Lord Krishna
+கே|M|N|Ketan|கேதன்|केतन|A bright star
+கே|M|N|Kedar|கேதர்|केदार|Lord Shiva
+கே|F|S|Keshavi|கேசவி|केशवी|A devoted lady
+கே|F|S|Keya|கேயா|केया|A gentle song
+கே|F|N|Ketaki|கேதகி|केतकी|A fragrant flower
+கே|F|N|Kesar|கேசர்|केसर|Saffron
+## கோ  (Ko / Koh)
+கோ|M|S|Kothandaraman|கோதண்டராமன்|कोदंडरामन|Lord Rama
+கோ|M|S|Kovalan|கோவலன்|कोवलन|A noble merchant
+கோ|M|S|Kodeeswaran|கோடீஸ்வரன்|कोटीश्वरन|Lord of a crore
+கோ|M|S|Komagan|கோமகன்|कोमगन|A prince
+கோ|M|S|Kovarthanan|கோவர்த்தனன்|कोवर्धनन|Lord Krishna
+கோ|M|N|Kovid|கோவிட்|कोविद|A learned scholar
+கோ|F|S|Kothai|கோதை|कोदै|A garland, Goddess Andal
+கோ|F|S|Kokila|கோகிலா|कोकिला|The cuckoo bird
+கோ|F|S|Komalavalli|கோமளவல்லி|कोमलवल्ली|A tender creeper
+கோ|F|S|Kovai|கோவை|कोवै|A graceful name
+கோ|F|N|Koyal|கோயல்|कोयल|The cuckoo bird
+கோ|F|N|Kopal|கோபால்|कोपल|A young bud
+## ஹா  (Haa)
+ஹா|M|S|Haaris|ஹாரிஸ்|हारिस|A lion
+ஹா|M|S|Haarish|ஹாரிஷ்|हारिश|Lord Shiva
+ஹா|F|S|Haarini|ஹாரிணி|हारिणी|One who captivates
+ஹா|F|S|Haasini|ஹாசினி|हासिनी|A smiling lady
+ஹா|F|N|Haaniya|ஹானியா|हानिया|A pleasant song
+## ஹீ  (Hee / Hi)
+ஹீ|M|S|Heer|ஹீர்|हीर|A diamond
+ஹீ|M|S|Heeran|ஹீரன்|हीरन|A diamond
+ஹீ|F|S|Heera|ஹீரா|हीरा|A diamond
+ஹீ|F|S|Heertha|ஹீர்தா|हीर्था|A joyful heart
+## ஹு  (Hu / Hoo)
+ஹு|M|S|Hussain|ஹுசைன்|हुसैन|A noble soul
+ஹு|M|S|Hukam|ஹுகம்|हुकम|An order, a command
+ஹு|F|S|Huma|ஹுமா|हुमा|A sacred bird
+ஹு|F|S|Husna|ஹுஸ்னா|हुस्ना|Beauty
+## ஹே  (He / Hay)
+ஹே|M|S|Hemanth|ஹேமந்த்|हेमंत|The winter season
+ஹே|M|S|Heth|ஹேத்|हेत|Love and reason
+ஹே|F|S|Hema|ஹேமா|हेमा|Golden
+ஹே|F|S|Hethika|ஹேதிகா|हेतिका|Love and reason
+## ஹோ  (Ho / Hoh)
+ஹோ|M|S|Hoshik|ஹோஷிக்|होशिक|Bright and glad
+ஹோ|F|S|Hoshi|ஹோஷி|होशी|Bright and glad
+## டா  (Daa)
+டா|M|S|Daasarathi|டாசராதி|दासरथि|Lord Rama
+டா|M|S|Dasan|டாசன்|दासन|A devoted servant
+டா|M|S|Daamodaran|டாமோதரன்|दामोदरन|Lord Krishna
+டா|M|N|Daanish|டானிஷ்|दानिश|Knowledge and wisdom
+டா|M|N|Daanav|டானவ்|दानव|Kind and generous
+டா|F|S|Daanya|டான்யா|दान्या|A pleasant gift
+டா|F|S|Daakshayani|டாக்ஷாயணி|दाक्षायणी|Daughter of Daksha
+டா|F|N|Daarini|டாரிணி|दारिणी|A giver
+## டீ  (Dee / Di)
+டீ|M|S|Deeran|டீரன்|दीरन|A brave soul
+டீ|M|S|Deevan|டீவன்|दीवन|A shining light
+டீ|M|S|Deekshith|டீக்ஷித்|दीक्षित|One who is initiated
+டீ|M|N|Deekshant|டீக்ஷந்த்|दीक्षंत|A noble resolve
+டீ|F|S|Deeksha|டீக்ஷா|दीक्षा|A sacred vow
+டீ|F|S|Deena|டீனா|दीना|A humble soul
+டீ|F|N|Deerika|டீரிகா|दीरिका|A brave and graceful lady
+## டூ  (Doo / Du)
+டூ|M|S|Durai|டூரை|दूरै|A chief, a leader
+டூ|F|S|Doorika|டூரிகா|दूरिका|A gentle beauty
+## டே  (De / Day)
+டே|M|S|Deyan|டேயன்|डेयन|A kind and giving soul
+டே|M|S|Deyalan|டேயலன்|डेयलन|A gentle heart
+டே|F|S|Deya|டேயா|डेया|A kind and giving soul
+## டோ  (Do / Doh)
+டோ|M|S|Doshan|டோஷன்|दोशन|A faultless soul
+டோ|F|S|Doshi|டோஷி|दोशी|A faultless soul
+## மா  (Maa)
+மா|M|S|Maaran|மாறன்|मारन|A brave warrior
+மா|M|S|Maadhavan|மாதவன்|माधवन|Lord Krishna
+மா|M|S|Maasilamani|மாசிலாமணி|मासिलामणि|A flawless gem
+மா|M|S|Maayon|மாயோன்|मायोन|Lord Vishnu
+மா|M|S|Maari|மாரி|मारी|Goddess Mariamman
+மா|M|S|Maadhav|மாதவ்|माधव|Lord Krishna
+மா|M|N|Maanav|மானவ்|मानव|A human, a kind soul
+மா|M|N|Maanas|மானஸ்|मानस|The mind
+மா|M|N|Maahir|மாஹிர்|माहिर|Skilled and able
+மா|F|S|Maalathi|மாலதி|मालती|A jasmine flower
+மா|F|S|Maalika|மாலிகா|मालिका|A garland
+மா|F|S|Maaya|மாயா|माया|Illusion, divine power
+மா|F|S|Maadhuri|மாதுரி|माधुरी|Sweetness
+மா|F|N|Maanya|மான்யா|मान्या|Worthy of honour
+மா|F|N|Maanasa|மானசா|मानसा|Of the mind
+மா|F|N|Maahi|மாஹி|माही|The earth
+## மீ  (Mee / Mi)
+மீ|M|S|Meeran|மீரான்|मीरान|A noble leader
+மீ|M|S|Meelan|மீலன்|मीलन|A meeting, a union
+மீ|F|S|Meena|மீனா|मीना|A fish, a gem
+மீ|F|S|Meenakshi|மீனாக்ஷி|मीनाक्षी|Goddess Meenakshi
+மீ|F|S|Meera|மீரா|मीरा|A devotee of Krishna
+மீ|F|S|Meenal|மீனல்|मीनल|A precious gem
+மீ|F|N|Meher|மீஹர்|मेहर|Grace and kindness
+## மூ  (Moo / Mu)
+மூ|M|S|Moorthy|மூர்த்தி|मूर्ति|A divine form
+மூ|M|S|Moovendhan|மூவேந்தன்|मूवेंदन|A king of flowers
+மூ|M|S|Moovendar|மூவேந்தர்|मूवेंदर|King of the three worlds
+மூ|M|N|Moorli|மூர்லி|मूर्ली|The flute of Krishna
+மூ|F|S|Moovarselvi|மூவர்செல்வி|मूवरसेल्वी|A treasured lady
+மூ|F|N|Moorika|மூரிகா|मूरिका|A sweet melody
+## மே  (Me / May)
+மே|M|S|Meganathan|மேகநாதன்|मेघनाथन|Lord of the clouds
+மே|M|S|Meghavan|மேகவன்|मेघवन|Lord of the clouds
+மே|M|N|Mehul|மேஹுல்|मेहुल|A gentle rain
+மே|M|N|Megh|மேக்|मेघ|A cloud
+மே|F|S|Mekala|மேகலா|मेकला|A mountain stream
+மே|F|S|Megha|மேகா|मेघा|A cloud
+மே|F|N|Meghna|மேக்னா|मेघना|A cloud-born river
+மே|F|N|Mehak|மேஹக்|मेहक|A sweet fragrance
+## மோ  (Mo / Moh)
+மோ|M|S|Mohan|மோகன்|मोहन|Lord Krishna
+மோ|M|S|Mohanraj|மோகன்ராஜ்|मोहनराज|A charming king
+மோ|M|S|Mohanasundaram|மோகனசுந்தரம்|मोहनसुंदरम|Beautiful and charming
+மோ|M|N|Mohit|மோஹித்|मोहित|Charmed and happy
+மோ|M|N|Mohsin|மோஹ்சின்|मोहसिन|A kind benefactor
+மோ|F|S|Mohana|மோகனா|मोहना|Charming and lovely
+மோ|F|S|Mohini|மோகினி|मोहिनी|The enchantress
+மோ|F|N|Mohita|மோஹிதா|मोहिता|Charmed and happy
+மோ|F|N|Mona|மோனா|मोना|A silent, calm soul
+## பா  (Paa / Baa)
+பா|M|S|Pandian|பாண்டியன்|पांडियन|A Pandya king
+பா|M|S|Pandurangan|பாண்டுரங்கன்|पांडुरंगन|Lord Vishnu
+பா|M|S|Paarthiban|பார்த்திபன்|पार्थिबन|An emperor
+பா|M|S|Paari|பாரி|पारी|A generous Tamil king
+பா|M|S|Baalasubramanian|பாலசுப்பிரமணியன்|बालसुब्रमण्यन|The young Lord Murugan
+பா|M|N|Parth|பார்த்|पार्थ|Arjuna
+பா|M|N|Paavan|பாவன்|पावन|Pure and holy
+பா|F|S|Paarvathi|பார்வதி|पार्वती|Goddess Parvati
+பா|F|S|Paavai|பாவை|पावै|A graceful maiden
+பா|F|S|Baala|பாலா|बाला|A young girl
+பா|F|S|Paandeeswari|பாண்டீஸ்வரி|पांडीश्वरी|Goddess of the Pandya land
+பா|F|N|Paavni|பாவ்னி|पावनी|Pure and sacred
+பா|F|N|Baani|பானி|बानी|Speech, a voice
+## பீ  (Pee / Pi)
+பீ|M|S|Peeran|பீரன்|पीरन|A noble guide
+பீ|M|S|Preetham|ப்ரீதம்|प्रीतम|A beloved friend
+பீ|M|S|Preethish|ப்ரீதிஷ்|प्रीतिश|A loving soul
+பீ|M|N|Peeyush|பீயுஷ்|पीयूष|Nectar
+பீ|F|S|Preethi|ப்ரீதி|प्रीति|Love and affection
+பீ|F|S|Preetha|ப்ரீதா|प्रीता|Beloved
+பீ|F|S|Preethika|ப்ரீதிகா|प्रीतिका|A loving soul
+பீ|F|N|Pihu|பீஹு|पीहू|The call of a cuckoo
+## பூ  (Poo / Pu / Bhoo)
+பூ|M|S|Poovannan|பூவண்ணன்|पूवण्णन|One with a flower's hue
+பூ|M|S|Poovarasan|பூவரசன்|पूवरसन|A blooming king
+பூ|M|S|Boothanathan|பூதநாதன்|भूतनाथन|Lord of all beings
+பூ|M|S|Poovendhan|பூவேந்தன்|पूवेंदन|A king of flowers
+பூ|M|N|Puneet|பூனீத்|पुनीत|Pure and sacred
+பூ|F|S|Poongodi|பூங்கொடி|पूंगोडी|A flowering creeper
+பூ|F|S|Poornima|பூர்ணிமா|पूर्णिमा|The full moon
+பூ|F|S|Poovai|பூவை|पूवै|A lovely flower
+பூ|F|S|Poonguzhali|பூங்குழலி|पूंगुझली|A sweet-voiced lady
+பூ|F|N|Poorna|பூர்ணா|पूर्णा|Complete and whole
+பூ|F|N|Poornika|பூர்ணிகா|पूर्णिका|Complete and whole
+## ஷா  (Sha)
+ஷா|M|S|Shaanthan|ஷாந்தன்|शांतन|A peaceful soul
+ஷா|M|S|Shaam|ஷாம்|शाम|The evening
+ஷா|M|N|Shaan|ஷான்|शान|Proud and glorious
+ஷா|M|N|Shaamil|ஷாமில்|शामिल|An able companion
+ஷா|F|S|Shaambhavi|ஷாம்பவி|शांभवी|Goddess Parvati
+ஷா|F|S|Shaalini|ஷாலினி|शालिनी|Modest and graceful
+ஷா|F|N|Shaanya|ஷான்யா|शान्या|A shining star
+## ரா  (Raa)
+ரா|M|S|Raman|ராமன்|रामन|Lord Rama
+ரா|M|S|Ramachandran|ராமச்சந்திரன்|रामचंद्रन|Lord Rama
+ரா|M|S|Rajan|ராஜன்|राजन|A king
+ரா|M|S|Rajesh|ராஜேஷ்|राजेश|A king of kings
+ரா|M|S|Ramesh|ராமேஷ்|रामेश|Lord Vishnu
+ரா|M|S|Raghavan|ராகவன்|राघवन|Descendant of Raghu
+ரா|M|S|Rajendran|ராஜேந்திரன்|राजेंद्रन|King of kings
+ரா|M|S|Rajarajan|ராஜராஜன்|राजराजन|The great Chola king
+ரா|M|N|Raghav|ராகவ்|राघव|Lord Rama
+ரா|M|N|Rahul|ராகுல்|राहुल|An able and cheerful soul
+ரா|M|N|Rajat|ராஜத்|रजत|Silver
+ரா|M|N|Rakesh|ராகேஷ்|राकेश|Lord of the full moon
+ரா|M|N|Rakshit|ராக்ஷித்|रक्षित|Protected
+ரா|F|S|Rajalakshmi|ராஜலக்ஷ்மி|राजलक्ष्मी|Goddess of fortune
+ரா|F|S|Rajeswari|ராஜேஸ்வரி|राजेश्वरी|A queen goddess
+ரா|F|S|Rajathi|ராஜாதி|राजाति|A royal lady
+ரா|F|N|Raagini|ராகினி|रागिनी|A melody
+## ரீ  (Ree / Ri)
+ரீ|M|S|Reevan|ரீவன்|रीवन|A noble soul
+ரீ|M|S|Reethan|ரீதன்|रीतन|A tradition of light
+ரீ|M|N|Reet|ரீத்|रीत|A sacred custom
+ரீ|F|S|Reethika|ரீதிகா|रीतिका|A graceful custom
+ரீ|F|S|Reena|ரீனா|रीना|A gentle lady
+ரீ|F|S|Reema|ரீமா|रीमा|A lovely lady
+ரீ|F|S|Reeva|ரீவா|रीवा|A river
+ரீ|F|N|Reesha|ரீஷா|रीशा|A line, a sacred verse
+## ரூ  (Roo / Ru)
+ரூ|M|S|Rupan|ரூபன்|रूपन|A handsome form
+ரூ|M|S|Roopak|ரூபக்|रूपक|A beautiful form
+ரூ|M|S|Rupesh|ரூபேஷ்|रूपेश|Lord of beauty
+ரூ|M|N|Roop|ரூப்|रूप|Beauty and form
+ரூ|F|S|Rupa|ரூபா|रूपा|Beauty and form
+ரூ|F|S|Roopika|ரூபிகா|रूपिका|Beautiful
+ரூ|F|S|Roopini|ரூபிணி|रूपिणी|One with a lovely form
+## ரே  (Re / Ray)
+ரே|M|S|Revanth|ரேவந்த்|रेवंत|A wealthy and bright soul
+ரே|M|S|Rethinavel|ரேதினவேல்|रेतिनवेल|The spear of Murugan
+ரே|M|S|Rengarajan|ரேங்கராஜன்|रेंगराजन|Lord Ranganatha
+ரே|M|N|Reyansh|ரேயான்ஷ்|रेयांश|A ray of light
+ரே|M|N|Reyan|ரேயன்|रेयन|A little prince
+ரே|F|S|Revathi|ரேவதி|रेवती|A star, a river
+ரே|F|S|Rekha|ரேகா|रेखा|A line, a sacred mark
+ரே|F|S|Renuka|ரேணுகா|रेणुका|Goddess Renuka
+ரே|F|S|Reshma|ரேஷ்மா|रेशमा|Silken
+ரே|F|N|Reya|ரேயா|रेया|A ray of light
+ரே|F|N|Reyanshi|ரேயான்ஷி|रेयांशी|A ray of light
+## ரோ  (Ro / Roh)
+ரோ|M|S|Rohan|ரோஹன்|रोहन|Lord Vishnu
+ரோ|M|S|Rohit|ரோஹித்|रोहित|The red sun
+ரோ|M|S|Roshan|ரோஷன்|रोशन|Bright and shining
+ரோ|M|N|Ronak|ரோனக்|रोनक|A joyful song
+ரோ|F|S|Rohini|ரோஹிணி|रोहिणी|A star, a red lotus
+ரோ|F|S|Roshini|ரோஷினி|रोशिनी|A ray of light
+ரோ|F|N|Roshni|ரோஷ்னி|रोशनी|Light
+## தா  (Thaa / Daa)
+தா|M|S|Thaaran|தாரண்|धारण|An able leader
+தா|M|S|Dhaanush|தாணுஷ்|धानुष|A bow
+தா|M|S|Thaandavam|தாண்டவம்|तांडवम|The cosmic dance
+தா|M|N|Dhaanveer|தான்வீர்|धानवीर|A brave and generous soul
+தா|F|S|Thaamarai|தாமரை|तामरै|A lotus
+தா|F|S|Thaara|தாரா|तारा|A star
+தா|F|N|Dhaanvi|தான்வி|धानवी|A generous soul
+## தீ  (Thee / Tee)
+தீ|M|S|Theeran|தீரன்|तीरन|A brave and able soul
+தீ|M|S|Theerthan|தீர்த்தன்|तीर्थन|A sacred soul
+தீ|M|S|Theerthagiri|தீர்த்தகிரி|तीर्थगिरि|A sacred mountain
+தீ|F|S|Theena|தீனா|तीना|A humble and kind soul
+தீ|F|S|Theerthana|தீர்த்தனா|तीर्थना|A sacred song
+தீ|F|N|Teerth|தீர்த்த்|तीर्थ|A sacred place
+## தூ  (Thoo / Doo)
+தூ|M|S|Thooran|தூரன்|दूरन|A far-sighted soul
+தூ|M|S|Thooyavan|தூயவன்|दूयवन|A pure soul
+தூ|F|S|Thoorika|தூரிகா|दूरिका|A swift and lovely soul
+தூ|F|S|Thooyamathi|தூயமதி|दूयमति|A pure mind
+## தே  (They / Te)
+தே|M|S|Devan|தேவன்|देवन|A divine lord
+தே|M|S|Devaraj|தேவராஜ்|देवराज|King of the gods
+தே|M|S|Devarajan|தேவராஜன்|देवराजन|King of the gods
+தே|M|S|Devendran|தேவேந்திரன்|देवेंद्रन|Lord Indra
+தே|M|N|Dev|தேவ்|देव|A god
+தே|M|N|Devansh|தேவான்ஷ்|देवांश|A part of the divine
+தே|M|N|Devendra|தேவேந்திர|देवेंद्र|Lord Indra
+தே|F|S|Devika|தேவிகா|देविका|A little goddess
+தே|F|S|Devasena|தேவசேனா|देवसेना|Consort of Murugan
+தே|F|S|Devadharshini|தேவதர்ஷினி|देवदर्शिनी|A vision of the divine
+தே|F|N|Devena|தேவேனா|देवेना|A divine blessing
+## தோ  (Tho / Toh)
+தோ|M|S|Thoran|தோரன்|तोरन|A shining soul
+தோ|F|S|Thozhi|தோழி|तोझि|A true friend
+தோ|F|S|Thovika|தோவிகா|तोविका|A gentle soul
+தோ|M|N|Thosh|தோஷ்|तोष|Joy and contentment
+## நா  (Naa)
+நா|M|S|Naagendran|நாகேந்திரன்|नागेंद्रन|Lord of the serpents
+நா|M|S|Naagappan|நாகப்பன்|नागप्पन|The serpent lord
+நா|M|S|Naavalan|நாவலன்|नावलन|An eloquent soul
+நா|F|S|Naagamani|நாகமணி|नागमणि|A serpent jewel
+நா|F|S|Naayaki|நாயகி|नायकी|A leading lady
+நா|F|S|Naavya|நாவ்யா|नाव्या|Praise and eloquence
+## நீ  (Nee / Ni)
+நீ|M|S|Neelan|நீலன்|नीलन|A blue gem
+நீ|M|S|Neelakandan|நீலகண்டன்|नीलकंठन|Lord Shiva
+நீ|M|S|Neelamegan|நீலமேகன்|नीलमेघन|The blue cloud
+நீ|M|N|Neeraj|நீரஜ்|नीरज|A lotus
+நீ|M|N|Neel|நீல்|नील|Blue, a sapphire
+நீ|F|S|Neela|நீலா|नीला|Blue, a sapphire
+நீ|F|S|Neelaveni|நீலவேணி|नीलवेणी|A blue braid
+நீ|F|S|Neelambari|நீலாம்பரி|नीलाम्बरी|Clad in blue
+நீ|F|N|Neeraja|நீரஜா|नीरजा|A lotus
+## நே  (Ne / Nay)
+நே|M|S|Nethaji|நேதாஜி|नेताजी|A great leader
+நே|M|S|Nesar|நேசர்|नेसर|A loving friend
+நே|M|S|Nesamani|நேசமணி|नेसमणि|A jewel of love
+நே|F|S|Nethra|நேத்ரா|नेत्रा|The eyes
+நே|F|S|Nesamathi|நேசமதி|नेसमति|A loving mind
+## நோ  (No / Noh)
+நோ|M|S|Noyal|நோயல்|नोएल|A blessed birth
+நோ|F|S|Noya|நோயா|नोया|A blessed birth
+## யா  (Yaa)
+யா|M|S|Yaadhav|யாதவ்|यादव|Lord Krishna
+யா|M|S|Yaasir|யாசிர்|यासिर|A gentle and able soul
+யா|M|S|Yaazhvelan|யாழ்வேலன்|याझवेलन|A spear of sweet music
+யா|F|S|Yaazhini|யாழினி|याझिनि|A melody of the lute
+யா|F|S|Yaamini|யாமினி|यामिनी|A serene night
+யா|F|S|Yaashika|யாஷிகா|याशिका|A devotee
+யா|F|N|Yaami|யாமி|यामी|The Yamuna river
+## யீ  (Yee / Yi)
+யீ|M|S|Yeeshwaran|யீஸ்வரன்|यीश्वरन|Lord of glory
+யீ|M|S|Yeeshan|யீஷன்|यीशन|A glorious soul
+யீ|F|S|Yeeshika|யீஷிகா|यीशिका|A glorious lady
+## யூ  (Yoo / Yu)
+## யூ  (Yoo / Yu)
+யூ|M|S|Yugendran|யூகேந்திரன்|यूगेंद्रन|A mighty king
+யூ|M|S|Yuvanesh|யூவனேஷ்|यूवनेश|A youthful lord
+யூ|M|N|Yuvraj|யூவ்ராஜ்|यूवराज|A crown prince
+யூ|F|S|Yuvana|யூவனா|यूवना|A youthful lady
+யூ|F|S|Yuthika|யூதிகா|यूथिका|A young and able lady
+யூ|F|N|Yukti|யூக்தி|यूक्ति|Skill and reason
+## யே  (Ye / Yay)
+யே|M|S|Yeshwanth|யேஷ்வந்த்|येशवंत|A victorious soul
+யே|M|N|Yesh|யேஷ்|येश|A glorious soul
+யே|F|S|Yeshaswini|யேஷஸ்வினி|येशस्विनी|Full of fame
+யே|F|S|Yeshika|யேஷிகா|येशिका|Full of fame
+## யோ  (Yo / Yoh)
+யோ|M|S|Yogesh|யோகேஷ்|योगेश|Lord of yoga
+யோ|M|S|Yogendran|யோகேந்திரன்|योगेंद्रन|Lord of yoga
+யோ|M|S|Yogi|யோகி|योगी|A yogi
+யோ|F|S|Yogini|யோகினி|योगिनी|A female ascetic
+யோ|F|S|Yogitha|யோகிதா|योगिता|United and focused
+யோ|F|S|Yogalakshmi|யோகலக்ஷ்மி|योगलक्ष्मी|Goddess of yoga
+## ஜா  (Jaa)
+ஜா|M|S|Jaanesh|ஜானேஷ்|जानेश|Lord of his people
+ஜா|M|N|Jaanav|ஜானவ்|जानव|A protector of the people
+ஜா|F|S|Jaanavi|ஜானவி|जानवी|Goddess Parvati
+ஜா|F|S|Jaanaki|ஜானகி|जानकी|Goddess Sita
+ஜா|F|N|Jaanvi|ஜான்வி|जान्वी|The sacred river Ganga
+## ஜீ  (Jee / Ji)
+ஜீ|M|S|Jeevan|ஜீவன்|जीवन|Life
+ஜீ|M|S|Jeevithan|ஜீவிதன்|जीवितन|Full of life
+ஜீ|M|S|Jeevagan|ஜீவகன்|जीवगन|A living soul
+ஜீ|M|N|Jivin|ஜீவின்|जीविन|Full of life
+ஜீ|F|S|Jeevitha|ஜீவிதா|जीविता|Life and vitality
+ஜீ|F|S|Jeevanya|ஜீவன்யா|जीवन्या|Full of life
+ஜீ|F|N|Jivika|ஜீவிகா|जीविका|Life and livelihood
+## கூ  (Koo / Ku)
+கூ|M|S|Koothan|கூத்தன்|कूत्तन|A dancer
+கூ|M|S|Koozhan|கூழன்|कूझन|A graceful soul
+கூ|F|S|Koovai|கூவை|कूवै|A sweet voice
+கூ|F|S|Koothai|கூத்தை|कूत्तै|A graceful dancer
+## சா  (Saa / Chaa)
+சா|M|S|Saathvik|சாத்விக்|सात्विक|Pure and virtuous
+சா|M|S|Saarangan|சாரங்கன்|सारंगन|Lord Vishnu
+சா|M|S|Saathyan|சாத்யன்|सात्यन|Truthful
+சா|M|S|Saaral|சாரல்|सारल|Gentle rain
+சா|M|N|Saarthak|சார்த்தக்|सार्थक|Meaningful
+சா|M|N|Sagar|சாகர்|सागर|The ocean
+சா|M|N|Sahil|சாஹில்|साहिल|A guide, a shore
+சா|F|S|Saarika|சாரிகா|सारिका|A melodious bird
+சா|F|S|Saanvi|சான்வி|सान्वी|Goddess Lakshmi
+சா|F|N|Sadhana|சாதனா|साधना|Devoted practice
+## சீ  (See / Si)
+சீ|M|S|Seenivasan|சீனிவாசன்|श्रीनिवासन|Lord Venkateswara
+சீ|M|S|Seenu|சீனு|सीनु|Lord Vishnu
+சீ|M|S|Seetharaman|சீதாராமன்|सीतारामन|Lord Rama with Sita
+சீ|F|S|Seetha|சீதா|सीता|Goddess Sita
+சீ|F|S|Seelavathi|சீலாவதி|शीलवती|Of good conduct
+சீ|F|N|Seerath|சீரத்|सीरत|Inner virtue
+## சூ  (Soo / Su)
+சூ|M|S|Surya|சூர்யா|सूर्या|The Sun
+சூ|M|S|Sooriyan|சூரியன்|सूरियन|The Sun god
+சூ|M|S|Soodan|சூடன்|सूडन|A bright and able soul
+சூ|M|N|Suryansh|சூர்யான்ஷ்|सूर्यांश|A part of the Sun
+சூ|F|S|Sooriya|சூரியா|सूरिया|The Sun
+சூ|F|N|Soorika|சூரிகா|सूरिका|A bright flame
+## த  (Tha / Ttha)
+த|M|S|Thamizh|தமிழ்|तमिळ|Sweet Tamil
+த|M|S|Thamizhselvan|தமிழ்செல்வன்|तमिळसेल्वन|A treasure of Tamil
+த|M|S|Thandapani|தண்டபாணி|दंडपाणि|Lord Murugan
+த|M|S|Thangaraju|தங்கராஜு|तंगराजु|A golden king
+த|M|S|Thavam|தவம்|तवम|Penance and devotion
+த|M|S|Tharun|தருண்|तरुण|A young and bright soul
+த|M|N|Tanmay|தன்மய்|तन्मय|Absorbed in the divine
+த|M|N|Tanish|தனிஷ்|तनीश|Lord of the night
+த|M|N|Tanishq|தனிஷ்க்|तनिष्क|A precious jewel
+த|F|S|Thamizhselvi|தமிழ்செல்வி|तमिळसेल्वी|A graceful Tamil lady
+த|F|S|Thamizharasi|தமிழரசி|तमिळरसी|Queen of Tamil
+த|F|S|Thangam|தங்கம்|तंगम|Gold
+த|F|S|Thavamalar|தவமலர்|तवमलर|A flower of penance
+த|F|S|Tharani|தரணி|तरणि|The earth
+த|F|N|Tanishka|தனிஷ்கா|तनिष्का|A small star
+த|F|N|Tanya|தன்யா|तन्या|A fairy queen
+த|F|N|Taruna|தருணா|तरुणा|Young and tender
+## ஜ  (Ja / Jha)
+ஜ|M|S|Jagan|ஜகன்|जगन|The world
+ஜ|M|S|Jagannathan|ஜகன்னாதன்|जगन्नाथन|Lord of the world
+ஜ|M|S|Jagadheesan|ஜகதீசன்|जगदीशन|Lord of the universe
+ஜ|M|S|Jambulingam|ஜம்புலிங்கம்|जम्बुलिंगम|Lord Shiva
+ஜ|M|S|Jayanthan|ஜயந்தன்|जयंतन|The victorious one
+ஜ|M|N|Jatin|ஜதின்|जतिन|A disciplined ascetic
+ஜ|M|N|Jagat|ஜகத்|जगत|The universe
+ஜ|F|S|Jaya|ஜயா|जया|Victory
+ஜ|F|S|Janani|ஜனனி|जननी|A mother, a creator
+ஜ|F|S|Jayanthi|ஜயந்தி|जयंती|A victorious festival
+## Additional names (grouped by letter)
+அ|M|S|Arulmozhi|அருள்மொழி|अरुलमोझि|Divine grace in speech
+அ|M|S|Anbarasan|அன்பரசன்|अन्बरसन|A king of love
+அ|M|S|Amaran|அமரன்|अमरन|The immortal one
+அ|M|S|Arivazhagan|அறிவழகன்|अरिवाझगन|Handsome in wisdom
+அ|M|S|Anbazhagan|அன்பழகன்|अन्बाझगन|Handsome in love
+அ|M|N|Anmol|அன்மோல்|अनमोल|Precious and priceless
+அ|M|N|Aniket|அனிகேத்|अनिकेत|The homeless wanderer
+அ|M|N|Anup|அனுப்|अनुप|Without compare
+அ|F|S|Amala|அமலா|अमला|Pure and spotless
+அ|F|S|Arasi|அரசி|अरसी|A queen
+அ|F|S|Ambika|அம்பிகா|अंबिका|Goddess Parvati
+அ|F|S|Amuthavalli|அமுதவல்லி|अमुतवल्ली|A creeper of nectar
+அ|F|S|Abinaya|அபிநயா|अभिनया|Graceful expression
+அ|F|N|Anamika|அனமிகா|अनामिका|One without a name
+அ|F|N|Apeksha|அபேக்ஷா|अपेक्षा|A hope, a wish
+இ|M|S|Ilangovan|இளங்கோவன்|इलंगोवन|A noble young lord
+இ|M|S|Ilavarasan|இளவரசன்|इलवरसन|A young prince
+இ|M|S|Inbasekaran|இன்பசேகரன்|इन्बशेखरन|A lord of joy
+இ|M|N|Ivaan|இவான்|इवान|A gift of the divine
+இ|F|S|Inbavalli|இன்பவல்லி|इन्बवल्ली|A creeper of joy
+இ|F|S|Iyarkai|இயற்கை|इयरकै|Nature
+இ|F|S|Ilavenil|இளவேனில்|इलवेनिल|The spring season
+இ|F|N|Ishani|இஷானி|ईशानी|Goddess Parvati
+இ|F|N|Iha|இஹா|इहा|The earth
+உ|M|S|Ulagan|உலகன்|उलगन|Lord of the world
+உ|M|N|Utkarsh|உத்கர்ஷ்|उत्कर्ष|Excellence and growth
+உ|F|S|Ulagammal|உலகம்மாள்|उलगम्माल|Mother of the world
+உ|F|S|Uthami|உத்தமி|उत्तमि|A virtuous lady
+உ|F|S|Umaiyal|உமையாள்|उमैयाल|Goddess Parvati
+உ|F|N|Unnati|உன்னதி|उन्नति|Progress and growth
+உ|F|N|Uttara|உத்தரா|उत्तरा|The north, a noble lady
+எ|M|S|Ezhilvendhan|எழில்வேந்தன்|एझिलवेंदन|A handsome king
+எ|M|N|Ehsan|எஹ்சான்|एहसान|A kindness, a favour
+எ|F|S|Ezhilmangai|எழில்மங்கை|एझिलमंगै|A beautiful lady
+எ|F|N|Ehsana|எஹ்சானா|एहसाना|A kind lady
+க|M|S|Kandhan|கந்தன்|कंदन|Lord Murugan
+க|M|S|Kalyanam|கல்யாணம்|कल्याणम|Auspicious and blessed
+க|M|S|Kamalesh|கமலேஷ்|कमलेश|Lord of the lotus
+க|M|S|Kaviyarasan|கவியரசன்|कवियरसन|A king of poets
+க|M|N|Kartik|கர்த்திக்|कार्तिक|A bright star
+க|M|N|Kamlesh|கம்லேஷ்|कमलेश|Lord of the lotus
+க|F|S|Kanimozhi|கனிமொழி|कनिमोझि|Sweet speech
+க|F|S|Kayalvizhi|கயல்விழி|कयलविझि|Eyes like a fish
+க|F|S|Kalaimagal|கலைமகள்|कलैमगल|Goddess Saraswati
+க|F|N|Kashish|கஷிஷ்|कशिश|Attraction and grace
+கா|F|N|Kaamya|காம்யா|काम्या|Desirable and lovely
+கீ|M|N|Keertan|கீர்த்தன்|कीर्तन|A song of praise
+கீ|F|N|Keerthana|கீர்த்தனா|कीर्तना|A song of praise
+கு|F|N|Kunika|குனிகா|कुनिका|A flower
+கூ|M|S|Koovilan|கூவிலன்|कूविलन|A sweet singer
+கே|M|S|Kesavanathan|கேசவநாதன்|केशवनाथन|Lord Vishnu
+கே|F|S|Kesika|கேசிகா|केशिका|A fragrant flower
+கே|F|N|Keya|கேயா|केया|A gentle song
+கோ|M|N|Kovinthan|கோவிந்தன்|कोविंदन|Lord Krishna
+கோ|F|N|Komalika|கோமலிகா|कोमलिका|A tender flower
+ச|M|S|Sanmugam|சன்முகம்|सन्मुगम|Lord Murugan
+ச|M|S|Sathyanarayanan|சத்யநாராயணன்|सत्यनारायणन|Lord Vishnu
+ச|M|S|Sankaran|சங்கரன்|शंकरन|Lord Shiva
+ச|M|N|Sahil|சஹில்|साहिल|A guide, a shore
+ச|F|S|Santhoshi|சந்தோஷி|संतोषी|Joyful
+ச|F|S|Sarika|சரிகா|सरिका|A melodious bird
+ச|F|S|Sathya|சத்யா|सत्या|Truth
+ச|F|N|Charita|சரிதா|चरिता|A good character
+ஜ|F|N|Jasmin|ஜஸ்மின்|जैस्मिन|A jasmine flower
+ஜ|F|S|Jananya|ஜனன்யா|जनन्या|A motherly soul
+ஜா|M|S|Jaanagan|ஜானகன்|जानकन|A noble leader
+ஜா|M|N|Jaanak|ஜானக்|जानक|A protector
+ஜா|F|N|Jaanya|ஜான்யா|जान्या|A noble lady
+ஜீ|M|N|Jeevith|ஜீவித்|जीवित|Full of life
+டா|M|S|Daas|டாஸ்|दास|A devoted servant
+டா|F|S|Daarika|டாரிகா|दारिका|A giver
+டீ|M|S|Deeshan|டீஷன்|दीशन|A shining soul
+டீ|F|S|Deerthi|டீர்த்தி|दीर्थि|Fame and glory
+த|M|N|Tanush|தனுஷ்|तनुष|A bow
+த|F|N|Tanvi|தன்வி|तन्वी|A slender lady
+தா|M|S|Thaaragan|தாரகன்|तारकन|A star, a protector
+தா|F|S|Thaaragai|தாரகை|तारगै|A star
+தே|F|S|Thejaswini|தேஜஸ்வினி|तेजस्विनी|Full of light
+தே|F|N|Tejasvi|தேஜஸ்வி|तेजस्वी|Radiant
+நா|M|S|Naagan|நாகன்|नागन|The serpent lord
+நா|M|N|Naagraj|நாக்ராஜ்|नागराज|King of serpents
+நா|F|N|Naavya|நாவ்யா|नाव्या|Praise and eloquence
+நீ|M|S|Neelavan|நீலவன்|नीलवन|The blue-hued Lord
+நீ|F|N|Neelima|நீலிமா|नीलिमा|A blue glow
+பா|M|S|Baalaji|பாலஜி|बालाजी|Lord Venkateswara
+பா|M|N|Paanav|பானவ்|पानव|A prince
+பா|F|N|Paavana|பாவனா|पावना|Pure and holy
+பீ|M|N|Peer|பீர்|पीर|A respected guide
+பீ|F|N|Peelika|பீலிகா|पीलिका|A sweet song
+பூ|M|S|Poovendra|பூவேந்திரா|पूवेंद्रा|A king of flowers
+பூ|M|N|Punit|பூனித்|पुनीत|Pure and sacred
+பூ|F|N|Poornavi|பூர்ணவி|पूर्णवी|Complete and whole
+மா|M|S|Maaveeran|மாவீரன்|मावीरन|A great warrior
+மா|F|S|Maalavika|மாலவிகா|मालविका|A fragrant flower
+மா|F|N|Maadhvi|மாத்வி|माध्वी|Sweet and gentle
+மீ|M|S|Meegnan|மீஞ்ஞன்|मीज्ञन|A wise soul
+மீ|M|N|Mihir|மீஹிர்|मीहिर|A ray of light
+மூ|M|S|Moorthigan|மூர்த்திகன்|मूर्तिगन|One with a divine form
+மூ|F|S|Moovitha|மூவிதா|मूविता|A joyful lady
+மூ|F|N|Moorthika|மூர்த்திகா|मूर्तिका|A lovely form
+மே|M|S|Meyyappan|மேய்யப்பன்|मेय्यप्पन|A loving lord
+மே|F|S|Megalai|மேகலை|मेगलै|A cloud-like lady
+யா|M|N|Yaadav|யாதவ்|यादव|Lord Krishna
+யா|F|N|Yaashini|யாஷினி|याशिनी|A devotee
+யீ|M|N|Yeesh|யீஷ்|यीश|A glorious soul
+யீ|F|S|Yeeshai|யீஷை|यीशै|A glorious lady
+யீ|F|N|Yeesha|யீஷா|यीशा|A glorious lady
+யே|F|N|Yeshna|யேஷ்னா|येश्ना|A glorious lady
+யோ|M|N|Yogin|யோகின்|योगिन|A yogi
+யோ|F|N|Yogita|யோகிதா|योगिता|United and focused
+ரா|F|N|Raaji|ராஜி|राजी|A queen
+ரீ|M|S|Reethik|ரீதிக்|रीतिक|A graceful custom
+ரீ|F|S|Reeshma|ரீஷ்மா|रीष्मा|Silken
+ரீ|F|N|Reethi|ரீதி|रीति|A sacred custom
+ரூ|F|N|Roopa|ரூபா|रूपा|Beauty and form
+ரே|F|S|Rethika|ரேதிகா|रेतिका|A graceful lady
+ரோ|F|N|Roshika|ரோஷிகா|रोशिका|A shining lady
+லூ|M|N|Luv|லூவ்|लूव|A son of Rama
+லே|M|N|Leo|லேயோ|लेओ|A lion
+லே|F|N|Leona|லேயோனா|लेओना|A lioness
+லோ|F|N|Lopika|லோபிகா|लोपिका|A wise lady
+வீ|M|S|Veerabagu|வீரபாகு|वीरबागु|A brave lord
+வே|M|S|Vethan|வேதன்|वेदन|Lord of the Vedas
+ஷா|M|S|Shaanth|ஷாந்த்|शांत|Peaceful
+ஷா|F|N|Shaarika|ஷாரிகா|शारिका|A melodious bird
+ஹா|M|N|Haarit|ஹாரித்|हारित|A sage
+ஹீ|M|N|Heer|ஹீர்|हीर|A diamond
+ஹீ|F|N|Heera|ஹீரா|हीरा|A diamond
+ஹே|M|N|Heman|ஹேமன்|हेमन|Golden
+ஹே|F|N|Hemika|ஹேமிகா|हेमिका|Golden
+
+தோ|M|S|Thozhamai|தோழமை|तोझमै|Friendship
+வா|F|S|Vaanathi|வானதி|वानती|A lovely lady
+வே|F|N|Vedhavalli|வேதவல்லி|वेदवल्ली|Daughter of the Vedas
+கோ|M|N|Kovi|கோவி|कोवि|Lord Krishna
+ஜீ|F|N|Jeevani|ஜீவனி|जीवनी|Life-giving
+லீ|F|S|Leelavathi Devi|லீலாவதி தேவி|लीलावती देवी|A playful goddess
+உ|M|S|Uthayanallan|உதயநல்லான்|उदयनल्लान|A rising good soul

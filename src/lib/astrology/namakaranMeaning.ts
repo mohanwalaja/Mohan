@@ -2,7 +2,7 @@
  * Localized Tamil and Hindi text for the meaning line printed under every name
  * on page 2 of the Vedic Namakaran report.
  *
- * The curated translations live in data/namakaran_meaning_glossary.tsv and are
+ * The curated translations live in data/namakaran_meaning_glossary.psv and are
  * compiled into namakaranMeaningData.ts (scripts/build_namakaran_glossary.mjs).
  * The build fails if a single meaning of the shipped name bank is missing, so a
  * shipped name is never translated word by word. The word glossary below is

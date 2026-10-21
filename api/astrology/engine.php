@@ -3413,8 +3413,9 @@ class AstroEngine {
     }
 
     /**
-     * The curated 1366-name Namakaran bank (page 2 of the report), generated
-     * from data/namakaran_name_bank.tsv by scripts/build_namakaran_bank.mjs.
+     * The curated Namakaran bank (page 2 of the report), generated from
+     * data/namakaran_name_bank.psv by scripts/build_namakaran_bank.mjs. Every
+     * entry carries its own Tamil and Hindi spelling.
      * The TypeScript twin of this file is src/lib/astrology/namakaranNameBank.ts
      * and both carry the same content hash, so the live preview and the
      * emailed report can never drift apart.
@@ -3451,18 +3452,25 @@ class AstroEngine {
             if (count($names) >= $limit) {
                 break;
             }
+            // Bank entries are [roman, tamil, hindi, meaning]. The hand-written
+            // Tamil spelling is the authority: it must open with the exact pada
+            // letter, and it is printed as-is (never machine-transliterated).
             $name = (string) ($entry[0] ?? '');
-            if ($name === '' || !AstroReportViews::nameMatchesPada($name, $akshara)) {
+            $tamilName = (string) ($entry[1] ?? '');
+            $hindiName = (string) ($entry[2] ?? '');
+            if ($name === '' || $tamilName === '' || !AstroReportViews::tamilNameMatchesPada($tamilName, $akshara)) {
                 continue;
             }
-            $fingerprint = AstroReportViews::transliterateToTamil($name);
+            $fingerprint = $tamilName;
             if (isset($used[$fingerprint])) {
                 continue;
             }
             $used[$fingerprint] = true;
-            $meaning = (string) ($entry[1] ?? '');
+            $meaning = (string) ($entry[3] ?? '');
             $names[] = [
                 'name' => $name,
+                'nameTa' => $tamilName,
+                'nameHi' => $hindiName,
                 'meaning' => $meaning,
                 'meaningEn' => $meaning,
                 'meaningTa' => self::localizeNamakaranMeaning($meaning, 'ta'),

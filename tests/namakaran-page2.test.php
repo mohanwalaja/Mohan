@@ -69,7 +69,7 @@ foreach ($stars as [$label, $index, $gender]) {
             checkNamakaran(!isset($seen[$key]), "PHP never repeats \"{$entry['name']}\" twice on the {$label} page");
             checkNamakaran(
                 $entry['sourceAksharaTa'] === $column['soundTa']
-                && AstroReportViews::nameMatchesPada($entry['name'], $column['soundTa']),
+                && AstroReportViews::tamilNameMatchesPada((string) $entry['nameTa'], $column['soundTa']),
                 "PHP only suggests exact {$column['soundTa']} names (\"{$entry['name']}\")"
             );
             checkNamakaran(trim($entry['meaning']) !== '', "PHP prints a meaning for \"{$entry['name']}\"");
@@ -92,7 +92,7 @@ foreach ($letters as $star) {
             }
             foreach (array_merge($column['south'], $column['north']) as $entry) {
                 checkNamakaran(
-                    AstroReportViews::nameMatchesPada($entry['name'], $column['soundTa']),
+                    AstroReportViews::tamilNameMatchesPada((string) $entry['nameTa'], $column['soundTa']),
                     "PHP never fills {$column['soundTa']} with an alternative name"
                 );
             }
@@ -150,27 +150,29 @@ foreach ([['en', 'en'], ['ta', 'ta'], ['hi', 'hi']] as [$lang]) {
             checkNamakaran(strpos($html, $column['soundTa']) !== false, "PHP {$lang} {$gender} page 2 prints pada {$column['soundTa']}");
             foreach (array_merge($column['south'], $column['north']) as $entry) {
                 checkNamakaran(
-                    AstroReportViews::nameMatchesPada($entry['name'], $column['soundTa']),
+                    AstroReportViews::tamilNameMatchesPada((string) $entry['nameTa'], $column['soundTa']),
                     "PHP {$lang} {$gender} page 2 only uses the exact {$column['soundTa']} sound"
                 );
                 $expectedName = $lang === 'ta'
-                    ? AstroReportViews::transliterateToTamil($entry['name'])
-                    : ($lang === 'hi' ? AstroReportViews::transliterateToHindi($entry['name']) : $entry['name']);
+                    ? (string) $entry['nameTa']
+                    : ($lang === 'hi' ? (string) $entry['nameHi'] : $entry['name']);
                 checkNamakaran(strpos($html, $expectedName) !== false, "PHP {$lang} {$gender} page 2 prints {$expectedName}");
             }
         }
         $firstSouth = null;
+        $firstSouthEntry = null;
         foreach ($columns as $column) {
             if (!empty($column['south'])) {
                 $firstSouth = $column['south'][0]['name'];
+                $firstSouthEntry = $column['south'][0];
                 break;
             }
         }
         if ($firstSouth !== null) {
             if ($lang === 'ta') {
-                $expectedFirst = AstroReportViews::transliterateToTamil($firstSouth);
+                $expectedFirst = (string) $firstSouthEntry['nameTa'];
             } elseif ($lang === 'hi') {
-                $expectedFirst = AstroReportViews::transliterateToHindi($firstSouth);
+                $expectedFirst = (string) $firstSouthEntry['nameHi'];
             } else {
                 $expectedFirst = $firstSouth;
             }
@@ -192,7 +194,7 @@ $columns = AstroEngine::getBabyNameSuggestionsByPada($x['padas'], 'M', 15);
 foreach ($columns as $column) {
     foreach (array_merge($column['south'], $column['north']) as $entry) {
         checkNamakaran(
-            AstroReportViews::nameMatchesPada($entry['name'], $column['soundTa']),
+            AstroReportViews::tamilNameMatchesPada((string) $entry['nameTa'], $column['soundTa']),
             "PHP leaves no related-sound suggestion under {$column['soundTa']}"
         );
     }
@@ -229,7 +231,7 @@ checkNamakaran(abs(floatval($heightMatch[1] ?? 0) * $expectedDenseRows - 186) < 
 
 // ── 5. The meaning under every name is a curated translation ───────────────
 // Page 2 must never fall back to word-by-word output for a shipped name: the
-// Tamil and Hindi meanings come from data/namakaran_meaning_glossary.tsv, and
+// Tamil and Hindi meanings come from data/namakaran_meaning_glossary.psv, and
 // the shipped name bank is fully covered by it.
 $glossary = astro_namakaran_meaning_glossary();
 checkNamakaran(count($glossary) > 1000, 'PHP loads the full curated meaning glossary (' . count($glossary) . ' meanings)');
@@ -244,7 +246,7 @@ checkNamakaran(
 );
 
 $untranslated = [];
-foreach (file(__DIR__ . '/../data/namakaran_name_bank.tsv') as $bankLine) {
+foreach (file(__DIR__ . '/../data/namakaran_name_bank.psv') as $bankLine) {
     $bankLine = trim($bankLine);
     if ($bankLine === '' || $bankLine[0] === '#') continue;
     $cells = explode("\t", $bankLine);
@@ -393,11 +395,11 @@ foreach ($sample['nameSuggestions'] as $column) {
     $seen = [];
     foreach (array_merge($column['south'], $column['north']) as $entry) {
         $sampleNameCount++;
-        $printed = AstroReportViews::transliterateToTamil($entry['name']);
+        $printed = (string) $entry['nameTa'];
         checkNamakaran(!isset($seen[$printed]), "PHP sample has no display duplicate: {$printed}");
         checkNamakaran(
             ($entry['sourceAksharaTa'] ?? '') === $column['soundTa']
-            && AstroReportViews::nameMatchesPada($entry['name'], $column['soundTa']),
+            && AstroReportViews::tamilNameMatchesPada($printed, $column['soundTa']),
             "PHP sample only suggests the exact {$column['soundTa']} sound"
         );
         checkNamakaran(strpos($samplePage2, $printed) !== false, "PHP page 2 prints exact name {$printed}");

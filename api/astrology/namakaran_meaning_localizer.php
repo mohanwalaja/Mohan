@@ -4,7 +4,7 @@
  * report for the language the customer ordered in.
  *
  * The curated English => [Tamil, Hindi] glossary lives in the generated
- * file namakaran_meanings.php (source of truth: data/namakaran_meaning_glossary.tsv,
+ * file namakaran_meanings.php (source of truth: data/namakaran_meaning_glossary.psv,
  * generator: scripts/build_namakaran_glossary.mjs). Every meaning of the
  * shipped name bank is covered there, so a shipped name is never translated
  * word by word. The word glossary below is only a safety net for an older or
