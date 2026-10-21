@@ -6,6 +6,7 @@ import { api } from '../../services/api';
 import { CurrencyCode, Order } from '../../types';
 import { PaymentMethodSelector, PAYMENT_METHOD_OPTIONS } from './PaymentMethodSelector';
 import { PaymentGatewayCheckoutBox } from './PaymentGatewayCheckoutBox';
+import { HowPaymentWorksModal } from './HowPaymentWorksModal';
 import { CURRENCY_INFO } from '../../services/pricing';
 import { MultiPersonCheckout } from './MultiPersonCheckout';
 import {
@@ -494,9 +495,14 @@ export const UnifiedCheckoutModal: React.FC<UnifiedCheckoutModalProps> = ({ onNa
                     </div>
                   )}
 
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    2. Choose Your Payment Method
-                  </h3>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      2. Choose Your Payment Method
+                    </h3>
+                    {/* Owner request (2026-10-22): "how payment works" one tap
+                        away at payment time — any currency, any country. */}
+                    <HowPaymentWorksModal />
+                  </div>
 
                   <PaymentMethodSelector
                     variant="full"

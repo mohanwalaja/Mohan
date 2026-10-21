@@ -31,6 +31,7 @@ import { useCart } from '../../context/CartContext';
 import { api } from '../../services/api';
 import { CURRENCY_INFO, getServicePrices } from '../../services/pricing';
 import { ServicePromiseStrip } from '../common/ServicePromiseStrip';
+import { HowPaymentWorksModal } from './HowPaymentWorksModal';
 import { CHAT_INCLUDED_LINE } from '../../services/servicePromise';
 import { checkoutPayloadProblem } from '../../services/checkoutReadiness';
 
@@ -478,6 +479,13 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
                 ) : (
                   /* Paid Options Card */
                   <div className="space-y-4">
+                    {/* Owner request (2026-10-22): a customer reading a USD price
+                        from Australia, NZ, Canada … must be one tap away from
+                        "you pay in your own currency, any PayPal-enabled card".
+                        The popup never opens by itself and never blocks paying. */}
+                    <div className="flex justify-end">
+                      <HowPaymentWorksModal />
+                    </div>
                     {/* Method Selector Tabs */}
                     <div className="grid grid-cols-3 gap-2">
                       <button

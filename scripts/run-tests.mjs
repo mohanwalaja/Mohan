@@ -259,7 +259,11 @@ const testFiles = [
   // row, while every status banner and button stays visible. Static ordering
   // contract, because hiding an actionable banner behind a toggle is the failure
   // mode that matters.
-  'tests/order-card-collapse.test.ts'
+  'tests/order-card-collapse.test.ts',
+  // Payment trust popup (owner request 2026-10-22): one tap at payment time
+  // explains own-currency billing, PayPal-enabled cards without an account,
+  // and card safety; top-right close, then continue to payment.
+  'tests/how-payment-works.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 
