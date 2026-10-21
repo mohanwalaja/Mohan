@@ -87,6 +87,19 @@ const HOST_REJECTED_TOO_LARGE_MESSAGE =
   'The hosting server rejected the request as too large (HTTP 413) before the API could read it. ' +
   "Nothing was saved or emailed; check the host's request-body limit (LiteSpeed / ModSecurity / proxy).";
 
+/**
+ * The frozen report-source route could not be reached at all: every URL form
+ * answered HTML (an older /api folder on the host, or the /api rewrite is not
+ * applied). That is a server/deployment problem, NOT "your report is not
+ * ready" — the two must never read the same to a customer who paid.
+ */
+export const REPORT_SOURCE_ROUTE_UNAVAILABLE_MESSAGE =
+  'The report download route is not reachable on this server right now. Your emailed PDF is still valid — ' +
+  'please try again shortly, or contact support with your order number.';
+
+/** The route answered, but this report has nothing to download yet. */
+export const REPORT_SOURCE_NOT_AVAILABLE_MESSAGE = 'This report is not available for download yet.';
+
 // Resilient JSON parser that gracefully handles server errors, HTML 404/500 pages, and empty responses without throwing JSON SyntaxError
 export async function safeJson<T = any>(res: Response): Promise<T> {
   try {
@@ -1131,6 +1144,17 @@ export const api = {
    * while `report_snapshot` is written once at order creation. This fetches
    * that snapshot body for ONE delivered report of the signed-in customer.
    * The server never recalculates it.
+   *
+   * RESILIENCE (customer bug, 2026-10-21 — "download the report from user
+   * profile can't download"): this was the ONLY customer call with a single
+   * URL. The pretty route depends on the host applying /api/.htaccess
+   * (`^services/(.*)$` → services/index.php); when that rewrite is missing, or
+   * an older /api folder is deployed, the server answers an HTML 404 and the
+   * customer saw a spinner and no file. So it now tries the same three URL
+   * forms every other customer call uses, and it separates two very different
+   * failures: the route being unreachable (REPORT_SOURCE_ROUTE_UNAVAILABLE_
+   * MESSAGE) from the route answering "not delivered / not yours / no
+   * snapshot" (the server's own message, never retried elsewhere).
    */
   async getMyOrderReportSnapshot(
     orderId: string,
@@ -1146,14 +1170,39 @@ export const api = {
   }> {
     const apiBase = getApiBase();
     const query = itemId ? `?itemId=${encodeURIComponent(String(itemId))}` : '';
-    const res = await apiFetch(
-      `${apiBase}/services/orders/${encodeURIComponent(orderId)}/report-snapshot${query}`
-    );
-    const data = await safeJson<any>(res);
-    if (!res.ok || !data?.success || !data?.result) {
-      throw new Error(data?.message || 'This report is not available for download yet.');
+    const itemParam = itemId ? `&itemId=${encodeURIComponent(String(itemId))}` : '';
+    const endpoints = [
+      `${apiBase}/services/orders/${encodeURIComponent(orderId)}/report-snapshot${query}`,
+      `${apiBase}/services.php?action=download-order-report-source&id=${encodeURIComponent(orderId)}${itemParam}`,
+      `${apiBase}/services/index.php?action=download-order-report-source&id=${encodeURIComponent(orderId)}${itemParam}`
+    ];
+
+    for (const endpoint of endpoints) {
+      let res: Response;
+      try {
+        res = await apiFetch(endpoint);
+      } catch (error: any) {
+        // Offline / network failure: the next URL form cannot help either, but
+        // keep the loop shape identical to the other customer calls.
+        throw new Error(error?.message || REPORT_SOURCE_NOT_AVAILABLE_MESSAGE);
+      }
+      const data = await safeJson<any>(res);
+      if (data?.success && data?.result) return data;
+
+      const message = String(data?.message || '');
+      // Only a MISSING route falls through to the next URL form. A real answer
+      // from the route — 401, 404 (not your order), 409 (not delivered yet),
+      // 429 (rate limited) — is final and must reach the customer verbatim.
+      const routeMissing =
+        isUnavailableApiEndpoint(res, data) || /not in JSON format/i.test(message);
+      if (!routeMissing) {
+        throw new Error(message || REPORT_SOURCE_NOT_AVAILABLE_MESSAGE);
+      }
     }
-    return data;
+
+    // Every URL form answered HTML / "endpoint not found": the route itself is
+    // not deployed on this host. Never report that as "not available yet".
+    throw new Error(REPORT_SOURCE_ROUTE_UNAVAILABLE_MESSAGE);
   },
 
   // Admin APIs

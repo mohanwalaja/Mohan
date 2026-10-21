@@ -57,6 +57,16 @@ const testFiles = [
   // document), with no server-side renderer left to substitute a thinner one.
   // Also pins the profile copy the customer asked to remove.
   'tests/customer-report-download-quality.test.ts',
+  // Same download, but does it DELIVER? Customer bug 2026-10-21 ("download the
+  // report from user profile can't download", iPhone Safari: spinner, then
+  // nothing). Pins the four defects that produced a silent spinner — the one
+  // customer API call with no URL fallback, unbounded rAF waits that also
+  // blocked the serialised render queue, a blob URL revoked 1.5 s after the
+  // click, and a scripted click iOS drops once the gesture has expired — and
+  // EXECUTES the fixes (a never-firing rAF, a fake browser taking the file, the
+  // API fallbacks against a stub server) while re-asserting that print quality
+  // did not move to get there.
+  'tests/customer-report-download-delivery.test.ts',
   // The customer-facing half of the same flow: while a download runs, the
   // dashboard and the preview/sample modal say "Downloading…", never
   // "Rendering…"/"Preparing…" (the file is the preview, not a new render).

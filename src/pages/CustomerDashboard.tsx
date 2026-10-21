@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   User,
   MapPin,
@@ -59,6 +59,56 @@ import {
   normalizePersonName,
   setPendingOrderFor
 } from '../utils/birthDetails';
+
+/**
+ * Report download copy and limits (customer bug, 2026-10-21: "download the
+ * report from user profile can't download" — iPhone/iPad Safari, spinner and
+ * then nothing).
+ *
+ * The download itself is unchanged in substance: the frozen snapshot, the same
+ * HTML builders and the same print-density capture that produced the emailed
+ * PDF. What was missing was honesty on a device that could not finish — a
+ * button that spun forever, a file the browser silently refused to take, and no
+ * way for the customer to get the bytes they had paid for.
+ */
+
+/**
+ * How long one download may run before the customer is told it stalled.
+ *
+ * Generous on purpose: a phone fetching the ~780 KB engine over mobile data and
+ * then capturing a ten-page report at 211 dpi can legitimately take a couple of
+ * minutes. The guard exists to end a SILENT wait, not to interrupt a slow one.
+ */
+const DOWNLOAD_STALL_GUARD_MS = 150_000;
+
+const REPORT_READY_MESSAGE =
+  'Report downloaded — the same print-quality PDF that was emailed to you. ' +
+  'If the file did not open, tap "Save the PDF" below.';
+
+const DOWNLOAD_STALLED_MESSAGE =
+  'This download did not finish on this device, so the button was freed instead of spinning forever. ' +
+  'Nothing was charged and the PDF in your email is still valid. Close other tabs and tap Download Report ' +
+  'again, or open My Orders on a computer — a desktop browser always saves the same print-quality file.';
+
+/**
+ * Why a capture can fail on a phone and what to do about it. iOS gets its own
+ * wording because the usual cause there is canvas memory: Safari gives a web
+ * page far less than a desktop browser, and a print-density A4 raster is ~17 MB
+ * before encoding.
+ */
+const deviceCaptureFailureMessage = (): string => {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+  const isIos =
+    /iP(hone|ad|od)/i.test(ua) ||
+    // iPadOS 13+ reports itself as a Mac; touch points tell them apart.
+    (/Macintosh/i.test(ua) && typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 1);
+  return isIos
+    ? 'Your iPhone or iPad could not render the report at print quality — Safari gives a page much less memory ' +
+      'than a computer, and every A4 page is captured at 200 dpi. Nothing was saved and nothing was charged. ' +
+      'Close other Safari tabs (or restart Safari) and tap Download Report again; opening My Orders on a ' +
+      'computer always works, and the PDF in your email is the same file.'
+    : 'This device could not render the report at print quality. Please retry on a desktop browser — your emailed copy remains valid.';
+};
 
 interface CustomerDashboardProps {
   onNavigate: (route: string) => void;
@@ -135,6 +185,22 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   // Frozen report download state (keyed per order / per order item).
   const [downloadingKey, setDownloadingKey] = useState('');
   const [downloadFeedback, setDownloadFeedback] = useState<{ orderId: string; type: 'success' | 'error'; message: string } | null>(null);
+  /**
+   * The rendered report the customer can still take with a tap.
+   *
+   * WHY THIS EXISTS (customer bug, 2026-10-21 — "download the report from user
+   * profile can't download", iPhone/iPad Safari): a print-density capture takes
+   * tens of seconds, and by the time it finishes the tap that started it is no
+   * longer a user gesture. Desktop browsers still honour the scripted
+   * `anchor.click()`; iOS Safari silently drops it, so the customer saw the
+   * spinner stop, no file, and no error. The blob URL is therefore kept and
+   * offered as a REAL link: a fresh tap always downloads, on every device, and
+   * it is the identical print-quality file.
+   */
+  const [savedReport, setSavedReport] = useState<{ orderId: string; url: string; fileName: string } | null>(null);
+  // Set once the deferred PDF engine is loaded: releases our blob URLs. The
+  // dashboard may never import the exporter statically (initial-js-budget).
+  const releaseSavedPdfRef = useRef<(() => void) | null>(null);
 
   // WhatsApp & Viber alert state: one saved number, verified per app.
   const [chatDelivery, setChatDelivery] = useState<ChatDeliveryState | null>(null);
@@ -309,6 +375,14 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   useEffect(() => {
     if (user?.id) fetchMyReviews();
   }, [user?.id]);
+
+  // Leaving the dashboard must not strand the rendered report's blob URL. The
+  // release function arrives with the deferred PDF engine (the page may never
+  // import the exporter statically), so it is called through the ref.
+  useEffect(() => () => {
+    releaseSavedPdfRef.current?.();
+    releaseSavedPdfRef.current = null;
+  }, []);
 
   // Open the invited order's review form once the server has said which
   // orders this account may review; explain when it is not one of them.
@@ -534,69 +608,108 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
     const key = item ? `${order.id}:${item.id}` : order.id;
     setDownloadingKey(key);
     setDownloadFeedback(null);
+    // One saved file at a time: release the previous capture's blob URL.
+    releaseSavedPdfRef.current?.();
+    setSavedReport(null);
     const personPart = item?.personName ? `_${item.personName.replace(/[^a-zA-Z0-9]+/g, '_')}` : '';
     const fileName = `ASTRO_SIVAM_Report_${order.orderNumber}${personPart}.pdf`;
     const language = normalizeReportLanguage(item?.language || order.language);
-    try {
-      // The PDF engine (jspdf + html2canvas, ~780 KB) is fetched HERE, on the
-      // click that needs it — the dashboard itself never downloads it.
-      const {
-        buildOrderReportHtml,
-        mergeOrderPayloadIntoResult,
-        downloadPaidReportPdf
-      } = await loadPdfEngine();
-      // The frozen snapshot body is fetched only when Download is clicked and
-      // only for the signed-in owner — the orders list never carries it.
-      const frozen = await api.getMyOrderReportSnapshot(order.id, item?.id);
-      // One-chart view of the item, exactly like the admin preview and the
-      // email render build it. Kept local so the dashboard never pulls the
-      // order-items module (and its invoice builders) into this route chunk.
-      const chartOrder: Order = item
-        ? {
-            ...order,
-            serviceType: item.serviceCode,
-            language,
-            inputPayload: item.inputPayload || {},
-            calculatedResult: item.calculatedResult,
-            amount: item.unitPrice
-          }
-        : { ...order, language };
-      const result = { ...(frozen.result || {}) };
-      // A legacy snapshot without its own stamp still prints the frozen
-      // preparation date, never today's date.
-      if (!result.generatedAt && frozen.preparedAt) {
-        result.generatedAt = frozen.preparedAt;
+
+    /**
+     * THE STALL GUARD.
+     *
+     * The reported bug was a button that said "Downloading…" and then produced
+     * nothing: no file, no message. Every coded failure already sets a visible
+     * message, so a silent spinner means the work never settled — a suspended
+     * tab, a canvas the device could not allocate, a browser that discarded the
+     * page. The guard caps how long the customer can be left guessing: when it
+     * fires the button frees up and says exactly what to do. If the capture
+     * does finish afterwards, the success message and the save link replace it.
+     */
+    let stallTimer: ReturnType<typeof setTimeout> | undefined;
+    const stalled = new Promise<'stalled'>(resolve => {
+      stallTimer = setTimeout(() => resolve('stalled'), DOWNLOAD_STALL_GUARD_MS);
+    });
+
+    const renderWork = (async (): Promise<'finished'> => {
+      try {
+        // The PDF engine (jspdf + html2canvas, ~780 KB) is fetched HERE, on the
+        // click that needs it — the dashboard itself never downloads it.
+        const engine = await loadPdfEngine();
+        const {
+          buildOrderReportHtml,
+          mergeOrderPayloadIntoResult,
+          downloadPaidReportPdf
+        } = engine;
+        releaseSavedPdfRef.current = engine.releaseSavedPdfUrls;
+        // The frozen snapshot body is fetched only when Download is clicked and
+        // only for the signed-in owner — the orders list never carries it.
+        const frozen = await api.getMyOrderReportSnapshot(order.id, item?.id);
+        // One-chart view of the item, exactly like the admin preview and the
+        // email render build it. Kept local so the dashboard never pulls the
+        // order-items module (and its invoice builders) into this route chunk.
+        const chartOrder: Order = item
+          ? {
+              ...order,
+              serviceType: item.serviceCode,
+              language,
+              inputPayload: item.inputPayload || {},
+              calculatedResult: item.calculatedResult,
+              amount: item.unitPrice
+            }
+          : { ...order, language };
+        const result = { ...(frozen.result || {}) };
+        // A legacy snapshot without its own stamp still prints the frozen
+        // preparation date, never today's date.
+        if (!result.generatedAt && frozen.preparedAt) {
+          result.generatedAt = frozen.preparedAt;
+        }
+        const reportHtml = buildOrderReportHtml(
+          chartOrder,
+          mergeOrderPayloadIntoResult(chartOrder, result),
+          language
+        );
+        if (!reportHtml) {
+          throw new Error('No report template exists for this report.');
+        }
+        const saved = await downloadPaidReportPdf(reportHtml, fileName);
+        // Keep the rendered bytes reachable: iOS Safari drops a scripted click
+        // this late, so the customer also gets a real link to tap. Same file.
+        setSavedReport({ orderId: order.id, url: saved.objectUrl, fileName: saved.fileName });
+        // There is only one quality: the file is the emailed document.
+        setDownloadFeedback({
+          orderId: order.id,
+          type: 'success',
+          message: REPORT_READY_MESSAGE
+        });
+      } catch (renderError: any) {
+        // The browser is the ONLY renderer now (the server-side mPDF path was
+        // removed). Never download a freshly generated substitute: surface the
+        // concrete reason — the report is not available yet, or this device could
+        // not capture the print-resolution canvas.
+        const message = renderError?.message || '';
+        setDownloadFeedback({
+          orderId: order.id,
+          type: 'error',
+          message: message === PDF_CAPTURE_ERROR
+            ? deviceCaptureFailureMessage()
+            : message || 'This report is not available for download yet.'
+        });
       }
-      const reportHtml = buildOrderReportHtml(
-        chartOrder,
-        mergeOrderPayloadIntoResult(chartOrder, result),
-        language
-      );
-      if (!reportHtml) {
-        throw new Error('No report template exists for this report.');
-      }
-      await downloadPaidReportPdf(reportHtml, fileName);
-      // There is only one quality: the file is the emailed document.
-      setDownloadFeedback({
-        orderId: order.id,
-        type: 'success',
-        message: 'Report downloaded — the same print-quality PDF that was emailed to you.'
-      });
-    } catch (renderError: any) {
-      // The browser is the ONLY renderer now (the server-side mPDF path was
-      // removed). Never download a freshly generated substitute: surface the
-      // concrete reason — the report is not available yet, or this device could
-      // not capture the print-resolution canvas.
-      const message = renderError?.message || '';
+      return 'finished';
+    })();
+
+    const outcome = await Promise.race([renderWork, stalled]);
+    if (stallTimer) clearTimeout(stallTimer);
+    // Free the button in BOTH cases: a finished render, or a stalled one the
+    // customer must be able to retry.
+    setDownloadingKey('');
+    if (outcome === 'stalled') {
       setDownloadFeedback({
         orderId: order.id,
         type: 'error',
-        message: message === PDF_CAPTURE_ERROR
-          ? 'This device could not render the report at print quality. Please retry on a desktop browser — your emailed copy remains valid.'
-          : message || 'This report is not available for download yet.'
+        message: DOWNLOAD_STALLED_MESSAGE
       });
-    } finally {
-      setDownloadingKey('');
     }
   };
 
@@ -1644,6 +1757,38 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                               : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
                             <span>{downloadFeedback.message}</span>
+                          </div>
+                        )}
+                        {/* The rendered file, as a REAL link the customer taps.
+
+                            A scripted anchor click only counts as a download
+                            while the gesture that started it is still alive;
+                            after a tens-of-seconds print capture it is not, and
+                            iOS Safari then drops it without a word. This link is
+                            the same bytes at the same print density — the tap is
+                            a fresh gesture every browser honours. */}
+                        {savedReport?.orderId === order.id && (
+                          <div
+                            data-saved-report={order.id}
+                            className="p-3 rounded-xl border border-emerald-800/70 bg-emerald-950/40 space-y-2"
+                          >
+                            <p className="text-[11.5px] text-emerald-200 break-all">
+                              <FileText className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
+                              {savedReport.fileName}
+                            </p>
+                            <a
+                              href={savedReport.url}
+                              download={savedReport.fileName}
+                              rel="noopener"
+                              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm active:scale-95 transition-all"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Save the PDF</span>
+                            </a>
+                            <p className="text-[11px] text-emerald-300/70">
+                              On iPhone and iPad this opens the report in Safari — tap the Share icon, then
+                              “Save to Files”.
+                            </p>
                           </div>
                         )}
                       </div>
