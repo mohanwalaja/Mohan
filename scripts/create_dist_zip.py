@@ -52,8 +52,10 @@ def create_dist_zip():
         # 1. Add all optimized static frontend files from dist/ to root of zip
         if os.path.exists(dist_dir):
             for root, dirs, files in os.walk(dist_dir):
-                # Filter out excluded directories and Vite 6+ .vite/ cache
-                dirs[:] = [d for d in dirs if d not in excluded_dirs and not d.startswith('.')]
+                # Filter out excluded directories and Vite 6+ .vite/ cache —
+                # but keep .well-known/: RFC 9116 security.txt must ship at
+                # /.well-known/security.txt on the live host.
+                dirs[:] = [d for d in dirs if d not in excluded_dirs and (d == '.well-known' or not d.startswith('.'))]
                 for file in files:
                     file_path = os.path.join(root, file)
                     if file in excluded_files or file.endswith('.map'):
@@ -145,7 +147,7 @@ def create_dist_zip():
 # Enforced by tests/dist-shape.test.ts and asserted again in CI's zip check.
 # ---------------------------------------------------------------------------
 EXPECTED_DIST_TOP_DIRS = {'assets', 'audio', 'pages', 'video-scenes'}
-EXPECTED_ZIP_TOP_DIRS = {'api', 'assets', 'audio', 'docs', 'knowledge', 'pages', 'scripts', 'src', 'video-scenes'}
+EXPECTED_ZIP_TOP_DIRS = {'.well-known', 'api', 'assets', 'audio', 'docs', 'knowledge', 'pages', 'scripts', 'src', 'video-scenes'}
 
 
 def assert_deploy_shape(dist_dir='dist', zip_name='dist.zip'):

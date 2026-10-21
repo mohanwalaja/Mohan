@@ -269,7 +269,10 @@ const testFiles = [
   // before reaching the content. The skip link must be the first focusable
   // element on every route, must target the real <main> id, and must be a
   // readable, opaque panel when focused.
-  'tests/a11y-skip-link-contract.test.ts'
+  'tests/a11y-skip-link-contract.test.ts',
+  // RFC 9116: /.well-known/security.txt with a contact and a future Expires,
+  // served as text/plain and shipped inside the deploy zip.
+  'tests/security-txt.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 
