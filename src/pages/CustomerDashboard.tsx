@@ -184,6 +184,11 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
   // Frozen report download state (keyed per order / per order item).
   const [downloadingKey, setDownloadingKey] = useState('');
+  // Owner request (2026-10-21): the My Orders cards must stay small. A collapsed
+  // card shows the name and the order badges only; the birth details and the
+  // payment block are one tap away behind the name row. Keyed by order id so
+  // expanding one card never opens its neighbours.
+  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
   const [downloadFeedback, setDownloadFeedback] = useState<{ orderId: string; type: 'success' | 'error'; message: string } | null>(null);
   /**
    * The rendered report the customer can still take with a tap.
@@ -1580,8 +1585,39 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                       )}
                     </div>
 
-                    {/* Middle: Complete Order & User Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Owner request (2026-10-21): collapsed, a card is one line of
+                        identity — the name and gender, under the order badges.
+                        Tapping it expands the birth details and the payment block;
+                        nothing actionable (status banner, buttons, downloads) is
+                        ever hidden behind it. */}
+                    <button
+                      type="button"
+                      onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
+                      aria-expanded={!!expandedOrders[order.id]}
+                      aria-controls={`order-details-${order.id}`}
+                      className="w-full flex items-center justify-between gap-3 rounded-xl px-1.5 py-1 text-left cursor-pointer hover:bg-slate-800/40 transition-colors"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-sm font-bold text-white">
+                          {order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl)
+                            ? `${boy?.name || 'Groom'} & ${girl?.name || 'Bride'}`
+                            : personName}
+                        </span>
+                        {gender && order.serviceType !== 'MARRIAGE_COMPATIBILITY' && (
+                          <span className="shrink-0 rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-300">
+                            {gender === 'M' || gender === 'Male' ? 'Male' : 'Female'}
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold text-amber-300">
+                        {expandedOrders[order.id] ? 'Hide details' : 'View details'}
+                        <ChevronDown className={`h-4 w-4 transition-transform ${expandedOrders[order.id] ? 'rotate-180' : ''}`} />
+                      </span>
+                    </button>
+
+                    {/* Middle: Complete Order & User Details (expanded only) */}
+                    {expandedOrders[order.id] && (
+                    <div id={`order-details-${order.id}`} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       
                       {/* Left Column: User & Astrological Input Details */}
                       <div className="space-y-2 bg-slate-950/50 rounded-xl p-3.5 border border-slate-800/60">
@@ -1602,16 +1638,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                           </div>
                         ) : (
                           <div className="space-y-1.5 text-xs">
-                            <div className="text-sm font-bold text-white flex items-center gap-2">
-                              <span>{personName}</span>
-                              {gender && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-normal">
-                                  {gender === 'M' || gender === 'Male' ? 'Male' : 'Female'}
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-300 text-[11.5px] pt-1">
+                            {/* The name and gender live in the collapsed header now
+                                (owner request, 2026-10-21); repeating them here would
+                                say the same thing twice on one card. */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-300 text-[11.5px]">
                               {dob && (
                                 <div>
                                   <span className="text-slate-400 font-medium">Date of Birth:</span>{' '}
@@ -1676,6 +1706,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                         </div>
                       </div>
                     </div>
+                    )}
 
                     {/* Bottom Row: Delivery Status & Conditional Email Retry */}
                     <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-slate-800/80">

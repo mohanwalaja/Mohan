@@ -253,7 +253,13 @@ const testFiles = [
   // (never a report, never an invoice), and a cron re-run or a second press of
   // the admin button messages nobody twice. Includes real PHP execution under
   // PHP-WASM (date rules, dedupe, dry run, per-run cap, gateway failure).
-  'tests/birthday-wishes.test.ts'
+  'tests/birthday-wishes.test.ts',
+  // My Orders cards (owner request 2026-10-21): collapsed shows the badges and
+  // the name only; birth details and payment info sit behind a tap on the name
+  // row, while every status banner and button stays visible. Static ordering
+  // contract, because hiding an actionable banner behind a toggle is the failure
+  // mode that matters.
+  'tests/order-card-collapse.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 
