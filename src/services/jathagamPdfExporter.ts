@@ -319,14 +319,58 @@ export function pageBudgetBytes(pageCount: number, documentBudgetBytes = REPORT_
 
 let _renderQueue: Promise<void> = Promise.resolve();
 
+/**
+ * A capture is serialised so two heavy renders can never fight for canvas
+ * memory — but a task that never settles must not own the queue forever.
+ * iOS Safari stops rAF (and can suspend JS outright) the moment the tab goes
+ * to the background or the screen locks; a customer who locked their phone
+ * mid-download came back to a button that spun silently on EVERY later click,
+ * because the stuck task was still at the head of this queue. The breaker
+ * releases the queue after RENDER_TASK_DEADLOCK_MS; the stuck task's own
+ * promise still resolves or rejects for whoever awaited it.
+ */
+const RENDER_TASK_DEADLOCK_MS = 3 * 60_000;
+
 /** Runs `task` after every previously queued render has finished. */
 function enqueueRender<T>(task: () => Promise<T>): Promise<T> {
   const resultPromise = _renderQueue.then(task, task);
-  _renderQueue = resultPromise.then(
-    () => {},
-    () => {}
-  );
+  _renderQueue = Promise.race([
+    resultPromise.then(
+      () => {},
+      () => {}
+    ),
+    new Promise<void>(resolve => {
+      setTimeout(resolve, RENDER_TASK_DEADLOCK_MS);
+    })
+  ]);
   return resultPromise;
+}
+
+/**
+ * Waits for the browser to paint, but BOUNDED.
+ *
+ * A bare `requestAnimationFrame(() => requestAnimationFrame(...))` never fires
+ * in a hidden/backgrounded/suspended tab — exactly what happens on an iPhone
+ * when the screen locks or the user swipes away mid-capture. Every such wait
+ * in this file is now raced against a timer, so the render proceeds with the
+ * layout the browser already has instead of hanging the download forever.
+ */
+export function waitForPaint(timeoutMs = 1500): Promise<void> {
+  return new Promise<void>(resolve => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve();
+    };
+    const timer = setTimeout(finish, timeoutMs);
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => requestAnimationFrame(finish));
+    } else {
+      setTimeout(finish, 32);
+    }
+  });
 }
 
 /**
@@ -534,9 +578,9 @@ export async function renderPageElementsToPdfDoc(
     ]);
     fitJathagamLifeCardText(ownerDoc);
     fitJathagamSummaryText(ownerDoc);
-    await new Promise<void>(resolve => {
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-    });
+    // Bounded: rAF never fires in a suspended/background tab (iOS), which used
+    // to hang this render — and with it the whole serialised queue — forever.
+    await waitForPaint();
 
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
     const pageBudget = pageBudgetBytes(pages.length);
@@ -653,12 +697,9 @@ export async function renderHtmlToPdfDoc(
         })
       );
 
-      // Let the browser paint the final layout (double RAF ensures styles applied)
-      await new Promise<void>(resolve => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => resolve());
-        });
-      });
+      // Let the browser paint the final layout (double RAF ensures styles
+      // applied) — bounded, so a locked/backgrounded phone cannot hang it.
+      await waitForPaint();
 
       const pages = reportDoc.querySelectorAll('.page') as NodeListOf<HTMLElement>;
       if (pages.length === 0) {
@@ -676,10 +717,9 @@ export async function renderHtmlToPdfDoc(
       fitJathagamSummaryText(reportDoc);
       pages.forEach(p => fitPageToA4Element(p));
 
-      // Wait a tick after fitting so transforms are applied
-      await new Promise<void>(resolve => {
-        requestAnimationFrame(() => setTimeout(resolve, 80));
-      });
+      // Wait a tick after fitting so transforms are applied (bounded).
+      await waitForPaint();
+      await new Promise<void>(resolve => setTimeout(resolve, 80));
 
       // Create the PDF before capturing pages and add each page immediately.
       //
@@ -813,16 +853,9 @@ export async function renderEmailPdfBase64(
  * (~8 s per report). Without this the progress bar would freeze on the first
  * member and the admin would think the family render had hung.
  */
-export function yieldToBrowser(): Promise<void> {
-  return new Promise(resolve => {
-    if (typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setTimeout(() => resolve(), 100));
-      });
-    } else {
-      setTimeout(() => resolve(), 150);
-    }
-  });
+export async function yieldToBrowser(): Promise<void> {
+  await waitForPaint();
+  await new Promise<void>(resolve => setTimeout(resolve, 100));
 }
 
 /**
@@ -939,12 +972,53 @@ export async function downloadHtmlPdf(
 }
 
 /**
+ * How long a handed-over blob URL stays alive.
+ *
+ * This used to be 1.5 s. On iOS Safari the scripted `click()` is NOT honoured
+ * as a download once the user gesture that started it has expired (a print
+ * capture takes tens of seconds), and even when it is honoured the transfer
+ * starts asynchronously — so revoking after 1.5 s cancelled a download that had
+ * not begun. Result on an iPhone: the spinner stopped, the UI said the report
+ * was downloaded, and no file ever appeared. The URL now lives long enough for
+ * the browser (or the customer's own tap on the save link) to take the bytes.
+ */
+const BLOB_URL_RELEASE_DELAY_MS = 10 * 60_000;
+
+/** Blob URLs still offered to the customer, so they can be released together. */
+const liveBlobUrls = new Set<string>();
+let blobUrlReleaseHooked = false;
+
+function releaseBlobUrl(url: string): void {
+  if (!url || !liveBlobUrls.has(url)) return;
+  liveBlobUrls.delete(url);
+  try {
+    window.URL.revokeObjectURL(url);
+  } catch {
+    // Revoking twice is harmless; never fail a download over cleanup.
+  }
+}
+
+function releaseAllBlobUrls(): void {
+  Array.from(liveBlobUrls).forEach(releaseBlobUrl);
+}
+
+/** Releases every blob URL this module created (page teardown, new download). */
+export function releaseSavedPdfUrls(): void {
+  releaseAllBlobUrls();
+}
+
+/**
  * Saves a base64 PDF payload under `fileName` with the same browser download
  * behaviour as `doc.save()`. Needed by the customer download because it reuses
  * the emailed document's render helper, which returns bytes rather than a
  * jsPDF document.
+ *
+ * Returns the blob URL it saved from, so a caller that cannot rely on the
+ * scripted click (iOS Safari, in-app browsers, popup blockers) can render a
+ * REAL `<a href download>` for the customer to tap — a fresh user gesture the
+ * browser always honours. The bytes are identical either way.
  */
-export function savePdfBase64AsFile(pdfBase64: string, fileName: string): void {
+export function savePdfBase64AsFile(pdfBase64: string, fileName: string): string {
   const normalized = (pdfBase64 || '').replace(/\s/g, '');
   if (!normalized) throw new Error('The rendered report PDF is empty.');
   const binary = window.atob(normalized);
@@ -954,14 +1028,25 @@ export function savePdfBase64AsFile(pdfBase64: string, fileName: string): void {
   }
   const blob = new Blob([bytes], { type: 'application/pdf' });
   const url = window.URL.createObjectURL(blob);
+  liveBlobUrls.add(url);
+  if (!blobUrlReleaseHooked && typeof window.addEventListener === 'function') {
+    blobUrlReleaseHooked = true;
+    // Leaving the page (or iOS discarding it) is the only point where an
+    // untaken URL is certainly dead weight.
+    window.addEventListener('pagehide', releaseAllBlobUrls);
+  }
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = fileName;
+  anchor.rel = 'noopener';
+  anchor.style.display = 'none';
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
-  // Give the browser a moment to start the download before revoking the URL.
-  window.setTimeout(() => window.URL.revokeObjectURL(url), 1500);
+  // Keep the URL alive long after the click: Safari may still be fetching it,
+  // and the dashboard offers the same URL as a tappable save link.
+  window.setTimeout(() => releaseBlobUrl(url), BLOB_URL_RELEASE_DELAY_MS);
+  return url;
 }
 
 /**
@@ -982,12 +1067,16 @@ export function savePdfBase64AsFile(pdfBase64: string, fileName: string): void {
 export async function downloadPaidReportPdf(
   htmlContent: string,
   fileName: string
-): Promise<void> {
+): Promise<{ objectUrl: string; fileName: string }> {
   if (!htmlContent) throw new Error('Nothing to render — the report HTML is empty.');
   try {
     // Identical profile, retry policy and quality gate as the emailed report.
     const pdfBase64 = await renderEmailPdfBase64(htmlContent, 'Report PDF');
-    savePdfBase64AsFile(pdfBase64, fileName);
+    const objectUrl = savePdfBase64AsFile(pdfBase64, fileName);
+    // The caller keeps the URL: iOS Safari ignores a scripted click once the
+    // gesture that started a multi-second capture has expired, so the customer
+    // also gets a real link to tap. Same bytes, same print density.
+    return { objectUrl, fileName };
   } catch (error) {
     console.error('Print-density report download failed on this device; nothing was saved:', error);
     throw new Error(PDF_CAPTURE_ERROR);
