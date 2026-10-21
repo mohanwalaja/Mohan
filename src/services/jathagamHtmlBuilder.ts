@@ -1183,7 +1183,7 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
    * so pages 1 and 2 keep exactly the height they had.
    */
   /**
-   * "Prepared on" stamp: the date this report was prepared (the order date
+   * Prepared-date stamp: the date this report was prepared (the order date
    * for a paid report). It comes from the calculation result itself, so a
    * frozen snapshot downloaded years later still prints its original
    * prepared date — the report can never look freshly prepared. Live
@@ -1193,7 +1193,6 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
    * only, printed on the LEFT of the footer — never centred on the brand
    * line with the page numbers.
    */
-  const preparedOnLabel = isTa ? 'தயாரிக்கப்பட்ட நாள்' : isHi ? 'तैयार तिथि' : 'Prepared on';
   const preparedDate = (() => {
     const raw = (result as any)?.generatedAt;
     if (!raw) return '';
@@ -1202,7 +1201,7 @@ export function buildJathagamHtml(result: HoroscopeResult, lang: AppLanguage = '
     return parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   })();
   const preparedStamp = preparedDate
-    ? `<span class="footer-prepared">${escapeHtml(preparedOnLabel)}: ${escapeHtml(preparedDate)}</span>`
+    ? `<span class="footer-prepared">${escapeHtml(preparedDate)}</span>`
     : '';
   const footerHtmlFor = (pageNumber: number) => `
     <div class="footer">
@@ -1782,7 +1781,8 @@ ${REPORT_FONT_LINK_TAG}
     page-break-inside: avoid;
   }
   .footer .footer-page { color: #7a1230; font-weight: 800; white-space: nowrap; }
-  /* Page 1 only: the "Prepared on" stamp sits on the LEFT edge of the footer,
+  /* Page 1 only: the prepared-date stamp (a bare date, no label in any
+     language — owner request, 2026-10-21) sits on the LEFT edge of the footer,
      level with the last footer line, so the centred brand + page line keeps
      exactly the width it had. */
   .footer .footer-prepared { position: absolute; left: 0; bottom: 0; color: #7a1230; font-weight: 700; white-space: nowrap; font-size: 10.5px; }

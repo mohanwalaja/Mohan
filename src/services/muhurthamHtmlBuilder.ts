@@ -395,12 +395,11 @@ export function buildMuhurthamHtml(result: MuhurthamScanResult, lang: AppLanguag
   const issuedOn = formatIssuedAt(result.generatedAt, result.muhurthamTimeZoneId);
 
   /**
-   * "Prepared on" stamp — the frozen calculation date, date-only like the
+   * Prepared-date stamp — the frozen calculation date. Owner request
    * other reports. First page only, on the LEFT of the bottom brand line,
    * never centred (owner request, Oct 2026). No stamp when the result has no
    * date rather than an invented "today".
    */
-  const preparedOnLabel = isTa ? 'தயாரிக்கப்பட்ட நாள்' : isHi ? 'तैयार तिथि' : 'Prepared on';
   const preparedDate = ((): string => {
     const raw = (result as any)?.generatedAt;
     if (!raw) return '';
@@ -409,7 +408,7 @@ export function buildMuhurthamHtml(result: MuhurthamScanResult, lang: AppLanguag
     return parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   })();
   const preparedStampHtml = preparedDate
-    ? `<span class="brand-prepared">${escapeHtml(preparedOnLabel)}: ${escapeHtml(preparedDate)}</span>`
+    ? `<span class="brand-prepared">${escapeHtml(preparedDate)}</span>`
     : '';
 
   // Gather recommended BEST and GOOD dates
@@ -879,7 +878,8 @@ ${REPORT_FONT_LINK_TAG}
     text-align: center; font-size: 8.5px; color: var(--ink-muted); font-weight: 600;
     margin-top: 1.5mm; letter-spacing: 0.3px; flex-shrink: 0;
   }
-  /* Page 1 only: the "Prepared on" stamp sits on the LEFT edge of the brand
+  /* Page 1 only: the prepared-date stamp (a bare date — owner request,
+     2026-10-21) sits on the LEFT edge of the brand
      line; the centred brand text never moves. */
   .page-bottom-brand .brand-prepared {
     position: absolute; left: 0; bottom: 0; color: var(--maroon); font-weight: 700; white-space: nowrap;

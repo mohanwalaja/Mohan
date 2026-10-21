@@ -950,7 +950,7 @@ class AstroReportViews {
     .header-sub { font-size: 10.5px; color: #0b7a5a; font-weight: bold; margin-top: 0.5mm; text-align: center; }
     .header-contact { font-size: 8.5px; color: #64748b; margin-top: 0.5mm; text-align: center; font-weight: bold; }
     .header-extra { font-size: 8px; color: #64748b; margin-top: 0.4mm; text-align: center; font-weight: bold; }
-    /* The reference line is a three-cell row: the "Prepared on" stamp rides
+    /* The reference line is a three-cell row: the prepared-date stamp rides
        on the LEFT (first page only), the page tag + order reference stay
        centred. Fixed equal side cells keep the centre block centred whatever
        the stamp's length. */
@@ -1107,7 +1107,7 @@ CSS;
     }
 
     /**
-     * "Prepared on" stamp for a report. The date is the one stored in the
+     * prepared-date stamp for a report. The date is the one stored in the
      * calculation result (generatedAt) — for a stored snapshot that is the
      * original order-date time, so a preview never looks freshly prepared.
      * Empty when the result carries no date (no stamp rather than a wrong
@@ -1117,13 +1117,18 @@ CSS;
      * on its FIRST page only, on the LEFT of the header/footer reference
      * line — never centred with the page numbers.
      */
-    public static function preparedOnLabel($result, string $lang): string {
+    /**
+     * The prepared-date stamp: the bare date, in every language. It carried a
+     * English / Tamil / Hindi label until the owner asked (2026-10-21) for
+     * the date alone inside reports. One method, because the four report headers
+     * and the frozen-snapshot parity test all print exactly this string.
+     */
+    public static function preparedDateStamp($result, string $lang): string {
         $raw = is_array($result) ? trim((string) ($result['generatedAt'] ?? '')) : '';
         if ($raw === '') return '';
         $ts = strtotime($raw);
         if ($ts === false) return '';
-        $label = $lang === 'ta' ? 'தயாரிக்கப்பட்ட நாள்' : ($lang === 'hi' ? 'तैयार तिथि' : 'Prepared on');
-        return $label . ': ' . date('d M Y', $ts);
+        return date('d M Y', $ts);
     }
 
     public static function topHeader(string $title, string $subtitle, string $orderNumber, int $page, int $total, string $lang, string $meta = '', bool $slashPageLabel = false, string $preparedLabel = ''): string {
@@ -1140,7 +1145,7 @@ CSS;
         $pageStr = ($lang === 'ta') ? "பக்கம் {$page} / {$total}" : (($lang === 'hi') ? "पृष्ठ {$page} / {$total}" : ($slashPageLabel ? "Page {$page} / {$total}" : "Page {$page} of {$total}"));
         $metaHtml = trim($meta) !== '' ? '<div class="header-extra">' . self::e($meta) . '</div>' : '';
         $orderHtml = trim($orderNumber) !== '' ? '<span class="header-order-ref">#' . $o . '</span>' : '';
-        // The "Prepared on" stamp (first page only) rides on the LEFT of the
+        // The prepared-date stamp (first page only) rides on the LEFT of the
         // reference line — never centred with the page tag (owner request,
         // Oct 2026). Absolutely positioned in the browser builders; a fixed
         // side cell here, so fixed-height report pages do not move.
@@ -1224,7 +1229,7 @@ HTML;
         // Printed on the FIRST page header only, on the LEFT of the reference
         // line: when this report was prepared. A stored snapshot keeps its
         // original order date.
-        $preparedLabel = self::preparedOnLabel($result, $lang);
+        $preparedLabel = self::preparedDateStamp($result, $lang);
         $name = self::e($result['devoteeName'] ?? $result['nativeName'] ?? ($order['user_name'] ?? 'User'));
         $dob = self::e(self::birthDate($result['dob'] ?? '', 'N/A'));
         $tob = self::e($result['tob'] ?? 'N/A');
@@ -3853,9 +3858,9 @@ CSS;
         $thSt = $isTa ? 'நிலை' : ($isHi ? 'स्थिति' : 'Status');
         $thExp = $isTa ? 'விளக்கம் & பலன்' : ($isHi ? 'विवरण एवं फल' : 'Explanation');
 
-        // "Prepared on" stamp: first page only, on the LEFT of the reference
+        // prepared-date stamp: first page only, on the LEFT of the reference
         // line — never centred with the page tag (owner request, Oct 2026).
-        $preparedLabel = self::preparedOnLabel($result, $lang);
+        $preparedLabel = self::preparedDateStamp($result, $lang);
         $body = self::topHeader('ASTRO SIVAM', $headerSub, $orderNumber, 1, self::WEDDING_PAGE_TOTAL, $lang, '', false, $preparedLabel);
         $body .= <<<HTML
 <div class="panel" style="padding:3.5mm 4mm;">
@@ -4387,9 +4392,9 @@ HTML;
 
         $recommendedDatesLabel = $isTa ? 'பரிந்துரைக்கப்பட்ட தேதிகள்' : ($isHi ? 'अनुशंसित तिथियाँ' : 'recommended dates');
         $coverMeta = $eventTitle . ' • ' . $totalRecommendedDates . ' ' . $recommendedDatesLabel;
-        // "Prepared on" stamp: first page only, on the LEFT of the reference
+        // prepared-date stamp: first page only, on the LEFT of the reference
         // line — never centred with the page tag (owner request, Oct 2026).
-        $preparedLabel = self::preparedOnLabel($result, $lang);
+        $preparedLabel = self::preparedDateStamp($result, $lang);
         $coverHeader = self::topHeader('ASTRO SIVAM', $t['docTitle'], $orderNumberSafe, 1, self::MUHURTHAM_PAGE_TOTAL, $lang, $coverMeta, false, $preparedLabel);
 
         $page1DatesHtml = $renderCalendarTable($page1Rows);
@@ -4906,9 +4911,9 @@ HTML;
                 : "This report certifies the computed Janma Nakshatra and naming syllables for {$babyName}. The supplied name is for identification only, not a certified birth-pada name match.");
         $signRole = $isTa ? 'அங்கீகரிக்கப்பட்ட ஜோதிடர்' : ($isHi ? 'अधिकृत ज्योतिषी' : 'AUTHORIZED ASTROLOGER');
         $footerLabel = $isTa ? 'அதிகாரப்பூர்வ வேத நாமகரண அறிக்கை' : ($isHi ? 'आधिकारिक वैदिक नामकरण रिपोर्ट' : 'Official Vedic Namakaran Report');
-        // "Prepared on" stamp: first page only, on the LEFT of the footer bar
+        // prepared-date stamp: first page only, on the LEFT of the footer bar
         // — never centred with the brand line (owner request, Oct 2026).
-        $preparedLabel = self::preparedOnLabel($result, $lang);
+        $preparedLabel = self::preparedDateStamp($result, $lang);
         $bnPreparedSpan = $preparedLabel !== '' ? '<span class="bn-prepared">' . self::e($preparedLabel) . '</span>' : '';
 
         $virtue1 = $isTa ? 'பிரகாசமான உயிர்த்திருவும் அறிவும் — கூர்மையான பார்வை, உயர்ந்த மன சுறுசுறுப்பு.' : ($isHi ? 'तेजस्वी ओज एवं बुद्धि — तीक्ष्ण बुद्धि, सूक्ष्म दृष्टि एवं उत्तम स्वभाव।' : 'Radiant Vitality &amp; Intellect — keen observational clarity, mental agility and noble presence.');
@@ -5008,7 +5013,7 @@ HTML;
     .bn-seal-sub { font-size: 5.8px; color: #8c6a1e; font-weight: bold; }
     .bn-footer-bar { border-top: 1px solid #b3862e; margin-top: 2mm; padding-top: 1mm; font-size: 7.2px; color: #8a7c6c; text-align: center; position: relative; }
     .bn-footer-bar b { color: #7a2129; letter-spacing: 0.8px; }
-    /* First page only: the "Prepared on" stamp sits on the LEFT edge of the
+    /* First page only: the prepared-date stamp sits on the LEFT edge of the
        footer bar, level with the brand text; the centred line never moves. */
     .bn-footer-bar .bn-prepared { position: absolute; left: 0; top: 1mm; color: #7a2129; font-weight: bold; white-space: nowrap; }
     .bn-doc-hint { font-size: 7.2px; color: #5c5044; margin-top: 1.4mm; line-height: 1.35; }

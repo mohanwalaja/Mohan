@@ -193,18 +193,17 @@ export function buildBabyNamingHtml(result: BabyNamingResult, lang: AppLanguage 
     hour12: false, timeZone: 'Asia/Kolkata'
   }) + ' IST';
   /**
-   * "Prepared on" stamp — the frozen calculation date, date-only like the
+   * Prepared-date stamp — the frozen calculation date. Owner request
    * other reports. First page only, on the LEFT of the footer, never centred
    * with the brand line (owner request, Oct 2026). No stamp when the result
    * has no date rather than an invented "today".
    */
-  const preparedOnLabel = isTa ? 'தயாரிக்கப்பட்ட நாள்' : isHi ? 'तैयार तिथि' : 'Prepared on';
   const preparedDateRaw = result.generatedAt ? new Date(String(result.generatedAt).replace(' ', 'T')) : null;
   const preparedDate = preparedDateRaw && !isNaN(preparedDateRaw.getTime())
     ? preparedDateRaw.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
     : '';
   const preparedStampHtml = preparedDate
-    ? `<span class="footer-prepared">${escapeHtml(preparedOnLabel)}: ${escapeHtml(preparedDate)}</span>`
+    ? `<span class="footer-prepared">${escapeHtml(preparedDate)}</span>`
     : '';
   const stamp = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now).replace(/-/g, '');
   const referenceNo = escapeHtml(resAny.orderNumber || resAny.reportNumber || `ASTRO-NAME-${stamp}`);
@@ -1109,7 +1108,8 @@ ${REPORT_FONT_LINK_TAG}
     font-weight: 600;
     margin-top: 0.2mm;
   }
-  /* Page 1 only: the "Prepared on" stamp sits on the LEFT edge of the footer,
+  /* Page 1 only: the prepared-date stamp (a bare date, no label in any
+     language — owner request, 2026-10-21) sits on the LEFT edge of the footer,
      level with the last footer line; the centred brand line never moves. */
   .footer .footer-prepared {
     position: absolute;
