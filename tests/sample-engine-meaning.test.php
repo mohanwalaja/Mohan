@@ -78,8 +78,8 @@ foreach ($table as $star) {
                     if ($source !== $column['soundTa'] || !in_array($name['name'], array_column($sourceEntries, 0), true)) {
                         throw new RuntimeException('A name was not sourced from its exact pada sound: ' . $name['name']);
                     }
-                    if (!AstroReportViews::nameMatchesPada($name['name'], $column['soundTa'])) {
-                        throw new RuntimeException('A non-matching name was included: ' . $name['name']);
+                    if (!AstroReportViews::tamilNameMatchesPada((string) ($name['nameTa'] ?? ''), $column['soundTa'])) {
+                        throw new RuntimeException('A non-matching name was included: ' . $name['name'] . ' (' . ($name['nameTa'] ?? '') . ')');
                     }
                 }
             }

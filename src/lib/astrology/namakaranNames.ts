@@ -1,14 +1,16 @@
-import { nameMatchesPada, nameFingerprint } from './namakaranSound';
+import { matchesPadaCore, tamilPadaCore } from './namakaranSound';
 /**
  * Namakaran (baby naming) page-2 name lists.
  *
  * Turns the four pada syllables of the baby's birth star into South and North
  * Indian style suggestions for the baby's gender. Each list contains only
- * names whose first sound exactly matches that pada's printed syllable. No
- * related-sound alternatives are added; a list may contain fewer names.
+ * names whose hand-written Tamil spelling opens with that pada's exact letter.
+ * No related-sound alternatives are added; a list may contain fewer names.
  *
  * The data itself lives in namakaranNameBank.ts (generated from
- * data/namakaran_name_bank.tsv). Names are not repeated within one report page.
+ * data/namakaran_name_bank.psv). Every entry carries its Tamil and Hindi
+ * spelling, so a Tamil page never shows machine-transliterated name text.
+ * Names are not repeated within one report page.
  */
 import {
   NAMAKARAN_BANK,
@@ -21,7 +23,12 @@ import { localizeNamakaranEntry } from './namakaranMeaning.js';
 export { NAMAKARAN_MAX_PER_SIDE };
 
 export interface NamakaranNameOption {
+  /** Roman spelling, printed by the English report. */
   name: string;
+  /** Hand-written Tamil spelling, printed by the Tamil report. */
+  nameTa: string;
+  /** Hand-written Devanagari spelling, printed by the Hindi report. */
+  nameHi: string;
   /** English meaning retained for legacy consumers and the English report. */
   meaning: string;
   meaningEn: string;
@@ -87,12 +94,14 @@ export interface NamakaranPadaInput {
 function toOption(entry: NamakaranBankEntry, sourceAksharaTa: string): NamakaranNameOption {
   return localizeNamakaranEntry({
     name: entry.n,
+    nameTa: entry.t,
+    nameHi: entry.h,
     meaning: entry.m,
     sourceAksharaTa
   }) as NamakaranNameOption;
 }
 
-/** Collects only names whose first sound matches this pada's exact akshara. */
+/** Collects only names whose Tamil spelling opens with this pada's exact akshara. */
 function collectExact(
   akshara: string,
   style: 'south' | 'north',
@@ -104,8 +113,10 @@ function collectExact(
   const names: NamakaranNameOption[] = [];
   for (const entry of candidates) {
     if (names.length >= limit) break;
-    if (!nameMatchesPada(entry.n, akshara)) continue;
-    const fingerprint = nameFingerprint(entry.n);
+    // The hand-written Tamil spelling is the authority: it must open with the
+    // exact pada letter printed on page 1.
+    if (!matchesPadaCore(entry.t, akshara)) continue;
+    const fingerprint = tamilPadaCore(entry.t) + '|' + entry.t.normalize('NFC').trim();
     if (used.has(fingerprint)) continue;
     used.add(fingerprint);
     names.push(toOption(entry, akshara));
@@ -115,8 +126,9 @@ function collectExact(
 
 /**
  * Builds the two name columns of page 2 for every pada of the birth star.
- * Only exact matches for the four supplied pada syllables are included. If a
- * syllable has few (or no) exact matches, the list stays short (or empty).
+ * Only names that open with the exact pada letter are included. If a syllable
+ * has few (or no) such names, the list stays short (or empty) rather than
+ * offering a related sound.
  *
  * @param padas   The four padas of the birth star (as stored on the result).
  * @param gender  The baby's gender — the report shows that gender's names.

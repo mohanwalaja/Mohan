@@ -1,4 +1,4 @@
-import { nameMatchesPada } from '../src/lib/astrology/namakaranSound';
+import { matchesPadaCore } from '../src/lib/astrology/namakaranSound';
 import assert from 'node:assert/strict';
 import { calculatePrecisionHoroscope, calculateVimshottariDashaTimeline } from '../src/lib/astrology/astronomy.js';
 import { calculateWeddingCompatibility } from '../src/lib/astrology/matchmaking.js';
@@ -109,7 +109,7 @@ assert.equal(buildNamakaranNameProvenance('Reyansh').status, 'SUPPLIED_NOT_CERTI
 const primaryColumn = baby.nameSuggestions!.find(column => column.padaNumber === baby.janmaPada)!;
 const reyansh = primaryColumn.north.find(entry => entry.name === 'Reyansh')!;
 assert.equal(reyansh.sourceAksharaTa, 'ரே');
-assert(nameMatchesPada(reyansh.name, primaryColumn.soundTa));
+assert(matchesPadaCore(reyansh.nameTa, primaryColumn.soundTa));
 assert.equal(primaryColumn.north.some(entry => entry.name === 'Rahul'), false,
   'A name from the related Ra sound is not added to the exact Re list');
 
@@ -127,8 +127,8 @@ for (const star of ALL_NAKSHATRA_LETTERS) {
         assert.equal(option.sourceAksharaTa, column.soundTa);
         const source = NAMAKARAN_BANK[column.soundTa][gender];
         assert([...source.south, ...source.north].some(entry => entry.n === option.name));
-        assert(nameMatchesPada(option.name, column.soundTa),
-          `${option.name} must match the exact ${column.soundTa} sound`);
+        assert(matchesPadaCore(option.nameTa, column.soundTa),
+          `${option.name} (${option.nameTa}) must match the exact ${column.soundTa} sound`);
       }
     }
   }

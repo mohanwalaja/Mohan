@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Builds the Namakaran (baby naming) name bank for BOTH report engines from the
- * single human-editable source of truth: data/namakaran_name_bank.tsv
+ * single human-editable source of truth: data/namakaran_name_bank.psv
  *
  *   node scripts/build_namakaran_bank.mjs            # validate + regenerate
  *   node scripts/build_namakaran_bank.mjs --check    # validate only (CI / tests)
@@ -14,13 +14,21 @@
  * live preview and the delivered report always show the same names.
  *
  * ---------------------------------------------------------------------------
+ * WHY EVERY NAME IS STORED IN THREE SCRIPTS
+ *   The earlier bank stored a Roman spelling only and transliterated it at
+ *   print time. Machine transliteration cannot know that "Suthanthira" is
+ *   சுதந்திரா and "Sunil" is சுனில், so Tamil pages carried misspelt names
+ *   (சுதந்த்ஹிர, சுநில்). Each row now carries the hand-written Tamil and Hindi
+ *   spelling of the name, and the generator refuses a row whose Tamil spelling
+ *   does not open with the exact pada letter of column 1.
+ *
  * VALIDATION RULES
- *   - every akshara must be one of the 108 pada letters in babynames.ts
- *   - every name must be Roman (ASCII) and must actually begin with the sound
- *     of its akshara (long vowels may drop to the bare consonant, which is the
- *     normal Tamil/Sanskrit naming practice — e.g. Kaa -> Karthik)
- *   - meanings stay short enough to print on one line
- *   - no duplicates inside one akshara + gender + style list
+ *   - column 1 is one of the pada letters printed by babynames.ts
+ *   - column 4 is the Roman name (plain ASCII letters)
+ *   - column 5 is Tamil script only and opens with column 1 (see tamilPadaCore)
+ *   - column 6 is Devanagari only
+ *   - column 7 is a short English meaning covered by the meaning glossary
+ *   - no duplicate Roman or Tamil spelling inside one akshara + gender + style
  * ---------------------------------------------------------------------------
  */
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -29,74 +37,35 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const TSV_PATH = resolve(ROOT, 'data', 'namakaran_name_bank.tsv');
+const TSV_PATH = resolve(ROOT, 'data', 'namakaran_name_bank.psv');
 const OUT_TS = resolve(ROOT, 'src', 'lib', 'astrology', 'namakaranNameBank.ts');
 const OUT_PHP = resolve(ROOT, 'api', 'astrology', 'namakaran_name_bank.php');
 
 const MAX_PER_SIDE = 8;
+const MAX_MEANING_LENGTH = 30;
 
-/**
- * A Tamil pada letter covers every voiced/voiceless reading of that letter
- * (ச = cha / sa / sha, க = ka / kha / ga / gha ...), so a name is accepted when
- * it opens with ANY reading of the akshara's letter in the SAME vowel:
- * கு accepts Kumar, Ghuruvam... but never Kamal (that is the bare க).
- */
-const CONSONANT_FAMILIES = {
-  'க': ['k', 'kh', 'g', 'gh'],
-  'ங': ['ng', 'nk', 'n'],
-  'ச': ['ch', 's', 'sh', 'z'],
-  'ஜ': ['j', 'jh', 'z', 'zh'],
-  'ஞ': ['ny', 'n', 'gn', 'tr'],
-  'ட': ['t', 'd', 'tt', 'dd'],
-  'ண': ['n', 'nn'],
-  'த': ['th', 't', 'd', 'dh', 'tt'],
-  'ந': ['n', 'nn'],
-  'ப': ['p', 'b', 'ph', 'bh'],
-  'ம': ['m'],
-  'ய': ['y'],
-  'ர': ['r'],
-  'ல': ['l', 'lh', 'zh'],
-  'வ': ['v', 'w'],
-  'ஷ': ['sh', 's', 'ssh'],
-  'ஹ': ['h'],
-  'ஸ': ['s'],
-  'ற': ['r', 'tr'],
-  'ள': ['l', 'll']
-};
+const PULLI = '\u0BCD';
+const LATIN = /[A-Za-z]/;
+const TAMIL_ONLY = /^[\u0B80-\u0BFF .'-]+$/u;
+const HINDI_ONLY = /^[\u0900-\u097F .'-]+$/u;
 
-/** Latin vowel spellings grouped by the Tamil vowel they represent. */
-const VOWEL_GROUPS = [
-  ['aa', 'a'],
-  ['ee', 'i'],
-  ['oo', 'u'],
-  ['ai', 'ay', 'ei'],
-  ['au', 'ow', 'ou'],
-  ['e', 'ae'],
-  ['o', 'oh', 'aw']
-];
+/** The Tamil pada letter a written name opens with (mirrors namakaranSound.ts). */
+export function tamilPadaCore(text) {
+  const value = String(text || '').normalize('NFC').trim();
+  const head = /^([\u0B85-\u0BB9])([\u0BBE-\u0BCD\u0BD7]?)/u.exec(value);
+  if (!head) return '';
+  const letter = head[1];
+  const sign = head[2] || '';
+  if (sign !== PULLI) return letter + sign;
 
-/** Extra literal prefixes accepted for a few aksharas (cluster readings). */
-const EXTRA_PREFIXES = {
-  'ஞ': ['tr', 'tri', 'tra'],
-  'ஜ': ['jha', 'jhi', 'za', 'zi'],
-  'ங': ['nga', 'ngi', 'ngu', 'nge', 'ngo'],
-  'ணா': ['nna', 'na']
-};
-
-/** Splits a transliteration token into its consonant part and vowel part. */
-function splitToken(token) {
-  const lower = token.toLowerCase().replace(/[^a-z]/g, '');
-  for (const group of VOWEL_GROUPS) {
-    for (const spelling of group) {
-      if (lower.endsWith(spelling)) {
-        return {
-          consonant: lower.slice(0, lower.length - spelling.length),
-          vowels: group
-        };
-      }
-    }
+  let rest = value.slice(head[0].length);
+  for (let guard = 0; guard < 4; guard += 1) {
+    const next = /^([\u0B95-\u0BB9])([\u0BBE-\u0BCD\u0BD7]?)/u.exec(rest);
+    if (!next) return letter;
+    if ((next[2] || '') !== PULLI) return letter + (next[2] || '');
+    rest = rest.slice(next[0].length);
   }
-  return { consonant: lower, vowels: ['a', 'aa'] };
+  return letter;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,39 +95,7 @@ function readPadaTable() {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Allowed Latin prefixes per akshara.
-// ---------------------------------------------------------------------------
-function allowedPrefixes(akshara, padaTable) {
-  const variants = new Set();
-  for (const pada of padaTable) {
-    if (pada.letterTa === akshara) variants.add(pada.letterEn);
-  }
-  const family = CONSONANT_FAMILIES[akshara[0]] || [];
-  const prefixes = new Set();
-
-  for (const variant of variants) {
-    for (const rawToken of variant.split('/')) {
-      const { consonant, vowels } = splitToken(rawToken);
-      // The letter's own consonant reading is always valid; the family adds the
-      // other voiced/voiceless readings of the same Tamil letter.
-      const stems = consonant ? [...new Set([consonant, ...family])] : [''];
-      for (const stem of stems) {
-        for (const vowel of vowels) {
-          prefixes.add(stem + vowel);
-          // Tamil writes a conjunct as letter + ர/ல/வ (கிரி for "Kri"), so the
-          // first akshara still matches: Kritika, Prakash, Priya... are valid
-          // for கீ / பா. Only consonant stems get this, never pure vowels.
-          if (consonant) prefixes.add(`${stem}r${vowel}`);
-        }
-      }
-    }
-  }
-  for (const extra of EXTRA_PREFIXES[akshara] || []) prefixes.add(extra);
-  return { prefixes: [...prefixes], variants: [...variants] };
-}
-
-// ---------------------------------------------------------------------------
-// 3. Parse the TSV.
+// 2. Parse the TSV.
 // ---------------------------------------------------------------------------
 function readTsv() {
   const lines = readFileSync(TSV_PATH, 'utf8').split(/\r?\n/);
@@ -166,108 +103,112 @@ function readTsv() {
   lines.forEach((line, idx) => {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) return;
-    const cells = line.split('\t').map(c => c.trim());
-    if (cells.length !== 5) {
-      rows.push({ line: idx + 1, error: `expected 5 tab-separated columns, found ${cells.length}` });
+    const cells = line.split('|').map(c => c.trim());
+    if (cells.length !== 7) {
+      rows.push({ line: idx + 1, error: `expected 7 pipe-separated columns, found ${cells.length}` });
       return;
     }
-    const [akshara, gender, style, name, meaning] = cells;
-    rows.push({ line: idx + 1, akshara, gender, style, name, meaning });
+    const [akshara, gender, style, name, tamil, hindi, meaning] = cells;
+    rows.push({ line: idx + 1, akshara, gender, style, name, tamil, hindi, meaning });
   });
   return rows;
 }
 
 // ---------------------------------------------------------------------------
-// 4. Validate.
+// 3. Validate.
 // ---------------------------------------------------------------------------
 function validate(rows, padaTable) {
   const problems = [];
   const knownAksharas = new Set(padaTable.map(p => p.letterTa));
-  const seen = new Map();
-  const prefixesCache = new Map();
+  const seenEn = new Map();
+  const seenTa = new Map();
 
   for (const row of rows) {
     if (row.error) {
       problems.push(`line ${row.line}: ${row.error}`);
       continue;
     }
-    const { akshara, gender, style, name, meaning } = row;
+    const { akshara, gender, style, name, tamil, hindi, meaning } = row;
     if (!knownAksharas.has(akshara)) {
       problems.push(`line ${row.line}: unknown akshara "${akshara}" (not one of the 108 pada letters)`);
       continue;
     }
-    if (!['M', 'F'].includes(gender)) {
-      problems.push(`line ${row.line}: gender must be M or F (found "${gender}")`);
-    }
-    if (!['S', 'N'].includes(style)) {
-      problems.push(`line ${row.line}: style must be S or N (found "${style}")`);
-    }
+    if (!['M', 'F'].includes(gender)) problems.push(`line ${row.line}: gender must be M or F (found "${gender}")`);
+    if (!['S', 'N'].includes(style)) problems.push(`line ${row.line}: style must be S or N (found "${style}")`);
+
     if (!name || !/^[A-Za-z][A-Za-z .'-]*$/.test(name)) {
-      problems.push(`line ${row.line}: name "${name}" must be plain Roman letters`);
+      problems.push(`line ${row.line}: Roman name "${name}" must be plain Roman letters`);
     }
-    if (/[?]|placeholder|hmm/i.test(`${name} ${meaning}`)) {
-      problems.push(`line ${row.line}: unfinished placeholder entry`);
+    if (!tamil) {
+      problems.push(`line ${row.line}: missing Tamil spelling`);
+    } else {
+      if (LATIN.test(tamil)) problems.push(`line ${row.line}: Tamil spelling "${tamil}" carries Latin letters`);
+      if (!TAMIL_ONLY.test(tamil)) problems.push(`line ${row.line}: Tamil spelling "${tamil}" has characters outside Tamil script`);
+      const expected = tamilPadaCore(akshara);
+      const actual = tamilPadaCore(tamil);
+      if (actual !== expected) {
+        problems.push(`line ${row.line}: Tamil spelling "${tamil}" starts with ${actual || 'nothing'}, but ${akshara} needs ${expected}`);
+      }
+    }
+    if (!hindi) {
+      problems.push(`line ${row.line}: missing Hindi spelling`);
+    } else {
+      if (LATIN.test(hindi)) problems.push(`line ${row.line}: Hindi spelling "${hindi}" carries Latin letters`);
+      if (!HINDI_ONLY.test(hindi)) problems.push(`line ${row.line}: Hindi spelling "${hindi}" has characters outside Devanagari`);
     }
     if (!meaning) {
       problems.push(`line ${row.line}: missing meaning`);
-    } else if (meaning.length > 30) {
-      problems.push(`line ${row.line}: meaning "${meaning}" is ${meaning.length} chars (max 30)`);
+    } else if (meaning.length > MAX_MEANING_LENGTH) {
+      problems.push(`line ${row.line}: meaning "${meaning}" is ${meaning.length} chars (max ${MAX_MEANING_LENGTH})`);
+    } else if (LATIN.test(meaning) === false) {
+      problems.push(`line ${row.line}: meaning "${meaning}" must be English text`);
     }
 
-    if (!prefixesCache.has(akshara)) prefixesCache.set(akshara, allowedPrefixes(akshara, padaTable).prefixes);
-    const prefixes = prefixesCache.get(akshara);
-    const lower = name.toLowerCase();
-    if (!prefixes.some(p => lower.startsWith(p))) {
-      problems.push(
-        `line ${row.line}: "${name}" does not begin with the sound of ${akshara} ` +
-        `(expected one of: ${prefixes.join(', ')})`
-      );
-    }
-
-    const key = `${akshara}|${gender}|${style}|${lower}`;
-    if (seen.has(key)) {
-      problems.push(`line ${row.line}: duplicate "${name}" for ${akshara} ${gender} ${style} (first seen on line ${seen.get(key)})`);
+    const keyEn = `${akshara}|${gender}|${style}|${name.toLowerCase()}`;
+    if (seenEn.has(keyEn)) {
+      problems.push(`line ${row.line}: duplicate name "${name}" for ${akshara} ${gender} ${style} (first seen on line ${seenEn.get(keyEn)})`);
     } else {
-      seen.set(key, row.line);
+      seenEn.set(keyEn, row.line);
+    }
+    const keyTa = `${akshara}|${gender}|${style}|${tamil}`;
+    if (seenTa.has(keyTa)) {
+      problems.push(`line ${row.line}: duplicate Tamil spelling "${tamil}" for ${akshara} ${gender} ${style} (first seen on line ${seenTa.get(keyTa)})`);
+    } else {
+      seenTa.set(keyTa, row.line);
     }
   }
   return problems;
 }
 
 // ---------------------------------------------------------------------------
-// 5. Build the nested bank.
+// 4. Build the nested bank.
 // ---------------------------------------------------------------------------
 function buildBank(rows) {
   const bank = {};
   for (const row of rows) {
     if (row.error) continue;
-    const { akshara, gender, style, name, meaning } = row;
+    const { akshara, gender, style, name, tamil, hindi, meaning } = row;
     const ak = (bank[akshara] = bank[akshara] || {
       M: { south: [], north: [] },
       F: { south: [], north: [] }
     });
     const list = style === 'S' ? ak[gender].south : ak[gender].north;
-    list.push({ n: name, m: meaning });
+    list.push({ n: name, t: tamil, h: hindi, m: meaning });
   }
   return bank;
 }
 
 // ---------------------------------------------------------------------------
-// 6. Emit both files.
+// 5. Emit both files.
 // ---------------------------------------------------------------------------
-function tsLiteral(value, indent = 0) {
-  // Compact, stable, readable JSON-ish literal (valid TypeScript).
-  return JSON.stringify(value)
-    .replace(/,/g, ', ')
-    .replace(/","/g, '", "');
-}
-
 function writeTs(bank, hash, aksharaOrder) {
   const entries = aksharaOrder
     .filter(ak => bank[ak])
     .map(ak => {
       const node = bank[ak];
-      const side = (g, s) => `[${node[g][s].map(x => `{n:${JSON.stringify(x.n)},m:${JSON.stringify(x.m)}}`).join(',')}]`;
+      const side = (g, s) => `[${node[g][s]
+        .map(x => `{n:${JSON.stringify(x.n)},t:${JSON.stringify(x.t)},h:${JSON.stringify(x.h)},m:${JSON.stringify(x.m)}}`)
+        .join(',')}]`;
       return `  ${JSON.stringify(ak)}: { M: { south: ${side('M', 'south')}, north: ${side('M', 'north')} }, ` +
         `F: { south: ${side('F', 'south')}, north: ${side('F', 'north')} } }`;
     })
@@ -276,7 +217,7 @@ function writeTs(bank, hash, aksharaOrder) {
   const content = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT BY HAND.
  *
- * Source of truth : data/namakaran_name_bank.tsv
+ * Source of truth : data/namakaran_name_bank.psv
  * Generator       : scripts/build_namakaran_bank.mjs
  * Content hash    : ${hash}
  *
@@ -294,9 +235,13 @@ export type NamakaranNameStyle = 'south' | 'north';
 export type NamakaranGender = 'M' | 'F';
 
 export interface NamakaranBankEntry {
-  /** Name in Roman script. */
+  /** Name in Roman script, printed by the English report. */
   n: string;
-  /** Short meaning. */
+  /** Hand-written Tamil spelling, printed by the Tamil report. */
+  t: string;
+  /** Hand-written Devanagari spelling, printed by the Hindi report. */
+  h: string;
+  /** Short English meaning (localized through the meaning glossary). */
   m: string;
 }
 
@@ -314,7 +259,8 @@ export interface NamakaranBankAkshara {
  * Keyed by the pada akshara (Tamil) of the birth star. Aksharas that share a
  * Tamil letter share one list on purpose: Tamil does not distinguish the
  * voiced/voiceless readings (ச = cha/sa, க = ka/ga ...), so one list serves
- * every pada that prints that letter.
+ * every pada that prints that letter. Every Tamil spelling below opens with the
+ * exact letter of its key.
  */
 export const NAMAKARAN_BANK: Record<string, NamakaranBankAkshara> = {
 ${entries}
@@ -330,7 +276,7 @@ function writePhp(bank, hash, aksharaOrder) {
     if (!bank[ak]) continue;
     const node = bank[ak];
     const side = (g, s) =>
-      `[${node[g][s].map(x => `[${phpString(x.n)}, ${phpString(x.m)}]`).join(', ')}]`;
+      `[${node[g][s].map(x => `[${phpString(x.n)}, ${phpString(x.t)}, ${phpString(x.h)}, ${phpString(x.m)}]`).join(', ')}]`;
     lines.push(
       `    ${phpString(ak)} => ['M' => ['south' => ${side('M', 'south')}, 'north' => ${side('M', 'north')}], ` +
       `'F' => ['south' => ${side('F', 'south')}, 'north' => ${side('F', 'north')}]],`
@@ -340,14 +286,14 @@ function writePhp(bank, hash, aksharaOrder) {
 /**
  * AUTO-GENERATED FILE — DO NOT EDIT BY HAND.
  *
- * Source of truth : data/namakaran_name_bank.tsv
+ * Source of truth : data/namakaran_name_bank.psv
  * Generator       : scripts/build_namakaran_bank.mjs
  * Content hash    : ${hash}
  *
  * Kept byte-for-byte in step with src/lib/astrology/namakaranNameBank.ts so the
  * live preview and the official report always print the same names.
- * Each entry is [name, meaning]; 'south' and 'north' are the two columns of
- * page 2 of the Vedic Namakaran report.
+ * Each entry is [roman, tamil, hindi, meaning]; 'south' and 'north' are the two
+ * columns of page 2 of the Vedic Namakaran report.
  */
 
 return [
@@ -385,8 +331,9 @@ function main() {
   }));
 
   if (problems.length) {
-    console.error(`✖ ${problems.length} problem(s) found in data/namakaran_name_bank.tsv:`);
-    for (const problem of problems) console.error(`   - ${problem}`);
+    console.error(`✖ ${problems.length} problem(s) found in data/namakaran_name_bank.psv:`);
+    for (const problem of problems.slice(0, 80)) console.error(`   - ${problem}`);
+    if (problems.length > 80) console.error(`   ... ${problems.length - 80} more`);
   }
 
   const totalNames = usable.length;
@@ -399,7 +346,7 @@ function main() {
   }
 
   const canonical = usable
-    .map(r => [r.akshara, r.gender, r.style, r.name, r.meaning].join('|'))
+    .map(r => [r.akshara, r.gender, r.style, r.name, r.tamil, r.hindi, r.meaning].join('|'))
     .join('\n');
   const hash = createHash('sha256').update(canonical).digest('hex').slice(0, 16);
 

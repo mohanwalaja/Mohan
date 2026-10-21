@@ -479,6 +479,54 @@ class AstroReportViews {
         return $matches[0] ?? '';
     }
 
+    /**
+     * The Tamil pada letter a written name opens with.
+     *
+     * A name is classified by its first letter plus that letter's vowel sign
+     * (சு = Su). A consonant cluster opens with a pulli (ப்ரீதி = Preethi) and
+     * belongs to the letter carrying that pulli with the next letter's vowel
+     * (பீ), which is how Tamil naming tables file Preethi and Priya. Mirrors
+     * tamilPadaCore() in src/lib/astrology/namakaranSound.ts.
+     */
+    public static function tamilPadaCore(string $text): string {
+        $value = trim($text);
+        if ($value === '' || !preg_match('/^([\x{0B85}-\x{0BB9}])([\x{0BBE}-\x{0BCD}\x{0BD7}]?)/u', $value, $head)) {
+            return '';
+        }
+        $letter = $head[1];
+        $sign = $head[2] ?? '';
+        if ($sign !== "\u{0BCD}" && $sign !== '\xE0\xAF\x8D') {
+            return $letter . $sign;
+        }
+
+        $rest = substr($value, strlen($head[0]));
+        for ($guard = 0; $guard < 4; $guard++) {
+            if (!preg_match('/^([\x{0B95}-\x{0BB9}])([\x{0BBE}-\x{0BCD}\x{0BD7}]?)/u', $rest, $next)) {
+                return $letter;
+            }
+            $nextSign = $next[2] ?? '';
+            if ($nextSign !== "\u{0BCD}" && $nextSign !== '\xE0\xAF\x8D') {
+                return $letter . $nextSign;
+            }
+            $rest = substr($rest, strlen($next[0]));
+        }
+        return $letter;
+    }
+
+    /** True when a hand-written Tamil spelling opens with the exact pada letter. */
+    public static function tamilNameMatchesPada(string $tamilName, string $sound): bool {
+        $core = self::tamilPadaCore($tamilName);
+        if ($core === '') {
+            return false;
+        }
+        foreach (explode('/', $sound) as $option) {
+            if ($core === self::tamilPadaCore($option)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static function nameMatchesPada(string $name, string $sound): bool {
         $first = self::firstTamilSound(self::transliterateToTamil($name));
         foreach (explode('/', $sound) as $option) {
@@ -5019,10 +5067,18 @@ CSS;
                         if ($entry !== null) {
                             $rawName = $entry['name'] ?? '';
                             if ($isTa) {
-                                $taName = self::transliterateToTamil($rawName);
+                                // Hand-written bank spelling; the transliterator is
+                                // only a fallback for a legacy stored order.
+                                $taName = (string) ($entry['nameTa'] ?? '');
+                                if ($taName === '') {
+                                    $taName = self::transliterateToTamil($rawName);
+                                }
                                 $nameHtml = '<span class="sug-nm-ta" style="font-family:notosanstamil,sans-serif; color:#7d1233; font-weight:bold;">' . self::e($taName) . '</span>';
                             } elseif ($isHi) {
-                                $hiName = self::transliterateToHindi($rawName);
+                                $hiName = (string) ($entry['nameHi'] ?? '');
+                                if ($hiName === '') {
+                                    $hiName = self::transliterateToHindi($rawName);
+                                }
                                 $nameHtml = '<span class="sug-nm-hi" style="font-family:notosansdevanagari,sans-serif; color:#7d1233; font-weight:bold;">' . self::e($hiName) . '</span>';
                             } else {
                                 $nameHtml = '<span class="sug-nm" style="font-weight:bold;">' . self::e($rawName) . '</span>';

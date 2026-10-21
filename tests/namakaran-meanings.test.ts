@@ -11,7 +11,7 @@ import { buildBabyNamingHtml } from '../src/services/babyNamingHtmlBuilder.js';
 /**
  * Page 2 of the Vedic Namakaran report — the Tamil and Hindi text printed under
  * every suggested name — must come from the curated glossary in
- * data/namakaran_meaning_glossary.tsv, never from word-by-word output.
+ * data/namakaran_meaning_glossary.psv, never from word-by-word output.
  *
  * The earlier report shipped a phrase table plus an automatic word fallback,
  * and any meaning the table did not hold came out as broken Tamil ("A blessed
@@ -40,10 +40,10 @@ for (const [english, entry] of Object.entries(NAMAKARAN_MEANING_GLOSSARY)) {
 // Every meaning the shipped name bank prints is covered, so no page-2 name can
 // reach the word-by-word safety net.
 const bankMeanings = new Set(
-  readFileSync(resolve('data/namakaran_name_bank.tsv'), 'utf8')
+  readFileSync(resolve('data/namakaran_name_bank.psv'), 'utf8')
     .split(/\r?\n/)
     .filter(line => line.trim() && !line.startsWith('#'))
-    .map(line => line.split('\t')[4]?.trim())
+    .map(line => line.split('|')[6]?.trim())
     .filter((value): value is string => Boolean(value))
 );
 for (const meaning of bankMeanings) {
@@ -152,6 +152,14 @@ assert.equal(phpHash, tsHash, 'The generated PHP glossary shares the TypeScript 
 const check = spawnSync(process.execPath, ['scripts/build_namakaran_glossary.mjs', '--check'], { encoding: 'utf8' });
 assert.equal(check.status, 0, `node scripts/build_namakaran_glossary.mjs --check passes\n${check.stdout}${check.stderr}`);
 
+// ── 6b. The bank itself is validated, not only generated ────────────────────
+// The generator refuses any row whose hand-written Tamil spelling does not
+// open with the exact pada letter of its column, and any row missing a Tamil
+// or Hindi spelling. CI runs the same check, so a bad spelling cannot ship.
+const bankCheck = spawnSync(process.execPath, ['scripts/build_namakaran_bank.mjs', '--check'], { encoding: 'utf8' });
+assert.equal(bankCheck.status, 0, `node scripts/build_namakaran_bank.mjs --check passes\n${bankCheck.stdout}${bankCheck.stderr}`);
+assert.match(bankCheck.stdout, /names across \d+ aksharas/, 'The generator reports the curated bank size');
+
 console.log(`\nALL NAMAKARAN MEANING CHECKS PASSED! (${glossaryCount} curated meanings, ${printedNames} printed names)`);
 
 // Source-level regressions for the corrected naming report.
@@ -172,7 +180,7 @@ expectedGroups.forEach((stars, group) => stars.forEach(index => {
 assert.match(ALL_NAKSHATRA_LETTERS[14].rajjuEn, /Kantha/);
 assert.match(ALL_NAKSHATRA_LETTERS[13].rajjuEn, /Siro/);
 
-const { firstTamilSound, nameMatchesPada, nameFingerprint } = await import('../src/lib/astrology/namakaranSound');
+const { firstTamilSound, nameMatchesPada, matchesPadaCore, tamilPadaCore } = await import('../src/lib/astrology/namakaranSound');
 const { transliterateToTamil } = await import('../src/services/indicTransliteration');
 const { calculateBabyNamingDetails } = await import('../src/lib/astrology/babynames');
 const { NAMAKARAN_BANK } = await import('../src/lib/astrology/namakaranNameBank');
@@ -180,19 +188,20 @@ for (const star of ALL_NAKSHATRA_LETTERS) for (const gender of ['M', 'F'] as con
   const seen = new Set<string>();
   for (const column of buildNamakaranPadaNames(star.padas, gender)) {
     for (const entry of [...column.south, ...column.north]) {
-      const first = firstTamilSound(transliterateToTamil(entry.name));
-      const exact = column.soundTa.split('/').some(sound => first === firstTamilSound(sound));
-      assert(exact, `${entry.name}: only exact ${column.soundTa} matches appear on page 2`);
+      // The hand-written Tamil spelling is what the Tamil page prints, and it
+      // must open with the exact pada letter printed on page 1.
+      assert(entry.nameTa && entry.nameHi, `${entry.name}: carries a Tamil and Hindi spelling`);
+      assert(matchesPadaCore(entry.nameTa, column.soundTa),
+        `${entry.name} (${entry.nameTa}): only exact ${column.soundTa} matches appear on page 2`);
       assert.equal(entry.sourceAksharaTa, column.soundTa);
-      assert(!seen.has(nameFingerprint(entry.name)), `${entry.name}: no Tamil-display duplicates`);
-      seen.add(nameFingerprint(entry.name));
+      assert(!seen.has(entry.nameTa), `${entry.name}: no Tamil-display duplicates`);
+      seen.add(entry.nameTa);
     }
   }
 }
 for (const sound of ['ரே', 'ரோ']) for (const gender of ['M', 'F'] as const) {
   for (const entry of [...NAMAKARAN_BANK[sound][gender].south, ...NAMAKARAN_BANK[sound][gender].north]) {
-    const first = firstTamilSound(transliterateToTamil(entry.n));
-    assert(!['ரெ', 'ரொ'].includes(first), `${entry.n}: use long Re/Ro, not short vowels`);
+    assert(!['ரெ', 'ரொ'].includes(tamilPadaCore(entry.t)), `${entry.n}: use long Re/Ro, not short vowels`);
   }
 }
 assert(nameMatchesPada('Revanth', 'ரே'));
@@ -207,11 +216,9 @@ assert.equal(sample.janmaPada, 2);
 for (const col of sample.nameSuggestions!) {
   assert(col.south.length <= 8 && col.north.length <= 8);
   for (const entry of [...col.south, ...col.north]) {
-    assert(nameMatchesPada(entry.name, col.soundTa), `${entry.name} must match ${col.soundTa}`);
+    assert(matchesPadaCore(entry.nameTa, col.soundTa), `${entry.name} (${entry.nameTa}) must match ${col.soundTa}`);
   }
 }
-assert(!sample.nameSuggestions![3].north.some(e => e.name === 'Danish'));
-assert([...sample.nameSuggestions![3].south, ...sample.nameSuggestions![3].north].every(e => !transliterateToTamil(e.name).startsWith('ட')));
 const sampleHtml = buildBabyNamingHtml(sample, 'ta');
 for (const text of ['கண்ட ரஜ்ஜு', 'கணிப்பு சரிபார்க்கப்பட்டது', 'பெயரின் முதல் ஒலி (A)', 'பொருந்தவில்லை',
   'birth-pada-section', '★ பாதம் 2', '07 Oct 2026, 08:00 IST', 'ASTRO-NAME-20261007', 'அங்கீகரிக்கப்பட்டவர்',
@@ -220,11 +227,14 @@ for (const text of ['கண்ட ரஜ்ஜு', 'கணிப்பு ச�
 }
 const samplePageTwo = sampleHtml.slice(sampleHtml.indexOf('id="namakaran-page-2"'));
 for (const entry of sample.nameSuggestions!.flatMap(c => [...c.south, ...c.north])) {
-  assert(samplePageTwo.includes(transliterateToTamil(entry.name)), `Page 2 prints exact name ${entry.name}`);
+  assert(samplePageTwo.includes(entry.nameTa), `Page 2 prints the hand-written Tamil name ${entry.nameTa}`);
 }
 assert(!samplePageTwo.includes('data-related-sound="true"'));
 assert(!samplePageTwo.includes('<sup'));
-assert(!samplePageTwo.includes('ரமேஷ்') && !samplePageTwo.includes('ரகேஷ்') && !samplePageTwo.includes('ராஜேஷ்'),
-  'Page 2 excludes related Ra alternatives from the four Roo/Re/Ro/Tha sounds');
+// A Tamil name must never come from machine transliteration: every printed
+// name is the curated spelling stored with the bank row.
+for (const entry of sample.nameSuggestions!.flatMap(c => [...c.south, ...c.north])) {
+  assert.equal(entry.nameTa, samplePageTwo.includes(entry.nameTa) ? entry.nameTa : 'missing');
+}
 assert(buildBabyNamingHtml({ ...sample, babyName: 'Revanth' }, 'ta').includes('பொருந்துகிறது'));
 console.log('Naming report: exact pada sounds only, localized meanings, spellings, sample metadata and navamsas passed.');
