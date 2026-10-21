@@ -147,10 +147,26 @@ check('inside the family card, a tap on a name opens that person only', () => {
   }
 });
 
-check('every delivered chart keeps its own download on the family card', () => {
+check('every delivered chart keeps its own download — on its name row', () => {
+  // Owner request (2026-10-22): "Download icon should be full right side of the
+  // user name, not in bottom — looks untidy." The family card's four stacked
+  // bare icons are gone; each member row carries its own icon at the right.
+  const familyStart = src.indexOf('{expandedOrders[order.id] && isFamily && (');
+  const singleStart = src.indexOf('{expandedOrders[order.id] && !isFamily && (');
+  const rowIcon = src.indexOf('onClick={() => handleDownloadReport(member, mItem)}');
+  assert.ok(rowIcon > familyStart && rowIcon < singleStart,
+    'the member-row download button lives inside the family (expanded) region');
+  assert.match(src, /const \{ item: mItem, key: mKey \} = memberDownload\(member\);/,
+    'a member downloads its first ready item, else the order — same keys as the band');
+  assert.match(src, /aria-label=\{mBusy \? 'Downloading…' : `Download Report — \$\{mName\}`\}/,
+    'and the row icon is named for the person it belongs to');
+  assert.match(src, /\{!isFamily && \(\(order\.items\?\.length \|\| 0\) > 0 \? \(/,
+    'the bottom band no longer stacks icons for family cards');
   assert.match(src, /downloadableMembers\.map\(downloadOrder => \{ const order = downloadOrder; return \(/,
-    'the tested download block is re-bound per delivered member, not copied');
+    'the tested band is still re-bound per delivered member, for outcomes');
   assert.match(src, /key=\{`download-\$\{order\.id\}`\}/, 'one block per member, keyed');
+  assert.match(src, /— \{orderServiceTitle\(order\)\}/,
+    'a single order without items labels its row instead of floating a bare icon');
 });
 
 check('one status banner per family card, reporting the member that needs action', () => {
