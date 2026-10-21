@@ -264,6 +264,12 @@ const testFiles = [
   // explains own-currency billing, PayPal-enabled cards without an account,
   // and card safety; top-right close, then continue to payment.
   'tests/how-payment-works.test.ts',
+  // Accessibility (2026-10-21 audit): every page opens with 20+ focusable
+  // header links, so a keyboard user had to traverse the whole navigation
+  // before reaching the content. The skip link must be the first focusable
+  // element on every route, must target the real <main> id, and must be a
+  // readable, opaque panel when focused.
+  'tests/a11y-skip-link-contract.test.ts',
   // RFC 9116: /.well-known/security.txt with a contact and a future Expires,
   // served as text/plain and shipped inside the deploy zip.
   'tests/security-txt.test.ts'

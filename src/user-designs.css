@@ -1,5 +1,55 @@
 /* Additive customer-facing Ivory & Saffron design. Admin routes deliberately
    omit data-user-design, preserving their original dark appearance. */
+
+/* ACCESSIBILITY (2026-10-21 audit): "Skip to main content".
+   Tailwind's `sr-only` / `focus:not-sr-only` pair handles the
+   visually-hidden-until-focused behaviour, but it leaves the element in
+   the normal flow, so a focused skip link would appear *above* the header
+   rather than over it, and it inherited the dark admin palette on the
+   admin route. This rule pins it to the top-left of the viewport and
+   gives it a high-contrast, always-legible treatment in both palettes.
+   `sr-only` sets position:absolute; these offsets win over it because
+   they are not `!important` but come later in the cascade than
+   Tailwind's utilities only if specificity is higher — `.skip-to-content`
+   is a single class, so we raise specificity with the `:focus` variant
+   below instead of relying on source order. */
+.skip-to-content {
+  position: fixed !important;
+  top: 0.75rem !important;
+  left: 0.75rem !important;
+  z-index: 2147483647 !important;
+  padding: 0.625rem 1rem !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  line-height: 1.2 !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  /* Light theme by default: readable on both the ivory customer pages and
+     the dark admin shell. */
+  background: #ffffff !important;
+  color: #34271d !important;
+  border: 2px solid #9c4c1d !important;
+  box-shadow: 0 8px 28px rgba(20, 10, 40, 0.28) !important;
+}
+/* The hidden state must win over the visible state above until focus. */
+.skip-to-content:not(:focus):not(:focus-within) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+}
+/* <main> is the skip target; it must not draw a focus ring of its own
+   (tabIndex={-1} means it is focused programmatically, not by Tab). */
+#main-content:focus { outline: none !important; }
+#main-content:focus-visible { outline: none !important; }
+
 [data-user-design] { --paper:#fffaf2; --surface:#ffffff; --tint:#f7ecdc; --heading:#34271d; --muted:#6e6052; --accent:#9c4c1d; --line:#e7d7c3; --radius:14px; background:var(--paper)!important; color:var(--heading)!important; color-scheme:light; }
 [data-user-design] > .cosmic-background { opacity:.08; }
 [data-user-design] :is(header,footer) { background:var(--surface)!important; color:var(--heading)!important; border-color:var(--line)!important; box-shadow:0 4px 24px #24203006; }

@@ -465,6 +465,18 @@ function AppContent() {
       {/* Cosmic Constellations Background Canvas */}
       <CosmicBackground />
 
+      {/* ACCESSIBILITY (2026-10-21 audit): a keyboard user landing on a page
+          with 20+ header links had to tab through the whole Navbar before
+          reaching the page content. This is the first focusable element on
+          the page, is visually hidden until focused, and jumps to <main>.
+          The target id lives on <main> below, so the two must stay in sync
+          (see tests/a11y-skip-link-contract.test.ts). */}
+      <a
+        href="#main-content"
+        className="skip-to-content sr-only focus:not-sr-only"
+      >
+        Skip to main content
+      </a>
       <Navbar
         currentRoute={currentRoute}
         onNavigate={handleNavigate}
@@ -472,7 +484,7 @@ function AppContent() {
         showColorModeToggle={!isAdminRoute}
         onToggleColorMode={toggleColorMode}
       />
-      <main className="flex-grow relative z-10">
+      <main id="main-content" tabIndex={-1} className="flex-grow relative z-10">
         <Suspense fallback={<RouteFallback />}>
           {renderRoute()}
           <RouteLoadedMarker />
