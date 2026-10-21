@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ServiceType } from '../../types';
 import { PaymentMethodSelector } from './PaymentMethodSelector';
+import { HowPaymentWorksModal } from './HowPaymentWorksModal';
 import { MAX_FAMILY_ORDER_ITEMS, hasFamilyOrderCapacity } from '../../services/familyOrderLimits';
 
 interface FamilyCartDrawerProps {
@@ -328,6 +329,11 @@ export const FamilyCartDrawer: React.FC<FamilyCartDrawerProps> = ({ onNavigate }
                       — one payment for all family reports.
                     </span>
                   </p>
+                  {/* Owner request (2026-10-22): the same one-tap payment
+                      explainer on the family cart's payment box. */}
+                  <div className="flex justify-end">
+                    <HowPaymentWorksModal />
+                  </div>
                 </div>
               )}
 
