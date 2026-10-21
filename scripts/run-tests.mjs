@@ -203,6 +203,10 @@ const testFiles = [
   // never declared (HTTP 500, empty body, silently ignored). Runs the real
   // create/update routes against both the current and the pre-migration table.
   'tests/team-member-save.test.ts',
+  // Every page in the desktop row must also be reachable from the phone menu
+  // (the Astrology Team page was filtered out of it). Both menus now come from
+  // services/navigation.ts, which this exercises directly.
+  'tests/mobile-nav-team-link.test.ts',
   // Saved family members + frozen report download: order forms must start
   // blank (explicit picker, never silent auto-fill), up to 6 family
   // members are saveable, and a dashboard re-download must render the

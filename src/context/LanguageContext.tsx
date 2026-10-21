@@ -18,6 +18,7 @@ const translations: Record<string, string> = {
   marriage_compatibility: 'Marriage Compatibility',
   baby_naming: 'Baby Naming',
   muhurtham: 'Subha Muhurtham',
+  astrology_team: 'Astrology Team',
   how_it_works: 'How It Works',
   about: 'About Us',
   contact: 'Contact',
