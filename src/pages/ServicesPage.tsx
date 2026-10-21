@@ -259,7 +259,9 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
                           this page — in the header badge above
                           (data-testid="services-chat-advert"). It used to repeat
                           on every price card as well, which said the same thing
-                          four times on one screen. */}
+                          four times on one screen; the card strip now skips the
+                          chat promise (STRIP_HIDDEN_PROMISES in
+                          services/servicePromise.ts). */}
                       <ServicePromiseStrip variant="card" className="mt-3 border-t border-white/10 pt-3" />
                       <RouteLink
                         route={route}

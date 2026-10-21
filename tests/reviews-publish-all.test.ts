@@ -25,6 +25,7 @@ import {
   CHAT_INCLUDED_LINE,
   PRE_APPROVAL_REFUND_PERCENT,
   SERVICE_PROMISES,
+  inlinePromises,
   priceCardPromises
 } from '../src/services/servicePromise';
 
@@ -70,10 +71,15 @@ await check('every promise is a capability the site really has', () => {
   for (const forbidden of ['24/7', 'lifetime', 'instant', 'guaranteed results', '100% accurate', 'no questions asked']) {
     assert.ok(!text.includes(forbidden), `the promise text must not claim "${forbidden}"`);
   }
-  // A price card shows three, and always includes the chat.
+  // A price card shows the guarantees that make a fee safe to pay — but NOT the
+  // chat benefit: the owner asked (2026-10-21) for the chat line to be stated
+  // once per page, so repeating it on every card would say it four times.
   const card = priceCardPromises();
-  assert.equal(card.length, 3);
-  assert.ok(card.some(promise => promise.id === 'chat'), 'the chat must be on the price card');
+  assert.deepEqual(card.map(promise => promise.id), ['reviewed', 'refund']);
+  assert.ok(!card.some(promise => promise.id === 'chat'), 'the chat is stated once per page, not once per card');
+  const inline = inlinePromises();
+  assert.deepEqual(inline.map(promise => promise.id), ['reviewed', 'refund']);
+  assert.ok(!inline.some(promise => promise.id === 'chat'), 'checkout spells the chat line out above its strip');
 });
 
 await check('the chat line is spelled out once on services, and never on the home page', () => {
@@ -98,6 +104,10 @@ await check('the chat line is spelled out once on services, and never on the hom
   assert.equal(spelled.length, 1, 'the Services page spells the chat line out exactly once');
   assert.match(services, /data-testid="services-chat-advert"/, 'and that one instance is the header badge');
   assert.doesNotMatch(services, /service-chat-line-/, 'the per-price-card copy is gone');
+  // The price cards cannot smuggle it back through the shared promise strip.
+  const stripLabels = [...priceCardPromises(), ...inlinePromises()].map(promise => promise.label).join(' ');
+  assert.doesNotMatch(stripLabels, /Personal astrologer chat included/,
+    'no strip may re-print the line the page states once');
   assert.match(read('src/pages/ServicesPage.tsx'), /ServicePromiseStrip/, 'services cards carry the promises');
   assert.match(read('src/components/cart/SingleServiceCheckoutModal.tsx'), /CHAT_INCLUDED_LINE/, 'checkout');
   assert.match(read('src/components/cart/SingleServiceCheckoutModal.tsx'), /ServicePromiseStrip/);
