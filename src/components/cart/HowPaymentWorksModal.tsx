@@ -90,8 +90,9 @@ export const HowPaymentWorksModal: React.FC = () => {
                     Our prices are listed in US dollars (and in rupees for India's GPay / UPI), but you
                     never need to hold dollars. PayPal and the card networks simply bill your own
                     currency — Australian dollars, New Zealand dollars, Canadian dollars, euros,
-                    pounds, or whatever your home currency is — at their own exchange rate. The exact
-                    amount in your currency is shown on the PayPal or card page BEFORE you approve it.
+                    pounds and all other currencies, including your home currency — at their own
+                    exchange rate. The exact amount in your currency is shown on the PayPal or card
+                    page BEFORE you approve it.
                   </p>
                 </div>
               </div>
