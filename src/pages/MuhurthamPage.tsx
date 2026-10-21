@@ -1131,6 +1131,13 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
         onClose={() => setShowAuthModal(false)}
         onAuthenticated={() => {
           setShowAuthModal(false);
+          // Never open the checkout for an incomplete form, even though this
+          // modal is normally reached only after validation.
+          const validationMessage = validate();
+          if (validationMessage) {
+            setError(validationMessage);
+            return;
+          }
           setShowCheckoutModal(true);
         }}
         title="Sign in to request your Muhurtham report"

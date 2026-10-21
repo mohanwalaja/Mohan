@@ -793,6 +793,13 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
         onClose={() => setShowAuthModal(false)}
         onAuthenticated={() => {
           setShowAuthModal(false);
+          // Signing in from the guest banner is NOT proof the form is filled.
+          // Open the checkout only when the birth details are complete.
+          const validationMessage = validateBirthForm();
+          if (validationMessage) {
+            setErrorMessage(validationMessage);
+            return;
+          }
           setShowCheckoutModal(true);
         }}
         title="Sign In to Place Birth Jathagam Order"
