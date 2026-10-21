@@ -263,7 +263,13 @@ const testFiles = [
   // Payment trust popup (owner request 2026-10-22): one tap at payment time
   // explains own-currency billing, PayPal-enabled cards without an account,
   // and card safety; top-right close, then continue to payment.
-  'tests/how-payment-works.test.ts'
+  'tests/how-payment-works.test.ts',
+  // Accessibility (2026-10-21 audit): every page opens with 20+ focusable
+  // header links, so a keyboard user had to traverse the whole navigation
+  // before reaching the content. The skip link must be the first focusable
+  // element on every route, must target the real <main> id, and must be a
+  // readable, opaque panel when focused.
+  'tests/a11y-skip-link-contract.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 
