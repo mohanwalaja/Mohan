@@ -207,6 +207,10 @@ const testFiles = [
   // (the Astrology Team page was filtered out of it). Both menus now come from
   // services/navigation.ts, which this exercises directly.
   'tests/mobile-nav-team-link.test.ts',
+  // "Publish every waiting review today" + the price-card promises (chat
+  // window and refund percent must match the PHP they advertise). Runs the real
+  // bulk-moderation route under PHP-WASM, including a refunded-order skip.
+  'tests/reviews-publish-all.test.ts',
   // Saved family members + frozen report download: order forms must start
   // blank (explicit picker, never silent auto-fill), up to 6 family
   // members are saveable, and a dashboard re-download must render the

@@ -361,6 +361,7 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
         eyebrow="Vedic Horoscope Computation · Thirukanitha Sidereal Jyotish"
         title="Birth Jathagam & Comprehensive Natal Chart"
         description="Detailed natal horoscope calculated with precision sidereal ephemeris using Lahiri Ayanamsa. Includes 12 Bhavas, Navagraha planetary longitudes, Vimshottari Mahadasha timeline, Sade Sati & Dosha analysis, and 8 life aspect predictions."
+        showChatBenefit
       />
 
       {/* Main Grid: Order Form + Real-time Preview */}

@@ -701,6 +701,7 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
         eyebrow="Personalized Vedic Timing · Ceremony Muhurtham"
         title="Subha Muhurtham Report"
         description="Enter the birth details, choose the ceremony, and select where you live or where the function will happen. Birth place is used for your Janma Nakshatra and Rasi; the selected Muhurtham location is used for the report dates and local times."
+        showChatBenefit
       />
 
       {/* Main grid: order form + side panel — the same frame every other service page uses. */}

@@ -26,6 +26,7 @@
  *   GET    /api/services/my-reviews            customer: own reviews + reviewable orders
  *   GET    /api/admin/reviews?status=          admin: moderation queue
  *   POST   /api/admin/reviews/:id/approve      admin: publish
+ *   POST   /api/admin/reviews/approve-all      admin: publish every waiting review (bounded)
  *   POST   /api/admin/reviews/:id/reject       admin: hide (optional reason)
  *   DELETE /api/admin/reviews/:id              admin: delete
  *
@@ -63,6 +64,12 @@ const ASTRO_REVIEW_PUBLIC_LIMIT_DEFAULT = 12;
 const ASTRO_REVIEW_PUBLIC_LIMIT_MAX = 50;
 /** Per customer: generous for fixing a typo, useless for flooding the queue. */
 const ASTRO_REVIEW_SUBMIT_MAX_PER_WINDOW = 20;
+/**
+ * How many waiting reviews one "publish all" request may process. Bounded so a
+ * single admin click can never walk an unbounded table on shared hosting; the
+ * panel shows the remaining count and the button stays until the queue is empty.
+ */
+const ASTRO_REVIEW_BULK_MAX = 100;
 const ASTRO_REVIEW_SUBMIT_WINDOW_SECONDS = 3600;
 /**
  * Origin of the links sent by email: always the canonical public site, never
@@ -725,6 +732,124 @@ function astro_reviews_route_admin_list(PDO $pdo): void
     ]);
 }
 
+/**
+ * Publish ONE review, enforcing the same rule the single-approve route does.
+ *
+ * Returns ['ok' => bool, 'code' => string, 'message' => string] instead of
+ * emitting a response, so the single-review route and the bulk route share
+ * exactly one definition of "may be published". Publishing re-checks the order:
+ * a refund (or a cancelled payment) since submission revokes the review.
+ *
+ * Re-approving keeps the original publication date — no fake freshness.
+ */
+function astro_review_publish_one(PDO $pdo, array $admin, array $review): array
+{
+    $order = astro_review_find_order($pdo, (string) $review['order_id']);
+    $eligibility = $order
+        ? astro_review_order_eligibility($order)
+        : ['eligible' => false, 'code' => 'ORDER_NOT_FOUND', 'message' => 'The order for this review no longer exists.'];
+    if (!$eligibility['eligible']) {
+        return ['ok' => false, 'code' => (string) $eligibility['code'], 'message' => (string) $eligibility['message']];
+    }
+
+    $adminId = (string) ($admin['id'] ?? '');
+    $pdo->prepare(
+        "UPDATE customer_reviews
+            SET published_at = CASE WHEN status = 'APPROVED' AND published_at IS NOT NULL THEN published_at ELSE NOW() END,
+                status = 'APPROVED', moderated_at = NOW(), moderated_by = ?, rejection_reason = NULL
+          WHERE id = ?"
+    )->execute([$adminId, (string) $review['id']]);
+
+    logAudit(
+        $pdo,
+        $adminId,
+        (string) ($admin['name'] ?? ''),
+        'admin',
+        'REVIEW_APPROVED',
+        'Review ' . $review['id'] . ' for order #' . ($review['order_number'] ?? '?') . ' (' . $review['service_code'] . ', ' . (int) $review['rating'] . '/5)'
+    );
+
+    return ['ok' => true, 'code' => 'PUBLISHED', 'message' => 'Review published.'];
+}
+
+/**
+ * POST /api/admin/reviews/approve-all
+ *
+ * "Publish every review that is waiting, today." The owner's most valuable
+ * cheap action: an empty review queue converts, and one-by-one clicking does
+ * not happen. Bounded (ASTRO_REVIEW_BULK_MAX) so one request can never walk an
+ * unbounded table on shared hosting, and every review still goes through
+ * astro_review_publish_one() — a refunded order is skipped, never published.
+ *
+ * Response: published count, skipped list (with the reason), and the fresh
+ * queue counts, so the panel can show the result without a second request.
+ */
+function astro_reviews_route_admin_approve_all(PDO $pdo, array $admin): void
+{
+    astro_reviews_ensure_table($pdo);
+
+    $stmt = $pdo->prepare(
+        "SELECT r.*, o.order_number
+           FROM customer_reviews r
+           LEFT JOIN orders o ON o.id = r.order_id
+          WHERE r.status = 'PENDING'
+          ORDER BY r.created_at ASC
+          LIMIT " . (int) ASTRO_REVIEW_BULK_MAX
+    );
+    $stmt->execute();
+    $pending = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    $published = 0;
+    $skipped = [];
+    foreach ($pending as $review) {
+        $result = astro_review_publish_one($pdo, $admin, $review);
+        if ($result['ok']) {
+            $published++;
+        } else {
+            $skipped[] = [
+                'id' => (string) $review['id'],
+                'displayName' => (string) ($review['display_name'] ?? ''),
+                'orderNumber' => (string) ($review['order_number'] ?? ''),
+                'code' => $result['code'],
+                'reason' => $result['message'],
+            ];
+        }
+    }
+
+    $counts = ['PENDING' => 0, 'APPROVED' => 0, 'REJECTED' => 0, 'ALL' => 0];
+    foreach ($pdo->query('SELECT status, COUNT(*) AS n FROM customer_reviews GROUP BY status')->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $key = strtoupper((string) $row['status']);
+        if (isset($counts[$key])) {
+            $counts[$key] = (int) $row['n'];
+        }
+        $counts['ALL'] += (int) $row['n'];
+    }
+
+    if ($published > 0) {
+        logAudit(
+            $pdo,
+            (string) ($admin['id'] ?? ''),
+            (string) ($admin['name'] ?? ''),
+            'admin',
+            'REVIEW_BULK_APPROVED',
+            $published . ' pending review(s) published in one action; ' . count($skipped) . ' skipped'
+        );
+    }
+
+    $message = $published === 0
+        ? ($skipped === [] ? 'No reviews are waiting for approval.' : 'No review could be published — see the reasons below.')
+        : $published . ' review' . ($published === 1 ? '' : 's') . ' published'
+            . ($skipped !== [] ? ' · ' . count($skipped) . ' skipped' : '') . '.';
+
+    jsonResponse([
+        'success' => true,
+        'message' => $message,
+        'published' => $published,
+        'skipped' => $skipped,
+        'counts' => $counts,
+    ]);
+}
+
 /** POST /api/admin/reviews/:id/approve | /reject */
 function astro_reviews_route_admin_moderate(PDO $pdo, array $admin, string $reviewId, string $decision, array $body): void
 {
@@ -740,25 +865,14 @@ function astro_reviews_route_admin_moderate(PDO $pdo, array $admin, string $revi
     $adminId = (string) ($admin['id'] ?? '');
 
     if ($decision === 'approve') {
-        // Publishing re-checks the order: a refund since submission revokes it.
-        $order = astro_review_find_order($pdo, (string) $review['order_id']);
-        $eligibility = $order
-            ? astro_review_order_eligibility($order)
-            : ['eligible' => false, 'code' => 'ORDER_NOT_FOUND', 'message' => 'The order for this review no longer exists.'];
-        if (!$eligibility['eligible']) {
+        $result = astro_review_publish_one($pdo, $admin, $review);
+        if (!$result['ok']) {
             jsonResponse([
                 'success' => false,
-                'code' => $eligibility['code'],
-                'message' => 'This review cannot be published: ' . $eligibility['message'],
+                'code' => $result['code'],
+                'message' => 'This review cannot be published: ' . $result['message'],
             ], 409);
         }
-        // Re-approving keeps the original publication date (no fake freshness).
-        $pdo->prepare(
-            "UPDATE customer_reviews
-                SET published_at = CASE WHEN status = 'APPROVED' AND published_at IS NOT NULL THEN published_at ELSE NOW() END,
-                    status = 'APPROVED', moderated_at = NOW(), moderated_by = ?, rejection_reason = NULL
-              WHERE id = ?"
-        )->execute([$adminId, $reviewId]);
         $action = 'REVIEW_APPROVED';
         $message = 'Review published.';
     } else {

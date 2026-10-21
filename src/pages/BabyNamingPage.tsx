@@ -347,6 +347,7 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
         eyebrow="Vedic Namakaran · Sacred Baby Naming"
         title="Vedic Baby Naming & Nakshatra Initial Letters"
         description="Determine the exact astrological initial sound vibrations (Namaksharas) for all 4 padas of the baby&apos;s birth star. Includes ruling deities, animal/nature energies, and Vedic Gunam (innate strengths & virtues) analysis."
+        showChatBenefit
       />
 
       {/* Main Grid: Form + Syllables Preview */}

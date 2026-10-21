@@ -41,6 +41,14 @@ export const CustomerReviewsPanel: React.FC<CustomerReviewsPanelProps> = ({ onSe
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // "Publish all waiting" — the owner's fastest path from an empty public
+  // reviews list to a credible one. Result (and any skipped review) is kept so
+  // the panel can explain exactly what did and did not go live.
+  const [isBulkPublishing, setIsBulkPublishing] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{
+    published: number;
+    skipped: Array<{ id: string; displayName: string; orderNumber: string; reason: string }>;
+  } | null>(null);
   // The portal passes fresh inline callbacks on every render; keeping them in a
   // ref stops `load` from changing identity (which would re-fetch on every
   // parent render — and loop forever when a failed load reports an error).
@@ -94,6 +102,39 @@ export const CustomerReviewsPanel: React.FC<CustomerReviewsPanelProps> = ({ onSe
     }
   };
 
+  const publishAll = async () => {
+    const waiting = counts.PENDING ?? 0;
+    if (waiting === 0) return;
+    if (
+      !window.confirm(
+        `Publish all ${waiting} review${waiting === 1 ? '' : 's'} that are waiting?\n\n` +
+          'Each one is re-checked first: a review whose order was refunded or never delivered is skipped, not published.'
+      )
+    ) {
+      return;
+    }
+    setIsBulkPublishing(true);
+    setBulkResult(null);
+    try {
+      const res = await api.approveAllPendingReviews();
+      if (!res.success) {
+        onSetError(res.message || 'The waiting reviews could not be published.');
+        return;
+      }
+      setBulkResult({
+        published: Number(res.published ?? 0),
+        skipped: Array.isArray(res.skipped) ? res.skipped : []
+      });
+      onSetSuccess(res.message || 'Waiting reviews published.');
+      setFilter('APPROVED');
+      await load('APPROVED');
+    } catch (err: any) {
+      onSetError(err?.message || 'The waiting reviews could not be published.');
+    } finally {
+      setIsBulkPublishing(false);
+    }
+  };
+
   const remove = async (review: AdminReview) => {
     if (!window.confirm(`Delete the review by "${review.displayName}" for order #${review.orderNumber || review.orderId}? This cannot be undone.`)) {
       return;
@@ -127,15 +168,63 @@ export const CustomerReviewsPanel: React.FC<CustomerReviewsPanelProps> = ({ onSe
             "Verified purchase" and link to the service page.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void load(filter)}
-          className="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 hover:bg-slate-200 dark:hover:bg-slate-700"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {(counts.PENDING ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={() => void publishAll()}
+              disabled={isBulkPublishing}
+              data-testid="reviews-publish-all"
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold flex items-center gap-1.5"
+            >
+              <CheckCircle2 className={`w-3.5 h-3.5 ${isBulkPublishing ? 'animate-pulse' : ''}`} />
+              <span>
+                {isBulkPublishing
+                  ? 'Publishing…'
+                  : `Publish all ${counts.PENDING} waiting`}
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => void load(filter)}
+            className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 hover:bg-slate-200 dark:hover:bg-slate-700"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
+
+      {bulkResult && (
+        <div
+          data-testid="reviews-bulk-result"
+          className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-4 py-3 text-xs text-slate-700 dark:text-slate-200 space-y-1.5"
+        >
+          <p className="font-bold flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <span>
+              {bulkResult.published} review{bulkResult.published === 1 ? '' : 's'} published
+              {bulkResult.skipped.length > 0 ? ` · ${bulkResult.skipped.length} skipped` : ''}
+            </span>
+          </p>
+          {bulkResult.skipped.length > 0 && (
+            <ul className="space-y-1 pl-5 list-disc">
+              {bulkResult.skipped.map((item) => (
+                <li key={item.id}>
+                  <span className="font-semibold">{item.displayName || 'Customer'}</span>
+                  {item.orderNumber ? ` (order #${item.orderNumber})` : ''}: {item.reason}
+                </li>
+              ))}
+            </ul>
+          )}
+          {bulkResult.published > 0 && (
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              They are live on the homepage and their service page now — no rebuild needed.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-xs text-slate-600 dark:text-slate-300 flex items-start gap-2.5">
         <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
