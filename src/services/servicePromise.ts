@@ -71,7 +71,28 @@ export const CHAT_INCLUDED_LINE = `Personal astrologer chat included — ${ASTRO
 /** How many promises a compact card can show before it becomes noise. */
 export const PRICE_CARD_PROMISE_LIMIT = 3;
 
-/** The promises a price card shows (reviewed, chat, refund). */
+/** How many promises fit the one-row strip beside a pay button. */
+export const INLINE_PROMISE_LIMIT = 2;
+
+/**
+ * Promises the strips must not repeat, because the page already spells them out
+ * in full (owner, 2026-10-21): the Services page states the chat benefit exactly
+ * once — in its header badge — so the four price cards no longer carry the chat
+ * promise; checkout prints CHAT_INCLUDED_LINE right above its strip, so the
+ * strip skips the chat there too. A fact stated once is a fact that is read.
+ */
+export const STRIP_HIDDEN_PROMISES: ServicePromiseId[] = ['chat'];
+
+/** The promises a price card shows (reviewed, refund). */
 export function priceCardPromises(): ServicePromise[] {
-  return SERVICE_PROMISES.filter(promise => promise.id !== 'delivery').slice(0, PRICE_CARD_PROMISE_LIMIT);
+  return SERVICE_PROMISES
+    .filter(promise => promise.id !== 'delivery' && !STRIP_HIDDEN_PROMISES.includes(promise.id))
+    .slice(0, PRICE_CARD_PROMISE_LIMIT);
+}
+
+/** The promises on the checkout's one-row strip (reviewed, refund). */
+export function inlinePromises(): ServicePromise[] {
+  return SERVICE_PROMISES
+    .filter(promise => promise.id !== 'delivery' && !STRIP_HIDDEN_PROMISES.includes(promise.id))
+    .slice(0, INLINE_PROMISE_LIMIT);
 }

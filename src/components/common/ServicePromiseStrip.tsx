@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle2, MessageSquareHeart, ShieldCheck, Star } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { SERVICE_PROMISES, priceCardPromises, type ServicePromiseId } from '../../services/servicePromise';
+import { priceCardPromises, inlinePromises, type ServicePromiseId } from '../../services/servicePromise';
 
 const ICONS: Record<ServicePromiseId, LucideIcon> = {
   reviewed: ShieldCheck,
@@ -29,7 +29,7 @@ export const ServicePromiseStrip: React.FC<ServicePromiseStripProps> = ({
   className = '',
   tone = 'dark'
 }) => {
-  const promises = variant === 'inline' ? SERVICE_PROMISES.slice(0, 2) : priceCardPromises();
+  const promises = variant === 'inline' ? inlinePromises() : priceCardPromises();
   const text = tone === 'dark' ? 'text-slate-300' : 'text-slate-600';
   const icon = tone === 'dark' ? 'text-emerald-300' : 'text-emerald-600';
 

@@ -53,7 +53,10 @@ check('the toggle is a real button wired to the region it opens', () => {
   assert.match(src, /<ChevronDown className=\{`h-4 w-4 transition-transform/, 'a visible affordance that turns');
   assert.match(src, /\? 'Hide details'/, 'and a label that says what the tap does');
   assert.match(src, /: 'View details'/, 'single order: view details');
-  assert.match(src, /isFamily \? 'View names & details'/, 'family: the tap promises the names');
+  assert.match(src, /hasDownload \? 'View details & download' : 'View details'/,
+    'single order with a delivered report: the tap promises the download too');
+  assert.match(src, /hasDownload \? 'View names & download' : 'View names & details'/,
+    'family: the tap promises the names and the downloads');
 });
 
 check('the collapsed card still names the person', () => {
@@ -78,13 +81,15 @@ check('birth details and payment info are expand-only', () => {
   assert.ok(!region.includes('<span>{personName}</span>'), 'the name moved to the collapsed header');
 });
 
-check('nothing actionable is hidden behind the toggle', () => {
+check('nothing the customer must act on is hidden behind the toggle', () => {
   const regionStart = src.indexOf('{expandedOrders[order.id] && isFamily && (');
   const bottomRow = src.indexOf('{/* Bottom Row: Delivery Status & Conditional Email Retry */}', regionStart);
+  const downloadBand = src.indexOf('{downloadBandOpen && downloadableMembers.map(', regionStart);
   assert.ok(regionStart > 0, 'the expand-only region exists');
   assert.ok(bottomRow > regionStart, 'the status row follows it');
   assert.ok(src.indexOf('{expandedOrders[order.id] && !isFamily && (') > regionStart,
     'the single-order detail columns sit in the same expand-only band');
+  assert.ok(downloadBand > bottomRow, 'and the download band comes after the status row');
   // Searched FROM the region onward: the same words also appear in the doc
   // comment at the top of this component, and a whole-file indexOf would find
   // that prose instead of the rendered button.
@@ -92,13 +97,30 @@ check('nothing actionable is hidden behind the toggle', () => {
     'Email Delivery Failed / Bounced',
     'Report Complete & Emailed',
     'Processing in Vedic Astrology Queue',
-    'Update Email & Retry Delivery',
-    'data-frozen-download={order.id}',
-    'Download Report'
+    'Update Email & Retry Delivery'
   ]) {
     const at = src.indexOf(actionable, regionStart);
     assert.ok(at > bottomRow, `"${actionable}" must sit after the expand-only region, so it stays visible when the card is collapsed`);
   }
+  // The band between the status row and the downloads renders unconditionally:
+  // no expandedOrders gate may wrap the banner or the retry button.
+  assert.doesNotMatch(src.slice(bottomRow, downloadBand), /expandedOrders\[order\.id\]/,
+    'the status banner and the retry button are never gated by the toggle');
+});
+
+check('the download icons open with View details — and never vanish mid-download', () => {
+  assert.match(src, /const downloadableMembers = members\.filter\(m => memberDone\(m\) && m\.hasPdf\);/,
+    'delivered charts are collected once per card');
+  assert.match(src, /const hasDownload = downloadableMembers\.length > 0;/,
+    'so the collapsed label can promise the file');
+  assert.match(src, /\{downloadBandOpen && downloadableMembers\.map\(downloadOrder => \{ const order = downloadOrder; return \(/,
+    'the tested download block renders only while the band is open');
+  assert.match(src, /const downloadBandOpen = !!expandedOrders\[order\.id\]/, 'it opens with the details…');
+  assert.ok(src.includes("downloadTouchedMember(downloadingKey ? downloadingKey.split(':')[0] : '')"),
+    '…a download in flight holds it open');
+  assert.ok(src.includes('downloadTouchedMember(downloadFeedback?.orderId)'), '…so does its success/error note');
+  assert.ok(src.includes('downloadTouchedMember(savedReport?.orderId)'),
+    'and so does the Save-the-PDF fallback, so iOS can never lose the link');
 });
 
 check('a family bundle is one card, with names behind the first tap', () => {
@@ -126,7 +148,7 @@ check('inside the family card, a tap on a name opens that person only', () => {
 });
 
 check('every delivered chart keeps its own download on the family card', () => {
-  assert.match(src, /members\.filter\(m => memberDone\(m\) && m\.hasPdf\)\.map\(downloadOrder => \{ const order = downloadOrder; return \(/,
+  assert.match(src, /downloadableMembers\.map\(downloadOrder => \{ const order = downloadOrder; return \(/,
     'the tested download block is re-bound per delivered member, not copied');
   assert.match(src, /key=\{`download-\$\{order\.id\}`\}/, 'one block per member, keyed');
 });

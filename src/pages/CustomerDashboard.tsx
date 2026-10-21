@@ -1378,13 +1378,13 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                   After approval, your <strong>Report PDF</strong> and <strong>Tax Invoice PDF</strong> are emailed as attachments from <strong>admin@astrosivam.com</strong>. Not in your inbox? Check Spam/Junk.
                 </p>
                 {/* Owner request (2026-10-21): keep this short. Two facts per
-                    line — where the PDFs come from, and what Download Report
+                    line — where the PDFs come from, and what the download icon
                     gives. The button is named as it actually renders
                     ("Update Email & Retry Delivery", and only on an order whose
                     delivery failed); the old copy quoted a "Resend to Email"
                     button that does not exist on this screen. */}
                 <p className="text-slate-400 leading-relaxed text-[11.5px]">
-                  <strong>Download Report</strong> saves the report exactly as prepared on your order date — never recalculated, so a new period needs a new order. Invoices are email-only; a failed delivery shows <strong>Update Email & Retry Delivery</strong> on that order.
+                  Open an order's <strong>View details</strong> and tap the download icon to save the report exactly as prepared on your order date — never recalculated, so a new period needs a new order. Invoices are email-only; a failed delivery shows <strong>Update Email & Retry Delivery</strong> on that order.
                 </p>
               </div>
             </div>
@@ -1480,6 +1480,23 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                     || order;
                 const bannerCompleted = memberDone(bannerOrder);
                 const bannerRefunded = memberRefunded(bannerOrder);
+                // Owner request (2026-10-21): "In user profile reports Download
+                // icon also should be inside view details" — a collapsed card is
+                // the badges and the name, and the download icons open with the
+                // rest of the details. Two guards keep that from costing the
+                // customer the file:
+                //   • the collapsed label promises the download when there is one,
+                //   • a download already in flight — or one that just produced a
+                //     file — holds the band open even if the card is collapsed, so
+                //     the "Save the PDF" fallback that fixed iOS Safari (2026-10-21)
+                //     can never be swallowed by a tap on Hide details.
+                const downloadableMembers = members.filter(m => memberDone(m) && m.hasPdf);
+                const hasDownload = downloadableMembers.length > 0;
+                const downloadTouchedMember = (id?: string) => Boolean(id) && members.some(m => m.id === id);
+                const downloadBandOpen = !!expandedOrders[order.id]
+                  || downloadTouchedMember(downloadingKey ? downloadingKey.split(':')[0] : '')
+                  || downloadTouchedMember(downloadFeedback?.orderId)
+                  || downloadTouchedMember(savedReport?.orderId);
                 const refundAmountText = (o: Order) => {
                   const amount = o.refundAmount != null ? o.refundAmount : Math.round((Number(o.amount) || 0) * 0.9 * 100) / 100;
                   const currency = (o.refundCurrency || o.currency || 'USD').toUpperCase();
@@ -1646,9 +1663,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
                     {/* Owner request (2026-10-21): collapsed, a card is one line of
                         identity — the name and gender, under the order badges.
-                        Tapping it expands the birth details and the payment block;
-                        nothing actionable (status banner, buttons, downloads) is
-                        ever hidden behind it. */}
+                        Tapping it expands the birth details, the payment block and
+                        the download icons. The status banner and the email-retry
+                        button stay outside it, so a delivery problem is never
+                        behind a toggle. */}
                     <button
                       type="button"
                       onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
@@ -1673,7 +1691,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                       <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold text-amber-300">
                         {expandedOrders[order.id]
                           ? 'Hide details'
-                          : isFamily ? 'View names & details' : 'View details'}
+                          : isFamily
+                            ? hasDownload ? 'View names & download' : 'View names & details'
+                            : hasDownload ? 'View details & download' : 'View details'}
                         <ChevronDown className={`h-4 w-4 transition-transform ${expandedOrders[order.id] ? 'rotate-180' : ''}`} />
                       </span>
                     </button>
@@ -1983,8 +2003,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                     {/* One download block per DELIVERED member, so a family card
                         keeps every chart's download exactly as a single order
                         keeps its own. The block below is byte-for-byte the tested
-                        one — `order` is merely re-bound per member. */}
-                    {members.filter(m => memberDone(m) && m.hasPdf).map(downloadOrder => { const order = downloadOrder; return (
+                        one — `order` is merely re-bound per member. It opens with
+                        "View details" (owner, 2026-10-21), and stays open while a
+                        download runs so its outcome is never hidden. */}
+                    {downloadBandOpen && downloadableMembers.map(downloadOrder => { const order = downloadOrder; return (
                       <div key={`download-${order.id}`} className="pt-1 space-y-2" data-frozen-download={order.id}>
                         {(order.items?.length || 0) > 0 ? (
                           <div className="space-y-2">
