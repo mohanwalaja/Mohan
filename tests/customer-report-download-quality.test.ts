@@ -120,15 +120,19 @@ check('the browser is the only PDF renderer left in the tree', () => {
   assert.ok(!api.includes('/export-preview-pdf'));
 });
 
-check('the removed profile wording stays removed, the language label stays', () => {
+check('the removed profile wording stays removed, and so does the prepared-on line', () => {
   assert.doesNotMatch(dashboard, /your order language/);
   assert.doesNotMatch(dashboard, /frozen as ordered/);
   assert.doesNotMatch(dashboard, /never updates itself/);
-  assert.match(dashboard, /Prepared on \{itemPrepared\} • \{reportLanguageName\(item\.language\)\}/);
-  assert.match(
-    dashboard,
-    /Prepared on \{formatPreparedDate\(order\.reportSnapshotAt \|\| order\.createdAt\)\} • \{reportLanguageName\(order\.language\)\}/
-  );
+  // Owner request (2026-10-21): the download row is a name and an icon. The
+  // "Prepared on <date> • <language>" line added height to every card and
+  // repeated what the language badge above the row already says.
+  assert.doesNotMatch(dashboard, /Prepared on \{itemPrepared\}/);
+  assert.doesNotMatch(dashboard, />Prepared on \{formatPreparedDate\(order\.reportSnapshotAt/);
+  // The language itself is still stated where it decides something: the card's
+  // language badge, and each family member's row.
+  assert.match(dashboard, /reportLanguageName\(member\.language\)/);
+  assert.match(dashboard, /const getLangBadge = \(\) => \{/);
 });
 
 let failures = 0;

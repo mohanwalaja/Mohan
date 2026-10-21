@@ -337,19 +337,18 @@ export function buildWeddingMatchHtml(
   const renderHeader = (subtitle: string) => buildReportHeaderHtml({ subtitle });
 
   /**
-   * "Prepared on" stamp — the frozen calculation date. First page only, on the
+   * Prepared-date stamp — the frozen calculation date. First page only, on the
    * LEFT of the footer, never centred with the brand line (owner request,
    * Oct 2026). The date comes from the result itself, so a re-downloaded
    * frozen snapshot keeps its original prepared date.
    */
-  const preparedOnLabel = isTa ? 'தயாரிக்கப்பட்ட நாள்' : isHi ? 'तैयार तिथि' : 'Prepared on';
   const preparedDateRaw = resAny.generatedAt ? new Date(String(resAny.generatedAt).replace(' ', 'T')) : null;
   const preparedDate = preparedDateRaw && !isNaN(preparedDateRaw.getTime())
     ? preparedDateRaw.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
     : '';
   const renderFooterFor = (pageNumber: number) => `
     <div class="footer">
-      ${pageNumber === 1 && preparedDate ? `<span class="footer-prepared">${escapeHtml(preparedOnLabel)}: ${escapeHtml(preparedDate)}</span>` : ''}
+      ${pageNumber === 1 && preparedDate ? `<span class="footer-prepared">${escapeHtml(preparedDate)}</span>` : ''}
       <div class="brand-title">ASTRO SIVAM - OFFICIAL VEDIC REPORT</div>
       <div class="brand-sub">astrosivam.com • admin@astrosivam.com</div>
     </div>
@@ -861,7 +860,8 @@ ${REPORT_FONT_LINK_TAG}
     font-weight: 600;
     margin-top: 0.3mm;
   }
-  /* Page 1 only: the "Prepared on" stamp sits on the LEFT edge of the footer,
+  /* Page 1 only: the prepared-date stamp (a bare date, no label in any
+     language — owner request, 2026-10-21) sits on the LEFT edge of the footer,
      level with the last footer line; the centred brand line never moves. */
   .footer .footer-prepared {
     position: absolute;

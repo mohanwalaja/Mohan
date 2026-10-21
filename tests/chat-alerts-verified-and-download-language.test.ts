@@ -55,8 +55,12 @@ check('download renders only the ordered language, only on click', () => {
   const request = fn.slice(fn.indexOf('> {'));
   assert.ok(!/lang(?:uage)?\s*[:=]/.test(request), 'client sends no language choice for downloads');
   const dashboard = read('src/pages/CustomerDashboard.tsx');
-  assert.match(dashboard, /reportLanguageName\(order\.language\)/, 'the ordered language is still shown');
-  assert.match(dashboard, /reportLanguageName\(item\.language\)/, 'each person downloads in their own ordered language');
+  // Owner request (2026-10-21): the download row lost its "Prepared on … • Tamil"
+  // line, so the ordered language is now stated by the card's language badge and,
+  // per person, on each family member's row. What must never come back is a
+  // language the customer can switch at download time.
+  assert.match(dashboard, /const getLangBadge = \(\) => \{/, 'the ordered language is still shown on the card');
+  assert.match(dashboard, /reportLanguageName\(member\.language\)/, 'each family member keeps their own ordered language');
   assert.doesNotMatch(dashboard, /your order language|frozen as ordered|never updates itself/,
     'the customer asked for the old profile wording to be removed');
 });

@@ -293,10 +293,12 @@ check('the report views render HTML only - no PDF renderer, no frozen flag', () 
 
 check('every report prints its prepared date (frozen date, never download date)', () => {
   const views = read('api/astrology/report_views.php');
-  assert.match(views, /function preparedOnLabel/);
-  assert.match(views, /Prepared on/, 'English prepared-on label');
-  assert.match(views, /தயாரிக்கப்பட்ட நாள்/, 'Tamil prepared-on label');
-  assert.match(views, /तैयार तिथि/, 'Hindi prepared-on label');
+  assert.match(views, /function preparedDateStamp/);
+  // Owner request (2026-10-21): inside the reports the stamp is the bare date —
+  // no "Prepared on" label in English, Tamil or Hindi.
+  assert.doesNotMatch(views, /Prepared on/, 'the English label is gone from the server views');
+  assert.doesNotMatch(views, /தயாரிக்கப்பட்ட நாள்/, 'and the Tamil label');
+  assert.doesNotMatch(views, /तैयार तिथि/, 'and the Hindi label');
   // Owner request (Oct 2026): the stamp prints on the FIRST page of every
   // report only, on the LEFT of the reference line — never centred with the
   // page numbers.
@@ -313,7 +315,7 @@ check('every report prints its prepared date (frozen date, never download date)'
   assert.match(views, /Issued On/, 'wedding/muhurtham/baby keep their issued-on date');
   const ts = read('src/services/jathagamHtmlBuilder.ts');
   assert.match(ts, /footer-prepared/);
-  assert.match(ts, /Prepared on/);
+  assert.doesNotMatch(ts, /Prepared on/, 'the browser builder prints the bare date too');
   assert.match(ts, /pageNumber === 1/, 'the browser Jathagam builder stamps page 1 only');
   assert.match(ts, /position: absolute;\s*left: 0/, 'the browser stamp is pinned to the left edge');
   assert.match(ts, /\['generatedAt'\]|generatedAt/, 'TS stamp reads the frozen result date');
@@ -371,8 +373,9 @@ function ok(bool $c, string $m): void {
     echo ($c ? "[PASS] " : "[FAIL] ") . $m . "\\n";
     if (!$c) { $GLOBALS['fails'] = ($GLOBALS['fails'] ?? 0) + 1; }
 }
-ok(AstroReportViews::preparedOnLabel(['generatedAt' => '2024-02-03 10:00:00'], 'en') === 'Prepared on: 03 Feb 2024', 'prepared date comes from the frozen result');
-ok(AstroReportViews::preparedOnLabel([], 'en') === '', 'no prepared date in result -> no invented today stamp');
+ok(AstroReportViews::preparedDateStamp(['generatedAt' => '2024-02-03 10:00:00'], 'en') === '03 Feb 2024', 'the stamp is the frozen date alone, no label');
+ok(AstroReportViews::preparedDateStamp(['generatedAt' => '2024-02-03 10:00:00'], 'ta') === '03 Feb 2024', 'and the same bare date in every language');
+ok(AstroReportViews::preparedDateStamp([], 'en') === '', 'no prepared date in result -> no invented today stamp');
 $birth = ['name' => 'Frozen Native', 'gender' => 'M', 'dob' => '1990-08-15', 'tob' => '09:30',
   'birthPlace' => 'Suva', 'country' => '', 'latitude' => -18.1416,
   'longitude' => 178.4419, 'timezoneOffsetHours' => 12, 'timeZoneId' => 'Pacific/Fiji'];
@@ -381,8 +384,9 @@ $result['generatedAt'] = '2024-02-03 10:00:00';
 $order = ['service_type' => 'BIRTH_JATHAGAM', 'language' => 'en', 'order_number' => 'ORD-FROZEN1',
   'user_name' => 'Frozen Native', 'input_payload' => $birth];
 $html = AstroReportViews::renderFullReportHtml($order, $result);
-ok(strpos($html, 'Prepared on: 03 Feb 2024') !== false, 'Jathagam header prints the frozen prepared date');
-ok(substr_count($html, 'Prepared on: 03 Feb 2024') === 1, 'the stamp prints on the first page only, never repeated');
+ok(strpos($html, 'header-prepared">03 Feb 2024<') !== false, 'Jathagam header prints the frozen date, bare');
+ok(substr_count($html, 'header-prepared">03 Feb 2024<') === 1, 'the stamp prints on the first page only, never repeated');
+ok(strpos($html, 'Prepared on') === false, 'and the report carries no "Prepared on" wording anywhere');
 ok(strpos($html, 'ref-left') !== false, 'the stamp rides the LEFT cell of the reference line');
 $babyOrder = ['service_type' => 'BABY_NAMING', 'language' => 'en', 'order_number' => 'ORD-PREVIEW2',
   'user_name' => 'Parent', 'input_payload' => $birth];

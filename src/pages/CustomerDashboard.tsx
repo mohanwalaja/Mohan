@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   User,
   MapPin,
@@ -26,7 +26,8 @@ import {
   Trash2,
   MessageCircle,
   Phone,
-  ChevronDown
+  ChevronDown,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -184,6 +185,43 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
   // Frozen report download state (keyed per order / per order item).
   const [downloadingKey, setDownloadingKey] = useState('');
+  // Owner request (2026-10-21): the My Orders cards must stay small. A collapsed
+  // card shows the name and the order badges only; the birth details and the
+  // payment block are one tap away behind the name row. Keyed by order id so
+  // expanding one card never opens its neighbours.
+  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
+  // Second level of the family card: tapping a name opens that person's birth
+  // details, without opening their siblings'.
+  const [expandedPersons, setExpandedPersons] = useState<Record<string, boolean>>({});
+
+  // Family bundles arrive as ONE orders row per chart sharing group_id
+  // (api/services/index.php: "one orders row per chart, grouped by group_id"),
+  // which used to mean one tall card per person. Group them so a family reads as
+  // a single card: names behind the first tap, each person's birth details
+  // behind a tap on their name.
+  const orderGroups = useMemo(() => {
+    const groups: Order[][] = [];
+    const byKey = new Map<string, Order[]>();
+    for (const entry of orders) {
+      const key = entry.groupId || entry.id;
+      const existing = byKey.get(key);
+      if (existing) {
+        existing.push(entry);
+      } else {
+        const fresh: Order[] = [entry];
+        byKey.set(key, fresh);
+        groups.push(fresh);
+      }
+    }
+    for (const list of groups) {
+      list.sort(
+        (a, b) =>
+          (a.groupOrderIndex ?? 0) - (b.groupOrderIndex ?? 0) ||
+          String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+      );
+    }
+    return groups;
+  }, [orders]);
   const [downloadFeedback, setDownloadFeedback] = useState<{ orderId: string; type: 'success' | 'error'; message: string } | null>(null);
   /**
    * The rendered report the customer can still take with a tap.
@@ -1419,13 +1457,29 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {(orders || []).map(order => {
+              {orderGroups.map(members => {
+                const isFamily = members.length > 1;
+                const order = members[0];
                 const isCompleted = order.status === 'COMPLETED' || order.status === 'GENERATED';
                 const isFree = order.serviceMode === 'FREE_BETA';
                 // Refund & Cancellation Policy: 90% back if cancelled BEFORE admin
                 // approval, settled within 3 working days; non-refundable after
                 // approval. Both values below come from the server, never guessed.
                 const isRefunded = (order.refundStatus || '').toUpperCase() === 'REFUNDED' || (order.status || '').toUpperCase() === 'REFUNDED';
+                // One status banner per card. For a family it reports the member
+                // that most needs the customer: a bounced email must not hide
+                // behind three completed siblings, and an order still in the
+                // queue must not read as delivered.
+                const memberDone = (m: Order) => (m.status || '').toUpperCase() === 'COMPLETED' || (m.status || '').toUpperCase() === 'GENERATED';
+                const memberRefunded = (m: Order) => (m.refundStatus || '').toUpperCase() === 'REFUNDED' || (m.status || '').toUpperCase() === 'REFUNDED';
+                const bannerOrder = !isFamily
+                  ? order
+                  : members.find(m => m.emailStatus === 'FAILED')
+                    || members.find(m => !memberDone(m) && !memberRefunded(m))
+                    || members.find(memberRefunded)
+                    || order;
+                const bannerCompleted = memberDone(bannerOrder);
+                const bannerRefunded = memberRefunded(bannerOrder);
                 const refundAmountText = (o: Order) => {
                   const amount = o.refundAmount != null ? o.refundAmount : Math.round((Number(o.amount) || 0) * 0.9 * 100) / 100;
                   const currency = (o.refundCurrency || o.currency || 'USD').toUpperCase();
@@ -1541,7 +1595,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
                 return (
                   <div
-                    key={order.id}
+                    key={order.groupId || order.id}
                     className="bg-slate-900/95 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 sm:p-6 shadow-lg transition-all space-y-4"
                   >
                     {/* Top Row: Order Badges */}
@@ -1565,6 +1619,16 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                         </span>
 
                         {getLangBadge()}
+
+                        {/* A family bundle is one checkout and one payment, so it
+                            is one card; the pill says how many charts are in it
+                            before the customer expands anything. */}
+                        {isFamily && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-violet-950/60 text-violet-300 border border-violet-700/60">
+                            <span>👪</span>
+                            <span>{members.length} charts · one order</span>
+                          </span>
+                        )}
                       </div>
 
                       {/* This report-specific shortcut appears after delivery; the
@@ -1580,8 +1644,151 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                       )}
                     </div>
 
-                    {/* Middle: Complete Order & User Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Owner request (2026-10-21): collapsed, a card is one line of
+                        identity — the name and gender, under the order badges.
+                        Tapping it expands the birth details and the payment block;
+                        nothing actionable (status banner, buttons, downloads) is
+                        ever hidden behind it. */}
+                    <button
+                      type="button"
+                      onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
+                      aria-expanded={!!expandedOrders[order.id]}
+                      aria-controls={`order-details-${order.id}`}
+                      className="w-full flex items-center justify-between gap-3 rounded-xl px-1.5 py-1 text-left cursor-pointer hover:bg-slate-800/40 transition-colors"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-sm font-bold text-white">
+                          {isFamily
+                            ? `${personName} + ${members.length - 1} more`
+                            : order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl)
+                              ? `${boy?.name || 'Groom'} & ${girl?.name || 'Bride'}`
+                              : personName}
+                        </span>
+                        {gender && order.serviceType !== 'MARRIAGE_COMPATIBILITY' && (
+                          <span className="shrink-0 rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-300">
+                            {gender === 'M' || gender === 'Male' ? 'Male' : 'Female'}
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold text-amber-300">
+                        {expandedOrders[order.id]
+                          ? 'Hide details'
+                          : isFamily ? 'View names & details' : 'View details'}
+                        <ChevronDown className={`h-4 w-4 transition-transform ${expandedOrders[order.id] ? 'rotate-180' : ''}`} />
+                      </span>
+                    </button>
+
+                    {/* Middle, FAMILY: one card for the whole bundle (owner
+                        request, 2026-10-21). The payment is stated once, then one
+                        row per chart; a tap on a name opens that person's birth
+                        details — names first, details behind the name. */}
+                    {expandedOrders[order.id] && isFamily && (
+                    <div id={`order-details-${order.id}`} className="space-y-3">
+                      <div className="space-y-2 bg-slate-950/50 rounded-xl p-3.5 border border-slate-800/60 text-xs">
+                        <div className="text-[10.5px] uppercase font-bold text-slate-400 tracking-wider">
+                          Order & Payment Information
+                        </div>
+                        <div className="space-y-1.5 text-[11.5px]">
+                          <div className="flex justify-between text-slate-300">
+                            <span className="text-slate-400">Ordered On:</span>
+                            <strong className="text-slate-200">
+                              {order.createdAt
+                                ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : 'N/A'}
+                            </strong>
+                          </div>
+                          <div className="flex justify-between text-slate-300">
+                            <span className="text-slate-400">Payment Mode:</span>
+                            <strong className={isFree ? 'text-amber-400' : 'text-emerald-400'}>
+                              {isFree ? '★ Free Beta (Your 1 Free Report)' : `Paid (${order.currency} $${order.amount})`}
+                            </strong>
+                          </div>
+                          {order.paymentReference && (
+                            <div className="flex justify-between text-slate-300">
+                              <span className="text-slate-400">Payment Ref:</span>
+                              <span className="font-mono text-[11px] text-slate-200">{order.paymentReference}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-slate-300">
+                            <span className="text-slate-400">Delivery Email:</span>
+                            <strong className="text-amber-300">{order.userEmail}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-[10.5px] uppercase font-bold text-amber-400 tracking-wider">
+                          Family Members & Birth Details
+                        </div>
+                        {members.map(member => {
+                          const mName = member.inputPayload?.name || member.userName || 'Family member';
+                          const mGender = member.inputPayload?.gender;
+                          const mOpen = !!expandedPersons[member.id];
+                          return (
+                            <div key={member.id} className="bg-slate-950/50 rounded-xl border border-slate-800/60">
+                              <button
+                                type="button"
+                                onClick={() => setExpandedPersons(prev => ({ ...prev, [member.id]: !prev[member.id] }))}
+                                aria-expanded={mOpen}
+                                aria-controls={`person-details-${member.id}`}
+                                className="w-full flex items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left cursor-pointer hover:bg-slate-800/40 transition-colors"
+                              >
+                                <span className="flex min-w-0 items-center gap-2">
+                                  <span className="truncate text-xs font-bold text-white">{mName}</span>
+                                  {mGender && (
+                                    <span className="shrink-0 rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-300">
+                                      {mGender === 'M' || mGender === 'Male' ? 'Male' : 'Female'}
+                                    </span>
+                                  )}
+                                  <span className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-bold ${
+                                    member.emailStatus === 'FAILED'
+                                      ? 'bg-rose-950/60 text-rose-300 border-rose-700/60'
+                                      : memberDone(member)
+                                        ? 'bg-emerald-950/60 text-emerald-300 border-emerald-700/60'
+                                        : 'bg-amber-950/60 text-amber-300 border-amber-700/60'
+                                  }`}>
+                                    {member.emailStatus === 'FAILED' ? 'Email failed' : memberDone(member) ? 'Delivered' : 'In progress'}
+                                  </span>
+                                </span>
+                                <ChevronDown className={`h-4 w-4 shrink-0 text-amber-300 transition-transform ${mOpen ? 'rotate-180' : ''}`} />
+                              </button>
+                              {mOpen && (
+                                <div id={`person-details-${member.id}`} className="space-y-1.5 px-3.5 pb-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-300 text-[11.5px]">
+                                    {member.inputPayload?.dob && (
+                                      <div>
+                                        <span className="text-slate-400 font-medium">Date of Birth:</span>{' '}
+                                        <strong className="text-amber-200 font-semibold">{member.inputPayload.dob}</strong>
+                                      </div>
+                                    )}
+                                    {member.inputPayload?.tob && (
+                                      <div>
+                                        <span className="text-slate-400 font-medium">Exact Time:</span>{' '}
+                                        <strong className="text-amber-200 font-semibold">{member.inputPayload.tob}</strong>
+                                      </div>
+                                    )}
+                                    {member.inputPayload?.birthPlace && (
+                                      <div className="sm:col-span-2">
+                                        <span className="text-slate-400 font-medium">Birth Place:</span>{' '}
+                                        <strong className="text-slate-200 font-semibold">{member.inputPayload.birthPlace}</strong>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400">
+                                    #{member.orderNumber || member.id} • {reportLanguageName(member.language)}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    )}
+
+                    {/* Middle: Complete Order & User Details (expanded only) */}
+                    {expandedOrders[order.id] && !isFamily && (
+                    <div id={`order-details-${order.id}`} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       
                       {/* Left Column: User & Astrological Input Details */}
                       <div className="space-y-2 bg-slate-950/50 rounded-xl p-3.5 border border-slate-800/60">
@@ -1602,16 +1809,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                           </div>
                         ) : (
                           <div className="space-y-1.5 text-xs">
-                            <div className="text-sm font-bold text-white flex items-center gap-2">
-                              <span>{personName}</span>
-                              {gender && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-normal">
-                                  {gender === 'M' || gender === 'Male' ? 'Male' : 'Female'}
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-300 text-[11.5px] pt-1">
+                            {/* The name and gender live in the collapsed header now
+                                (owner request, 2026-10-21); repeating them here would
+                                say the same thing twice on one card. */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-300 text-[11.5px]">
                               {dob && (
                                 <div>
                                   <span className="text-slate-400 font-medium">Date of Birth:</span>{' '}
@@ -1676,13 +1877,14 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                         </div>
                       </div>
                     </div>
+                    )}
 
                     {/* Bottom Row: Delivery Status & Conditional Email Retry */}
                     <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-slate-800/80">
                       
                       {/* Delivery Status Message */}
                       <div className="flex-1 text-xs">
-                        {order.emailStatus === 'FAILED' ? (
+                        {bannerOrder.emailStatus === 'FAILED' ? (
                           <div className="text-rose-200 bg-rose-950/60 border border-rose-700/80 rounded-xl px-3.5 py-2.5 flex items-start gap-2.5">
                             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
@@ -1690,11 +1892,11 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                 Email Delivery Failed / Bounced
                               </div>
                               <div className="text-[11.5px] text-rose-200">
-                                We could not deliver your report to <strong>{order.userEmail}</strong>. Please update your email address using the button on the right to receive your Vedic Report.
+                                We could not deliver your report to <strong>{bannerOrder.userEmail}</strong>. Please update your email address using the button on the right to receive your Vedic Report.
                               </div>
                             </div>
                           </div>
-                        ) : isRefunded ? (
+                        ) : bannerRefunded ? (
                           <div className="text-emerald-200 bg-emerald-950/50 border border-emerald-700/70 rounded-xl px-3.5 py-2.5 flex items-start gap-2.5">
                             <RotateCcw className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
@@ -1712,7 +1914,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               </div>
                             </div>
                           </div>
-                        ) : isCompleted ? (
+                        ) : bannerCompleted ? (
                           <div className="text-emerald-300 bg-emerald-950/40 border border-emerald-800/60 rounded-xl px-3.5 py-2.5 flex items-start gap-2.5">
                             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
@@ -1726,7 +1928,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                   quoting the 90% pre-approval window here is
                                   something the customer cannot act on. */}
                               <div className="text-[11.5px] text-emerald-200">
-                                Your Vedic Report and Tax Invoice PDFs were emailed to <strong>{order.userEmail}</strong>.
+                                Your Vedic Report and Tax Invoice PDFs were emailed to <strong>{bannerOrder.userEmail}</strong>.
                               </div>
                             </div>
                           </div>
@@ -1743,7 +1945,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                 Processing in Vedic Astrology Queue
                               </div>
                               <div className="text-[11.5px] text-amber-300/90">
-                                Our India Vedic astrology scholars are reviewing your planetary chart. Your PDF Report and Tax Invoice will be emailed to <strong>{order.userEmail}</strong>.
+                                Our India Vedic astrology scholars are reviewing your planetary chart. Your PDF Report and Tax Invoice will be emailed to <strong>{bannerOrder.userEmail}</strong>.
                               </div>
                               <div className="text-[11px] text-amber-300/80 pt-0.5">
                                 Not approved yet — you are eligible for a <strong>90% refund</strong> if you cancel before admin approval (the other 10% is the non-refundable payment gateway fee). Approved refunds settle within <strong>3 working days</strong>. To request one, email <strong>admin@astrosivam.com</strong> with this order number.
@@ -1754,20 +1956,20 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                       </div>
 
                       {/* Request Email Resend / Update Email Button: ONLY ENABLED IF DELIVERY FAILED OR PENDING */}
-                      {(order.emailStatus === 'FAILED' || order.status === 'PENDING' || order.status === 'PENDING_APPROVAL') && (
+                      {(bannerOrder.emailStatus === 'FAILED' || bannerOrder.status === 'PENDING' || bannerOrder.status === 'PENDING_APPROVAL') && (
                         <div className="shrink-0 w-full sm:w-auto">
                           <button
                             type="button"
-                            onClick={() => handleOpenResendModal(order)}
+                            onClick={() => handleOpenResendModal(bannerOrder)}
                             className={`w-full sm:w-auto px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 border ${
-                              order.emailStatus === 'FAILED'
+                              bannerOrder.emailStatus === 'FAILED'
                                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-amber-500/20'
                                 : 'bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border-slate-700'
                             }`}
-                            title={order.emailStatus === 'FAILED' ? "Update email address and re-dispatch report" : "Update delivery email address"}
+                            title={bannerOrder.emailStatus === 'FAILED' ? "Update email address and re-dispatch report" : "Update delivery email address"}
                           >
                             <Mail className="w-3.5 h-3.5" />
-                            <span>{order.emailStatus === 'FAILED' ? "Update Email & Retry Delivery" : "Update Delivery Email"}</span>
+                            <span>{bannerOrder.emailStatus === 'FAILED' ? "Update Email & Retry Delivery" : "Update Delivery Email"}</span>
                           </button>
                         </div>
                       )}
@@ -1778,12 +1980,15 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                         is rendered from the snapshot prepared on the order
                         date and never recalculates. Report only — the tax
                         invoice stays email-only. */}
-                    {isCompleted && order.hasPdf && (
-                      <div className="pt-1 space-y-2" data-frozen-download={order.id}>
+                    {/* One download block per DELIVERED member, so a family card
+                        keeps every chart's download exactly as a single order
+                        keeps its own. The block below is byte-for-byte the tested
+                        one — `order` is merely re-bound per member. */}
+                    {members.filter(m => memberDone(m) && m.hasPdf).map(downloadOrder => { const order = downloadOrder; return (
+                      <div key={`download-${order.id}`} className="pt-1 space-y-2" data-frozen-download={order.id}>
                         {(order.items?.length || 0) > 0 ? (
                           <div className="space-y-2">
                             {(order.items || []).map(item => {
-                              const itemPrepared = formatPreparedDate(item.reportSnapshotAt || order.reportSnapshotAt || order.createdAt);
                               const itemReady = item.reportStatus === 'SENT' && item.hasReportSnapshot !== false;
                               const itemService = item.serviceCode === 'BIRTH_JATHAGAM'
                                 ? 'Birth Jathagam'
@@ -1794,15 +1999,20 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                     : item.serviceCode === 'MUHURTHAM'
                                       ? 'Subha Muhurtham'
                                       : String(item.serviceCode).replace(/_/g, ' ');
+                              // Owner request (2026-10-21): the row is a name and
+                              // an icon. No wide button, no "Prepared on" line —
+                              // the date and language added height to every card
+                              // and told the customer nothing they act on. The
+                              // label ternary stays in title/aria-label so the
+                              // button is still named for a screen reader and
+                              // still promises "Downloading…" while it works.
                               return (
-                                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-950/50 border border-slate-800/60 rounded-xl px-3.5 py-2.5">
-                                  <div className="text-[11.5px] text-slate-300">
+                                <div key={item.id} className="flex items-center justify-between gap-2 bg-slate-950/50 border border-slate-800/60 rounded-xl px-3.5 py-2">
+                                  <div className="min-w-0 text-[11.5px] text-slate-300">
                                     <span className="font-bold text-white">{item.personName || 'Report'}</span>
                                     <span className="text-slate-400"> — {itemService}</span>
-                                    {itemPrepared && (
-                                      <span className="block text-[11px] text-slate-500">
-                                        Prepared on {itemPrepared} • {reportLanguageName(item.language)}
-                                      </span>
+                                    {downloadingKey === `${order.id}:${item.id}` && (
+                                      <span className="block text-[11px] font-bold text-amber-300">Downloading…</span>
                                     )}
                                   </div>
                                   {itemReady ? (
@@ -1810,10 +2020,13 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                       type="button"
                                       onClick={() => handleDownloadReport(order, item)}
                                       disabled={downloadingKey === `${order.id}:${item.id}`}
-                                      className="shrink-0 px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-slate-700 disabled:opacity-50"
+                                      title={downloadingKey === `${order.id}:${item.id}` ? 'Downloading…' : 'Download Report'}
+                                      aria-label={downloadingKey === `${order.id}:${item.id}` ? 'Downloading…' : `Download Report — ${item.personName || 'report'}`}
+                                      className="shrink-0 h-9 w-9 rounded-lg flex items-center justify-center border border-slate-700 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 disabled:opacity-60 transition-all cursor-pointer active:scale-95"
                                     >
-                                      <Download className="w-3.5 h-3.5" />
-                                      <span>{downloadingKey === `${order.id}:${item.id}` ? 'Downloading…' : 'Download Report'}</span>
+                                      {downloadingKey === `${order.id}:${item.id}`
+                                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                                        : <Download className="h-4 w-4" />}
                                     </button>
                                   ) : (
                                     <span className="text-[11px] text-slate-500">
@@ -1829,20 +2042,21 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                             Report download is unavailable for this order — please use the PDF copy emailed to you.
                           </p>
                         ) : (
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <span className="text-[11px] text-slate-500">
-                              {formatPreparedDate(order.reportSnapshotAt || order.createdAt) && (
-                                <>Prepared on {formatPreparedDate(order.reportSnapshotAt || order.createdAt)} • {reportLanguageName(order.language)}</>
-                              )}
-                            </span>
+                          <div className="flex items-center justify-end gap-2">
+                            {downloadingKey === order.id && (
+                              <span className="text-[11px] font-bold text-amber-300">Downloading…</span>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleDownloadReport(order)}
                               disabled={downloadingKey === order.id}
-                              className="shrink-0 px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-slate-700 disabled:opacity-50"
+                              title={downloadingKey === order.id ? 'Downloading…' : 'Download Report'}
+                              aria-label={downloadingKey === order.id ? 'Downloading…' : 'Download Report'}
+                              className="shrink-0 h-9 w-9 rounded-lg flex items-center justify-center border border-slate-700 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 disabled:opacity-60 transition-all cursor-pointer active:scale-95"
                             >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>{downloadingKey === order.id ? 'Downloading…' : 'Download Report'}</span>
+                              {downloadingKey === order.id
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <Download className="h-4 w-4" />}
                             </button>
                           </div>
                         )}
@@ -1894,7 +2108,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                           </div>
                         )}
                       </div>
-                    )}
+                    ); })}
 
                     {/* Verified review — paid, delivered orders only (server-decided). */}
                     {reviewEligibility && (

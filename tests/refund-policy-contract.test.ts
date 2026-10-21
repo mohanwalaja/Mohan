@@ -271,7 +271,9 @@ check('dashboard: the refund window is quoted on pending orders, never on comple
   const jsx = (source: string) =>
     source.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/^\s*\/\/.*$/gm, '');
 
-  const completed = jsx(region(dashboard, ') : isCompleted ? (', ") : order.status === 'CANCELLED' ? ("));
+  // The banner reads bannerCompleted (the family card reports the member that
+  // most needs the customer), but it is still the completed-order banner.
+  const completed = jsx(region(dashboard, ') : bannerCompleted ? (', ") : order.status === 'CANCELLED' ? ("));
   assert.doesNotMatch(completed, /refund|90%|Refund & Cancellation Policy/i,
     'a completed order must not quote the refund policy at all');
   assert.match(completed, /emailed to/, 'and must still say what was emailed, and where');

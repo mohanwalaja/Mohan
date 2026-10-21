@@ -76,9 +76,28 @@ await check('every promise is a capability the site really has', () => {
   assert.ok(card.some(promise => promise.id === 'chat'), 'the chat must be on the price card');
 });
 
-await check('the chat is advertised on the home page, services, checkout and every service page', () => {
-  assert.match(read('src/pages/HomePage.tsx'), /CHAT_INCLUDED_LINE/, 'home page');
-  assert.match(read('src/pages/ServicesPage.tsx'), /CHAT_INCLUDED_LINE/, 'services price cards');
+await check('the chat line is spelled out once on services, and never on the home page', () => {
+  // Owner request (2026-10-21): "Personal astrologer chat included — 7 days of
+  // free questions after delivery" comes off the home page entirely, and stops
+  // repeating on every Services price card — the header badge is its one
+  // instance there. Checkout and each service page header still carry it.
+  //
+  // Scanned with comments stripped: both files now explain the removal in a
+  // comment that quotes the line, and a scan of the raw source would fail on the
+  // explanation rather than on the rendered page.
+  const rendered = (file: string) =>
+    read(file).replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  const home = rendered('src/pages/HomePage.tsx');
+  assert.doesNotMatch(home, /CHAT_INCLUDED_LINE/, 'the home page must not render the shared chat line');
+  assert.doesNotMatch(home, /Personal astrologer chat included/, 'nor spell it out in its own words');
+  assert.match(home, /ASTRO_CHAT_WINDOW_DAYS/, 'the services intro still promises the chat window by day count');
+
+  const services = rendered('src/pages/ServicesPage.tsx');
+  const spelled = services.match(/Personal astrologer chat included/g) || [];
+  assert.equal(spelled.length, 1, 'the Services page spells the chat line out exactly once');
+  assert.match(services, /data-testid="services-chat-advert"/, 'and that one instance is the header badge');
+  assert.doesNotMatch(services, /service-chat-line-/, 'the per-price-card copy is gone');
   assert.match(read('src/pages/ServicesPage.tsx'), /ServicePromiseStrip/, 'services cards carry the promises');
   assert.match(read('src/components/cart/SingleServiceCheckoutModal.tsx'), /CHAT_INCLUDED_LINE/, 'checkout');
   assert.match(read('src/components/cart/SingleServiceCheckoutModal.tsx'), /ServicePromiseStrip/);
