@@ -1244,10 +1244,16 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                   </span>
                 </h3>
                 <p className="text-slate-300 leading-relaxed">
-                  Once your order is approved by the ASTRO SIVAM Administrator, your certified <strong>Astrological Report PDF</strong> and official <strong>Tax Invoice Bill PDF</strong> are attached directly and emailed from <strong>admin@astrosivam.com</strong>.
+                  After approval, your <strong>Report PDF</strong> and <strong>Tax Invoice PDF</strong> are emailed as attachments from <strong>admin@astrosivam.com</strong>. Not in your inbox? Check Spam/Junk.
                 </p>
+                {/* Owner request (2026-10-21): keep this short. Two facts per
+                    line — where the PDFs come from, and what Download Report
+                    gives. The button is named as it actually renders
+                    ("Update Email & Retry Delivery", and only on an order whose
+                    delivery failed); the old copy quoted a "Resend to Email"
+                    button that does not exist on this screen. */}
                 <p className="text-slate-400 leading-relaxed text-[11.5px]">
-                  Delivered orders also offer a <strong>Download Report</strong> button below: it downloads the report <strong>exactly as prepared on your order date</strong> (that date is printed on the report). The downloaded report never recalculates or updates itself — a fresh report for a new period needs a new order. Tax invoices are sent by email only. <strong>Check your Spam/Junk folder</strong> if the email is not in your inbox; if delivery failed, update your address and use the <strong>&quot;Resend to Email&quot;</strong> button below.
+                  <strong>Download Report</strong> saves the report exactly as prepared on your order date — never recalculated, so a new period needs a new order. Invoices are email-only; a failed delivery shows <strong>Update Email & Retry Delivery</strong> on that order.
                 </p>
               </div>
             </div>
@@ -1620,11 +1626,14 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               <div className="font-bold text-white">
                                 Report Complete & Emailed
                               </div>
+                              {/* Owner request (2026-10-21): keep this short. Two
+                                  facts only — what was emailed and where, and
+                                  that a completed order is non-refundable. The
+                                  heading already says it is approved and
+                                  delivered, so the body must not repeat it. */}
                               <div className="text-[11.5px] text-emerald-200">
-                                High-resolution Vedic Report PDF & Tax Invoice PDF were successfully emailed to <strong>{order.userEmail}</strong>.
-                              </div>
-                              <div className="text-[11px] text-emerald-200/80 pt-0.5">
-                                Approved &amp; delivered — the order is completed and non-refundable under our <strong>Refund &amp; Cancellation Policy</strong> (90% refunds apply only before admin approval).
+                                Your Vedic Report and Tax Invoice PDFs were emailed to <strong>{order.userEmail}</strong>.
+                                Completed orders are non-refundable under the <strong>Refund & Cancellation Policy</strong> — 90% refunds apply only before approval.
                               </div>
                             </div>
                           </div>
