@@ -17,6 +17,7 @@ import {
 import { dismissBootSplash, getPrerenderedPage, clearPrerenderedPage } from './services/bootSplash';
 import { routeHref } from './services/routePaths';
 import { getSavedColorMode, saveColorMode, type ColorMode } from './services/colorMode';
+import { rememberRouteForAuth } from './services/authReturnRoute';
 
 // Routes are code-split (audit S1, widened by audit PERF-1): the admin portal,
 // the customer dashboard and the four report pages pull in the PDF/HTML report
@@ -339,6 +340,17 @@ function AppContent() {
     document.body.style.backgroundColor = light ? '#fffaf2' : '#0b0718';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#fffaf2' : '#0b0813');
   }, [light]);
+
+  // A signed-out visitor who leaves for the login/register page must come back
+  // to the page they were on — not to the dashboard. Remembering it here (rather
+  // than on each login link) also covers a browser refresh and a direct visit to
+  // /login from a half-filled report form. Only whitelisted in-app routes are
+  // stored; the login page consumes the value once (services/authReturnRoute.ts)
+  // and the report forms restore their own draft on top of it.
+  useEffect(() => {
+    if (user) return;
+    rememberRouteForAuth(currentRoute);
+  }, [currentRoute, user]);
 
   // Handle browser back/forward buttons and programmatic app:navigate events
   useEffect(() => {

@@ -223,6 +223,11 @@ const testFiles = [
   // checkout with an empty form. Every service page re-checks the form after
   // sign-in, and the checkout modal refuses an incomplete payload outright.
   'tests/checkout-requires-birth-details.test.ts',
+  // A half-filled order form survives the navbar Login link and a browser
+  // refresh: the router returns the customer to the page they left, and each
+  // report form restores its own short-lived draft (never a saved profile,
+  // never consent or payment data, and never over live typing).
+  'tests/form-draft-and-login-return.test.ts',
   // WhatsApp/Viber alerts + the download-language rule: downloads render
   // ONLY the ordered language (never all three, never switchable by
   // parameter), customers verify one saved number per app by OTP, and

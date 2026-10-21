@@ -62,6 +62,9 @@ import {
   type SavedPerson
 } from '../utils/birthDetails';
 import { SavedPersonPicker, useSavedPeople, useDashboardOrderFor } from '../components/common/SavedPersonPicker';
+import { FormDraftNotice, useFormDraft } from '../components/common/FormDraftNotice';
+import { restorableChoice, restorableLocation, restorableText } from '../services/formDraft';
+import type { LocationData as DraftLocationData } from '../components/common/GooglePlacesPicker';
 import { SaveBirthDetailsOption } from '../components/common/SaveBirthDetailsOption';
 import { saveBirthDetailsForNextTime } from '../services/saveBirthDetails';
 
@@ -170,6 +173,33 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
   const [traySuccessMessage, setTraySuccessMessage] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+
+  // A half-filled birth chart form survives the navbar Login link and a browser
+  // refresh. Only this visitor's own typing in this tab, for 30 minutes; a saved
+  // profile is never copied in, and the consent checkbox is never carried over.
+  const jathagamFormDraft = useFormDraft<{
+    name?: unknown;
+    dob?: unknown;
+    tob?: unknown;
+    gender?: unknown;
+    location?: unknown;
+    selectedLanguage?: unknown;
+  }>({
+    route: 'birth-jathagam',
+    snapshot: () => ({ name, dob, tob, gender, location, selectedLanguage }),
+    restore: draft => {
+      setName(restorableText(draft.name, 80));
+      const draftDob = restorableText(draft.dob, 10);
+      setDob(isValidIsoBirthDate(draftDob) ? draftDob : '');
+      const draftTob = restorableText(draft.tob, 5);
+      setTob(isValidBirthTime(draftTob) ? draftTob : '');
+      setGender(restorableChoice(draft.gender, ['M', 'F'] as const, 'M'));
+      setLocation(restorableLocation<DraftLocationData>(draft.location));
+      setSelectedLanguage(restorableChoice(draft.selectedLanguage, ['en', 'ta', 'hi'] as const, 'en'));
+    },
+    isEmpty: () => !dob && !tob && !normalizePersonName(name),
+    deps: [name, dob, tob, gender, location, selectedLanguage]
+  });
 
   const validateBirthForm = (): string => {
     if (!normalizePersonName(name)) return 'Please enter the user full name.';
@@ -310,6 +340,7 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
 
       if (res.success && res.order) {
         void persistFamilySave();
+        jathagamFormDraft.discard();
         setOrderSuccess(res.order);
       } else {
         setErrorMessage(res.message || 'Failed to submit order');
@@ -445,6 +476,12 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
 
               {/* Saved details are only used after an explicit pick; otherwise this form stays blank. */}
               <SavedPersonPicker value={pickedKey} onPick={handlePickPerson} />
+
+              <FormDraftNotice
+                shown={jathagamFormDraft.restored}
+                onDismiss={jathagamFormDraft.dismiss}
+                subject="birth chart form"
+              />
 
               {errorMessage && (
                 <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
@@ -835,6 +872,7 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
         saveAsProfile={saveAsProfile && pickedPerson?.source === 'self'}
         onSuccess={ord => {
           void persistFamilySave();
+          jathagamFormDraft.discard();
           setOrderSuccess(ord);
           setShowCheckoutModal(false);
         }}
