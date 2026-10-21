@@ -44,6 +44,8 @@ check('the popup explains own-currency billing with real currencies', () => {
   for (const currency of ['Australian dollars', 'New Zealand dollars', 'Canadian dollars', 'euros', 'pounds']) {
     assert.ok(modal.includes(currency), `the explainer names ${currency} so no customer feels excluded`);
   }
+  assert.match(modal, /and all other currencies, including your home currency/,
+    'the list ends in "and all other currencies" — no one is left out (owner, 2026-10-22)');
   assert.match(modal, /at their own exchange rate/, 'the conversion is attributed to PayPal / the card networks');
   assert.match(modal, /BEFORE you approve it/, 'and the customer sees the converted amount before approving');
 });
