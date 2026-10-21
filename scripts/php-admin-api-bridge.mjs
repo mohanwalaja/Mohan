@@ -102,6 +102,14 @@ CREATE TABLE system_settings (
   id INTEGER PRIMARY KEY, email_settings TEXT, general_settings TEXT, payment_settings TEXT, service_pricing TEXT,
   service_mode TEXT DEFAULT 'FREE_BETA', updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE customer_reviews (
+  id TEXT PRIMARY KEY, order_id TEXT NOT NULL, user_id TEXT NOT NULL, service_code TEXT NOT NULL,
+  rating INTEGER NOT NULL, title TEXT NULL, body TEXT NOT NULL, display_name TEXT NOT NULL, location TEXT NULL,
+  status TEXT NOT NULL DEFAULT 'PENDING', rejection_reason TEXT NULL, moderated_by TEXT NULL,
+  moderated_at TEXT NULL, published_at TEXT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (order_id, service_code)
+);
 CREATE TABLE team_members (
   id TEXT PRIMARY KEY, name TEXT NOT NULL DEFAULT '', name_ta TEXT DEFAULT '', title TEXT DEFAULT '',
   title_ta TEXT DEFAULT '', title_hi TEXT DEFAULT '', bio TEXT DEFAULT '', location TEXT DEFAULT '',

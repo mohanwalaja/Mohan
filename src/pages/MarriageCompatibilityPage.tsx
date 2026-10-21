@@ -478,6 +478,7 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
         eyebrow="10 Poruthams · Kuja Dosha · Vedic Matrimonial Compatibility"
         title="Vedic Marriage Compatibility & Matrimonial Horoscope Match"
         description="Detailed 10-Porutham evaluation including Dina, Gana, Mahendra, Stree Dheerkha, Yoni, Rasi, Rasiyathipathi, Vasiya, Rajju, and Vedha. Features in-depth Kuja (Mars) Dosha analysis and Dosha Samyam balance."
+        showChatBenefit
       />
 
       {/* Main Grid: Form + Real-time Compatibility Matrix */}

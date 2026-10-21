@@ -2010,6 +2010,27 @@ export const api = {
     return safeJson(res);
   },
 
+  /**
+   * Publish every review waiting for approval in one request (the owner's
+   * "do it today" action). Each review still passes the server's order check,
+   * so a refunded order is skipped rather than published; the response lists
+   * the skipped ones with the reason.
+   */
+  async approveAllPendingReviews(): Promise<{
+    success: boolean;
+    message?: string;
+    published?: number;
+    skipped?: Array<{ id: string; displayName: string; orderNumber: string; code: string; reason: string }>;
+    counts?: Record<string, number>;
+  }> {
+    const res = await apiFetch(`${API_BASE}/admin/reviews/approve-all`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    return safeJson(res);
+  },
+
   async deleteReview(id: string): Promise<{ success: boolean; message?: string }> {
     const res = await apiFetch(`${API_BASE}/admin/reviews/${encodeURIComponent(id)}`, { method: 'DELETE' });
     return safeJson(res);

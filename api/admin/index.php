@@ -41,7 +41,11 @@ function astro_admin_action_limit($pdo, $admin, $action) {
         'provider' => array(10, 600, 'Too many reconciliation runs in a short time. Please wait before sweeping again.'),
         // Team portraits: 20 uploads per 10 minutes per admin. Generous for a
         // real team (a handful of photos), useless as a disk-filling weapon.
-        'team-photo' => array(20, 600, 'Too many photo uploads in a short time. Please wait a few minutes and try again.')
+        'team-photo' => array(20, 600, 'Too many photo uploads in a short time. Please wait a few minutes and try again.'),
+        // Bulk review publish: 10 runs per 10 minutes. Each run publishes at
+        // most ASTRO_REVIEW_BULK_MAX rows, so 1000 reviews/10 min is plenty for
+        // a real queue and useless as an audit-log flood.
+        'review-bulk' => array(10, 600, 'Too many bulk review publishes in a short time. Please wait a few minutes.')
     );
     if (!isset($limits[$action])) return;
     list($maxHits, $windowSeconds, $message) = $limits[$action];
@@ -2310,6 +2314,12 @@ if (preg_match('/admin\/orders\/([^\/]+)\/ban-ip/', $path, $matches) && $method 
 if (preg_match('#/admin/reviews(?:/([^/]+))?(?:/(approve|reject))?/?$#', $path, $reviewRoute)) {
     require_once __DIR__ . '/../reviews.php';
     $reviewId = isset($reviewRoute[1]) ? rawurldecode($reviewRoute[1]) : '';
+    // "Publish every waiting review" — one click instead of one per review. The
+    // single-review rule still applies to each row (a refunded order is skipped).
+    if ($method === 'POST' && $reviewId === 'approve-all') {
+        astro_admin_action_limit($pdo, $admin, 'review-bulk');
+        astro_reviews_route_admin_approve_all($pdo, $admin);
+    }
     $reviewDecision = $reviewRoute[2] ?? '';
     if ($method === 'GET' && $reviewId === '') {
         astro_reviews_route_admin_list($pdo);

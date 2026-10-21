@@ -18,6 +18,8 @@ import { RouteLink } from '../components/common/RouteLink';
 import { JsonLd } from '../components/common/JsonLd';
 import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { getServicePrices } from '../services/pricing';
+import { ServicePromiseStrip } from '../components/common/ServicePromiseStrip';
+import { ASTRO_CHAT_WINDOW_DAYS, CHAT_INCLUDED_LINE } from '../services/servicePromise';
 
 interface ServicesPageProps {
   onNavigate: (route: string) => void;
@@ -170,6 +172,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-1.5 text-xs font-medium text-amber-100/80">
             <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />Reviewed by our Vedic team</span>
             <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />Prepared daily 9–11 AM IST &amp; emailed upon admin approval</span>
+            <span className="inline-flex items-center gap-1.5" data-testid="services-chat-advert"><Sparkles className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />Personal astrologer chat included · {ASTRO_CHAT_WINDOW_DAYS} days after delivery</span>
             <span className="inline-flex items-center gap-1.5"><Globe2 className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />For users worldwide</span>
           </div>
         </header>
@@ -249,6 +252,17 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
                           One free report per customer; additional reports are charged at the standard price.
                         </p>
                       )}
+                      {/* What the fee includes beyond the PDF. The chat is a real,
+                          included benefit; leaving it unmentioned meant customers
+                          paid for it without ever knowing. */}
+                      <p
+                        data-testid={`service-chat-line-${route}`}
+                        className="mt-3 flex items-start gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/10 px-2.5 py-2 text-[11px] font-semibold leading-snug text-amber-100"
+                      >
+                        <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" aria-hidden="true" />
+                        <span>{CHAT_INCLUDED_LINE}</span>
+                      </p>
+                      <ServicePromiseStrip variant="card" className="mt-3 border-t border-white/10 pt-3" />
                       <RouteLink
                         route={route}
                         onNavigate={onNavigate}

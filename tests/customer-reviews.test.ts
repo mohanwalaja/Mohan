@@ -394,7 +394,7 @@ const q = (value: string) => `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'
 
 await bridge.runPhp(`
 $pdo = getDbConnection();
-$pdo->exec("CREATE TABLE customer_reviews (id TEXT PRIMARY KEY, order_id TEXT NOT NULL, user_id TEXT NOT NULL,
+$pdo->exec("CREATE TABLE IF NOT EXISTS customer_reviews (id TEXT PRIMARY KEY, order_id TEXT NOT NULL, user_id TEXT NOT NULL,
   service_code TEXT NOT NULL, rating INTEGER NOT NULL, title TEXT NULL, body TEXT NOT NULL, display_name TEXT NOT NULL,
   location TEXT NULL, status TEXT NOT NULL DEFAULT 'PENDING', rejection_reason TEXT NULL, moderated_by TEXT NULL,
   moderated_at TEXT NULL, published_at TEXT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,

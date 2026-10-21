@@ -30,6 +30,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { api } from '../../services/api';
 import { CURRENCY_INFO, getServicePrices } from '../../services/pricing';
+import { ServicePromiseStrip } from '../common/ServicePromiseStrip';
+import { CHAT_INCLUDED_LINE } from '../../services/servicePromise';
 
 export interface CheckoutDevoteeSummary {
   name: string;
@@ -629,6 +631,16 @@ export const SingleServiceCheckoutModal: React.FC<SingleServiceCheckoutModalProp
                     </>
                   )}
                 </button>
+
+                {/* What the payment includes, at the exact moment of paying.
+                    Every line is true of the delivery flow (services/servicePromise.ts). */}
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 space-y-1.5">
+                  <p className="flex items-start gap-1.5 text-[11px] font-semibold leading-snug text-amber-100">
+                    <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" aria-hidden="true" />
+                    <span>{CHAT_INCLUDED_LINE}</span>
+                  </p>
+                  <ServicePromiseStrip variant="inline" />
+                </div>
 
                 <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 text-center">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
