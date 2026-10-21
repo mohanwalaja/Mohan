@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Smartphone, Send, Save, CheckCircle2, AlertCircle, ShieldCheck, KeyRound, FileText, Zap } from 'lucide-react';
+import { MessageCircle, Smartphone, Send, Save, CheckCircle2, AlertCircle, ShieldCheck, KeyRound, FileText, Zap, Cake, Eye } from 'lucide-react';
 import { api } from '../../services/api';
-import { AppSettings, ChatAlertConfig, ChatAlertChannelResult } from '../../types';
+import { AppSettings, ChatAlertConfig, ChatAlertChannelResult, BirthdayWishRunSummary } from '../../types';
 
 interface ChatAlertConfigPanelProps {
   settings: AppSettings | null;
@@ -54,8 +54,22 @@ const buildDefaults = (): ChatAlertConfig => ({
     webhookUrl: ''
   },
   orderConfirmedMessage: DEFAULT_CONFIRMED,
-  orderCompletedMessage: DEFAULT_COMPLETED
+  orderCompletedMessage: DEFAULT_COMPLETED,
+  // Off until the operator switches it on: a birthday wish is not a
+  // transactional alert, and customers must opt in on their side too.
+  birthdayWishes: {
+    enabled: false,
+    timezone: 'Asia/Kolkata',
+    includeFamilyMembers: true
+  }
 });
+
+/** The zones the dispatcher accepts; anything else falls back to IST. */
+const BIRTHDAY_TIMEZONES = [
+  'Asia/Kolkata', 'Asia/Colombo', 'Asia/Dubai', 'Asia/Singapore',
+  'Europe/London', 'America/New_York', 'America/Los_Angeles',
+  'Australia/Sydney', 'Pacific/Auckland', 'UTC'
+];
 
 const PLACEHOLDER_HINTS = [
   '{customer_name}', '{order_number}', '{service_name}', '{amount}',
@@ -70,6 +84,8 @@ export const ChatAlertConfigPanel: React.FC<ChatAlertConfigPanelProps> = ({ sett
   const [testChannels, setTestChannels] = useState<{ whatsapp: boolean; viber: boolean }>({ whatsapp: true, viber: true });
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testMessage, setTestMessage] = useState<{ success: boolean; text: string } | null>(null);
+  const [birthdayBusy, setBirthdayBusy] = useState(false);
+  const [birthdayRun, setBirthdayRun] = useState<{ summary: BirthdayWishRunSummary; note?: string } | null>(null);
 
   useEffect(() => {
     if (settings?.chatAlertSettings) {
@@ -79,7 +95,8 @@ export const ChatAlertConfigPanel: React.FC<ChatAlertConfigPanelProps> = ({ sett
         ...base,
         ...s,
         whatsapp: { ...base.whatsapp, ...(s.whatsapp || {}) },
-        viber: { ...base.viber, ...(s.viber || {}) }
+        viber: { ...base.viber, ...(s.viber || {}) },
+        birthdayWishes: { ...base.birthdayWishes!, ...(s.birthdayWishes || {}) }
       });
     }
   }, [settings]);
@@ -114,6 +131,40 @@ export const ChatAlertConfigPanel: React.FC<ChatAlertConfigPanelProps> = ({ sett
       setTestMessage({ success: false, text: err.message || 'Failed to dispatch test alert' });
     } finally {
       setIsSendingTest(false);
+    }
+  };
+
+  /**
+   * Preview and run the SAME dispatcher the daily cron uses
+   * (api/cron/birthday_wishes.php), so what the operator reads here is what the
+   * cron sends. Both are deduped server-side by the once-a-year log key.
+   */
+  const handleBirthdayPreview = async () => {
+    setBirthdayBusy(true);
+    setBirthdayRun(null);
+    try {
+      const res = await api.previewBirthdayWishes();
+      if (res.summary) setBirthdayRun({ summary: res.summary, note: res.message });
+      else setBirthdayRun({ summary: { success: false, date: '', timezone: '', due: 0, sent: 0, failed: 0, skipped: 0, dryRun: true, message: res.message || 'No summary returned.' } });
+    } catch (err: any) {
+      setBirthdayRun({ summary: { success: false, date: '', timezone: '', due: 0, sent: 0, failed: 0, skipped: 0, dryRun: true, message: err?.message || 'Preview failed.' } });
+    } finally {
+      setBirthdayBusy(false);
+    }
+  };
+
+  const handleBirthdayRun = async () => {
+    if (!window.confirm('Send today\'s birthday wishes now? Customers who opted in and have a verified number will be messaged. Each person is wished only once a year, so re-running is safe but cannot be unsent.')) return;
+    setBirthdayBusy(true);
+    setBirthdayRun(null);
+    try {
+      const res = await api.runBirthdayWishes();
+      if (res.summary) setBirthdayRun({ summary: res.summary, note: res.message });
+      else setBirthdayRun({ summary: { success: false, date: '', timezone: '', due: 0, sent: 0, failed: 0, skipped: 0, dryRun: false, message: res.message || 'No summary returned.' } });
+    } catch (err: any) {
+      setBirthdayRun({ summary: { success: false, date: '', timezone: '', due: 0, sent: 0, failed: 0, skipped: 0, dryRun: false, message: err?.message || 'Send failed.' } });
+    } finally {
+      setBirthdayBusy(false);
     }
   };
 
@@ -485,6 +536,134 @@ export const ChatAlertConfigPanel: React.FC<ChatAlertConfigPanelProps> = ({ sett
           <ShieldCheck className="w-3.5 h-3.5 mt-0.5" />
           <span>
             Alert credentials are stored in system settings and are never exposed publicly. Alerts are best-effort: if a chat gateway is unreachable, order processing continues unaffected and the failure is recorded in the audit log.
+          </span>
+        </div>
+      </div>
+
+      {/* Birthday wishes (migration 020) */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <Cake className="w-4 h-4 text-amber-500" />
+          <h3 className="font-bold text-slate-900 dark:text-white text-sm uppercase tracking-wider">Birthday Wishes</h3>
+        </div>
+        <p className="text-xs text-slate-500 mb-4">
+          Wish customers on the birthdays they saved — their own profile and their saved family members — using the
+          WhatsApp/Viber channels above. Two switches must both be on before anything is sent: this one, and the
+          customer's own opt-in in their profile (default off). Text only; reports and invoices stay email-only.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <label className="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40">
+            <input
+              type="checkbox"
+              checked={cfg.birthdayWishes?.enabled === true}
+              onChange={e => patch({ birthdayWishes: { ...(cfg.birthdayWishes || { timezone: 'Asia/Kolkata', includeFamilyMembers: true }), enabled: e.target.checked } })}
+              className="mt-1 w-4 h-4 accent-amber-600"
+            />
+            <span>
+              <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">Enable Birthday Wishes</span>
+              <span className="block text-xs text-slate-500 mt-0.5">Master switch — customers still opt in individually</span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40">
+            <input
+              type="checkbox"
+              checked={cfg.birthdayWishes?.includeFamilyMembers !== false}
+              onChange={e => patch({ birthdayWishes: { ...(cfg.birthdayWishes || { enabled: false, timezone: 'Asia/Kolkata' }), includeFamilyMembers: e.target.checked } })}
+              className="mt-1 w-4 h-4 accent-amber-600"
+            />
+            <span>
+              <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">Include Saved Family Members</span>
+              <span className="block text-xs text-slate-500 mt-0.5">Off = only the account holder's own birthday</span>
+            </span>
+          </label>
+
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <label className={labelCls} htmlFor="birthday-timezone">Birthday Timezone</label>
+            <select
+              id="birthday-timezone"
+              value={cfg.birthdayWishes?.timezone || 'Asia/Kolkata'}
+              onChange={e => patch({ birthdayWishes: { ...(cfg.birthdayWishes || { enabled: false, includeFamilyMembers: true }), timezone: e.target.value } })}
+              className={inputCls}
+            >
+              {BIRTHDAY_TIMEZONES.map(zone => (
+                <option key={zone} value={zone}>{zone}</option>
+              ))}
+            </select>
+            <p className="text-[11px] text-slate-500 mt-1.5">Whose calendar day decides that it is somebody's birthday.</p>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+          <button
+            type="button"
+            onClick={handleBirthdayPreview}
+            disabled={birthdayBusy}
+            className="px-5 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all"
+          >
+            <Eye className="w-4 h-4" />
+            {birthdayBusy ? 'Working…' : 'Preview Today'}
+          </button>
+          <button
+            type="button"
+            onClick={handleBirthdayRun}
+            disabled={birthdayBusy || cfg.birthdayWishes?.enabled !== true || cfg.enabled !== true}
+            className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold flex items-center gap-2 disabled:opacity-50 transition-all"
+          >
+            <Send className="w-4 h-4" />
+            Send Today's Wishes
+          </button>
+          <p className="text-[11px] text-slate-500">
+            Settings must be saved before Send uses them. The daily cron is the normal sender:
+            <code className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10.5px]">
+              0 8 * * * php api/cron/birthday_wishes.php
+            </code>
+          </p>
+        </div>
+
+        {birthdayRun && (
+          <div className={`mt-4 px-4 py-3 rounded-2xl border text-sm ${
+            birthdayRun.summary.success
+              ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+          }`}>
+            <div className="flex items-start gap-2">
+              {birthdayRun.summary.success ? <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /> : <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />}
+              <div>
+                <p className="font-bold">
+                  {birthdayRun.summary.dryRun ? 'Preview' : 'Run'} {birthdayRun.summary.date || ''}
+                  {birthdayRun.summary.timezone ? ` (${birthdayRun.summary.timezone})` : ''}:
+                  {' '}{birthdayRun.summary.due} due · {birthdayRun.summary.sent} {birthdayRun.summary.dryRun ? 'would send' : 'sent'} · {birthdayRun.summary.failed} failed · {birthdayRun.summary.skipped} skipped
+                </p>
+                {birthdayRun.summary.message && (
+                  <p className="text-xs mt-0.5 opacity-90">{birthdayRun.summary.message}</p>
+                )}
+                {(birthdayRun.summary.details || []).length > 0 && (
+                  <ul className="mt-2 space-y-1 text-xs">
+                    {(birthdayRun.summary.details || []).slice(0, 12).map((detail, index) => (
+                      <li key={index} className="flex flex-wrap items-baseline gap-x-2">
+                        <span className="font-bold">{detail.person}</span>
+                        {detail.relation && detail.relation !== 'SELF' && <span className="opacity-70">{detail.relation}</span>}
+                        {detail.channel && <span className="opacity-70">{detail.channel}</span>}
+                        <span>{detail.status}</span>
+                        {detail.reason && <span className="opacity-70">— {detail.reason}</span>}
+                        {detail.message && <span className="block w-full opacity-80 whitespace-pre-line border-l-2 border-current/30 pl-2 mt-0.5">{detail.message}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 flex items-start gap-2 text-xs text-slate-500">
+          <ShieldCheck className="w-3.5 h-3.5 mt-0.5" />
+          <span>
+            Wishes go only to a number the customer verified in that app, and only after they switched birthday wishes on
+            in their own profile. Each person is wished once per year per channel — the log's unique key makes a repeated
+            cron run or a second press of "Send Today's Wishes" harmless.
           </span>
         </div>
       </div>

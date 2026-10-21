@@ -1,4 +1,4 @@
-import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, FamilyMember, ChatDeliveryState, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus } from '../types';
+import { AppLanguage, ServiceType, PaymentMethod, CurrencyCode, User, CustomerBirthProfile, FamilyMember, ChatDeliveryState, BirthdayWishState, BirthdayWishRunSummary, Order, OrderItem, RefundResult, SystemSettings, Statistics, AuditLog, AiChatHandoff, TeamMember, ContactMessage, AdminAnalyticsData, BannedIpEntry, OnlinePaymentSession, PublishedReview, ReviewAggregate, CustomerReview, ReviewEligibleOrder, ReviewSubmission, AdminReview, ReviewStatus } from '../types';
 
 export function getApiBase(): string {
   // Always default to relative '/api' in browser contexts.
@@ -827,6 +827,52 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ channel, otp })
+    });
+    return safeJson(res);
+  },
+
+  /**
+   * Birthday wishes (customer consent, migration 020).
+   *
+   * The customer's OWN opt-in to a birthday greeting on the number they already
+   * verified for order alerts. Default OFF, and nothing here sends anything:
+   * the daily cron and the admin "Send now" button are the only senders. The
+   * language posted with the switch is the site language the customer is using,
+   * which is the language the wish is written in.
+   *
+   * Same two-URL fallback as the chat-delivery calls next door: the pretty route
+   * needs the host's /api rewrite, the flat action route works without it.
+   */
+  async getBirthdayWishes(): Promise<{ success: boolean; birthdayWishes?: BirthdayWishState; message?: string }> {
+    const apiBase = getApiBase();
+    try {
+      const res = await apiFetch(`${apiBase}/services/birthday-wishes`);
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) return resData;
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=birthday-wishes`);
+    return safeJson(res);
+  },
+
+  async saveBirthdayWishPreference(
+    enabled: boolean,
+    language?: AppLanguage
+  ): Promise<{ success: boolean; birthdayWishes?: BirthdayWishState; message?: string }> {
+    const apiBase = getApiBase();
+    const body = JSON.stringify({ enabled, ...(language ? { language } : {}) });
+    try {
+      const res = await apiFetch(`${apiBase}/services/birthday-wishes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) return resData;
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=birthday-wishes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body
     });
     return safeJson(res);
   },
@@ -1670,6 +1716,27 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ phone, channels, chatAlertSettings })
+    });
+    return safeJson(res);
+  },
+
+  /**
+   * Admin: the birthday-wish dispatcher. `preview` decides and sends nothing
+   * (the operator reads exactly what the cron would send); `run` sends one
+   * date's wishes. Both are deduped server-side, so a second run in the same
+   * year messages nobody twice.
+   */
+  async previewBirthdayWishes(date?: string): Promise<{ success: boolean; message?: string; summary?: BirthdayWishRunSummary; settings?: any }> {
+    const query = date ? `?date=${encodeURIComponent(date)}` : '';
+    const res = await apiFetch(`${API_BASE}/admin/birthday-wishes/preview${query}`);
+    return safeJson(res);
+  },
+
+  async runBirthdayWishes(date?: string, limit?: number): Promise<{ success: boolean; message?: string; summary?: BirthdayWishRunSummary; settings?: any }> {
+    const res = await apiFetch(`${API_BASE}/admin/birthday-wishes/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...(date ? { date } : {}), ...(limit ? { limit } : {}) })
     });
     return safeJson(res);
   },

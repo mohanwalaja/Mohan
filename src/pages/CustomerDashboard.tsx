@@ -34,7 +34,7 @@ import { api } from '../services/api';
 import { normalizeReportLanguage } from '../services/reportLanguage';
 import { PDF_CAPTURE_ERROR } from '../services/pdfErrors';
 import { loadPdfEngine } from '../services/pdfEngine';
-import { Order, OrderItem, BirthProfile, CustomerReview, ReviewEligibleOrder, FamilyMember, FamilyRelation, MAX_FAMILY_MEMBERS, ChatDeliveryState } from '../types';
+import { Order, OrderItem, BirthProfile, CustomerReview, ReviewEligibleOrder, FamilyMember, FamilyRelation, MAX_FAMILY_MEMBERS, ChatDeliveryState, BirthdayWishState } from '../types';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
 import { BirthDateField, BirthTimeField, BirthTimeZoneNotice } from '../components/common/BirthDateTimeFields';
 import { PersonNameField } from '../components/common/PersonNameField';
@@ -209,6 +209,23 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   const [chatOtpCode, setChatOtpCode] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
   const [chatFeedback, setChatFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  /**
+   * The customer's OWN birthday-wish consent (migration 020). It lives in this
+   * panel because it is delivered to the same verified number, and it is read
+   * separately because the consent is separate: an order alert is announced at
+   * checkout, a birthday wish is not, so nothing is sent until this is switched
+   * on here.
+   */
+  const [birthdayWishes, setBirthdayWishes] = useState<BirthdayWishState | null>(null);
+
+  const loadBirthdayWishes = async () => {
+    try {
+      const result = await api.getBirthdayWishes();
+      if (result.success && result.birthdayWishes) setBirthdayWishes(result.birthdayWishes);
+    } catch {
+      /* the toggle simply stays hidden until the state is known */
+    }
+  };
 
   const loadChatDelivery = async () => {
     try {
@@ -225,6 +242,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
   useEffect(() => {
     if (user) {
       loadChatDelivery();
+      loadBirthdayWishes();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
@@ -296,6 +314,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
       if (result.success) {
         setChatOtpChannel(null);
         setChatOtpCode('');
+        // Verifying a number is what makes a birthday wish deliverable, so the
+        // consent panel re-reads its state (channels + saved people).
+        loadBirthdayWishes();
       }
       setChatFeedback({
         type: result.success ? 'success' : 'error',
@@ -303,6 +324,29 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
       });
     } catch (err: any) {
       setChatFeedback({ type: 'error', message: err?.message || 'That code did not match.' });
+    } finally {
+      setChatBusy(false);
+    }
+  };
+
+  /**
+   * Birthday wishes on/off. The language sent with the switch is the one the
+   * site is in right now, so the wish arrives in the language the customer is
+   * reading — and it is stored, because the cron runs long after this tab is
+   * closed.
+   */
+  const handleToggleBirthdayWishes = async (next: boolean) => {
+    setChatBusy(true);
+    setChatFeedback(null);
+    try {
+      const result = await api.saveBirthdayWishPreference(next, appLanguage);
+      if (result.birthdayWishes) setBirthdayWishes(result.birthdayWishes);
+      setChatFeedback({
+        type: result.success ? 'success' : 'error',
+        message: result.message || (result.success ? 'Saved.' : 'Could not save that setting.')
+      });
+    } catch (err: any) {
+      setChatFeedback({ type: 'error', message: err?.message || 'Could not save that setting.' });
     } finally {
       setChatBusy(false);
     }
@@ -1184,6 +1228,55 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           </p>
         )}
       </div>
+
+        {/* Birthday wishes — the customer's OWN opt-in (migration 020). A wish
+            goes only to a number verified in that app, only once a year per
+            person, and it is text only: reports and invoices stay on email. */}
+        {birthdayWishes && (
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  Birthday wishes
+                </span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  One short wish on your verified number for each saved birthday —
+                  yours{birthdayWishes.savedPeople > 1 ? " and your family members'" : ''} — in {reportLanguageName(appLanguage)}.
+                  Text only; reports and invoices stay on email.
+                </p>
+                {!birthdayWishes.available ? (
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                    Not offered on this site right now — order alerts above keep working.
+                  </p>
+                ) : !birthdayWishes.numberVerified ? (
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                    Verify your number on WhatsApp or Viber above first.
+                  </p>
+                ) : birthdayWishes.enabled ? (
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                    On — {birthdayWishes.savedPeople > 0
+                      ? `${birthdayWishes.savedPeople} saved ${birthdayWishes.savedPeople === 1 ? 'person' : 'people'} covered.`
+                      : 'save a birth date and the wishes start.'}
+                  </p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleToggleBirthdayWishes(!birthdayWishes.enabled)}
+                disabled={chatBusy || !birthdayWishes.available || !birthdayWishes.numberVerified}
+                aria-pressed={birthdayWishes.enabled}
+                className={`shrink-0 px-4 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  birthdayWishes.enabled
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    : 'bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white'
+                }`}
+              >
+                {birthdayWishes.enabled ? 'On — turn off' : 'Turn on'}
+              </button>
+            </div>
+          </div>
+        )}
           </div>
         )}
       </div>

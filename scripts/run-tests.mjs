@@ -244,7 +244,16 @@ const testFiles = [
   // order-status alerts go only to those verified numbers. Reports and
   // invoices are never sent over chat (email is the only document
   // channel). Includes real PHP helper execution under PHP-WASM.
-  'tests/chat-alerts-verified-and-download-language.test.ts'
+  'tests/chat-alerts-verified-and-download-language.test.ts',
+  // Birthday wishes (owner request 2026-10-21): customers who save birth
+  // details can be wished on WhatsApp/Viber on those birthdays - their own
+  // profile and their saved family members. Consent defaults OFF on the server
+  // AND needs the customer's own switch, wishes go only to numbers verified in
+  // that specific app, the text is a greeting in the customer's chosen language
+  // (never a report, never an invoice), and a cron re-run or a second press of
+  // the admin button messages nobody twice. Includes real PHP execution under
+  // PHP-WASM (date rules, dedupe, dry run, per-run cap, gateway failure).
+  'tests/birthday-wishes.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 

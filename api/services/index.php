@@ -11,6 +11,9 @@ require_once __DIR__ . '/../birth_profiles.php';
 require_once __DIR__ . '/../astrology/engine.php';
 require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../chat_alerts.php';
+// Birthday wishes reuse the same verified chat targets and gateway settings;
+// only the consent and the once-a-year dedupe log are new (migration 020).
+require_once __DIR__ . '/../birthday_wishes.php';
 // Payment primitives: the idempotency ledger + structured DB retry that make
 // a repeated checkout submission replay instead of duplicating an order.
 require_once __DIR__ . '/../payments.php';
@@ -840,6 +843,45 @@ if (preg_match('#/services/chat-delivery(-number|-verify-request|-verify-confirm
     }
 
     jsonResponse(['success' => false, 'message' => 'Unsupported chat delivery request.'], 400);
+}
+
+// 3d. Birthday wishes (profile feature, migration 020): the customer's OWN
+// opt-in to a birthday greeting on the WhatsApp/Viber number they already
+// verified for order alerts. Consent is explicit and default OFF because a
+// birthday wish is not a transactional alert; the language stored here is the
+// site language they were using when they switched it on, and it is the
+// language the wish is written in.
+//   GET  /services/birthday-wishes  -> state (never another customer's data)
+//   POST /services/birthday-wishes  -> { enabled: bool, language?: 'en'|'ta'|'hi' }
+// Nothing is sent from here: the daily cron (api/cron/birthday_wishes.php) and
+// the admin "Send now" button are the only senders.
+if (preg_match('#/services/birthday-wishes/?$#', $path) || $action === 'birthday-wishes') {
+    $user = requireAuth($pdo);
+    $userId = (string)$user['id'];
+
+    if ($method === 'GET') {
+        jsonResponse(['success' => true, 'birthdayWishes' => AstroBirthdayWishes::preferenceState($pdo, $userId)]);
+    }
+
+    if ($method !== 'POST') {
+        jsonResponse(['success' => false, 'message' => 'Method not allowed'], 405);
+    }
+
+    $body = getJsonBody();
+    // A consent change is rare and cheap to abuse-free, but it writes a row and
+    // can trigger a gateway message later in the year, so it is rate limited
+    // like the number change next door.
+    astro_rate_limit_enforce($pdo, 'birthday-wishes-user', $userId, 30, 3600,
+        'Too many birthday wish changes. Please wait a while and try again.');
+
+    $enabled = filter_var($body['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    $language = isset($body['language']) ? (string)$body['language'] : null;
+    $result = AstroBirthdayWishes::savePreference($pdo, $userId, $enabled, $language);
+    jsonResponse([
+        'success' => (bool)($result['success'] ?? false),
+        'message' => (string)($result['message'] ?? ''),
+        'birthdayWishes' => $result['birthdayWishes'] ?? AstroBirthdayWishes::preferenceState($pdo, $userId)
+    ], !empty($result['success']) ? 200 : 400);
 }
 
 // 4. POST /api/services/calculate-preview

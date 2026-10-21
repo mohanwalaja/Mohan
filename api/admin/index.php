@@ -8,6 +8,7 @@ require_once __DIR__ . '/../astrology/engine.php';
 require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../branding.php';
 require_once __DIR__ . '/../chat_alerts.php';
+require_once __DIR__ . '/../birthday_wishes.php';
 require_once __DIR__ . '/../rate_limit.php';
 // Review moderation + the "Rate your report" block of the delivery emails.
 require_once __DIR__ . '/../reviews.php';
@@ -1666,6 +1667,67 @@ if ((strpos($path, 'admin/settings/test-alert') !== false || strpos($path, 'admi
         'message' => implode(' • ', $parts),
         'results' => $results
     ]);
+}
+
+// 5b2. Birthday wishes (migration 020). The daily cron
+//      (api/cron/birthday_wishes.php) is the normal sender; these two routes let
+//      the operator see exactly who would be wished and run the SAME dispatcher
+//      on demand. Both are deduped by birthday_wishes_log, so pressing "Send
+//      now" after the cron ran cannot message anybody twice in a year.
+//   GET  /api/admin/birthday-wishes/preview?date=YYYY-MM-DD  -> decides, sends nothing
+//   POST /api/admin/birthday-wishes/run     {date?, limit?}  -> sends today's (or one date's) wishes
+// admin/index.php has no $action of its own (services/index.php does), so the
+// query-string fallback is read here. Undefined-variable warnings in this file
+// are a test failure: tests/customer-reviews.test.ts asserts the error log stays
+// empty across a whole admin session.
+$birthdayAction = (string)($_GET['action'] ?? $_POST['action'] ?? '');
+if (preg_match('#/admin/birthday-wishes/(preview|run)/?$#', $path, $birthdayMatch)
+    || in_array($birthdayAction, ['birthday-wishes-preview', 'birthday-wishes-run'], true)) {
+    $wantsRun = ($birthdayMatch[1] ?? '') === 'run' || $birthdayAction === 'birthday-wishes-run';
+    if ($wantsRun && $method !== 'POST') {
+        jsonResponse(['success' => false, 'message' => 'Method not allowed'], 405);
+    }
+    if (!$wantsRun && $method !== 'GET' && $method !== 'POST') {
+        jsonResponse(['success' => false, 'message' => 'Method not allowed'], 405);
+    }
+
+    $wishSettings = AstroBirthdayWishes::getWishSettings($pdo);
+    if (!AstroBirthdayWishes::tablesReady($pdo)) {
+        jsonResponse([
+            'success' => false,
+            'message' => 'Birthday wish tables are missing. Apply api/migrations/020_birthday_wishes.sql, then reload this panel.',
+            'settings' => $wishSettings
+        ], 503);
+    }
+
+    $body = ($method === 'POST') ? getJsonBody() : [];
+    $date = trim((string)($body['date'] ?? ($_GET['date'] ?? '')));
+    if ($date !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        jsonResponse(['success' => false, 'message' => 'The date must be in YYYY-MM-DD form.'], 400);
+    }
+
+    $options = ['date' => $date !== '' ? $date : AstroBirthdayWishes::todayString($wishSettings)];
+    if (!$wantsRun) {
+        // Preview == the real decision path with the transport switched off, so
+        // what the operator reads is what the cron would send.
+        $options['dryRun'] = true;
+    } elseif (isset($body['limit'])) {
+        $options['limit'] = (int)$body['limit'];
+    }
+
+    $summary = AstroBirthdayWishes::sendDueWishes($pdo, $options);
+
+    if ($wantsRun && ($summary['sent'] > 0 || $summary['failed'] > 0)) {
+        logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'BIRTHDAY_WISH_RUN',
+            'Admin ran the birthday wishes for ' . $summary['date'] . ': ' . (string)($summary['message'] ?? ''));
+    }
+
+    jsonResponse([
+        'success' => (bool)($summary['success'] ?? false),
+        'message' => (string)($summary['message'] ?? ''),
+        'summary' => $summary,
+        'settings' => $wishSettings
+    ], empty($summary['success']) ? 500 : 200);
 }
 
 // 5c. POST /api/admin/testing/payment
