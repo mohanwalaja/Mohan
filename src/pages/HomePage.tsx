@@ -10,8 +10,7 @@ import {
   HelpCircle,
   Mail,
   Languages,
-  ShieldCheck,
-  Sparkles
+  ShieldCheck
 } from 'lucide-react';
 import { TestimonialsSection } from '../components/common/TestimonialsSection';
 import { SEO } from '../components/common/SEO';
@@ -19,7 +18,10 @@ import { JsonLd } from '../components/common/JsonLd';
 import { RouteLink } from '../components/common/RouteLink';
 import { HOME_FAQ_ITEMS } from '../data/homeFaq';
 import { buildFaqPageJsonLd } from '../services/structuredData';
-import { ASTRO_CHAT_WINDOW_DAYS, CHAT_INCLUDED_LINE } from '../services/servicePromise';
+// Only the day count is used here now: the full "Personal astrologer chat
+// included" line belongs to the Services page, the service page headers and
+// checkout, not to the home page (owner request, 2026-10-21).
+import { ASTRO_CHAT_WINDOW_DAYS } from '../services/servicePromise';
 import type { ServiceType } from '../types';
 import logoImg from '../assets/astrosivam_appicon.png';
 
@@ -220,12 +222,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                     <span>{service.detail}</span>
                   </div>
 
-                  {/* Included, not an upsell: the chat is part of what they pay
-                      for, and no homepage card used to say so. */}
-                  <p className="mt-3 flex items-start gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/10 px-2.5 py-2 text-[11px] font-semibold leading-snug text-amber-100">
-                    <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" aria-hidden="true" />
-                    <span>{CHAT_INCLUDED_LINE}</span>
-                  </p>
+                  {/* Owner request (2026-10-21): the "Personal astrologer chat
+                      included — 7 days of free questions after delivery" line is
+                      not shown on the home page. It stays on the full Services
+                      page (once, in the header badge), on each service page
+                      header and in checkout, and the section intro above still
+                      promises the chat window in its own words. */}
 
                   <RouteLink
                     route={service.route}

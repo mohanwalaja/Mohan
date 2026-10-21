@@ -19,7 +19,10 @@ import { JsonLd } from '../components/common/JsonLd';
 import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { getServicePrices } from '../services/pricing';
 import { ServicePromiseStrip } from '../components/common/ServicePromiseStrip';
-import { ASTRO_CHAT_WINDOW_DAYS, CHAT_INCLUDED_LINE } from '../services/servicePromise';
+// The chat line itself lives in the header badge below, spelled out inline with
+// the day count; the shared CHAT_INCLUDED_LINE constant is no longer repeated on
+// every price card (owner request, 2026-10-21).
+import { ASTRO_CHAT_WINDOW_DAYS } from '../services/servicePromise';
 
 interface ServicesPageProps {
   onNavigate: (route: string) => void;
@@ -252,16 +255,11 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
                           One free report per customer; additional reports are charged at the standard price.
                         </p>
                       )}
-                      {/* What the fee includes beyond the PDF. The chat is a real,
-                          included benefit; leaving it unmentioned meant customers
-                          paid for it without ever knowing. */}
-                      <p
-                        data-testid={`service-chat-line-${route}`}
-                        className="mt-3 flex items-start gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/10 px-2.5 py-2 text-[11px] font-semibold leading-snug text-amber-100"
-                      >
-                        <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" aria-hidden="true" />
-                        <span>{CHAT_INCLUDED_LINE}</span>
-                      </p>
+                      {/* Owner request (2026-10-21): the chat line appears ONCE on
+                          this page — in the header badge above
+                          (data-testid="services-chat-advert"). It used to repeat
+                          on every price card as well, which said the same thing
+                          four times on one screen. */}
                       <ServicePromiseStrip variant="card" className="mt-3 border-t border-white/10 pt-3" />
                       <RouteLink
                         route={route}
