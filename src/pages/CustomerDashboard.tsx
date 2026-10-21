@@ -1719,14 +1719,14 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               <div className="font-bold text-white">
                                 Report Complete & Emailed
                               </div>
-                              {/* Owner request (2026-10-21): keep this short. Two
-                                  facts only — what was emailed and where, and
-                                  that a completed order is non-refundable. The
-                                  heading already says it is approved and
-                                  delivered, so the body must not repeat it. */}
+                              {/* Owner request (2026-10-21): one fact only — what
+                                  was emailed, and where. The refund wording lives
+                                  on the pending banner below and nowhere else: a
+                                  completed order can no longer be refunded, so
+                                  quoting the 90% pre-approval window here is
+                                  something the customer cannot act on. */}
                               <div className="text-[11.5px] text-emerald-200">
                                 Your Vedic Report and Tax Invoice PDFs were emailed to <strong>{order.userEmail}</strong>.
-                                Completed orders are non-refundable under the <strong>Refund & Cancellation Policy</strong> — 90% refunds apply only before approval.
                               </div>
                             </div>
                           </div>
