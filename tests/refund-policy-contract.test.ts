@@ -260,4 +260,26 @@ check('portal and customer see how the money travelled', () => {
   assert.match(dashboard, /order\.refundReference/, 'the customer must be able to see the provider reference');
 });
 
+// Owner request (2026-10-21): the refund wording belongs on PENDING orders only.
+// A completed order can no longer be refunded, so quoting the 90% pre-approval
+// window there tells the customer something they cannot act on - it read as a
+// warning on the one banner that should simply confirm delivery.
+check('dashboard: the refund window is quoted on pending orders, never on completed ones', () => {
+  const dashboard = read('src/pages/CustomerDashboard.tsx');
+  // Scan rendered JSX only: the source comment above the completed banner
+  // explains WHY the wording is not there, and must not fail this check.
+  const jsx = (source: string) =>
+    source.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  const completed = jsx(region(dashboard, ') : isCompleted ? (', ") : order.status === 'CANCELLED' ? ("));
+  assert.doesNotMatch(completed, /refund|90%|Refund & Cancellation Policy/i,
+    'a completed order must not quote the refund policy at all');
+  assert.match(completed, /emailed to/, 'and must still say what was emailed, and where');
+
+  const pending = jsx(region(dashboard, 'Processing in Vedic Astrology Queue', 'Request Email Resend'));
+  assert.match(pending, /90% refund/, 'the pending banner keeps the window the customer can still use');
+  assert.match(pending, /before admin approval/i, 'tied to the event that closes it');
+  assert.match(pending, /admin@astrosivam\.com/, 'with the address to request it from');
+});
+
 console.log(`\n${passed} refund-policy contract checks passed.`);
