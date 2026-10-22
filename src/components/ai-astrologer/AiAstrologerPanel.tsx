@@ -29,7 +29,7 @@ import {
   type GuidedCategory,
   type GuidedQuestion,
 } from '../../services/aiAstrologerApi';
-import guidedQuestionsData from '../../../knowledge/ai-astrologer/rules/guided-questions.json';
+import guidedQuestionsData from '../../../knowledge/ai-astrologer/rules/guided-questions.json' with { type: 'json' };
 
 function buildLocalGuidedMenu(
   language: ChatLanguage,

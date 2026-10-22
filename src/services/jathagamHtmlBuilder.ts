@@ -25,7 +25,7 @@ import { LUCKY_INDICATOR_TEXT, resolveLuckyIndicators } from './jathagamLuckyDat
 // Page-1 wording shared with api/astrology/report_views.php (read there by
 // astro_jathagam_page1()). One file, two renderers: the browser preview and the
 // server/email PDF cannot drift on the zodiac names or the dosha explanations.
-import jathagamPage1Data from '../../api/astrology/jathagam_page1.json';
+import jathagamPage1Data from '../../api/astrology/jathagam_page1.json' with { type: 'json' };
 // Plain-language glossary shared with api/astrology/report_views.php (read there
 // by astro_report_glossary()). Appended as the report's last page so no reader
 // has to guess what "bhava", "vakri" or "porutham" means.
@@ -1578,15 +1578,19 @@ ${REPORT_FONT_LINK_TAG}
      name inside its box. */
   .summary-page {
     --summary-scale: 1;
-    padding: 8mm 11mm 8mm;
+    padding: 5.5mm 11mm 5.5mm;
+  }
+  .summary-page .header {
+    margin-bottom: calc(4px * var(--summary-scale));
+    padding-bottom: calc(4px * var(--summary-scale));
   }
 
   .summary-page .card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
-    padding: calc(6px * var(--summary-scale)) calc(9px * var(--summary-scale));
-    margin-bottom: calc(7px * var(--summary-scale));
+    padding: calc(4px * var(--summary-scale)) calc(8px * var(--summary-scale));
+    margin-bottom: calc(4.5px * var(--summary-scale));
     box-sizing: border-box;
     break-inside: avoid;
     page-break-inside: avoid;
@@ -1594,12 +1598,12 @@ ${REPORT_FONT_LINK_TAG}
   }
   .summary-page .card-title {
     color: #7a1230;
-    font-size: calc(14px * var(--summary-scale));
+    font-size: calc(13.5px * var(--summary-scale));
     font-weight: 800;
-    line-height: 1.35;
-    margin-bottom: calc(5px * var(--summary-scale));
+    line-height: 1.28;
+    margin-bottom: calc(3.5px * var(--summary-scale));
     border-bottom: 1px solid #e5e7eb;
-    padding-bottom: calc(2px * var(--summary-scale));
+    padding-bottom: calc(1.5px * var(--summary-scale));
     min-width: 0;
     overflow-wrap: anywhere;
   }
@@ -1610,13 +1614,13 @@ ${REPORT_FONT_LINK_TAG}
   .summary-details-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: calc(5px * var(--summary-scale));
+    gap: calc(4px * var(--summary-scale));
   }
   .summary-detail {
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
-    padding: calc(3px * var(--summary-scale)) calc(6px * var(--summary-scale));
+    padding: calc(2.5px * var(--summary-scale)) calc(6px * var(--summary-scale));
     min-width: 0;
   }
   .summary-detail.is-wide { grid-column: span 2; }
@@ -1634,7 +1638,7 @@ ${REPORT_FONT_LINK_TAG}
     color: #1f2937;
     font-size: calc(11.5px * var(--summary-scale));
     font-weight: 700;
-    line-height: 1.5;
+    line-height: 1.32;
     overflow-wrap: anywhere;
     word-break: break-word;
   }
@@ -1643,29 +1647,29 @@ ${REPORT_FONT_LINK_TAG}
      stone, colour, numbers. */
   .summary-lucky { background: #fffbeb; border-color: #f3e0a6; }
   .summary-page .card-title-gold { color: #8a5a00; border-bottom-color: #f3e0a6; }
-  .lucky-row { margin-bottom: calc(4px * var(--summary-scale)); }
+  .lucky-row { margin-bottom: calc(3px * var(--summary-scale)); }
   .lucky-row:last-of-type { margin-bottom: 0; }
   .lucky-row-head {
     color: #8a5a00;
     font-size: calc(10.5px * var(--summary-scale));
     font-weight: 800;
-    line-height: 1.4;
-    margin-bottom: calc(2px * var(--summary-scale));
+    line-height: 1.3;
+    margin-bottom: calc(1.5px * var(--summary-scale));
     overflow-wrap: anywhere;
   }
   .lucky-row-sub { color: #6b7280; font-weight: 600; margin-left: calc(6px * var(--summary-scale)); }
   .lucky-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: calc(5px * var(--summary-scale));
+    gap: calc(4px * var(--summary-scale));
   }
   .lucky-cell { border-color: #f3e0a6; }
   .lucky-cell .summary-detail-value { color: #7a1230; }
   .lucky-note {
-    margin: calc(4px * var(--summary-scale)) 0 0;
+    margin: calc(3px * var(--summary-scale)) 0 0;
     color: #4b5563;
     font-size: calc(10.5px * var(--summary-scale));
-    line-height: 1.45;
+    line-height: 1.34;
     overflow-wrap: anywhere;
   }
   /* Compact page (5+ flagged grahas): the lucky card gives back vertical
@@ -1673,26 +1677,26 @@ ${REPORT_FONT_LINK_TAG}
   .summary-page.is-compact .lucky-row { margin-bottom: 2px; }
   .summary-page.is-compact .lucky-row-head { margin-bottom: 1px; }
   .summary-page.is-compact .lucky-row-sub { display: none; }
-  .summary-page.is-compact .lucky-note { margin-top: 2px; line-height: 1.35; }
+  .summary-page.is-compact .lucky-note { margin-top: 2px; line-height: 1.28; }
 
   /* Supportive planets: green tint, at most three boxes in a row. */
   .summary-good { background: #f2fbf6; border-color: #bfe6d3; }
   .summary-good-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: calc(5px * var(--summary-scale));
+    gap: calc(4px * var(--summary-scale));
   }
   .summary-planet {
     background: #ffffff;
     border: 1px solid #bfe6d3;
     border-radius: 8px;
-    padding: calc(4px * var(--summary-scale)) calc(6px * var(--summary-scale));
+    padding: calc(3px * var(--summary-scale)) calc(6px * var(--summary-scale));
     min-width: 0;
   }
-  .summary-planet-name { color: #0f6b4a; font-size: calc(13px * var(--summary-scale)); font-weight: 800; line-height: 1.45; overflow-wrap: anywhere; }
-  .summary-planet-note { color: #1f2937; font-size: calc(11.5px * var(--summary-scale)); line-height: 1.5; overflow-wrap: anywhere; }
-  .summary-empty { color: #0f6b4a; font-size: calc(11.5px * var(--summary-scale)); font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
-  .summary-incomplete { color: #92400e; font-size: calc(10.5px * var(--summary-scale)); font-weight: 400; line-height: 1.5; }
+  .summary-planet-name { color: #0f6b4a; font-size: calc(12.5px * var(--summary-scale)); font-weight: 800; line-height: 1.32; overflow-wrap: anywhere; }
+  .summary-planet-note { color: #1f2937; font-size: calc(11px * var(--summary-scale)); line-height: 1.34; overflow-wrap: anywhere; }
+  .summary-empty { color: #0f6b4a; font-size: calc(11.5px * var(--summary-scale)); font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+  .summary-incomplete { color: #92400e; font-size: calc(10.5px * var(--summary-scale)); font-weight: 400; line-height: 1.4; }
 
   /* Planets needing care: amber tint, one row per flagged planet.
      Growing block of page 3: leftover millimetres after the font fitter. */
@@ -1714,55 +1718,55 @@ ${REPORT_FONT_LINK_TAG}
     text-transform: uppercase;
     letter-spacing: 0.2px;
     text-align: left;
-    padding: calc(3px * var(--summary-scale)) calc(6px * var(--summary-scale));
+    padding: calc(2.5px * var(--summary-scale)) calc(6px * var(--summary-scale));
     border-bottom: 1px solid #f1d9a6;
-    line-height: 1.4;
+    line-height: 1.3;
     overflow-wrap: anywhere;
   }
   table.care-table td {
-    padding: calc(3px * var(--summary-scale)) calc(6px * var(--summary-scale));
+    padding: calc(2px * var(--summary-scale)) calc(6px * var(--summary-scale));
     border-bottom: 1px solid #f1d9a6;
     vertical-align: top;
     /* 10.5px is the report's floor — scale never goes below 1, so a four-line
        remedy cell never prints smaller type to make it fit. */
     font-size: calc(10.5px * var(--summary-scale));
-    line-height: 1.35;
+    line-height: 1.28;
     color: #1f2937;
     overflow-wrap: anywhere;
     word-break: break-word;
   }
   table.care-table tr:last-child td { border-bottom: none; }
-  table.care-table td.care-planet { color: #7a1230; font-size: calc(13px * var(--summary-scale)); font-weight: 800; line-height: 1.35; }
-  table.care-table td.care-empty { color: #0f6b4a; font-weight: 700; font-size: calc(11.5px * var(--summary-scale)); line-height: 1.5; }
+  table.care-table td.care-planet { color: #7a1230; font-size: calc(12.5px * var(--summary-scale)); font-weight: 800; line-height: 1.28; }
+  table.care-table td.care-empty { color: #0f6b4a; font-weight: 700; font-size: calc(11.5px * var(--summary-scale)); line-height: 1.4; }
   .care-line { margin-bottom: calc(1px * var(--summary-scale)); overflow-wrap: anywhere; }
   .care-line:last-child { margin-bottom: 0; }
   .care-label { color: #92400e; font-size: calc(10.5px * var(--summary-scale)); font-weight: 800; }
   /* Compact mode (5 to 9 flagged grahas): the same facts on one line per
      planet and tighter rows, never smaller than 10.5px. */
-  table.care-table.is-compact th { font-size: calc(10.5px * var(--summary-scale)); padding: calc(3px * var(--summary-scale)) calc(6px * var(--summary-scale)); }
-  table.care-table.is-compact td { font-size: calc(10.5px * var(--summary-scale)); line-height: 1.5; padding: calc(3px * var(--summary-scale)) calc(6px * var(--summary-scale)); }
-  table.care-table.is-compact td.care-planet { font-size: calc(12px * var(--summary-scale)); }
-  .care-compact-line { font-size: calc(10.5px * var(--summary-scale)); line-height: 1.5; overflow-wrap: anywhere; }
+  table.care-table.is-compact th { font-size: calc(10.5px * var(--summary-scale)); padding: calc(2px * var(--summary-scale)) calc(5px * var(--summary-scale)); }
+  table.care-table.is-compact td { font-size: calc(10.5px * var(--summary-scale)); line-height: 1.32; padding: calc(1.5px * var(--summary-scale)) calc(5px * var(--summary-scale)); }
+  table.care-table.is-compact td.care-planet { font-size: calc(11.5px * var(--summary-scale)); }
+  .care-compact-line { font-size: calc(10.5px * var(--summary-scale)); line-height: 1.32; overflow-wrap: anywhere; }
 
   /* Compact mode (5 to 9 flagged grahas): the SAME facts with less spacing —
      never smaller text, never a hidden planet, never a second sheet. */
-  .summary-page.is-compact .card { padding: calc(5px * var(--summary-scale)) calc(8px * var(--summary-scale)); margin-bottom: calc(5px * var(--summary-scale)); }
-  .summary-page.is-compact .card-title { font-size: calc(13.5px * var(--summary-scale)); margin-bottom: calc(4px * var(--summary-scale)); padding-bottom: calc(1px * var(--summary-scale)); }
-  .summary-page.is-compact .summary-detail { padding: calc(2px * var(--summary-scale)) calc(5px * var(--summary-scale)); }
-  .summary-page.is-compact .summary-detail-value { font-size: calc(11px * var(--summary-scale)); line-height: 1.45; }
-  .summary-page.is-compact .summary-planet { padding: calc(3px * var(--summary-scale)) calc(5px * var(--summary-scale)); }
-  .summary-page.is-compact .summary-planet-note { font-size: calc(11px * var(--summary-scale)); line-height: 1.45; }
-  .summary-page.is-compact table.care-table.is-compact td { padding: calc(2px * var(--summary-scale)) calc(5px * var(--summary-scale)); line-height: 1.4; }
-  .summary-page.is-compact .summary-short-text { font-size: calc(11.5px * var(--summary-scale)); line-height: 1.5; margin-bottom: calc(2px * var(--summary-scale)); }
-  .summary-page.is-compact .reassurance { padding: calc(5px * var(--summary-scale)) calc(8px * var(--summary-scale)); font-size: calc(11px * var(--summary-scale)); line-height: 1.5; margin-bottom: calc(5px * var(--summary-scale)); }
+  .summary-page.is-compact .card { padding: calc(3.5px * var(--summary-scale)) calc(7px * var(--summary-scale)); margin-bottom: calc(3.5px * var(--summary-scale)); }
+  .summary-page.is-compact .card-title { font-size: calc(13px * var(--summary-scale)); margin-bottom: calc(2.5px * var(--summary-scale)); padding-bottom: calc(1px * var(--summary-scale)); }
+  .summary-page.is-compact .summary-detail { padding: calc(1.5px * var(--summary-scale)) calc(5px * var(--summary-scale)); }
+  .summary-page.is-compact .summary-detail-value { font-size: calc(11px * var(--summary-scale)); line-height: 1.3; }
+  .summary-page.is-compact .summary-planet { padding: calc(2px * var(--summary-scale)) calc(5px * var(--summary-scale)); }
+  .summary-page.is-compact .summary-planet-note { font-size: calc(11px * var(--summary-scale)); line-height: 1.3; }
+  .summary-page.is-compact table.care-table.is-compact td { padding: calc(1.5px * var(--summary-scale)) calc(5px * var(--summary-scale)); line-height: 1.28; }
+  .summary-page.is-compact .summary-short-text { font-size: calc(11px * var(--summary-scale)); line-height: 1.34; margin-bottom: calc(1.5px * var(--summary-scale)); }
+  .summary-page.is-compact .reassurance { padding: calc(3.5px * var(--summary-scale)) calc(7px * var(--summary-scale)); font-size: calc(11px * var(--summary-scale)); line-height: 1.34; margin-bottom: calc(4px * var(--summary-scale)); }
   .summary-page.is-compact .footer-page { font-size: 10.5px; }
 
   /* In Short + reassurance note. */
   .summary-short-text {
     color: #1f2937;
-    font-size: calc(12px * var(--summary-scale));
-    line-height: 1.6;
-    margin: 0 0 calc(3px * var(--summary-scale));
+    font-size: calc(11.5px * var(--summary-scale));
+    line-height: 1.38;
+    margin: 0 0 calc(2px * var(--summary-scale));
     overflow-wrap: anywhere;
   }
   .summary-short-text:last-child { margin-bottom: 0; }
@@ -1771,11 +1775,11 @@ ${REPORT_FONT_LINK_TAG}
     border: 1px solid #e5e7eb;
     border-left: 3.5px solid #7a1230;
     border-radius: 6px;
-    padding: calc(6px * var(--summary-scale)) calc(9px * var(--summary-scale));
+    padding: calc(4.5px * var(--summary-scale)) calc(8px * var(--summary-scale));
     color: #1f2937;
-    font-size: calc(11.5px * var(--summary-scale));
-    line-height: 1.55;
-    margin-bottom: calc(7px * var(--summary-scale));
+    font-size: calc(11px * var(--summary-scale));
+    line-height: 1.38;
+    margin-bottom: calc(5px * var(--summary-scale));
     overflow-wrap: anywhere;
     break-inside: avoid;
     page-break-inside: avoid;
@@ -1864,6 +1868,11 @@ ${REPORT_FONT_LINK_TAG}
      start) instead of being stretched to four equal fractions of the sheet.
      fitJathagamLifeCardText then picks the largest shared body size whose
      content-sized stack still fits one A4 page. */
+  #jathagam-page-2 { padding: 4.5mm ${isTa || isHi ? '9.5mm' : '11.2mm'} 4.5mm; }
+  #jathagam-page-2 .header { margin-bottom: 1mm; }
+  #jathagam-page-2 .header .header-logo { width: 44px; height: 44px; }
+  #jathagam-page-2 .modern-divider { margin: 0.5mm 0 1.2mm; }
+  #jathagam-page-2 .footer { margin-top: 0.8mm; padding-top: 1.2mm; }
   .life-grid-big {
     flex: 0 0 auto;
     min-height: 0;
@@ -1871,14 +1880,15 @@ ${REPORT_FONT_LINK_TAG}
     grid-template-columns: 1fr 1fr;
     grid-auto-rows: auto;
     align-items: start;
-    gap: 2.5mm;
-    margin-bottom: 1.5mm;
+    row-gap: 1.5mm;
+    column-gap: 2.2mm;
+    margin-bottom: 0.8mm;
     box-sizing: border-box;
   }
   .life-grid-big .panel.life-card-big {
     min-height: 0;
     margin-bottom: 0;
-    padding: 2.5mm 3.5mm;
+    padding: 1.5mm 2.8mm;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -1894,23 +1904,23 @@ ${REPORT_FONT_LINK_TAG}
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 2mm;
-    margin-bottom: 1mm;
-    padding: 0.5mm 0;
+    gap: 1.6mm;
+    margin-bottom: 0.4mm;
+    padding: 0.2mm 0;
     flex-shrink: 0;
     overflow: visible;
   }
   .life-grid-big .panel.life-card-big .card-title-wrap {
     display: flex;
     align-items: center;
-    gap: 1.5mm;
+    gap: 1.3mm;
     min-width: 0;
     flex: 1;
     overflow: visible;
-    padding: 0.2mm 0;
+    padding: 0.1mm 0;
   }
   .life-grid-big .panel.life-card-big .card-icon {
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1;
     display: inline-flex;
     align-items: center;
@@ -1920,11 +1930,11 @@ ${REPORT_FONT_LINK_TAG}
   }
   .life-grid-big .panel.life-card-big .card-title {
     font-family: ${headerFont};
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: var(--maroon);
-    line-height: 1.4;
-    padding: 0.5mm 0;
+    line-height: 1.25;
+    padding: 0.2mm 0;
     display: inline-block;
     white-space: normal;
     overflow: visible;
@@ -1935,21 +1945,21 @@ ${REPORT_FONT_LINK_TAG}
   .life-grid-big .panel.life-card-big .bhava-badge {
     display: inline-flex;
     align-items: center;
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 700;
     background: #f8fafc;
     color: var(--ink-muted);
     border: 1px solid var(--slate-border);
     border-radius: 3px;
-    padding: 0.4mm 1.8mm;
-    max-width: 42%;
+    padding: 0.25mm 1.4mm;
+    max-width: 44%;
     white-space: normal;
     overflow-wrap: anywhere;
     text-align: right;
-    line-height: 1.25;
+    line-height: 1.18;
     flex: 0 1 auto;
     min-width: 0;
-    margin: 0.3mm 0 0 0;
+    margin: 0.1mm 0 0 0;
   }
   .life-grid-big .panel.life-card-big .bhava-badge.badge-caution {
     background: #fef3c7;
@@ -1966,7 +1976,7 @@ ${REPORT_FONT_LINK_TAG}
     color: #1e293b;
     text-align: left;
     margin: 0;
-    padding-top: 0.8mm;
+    padding-top: 0.5mm;
     padding-bottom: 0;
     padding-left: 0;
     padding-right: 0;
@@ -2227,7 +2237,10 @@ function fitPageToA4(pageEl) {
 }
 var fitLifeCardText = ${fitJathagamLifeCardText.toString()};
 var fitSummaryText = ${fitJathagamSummaryText.toString()};
-window.addEventListener('load', function () {
+function refitAll() {
+  document.querySelectorAll('.page .inner').forEach(function (inner) {
+    inner.style.transform = 'none';
+  });
   fitLifeCardText(document);
   fitSummaryText(document);
   document.querySelectorAll('.page').forEach(function (pageEl) {
@@ -2241,10 +2254,11 @@ window.addEventListener('load', function () {
     if (pageEl.className.indexOf('summary-page') !== -1) return;
     fitPageToA4(pageEl);
   });
-});
+}
+window.addEventListener('load', refitAll);
 if (document.fonts) {
-  document.fonts.ready.then(function () { fitLifeCardText(document); fitSummaryText(document); });
-  document.fonts.addEventListener('loadingdone', function () { fitLifeCardText(document); fitSummaryText(document); });
+  document.fonts.ready.then(refitAll);
+  document.fonts.addEventListener('loadingdone', refitAll);
 }
 </script>
 

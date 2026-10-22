@@ -20,7 +20,7 @@ import {
   validatePersonDraft
 } from '../../services/multiPersonOrder';
 import { formatMoney } from '../../services/pricing';
-import rulesData from '../../lib/muhurtham/rules.json';
+import rulesData from '../../lib/muhurtham/rules.json' with { type: 'json' };
 import { useAuth } from '../../context/AuthContext';
 import {
   buildSavedPeople,

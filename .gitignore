@@ -70,3 +70,9 @@ tests/fixtures/php-refund-probes/out.json
 
 # Local visual-check screenshots (Playwright capture of the colour modes)
 shots/
+
+# Foreign lockfiles and AI Studio local scratch artifacts
+bun.lock
+.aistudio/
+public/assets/aistudio/
+

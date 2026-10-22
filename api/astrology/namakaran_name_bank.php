@@ -4,7 +4,7 @@
  *
  * Source of truth : data/namakaran_name_bank.psv
  * Generator       : scripts/build_namakaran_bank.mjs
- * Content hash    : cf3675358b56b120
+ * Content hash    : 324cc71c98585af0
  *
  * Kept byte-for-byte in step with src/lib/astrology/namakaranNameBank.ts so the
  * live preview and the official report always print the same names.
@@ -13,7 +13,7 @@
  */
 
 return [
-    'hash' => 'cf3675358b56b120',
+    'hash' => '324cc71c98585af0',
     'maxPerSide' => 8,
     'bank' => [
     'சு' => ['M' => ['south' => [['Suresh', 'சுரேஷ்', 'सुरेश', 'Lord of the celestials'], ['Sudhan', 'சுதன்', 'सुधन', 'Wealth and virtue'], ['Sundaram', 'சுந்தரம்', 'सुंदरम', 'Beautiful and auspicious'], ['Sudharshan', 'சுதர்ஷன்', 'सुदर्शन', 'Beautiful vision'], ['Suganthan', 'சுகந்தன்', 'सुगंधन', 'Fragrant and pleasing'], ['Sugumar', 'சுகுமார்', 'सुकुमार', 'Noble and gentle'], ['Suriyan', 'சுரியன்', 'सूरियन', 'The Sun god'], ['Subramanian', 'சுப்பிரமணியன்', 'सुब्रमण्यन', 'Lord Murugan']], 'north' => [['Sumit', 'சுமித்', 'सुमित', 'A good friend'], ['Sunil', 'சுனில்', 'सुनील', 'Deep blue, sapphire'], ['Sudhir', 'சுதீர்', 'सुधीर', 'Resolute and wise'], ['Sushant', 'சுஷாந்த்', 'सुशांत', 'Calm and peaceful'], ['Suhas', 'சுஹாஸ்', 'सुहास', 'A pleasant smile']]], 'F' => ['south' => [['Suganya', 'சுகன்யா', 'सुगन्या', 'Sweet-natured'], ['Sudha', 'சுதா', 'सुधा', 'Nectar, divine calm'], ['Sumathi', 'சுமதி', 'सुमति', 'Pure and wise mind'], ['Sundari', 'சுந்தரி', 'सुंदरी', 'A beautiful woman'], ['Sujatha', 'சுஜாதா', 'सुजाता', 'Well-born and noble'], ['Supriya', 'சுப்ரியா', 'सुप्रिया', 'Very dear'], ['Sunitha', 'சுனிதா', 'सुनीता', 'Of good conduct'], ['Subiksha', 'சுபிக்ஷா', 'सुभिक्षा', 'Prosperity and grace']], 'north' => [['Sushma', 'சுஷ்மா', 'सुष्मा', 'Beautiful, good nature'], ['Suhani', 'சுஹானி', 'सुहानी', 'Pleasant and beautiful'], ['Sumedha', 'சுமேதா', 'सुमेधा', 'Wise and intelligent'], ['Surbhi', 'சுரபி', 'सुरभि', 'Fragrance']]]],
@@ -87,5 +87,6 @@ return [
     'சூ' => ['M' => ['south' => [['Surya', 'சூர்யா', 'सूर्या', 'The Sun'], ['Sooriyan', 'சூரியன்', 'सूरियन', 'The Sun god'], ['Soodan', 'சூடன்', 'सूडन', 'A bright and able soul']], 'north' => [['Suryansh', 'சூர்யான்ஷ்', 'सूर्यांश', 'A part of the Sun']]], 'F' => ['south' => [['Sooriya', 'சூரியா', 'सूरिया', 'The Sun']], 'north' => [['Soorika', 'சூரிகா', 'सूरिका', 'A bright flame']]]],
     'த' => ['M' => ['south' => [['Thamizh', 'தமிழ்', 'तमिळ', 'Sweet Tamil'], ['Thamizhselvan', 'தமிழ்செல்வன்', 'तमिळसेल्वन', 'A treasure of Tamil'], ['Thandapani', 'தண்டபாணி', 'दंडपाणि', 'Lord Murugan'], ['Thangaraju', 'தங்கராஜு', 'तंगराजु', 'A golden king'], ['Thavam', 'தவம்', 'तवम', 'Penance and devotion'], ['Tharun', 'தருண்', 'तरुण', 'A young and bright soul']], 'north' => [['Tanmay', 'தன்மய்', 'तन्मय', 'Absorbed in the divine'], ['Tanish', 'தனிஷ்', 'तनीश', 'Lord of the night'], ['Tanishq', 'தனிஷ்க்', 'तनिष्क', 'A precious jewel'], ['Tanush', 'தனுஷ்', 'तनुष', 'A bow']]], 'F' => ['south' => [['Thamizhselvi', 'தமிழ்செல்வி', 'तमिळसेल्वी', 'A graceful Tamil lady'], ['Thamizharasi', 'தமிழரசி', 'तमिळरसी', 'Queen of Tamil'], ['Thangam', 'தங்கம்', 'तंगम', 'Gold'], ['Thavamalar', 'தவமலர்', 'तवमलर', 'A flower of penance'], ['Tharani', 'தரணி', 'तरणि', 'The earth']], 'north' => [['Tanishka', 'தனிஷ்கா', 'तनिष्का', 'A small star'], ['Tanya', 'தன்யா', 'तन्या', 'A fairy queen'], ['Taruna', 'தருணா', 'तरुणा', 'Young and tender'], ['Tanvi', 'தன்வி', 'तन्वी', 'A slender lady']]]],
     'ஜ' => ['M' => ['south' => [['Jagan', 'ஜகன்', 'जगन', 'The world'], ['Jagannathan', 'ஜகன்னாதன்', 'जगन्नाथन', 'Lord of the world'], ['Jagadheesan', 'ஜகதீசன்', 'जगदीशन', 'Lord of the universe'], ['Jambulingam', 'ஜம்புலிங்கம்', 'जम्बुलिंगम', 'Lord Shiva'], ['Jayanthan', 'ஜயந்தன்', 'जयंतन', 'The victorious one']], 'north' => [['Jatin', 'ஜதின்', 'जतिन', 'A disciplined ascetic'], ['Jagat', 'ஜகத்', 'जगत', 'The universe']]], 'F' => ['south' => [['Jaya', 'ஜயா', 'जया', 'Victory'], ['Janani', 'ஜனனி', 'जननी', 'A mother, a creator'], ['Jayanthi', 'ஜயந்தி', 'जयंती', 'A victorious festival'], ['Jananya', 'ஜனன்யா', 'जनन्या', 'A motherly soul']], 'north' => [['Jasmin', 'ஜஸ்மின்', 'जैस्मिन', 'A jasmine flower']]]],
+    'ஞ' => ['M' => ['south' => [['Nyamalan', 'ஞமலன்', 'ञमलन', 'A noble soul'], ['Nyaman', 'ஞமன்', 'ञमन', 'A sage']], 'north' => [['Jnapakan', 'ஞபகன்', 'ज्ञापकन', 'Peaceful'], ['Nyayan', 'ஞயன்', 'ञयन', 'Golden']]], 'F' => ['south' => [['Nyamali', 'ஞமலி', 'ञमली', 'A graceful lady'], ['Nyamalini', 'ஞமலினி', 'ञमलिनी', 'A shining lady']], 'north' => [['Jnapaki', 'ஞபகி', 'ज्ञापकी', 'A goddess of wisdom'], ['Nyaya', 'ஞயா', 'ञया', 'A wise lady']]]],
     ],
 ];

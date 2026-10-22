@@ -1,5 +1,5 @@
-import rulesData from '../lib/muhurtham/rules.json';
-import notesData from '../../api/astrology/muhurtham_report_notes.json';
+import rulesData from '../lib/muhurtham/rules.json' with { type: 'json' };
+import notesData from '../../api/astrology/muhurtham_report_notes.json' with { type: 'json' };
 import type { AppLanguage } from '../types';
 import type { MuhurthamScanResult } from './muhurthamHtmlBuilder';
 

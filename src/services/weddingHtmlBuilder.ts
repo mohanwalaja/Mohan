@@ -480,7 +480,7 @@ ${REPORT_FONT_LINK_TAG}
     font-family: ${fontFamilies};
     color: var(--ink);
     position: relative;
-    padding: 7mm 11mm 7mm;
+    padding: 5.5mm 11mm 5.5mm;
     box-sizing: border-box;
   }
 
@@ -495,52 +495,54 @@ ${REPORT_FONT_LINK_TAG}
 
   /* ── Shared centred Baby Naming report lockup ── */
   ${reportHeaderCss(headerFont)}
+  #wedding-page-1 .header { gap: 0.4mm; margin-bottom: 1.3mm; }
+  #wedding-page-1 .header .header-logo { width: 48px; height: 48px; }
 
   /* ── Profiles Grid ── */
   .profiles-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 3.5mm;
-    margin-bottom: 2mm;
+    gap: 3mm;
+    margin-bottom: 1.4mm;
     flex-shrink: 0;
   }
   .profile-card {
     background: var(--slate-bg);
     border: 1px solid var(--slate-border);
     border-radius: 8px;
-    padding: 2.6mm 3.8mm;
+    padding: 2mm 3.4mm;
   }
   .profile-card.bride { border-top: 3.5px solid #db2777; }
   .profile-card.groom { border-top: 3.5px solid #2563eb; }
   .profile-card h3 {
     font-family: ${headerFont};
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 800;
-    margin-bottom: 1.2mm;
+    margin-bottom: 0.9mm;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 1mm;
+    padding-bottom: 0.7mm;
     border-bottom: 1px solid var(--slate-border);
   }
   .profile-card.bride h3 { color: #be185d; }
   .profile-card.groom h3 { color: #1d4ed8; }
 
-  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm 3mm; }
-  .profile-item { font-size: 11px; line-height: 1.25; }
+  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1mm 2.8mm; }
+  .profile-item { font-size: 10.5px; line-height: 1.22; }
   .profile-item .label {
     color: var(--ink-muted);
     font-weight: 700;
-    font-size: 9px;
+    font-size: 8.5px;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     display: block;
-    margin-bottom: 0.5mm;
+    margin-bottom: 0.3mm;
   }
   .profile-item .value {
     font-weight: 700;
     color: var(--ink);
-    font-size: 11.5px;
+    font-size: 11px;
   }
 
   /* ── Compatibility meter + Kuja summary: paired first-page cards ── */
@@ -549,7 +551,7 @@ ${REPORT_FONT_LINK_TAG}
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: stretch;
     gap: 3mm;
-    margin-bottom: 2mm;
+    margin-bottom: 1.4mm;
     flex-shrink: 0;
   }
   .score-panel {
@@ -557,12 +559,12 @@ ${REPORT_FONT_LINK_TAG}
     background: #ffffff;
     border: 1px solid var(--slate-border);
     border-radius: 8px;
-    padding: 3mm 3.5mm;
+    padding: 2.2mm 3.2mm;
     margin: 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    gap: 1.1mm;
+    gap: 0.9mm;
     box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     flex-shrink: 0;
   }
@@ -650,7 +652,7 @@ ${REPORT_FONT_LINK_TAG}
     min-height: 0;
     display: flex;
     flex-direction: column;
-    margin-bottom: 2mm;
+    margin-bottom: 1.5mm;
   }
   table.poruthams-table {
     width: 100%;
@@ -670,28 +672,28 @@ ${REPORT_FONT_LINK_TAG}
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    padding: 1.4mm 2.4mm;
+    padding: 1mm 2.2mm;
     text-align: left;
     border-bottom: 1px solid var(--slate-border);
   }
   table.poruthams-table td {
-    padding: 1.2mm 2.4mm;
+    padding: 0.8mm 2.2mm;
     border-bottom: 1px solid #f1f5f9;
     vertical-align: middle;
   }
   table.poruthams-table tr:last-child td { border-bottom: none; }
   .porutham-num { text-align: center; font-weight: 700; color: var(--ink-muted); width: 24px; font-size: 10px; }
-  .porutham-name { font-weight: 700; color: var(--maroon); width: 168px; font-size: 11px; }
+  .porutham-name { font-weight: 700; color: var(--maroon); width: 168px; font-size: 10.5px; }
   .crucial-star { color: #d97706; font-size: 11px; margin-left: 2px; }
   .porutham-status { text-align: center; width: 84px; }
-  .porutham-points { text-align: center; font-weight: 700; width: 52px; color: var(--ink); font-size: 10.5px; }
-  .porutham-desc { font-size: 10.5px; line-height: 1.3; color: var(--ink-light); font-weight: 500; }
+  .porutham-points { text-align: center; font-weight: 700; width: 52px; color: var(--ink); font-size: 10px; }
+  .porutham-desc { font-size: 10px; line-height: 1.24; color: var(--ink-light); font-weight: 500; }
 
   .status-pill {
     display: inline-block;
-    padding: 0.8mm 2.5mm;
+    padding: 0.6mm 2.2mm;
     border-radius: 8px;
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 800;
   }
   .status-good { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
@@ -706,7 +708,7 @@ ${REPORT_FONT_LINK_TAG}
     border: 1px solid var(--slate-border);
     border-left: 4px solid var(--maroon);
     border-radius: 8px;
-    padding: 3mm 3.5mm;
+    padding: 2.2mm 3.2mm;
     margin: 0;
     flex-shrink: 0;
   }
@@ -779,8 +781,8 @@ ${REPORT_FONT_LINK_TAG}
   .final-verdict {
     text-align: center;
     border-radius: 8px;
-    padding: 2mm 3mm;
-    margin: 0 0 2mm;
+    padding: 1.6mm 2.8mm;
+    margin: 0 0 1.5mm;
     flex-shrink: 0;
     page-break-inside: avoid;
     break-inside: avoid;

@@ -81,13 +81,14 @@ for (const language of ['en', 'ta', 'hi'] as const) {
       await page.setViewportSize({ width: 900, height: 1200 });
       const frame = await openReport(page, buildJathagamHtml(testCase.chart, language));
 
-      // Exactly three sheets, in order, with the real "x / 3" label each.
-      await expect(frame.locator('.page')).toHaveCount(3);
+      // Exactly four sheets (pages 1–3 + glossary guide), in order, with the real "x / 4" label each.
+      await expect(frame.locator('.page')).toHaveCount(4);
       const labels = await frame.locator('.footer-page').allTextContents();
-      expect(labels).toHaveLength(3);
-      expect(labels[0]).toMatch(/1\s*\/\s*3/);
-      expect(labels[1]).toMatch(/2\s*\/\s*3/);
-      expect(labels[2]).toMatch(/3\s*\/\s*3/);
+      expect(labels).toHaveLength(4);
+      expect(labels[0]).toMatch(/1\s*\/\s*4/);
+      expect(labels[1]).toMatch(/2\s*\/\s*4/);
+      expect(labels[2]).toMatch(/3\s*\/\s*4/);
+      expect(labels[3]).toMatch(/4\s*\/\s*4/);
 
       const measured = await frame.evaluate(() => {
         const page3 = document.getElementById('jathagam-page-3')! as HTMLElement;
@@ -251,6 +252,7 @@ test('page 1 shows paired Rasi/Navamsa charts while page 2 retains its prior lay
   const expected = baseline['normal|en'];
   const cleanBaseline = (html: string) =>
     html
+      .replace(/\s*<span class="footer-page">[^<]*<\/span>/, '')
       .replace(/ style="font-size: [\d.]+px;"/g, '')
       .replace(/<div class="page" id="([^"]+)"[^>]*>/, '<div class="page" id="$1">')
       .replace(/<div class="inner"[^>]*>/, '<div class="inner">');

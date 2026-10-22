@@ -1,4 +1,4 @@
-import disclaimerData from '../../api/astrology/wedding_disclaimer_notes.json';
+import disclaimerData from '../../api/astrology/wedding_disclaimer_notes.json' with { type: 'json' };
 import type { AppLanguage } from '../types';
 
 /**

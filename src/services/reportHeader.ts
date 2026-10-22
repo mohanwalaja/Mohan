@@ -81,7 +81,7 @@ export function reportHeaderCss(headerFont: string): string {
   }
   .header h1 {
     font-family: ${headerFont};
-    font-size: clamp(17px, 2.7vw, 22px);
+    font-size: 21.5px;
     font-weight: 800;
     color: #7d1233;
     line-height: 1.2;
@@ -90,7 +90,7 @@ export function reportHeaderCss(headerFont: string): string {
     white-space: normal;
   }
   .header .subtitle {
-    font-size: clamp(11.5px, 1.75vw, 14px);
+    font-size: 14px;
     color: #0b7a5a;
     margin-top: 0.4mm;
     font-weight: 700;

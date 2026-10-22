@@ -372,6 +372,9 @@ export default defineConfig(() => {
       },
     },
     plugins: [react(), tailwindcss(), apiDevMiddleware(), previewServePrerendered(), previewServePrecompressed(), compressBuildOutput()],
+    optimizeDeps: {
+      include: ['leaflet', 'jspdf', 'html2canvas'],
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

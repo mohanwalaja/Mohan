@@ -1,11 +1,12 @@
+import { readFileSync } from 'node:fs';
 import { test, expect, type Frame, type Page } from '@playwright/test';
 import { calculatePrecisionHoroscope } from '../../src/lib/astrology/astronomy';
 import { buildJathagamHtml, buildJathagamLifeCards } from '../../src/services/jathagamHtmlBuilder';
 
-// A4 at 300 dpi — the print-quality floor the PHP gate enforces
-// (ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX / _HEIGHT_PX in api/admin/family_docs.php).
-const A4_PRINT_MIN_WIDTH_PX = 2480;
-const A4_PRINT_MIN_HEIGHT_PX = 3508;
+import {
+  A4_PRINT_MIN_HEIGHT_PX,
+  A4_PRINT_MIN_WIDTH_PX
+} from '../../src/services/jathagamPdfExporter';
 
 // Use the real bundled Latin/Indic faces, without depending on the fonts CDN.
 const fontCss = [
@@ -26,6 +27,9 @@ const cautionSample = { ...sample, lagnaRasi: 1, planetPositions: sample.planetP
 
 async function openReport(page: Page, html: string): Promise<Frame> {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: fontCss }));
+  await page.route('**/fonts/*.ttf', route => route.fulfill({
+    contentType: 'font/ttf', body: readFileSync(new URL('../../api/astrology/fonts/' + route.request().url().split('/').pop(), import.meta.url))
+  }));
   await page.route('http://127.0.0.1:4173/', route => route.fulfill({
     contentType: 'text/html', body: '<!doctype html><html><head></head><body></body></html>'
   }));
@@ -50,7 +54,7 @@ async function openReport(page: Page, html: string): Promise<Frame> {
 for (const language of ['en', 'ta', 'hi'] as const) {
   test(`${language}: all eight cards fit larger text for every house-lord placement`, async ({ page }) => {
     const frame = await openReport(page, buildJathagamHtml(sample, language));
-    await expect(frame.locator('.page')).toHaveCount(3);
+    await expect(frame.locator('.page')).toHaveCount(4);
     await expect(frame.locator('#jathagam-page-2 .life-card-big')).toHaveCount(8);
     // Exercise the serialized standalone preview script, not just the imported helper.
     expect(await frame.locator('.life-card-big p').first().evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThan(14);
@@ -152,8 +156,8 @@ for (const language of ['en', 'ta', 'hi'] as const) {
         const images = Object.values((pdf.internal as any).collections.addImage_images) as any[];
         return { pageCount: pdf.getNumberOfPages(), jpeg: btoa(images[1].data), width: images[1].width, height: images[1].height };
       }, mode.fromHtml);
-      expect(captured.pageCount).toBe(3);
-      // The capture must clear the 300 dpi print floor the API enforces.
+      expect(captured.pageCount).toBe(4);
+      // The capture must clear the print floor the API enforces.
       expect(captured.width).toBeGreaterThanOrEqual(A4_PRINT_MIN_WIDTH_PX);
       expect(captured.height).toBeGreaterThanOrEqual(A4_PRINT_MIN_HEIGHT_PX);
 
