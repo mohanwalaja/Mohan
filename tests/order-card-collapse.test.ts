@@ -1,25 +1,12 @@
 /**
- * ASTRO SIVAM — My Orders cards stay small until the customer asks for more.
+ * Customer My Orders keeps the admin panel's compact order / name / payment /
+ * action layout, without inheriting admin controls. The existing per-order and
+ * per-person expand behaviour and the frozen-report download gates are part of
+ * the UI contract; the only regular download control is an icon to the right
+ * of the name of the report being downloaded.
  *
- * Owner request (2026-10-21), looking at a phone screenshot of the dashboard:
- * "No need show birth details in this card once the user click on name can
- * expand and show birth details … cards should be smaller less details name and
- * order details when click on it can expand with more detail."
- *
- * A collapsed card is now one line of identity — the order badges and the name —
- * with the birth details and the payment block behind a tap on the name row.
- * The trap this test guards is hiding something the customer must ACT on: a
- * bounced-email warning or a download button buried behind a toggle is a
- * support ticket, not a feature. So the contract is directional:
- *
- *   • the detail blocks live INSIDE the expand-only region,
- *   • the status banner and every button live AFTER it (always visible),
- *   • the toggle is a real button with aria-expanded/aria-controls wired to the
- *     region it opens, per order, so a screen reader and a sighted customer get
- *     the same behaviour.
- *
- * Static on purpose: there is no DOM renderer in this repo's test stack, and the
- * ordering of the regions is exactly the thing a refactor would break.
+ * Static on purpose: these checks pin the JSX ordering and event wiring even
+ * when a browser is unavailable in the build environment.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -27,153 +14,124 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');
-
+const src = fs.readFileSync(path.join(root, 'src/pages/CustomerDashboard.tsx'), 'utf8');
 const checks: Array<[string, () => void]> = [];
 const check = (name: string, fn: () => void) => checks.push([name, fn]);
 
-const src = read('src/pages/CustomerDashboard.tsx');
+const summaryStart = src.indexOf('{/* Admin-style order summary:');
+const familyStart = src.indexOf('{expandedOrders[order.id] && isFamily && (');
+const singleStart = src.indexOf('{expandedOrders[order.id] && !isFamily && (');
+const statusStart = src.indexOf('{/* Bottom Row: Delivery Status & Conditional Email Retry */}', singleStart);
+const feedbackStart = src.indexOf('{/* Feedback and the Safari save link survive collapsing the card. */}', statusStart);
+const reviewStart = src.indexOf('{/* Verified Review Section */}', feedbackStart);
 
-console.log('--- MY ORDERS: COLLAPSIBLE ORDER CARDS ---');
+console.log('--- MY ORDERS: ADMIN-STYLE COLLAPSIBLE CARDS ---');
 
-check('one expansion state per order, collapsed by default', () => {
-  assert.match(
-    src,
-    /const \[expandedOrders, setExpandedOrders\] = useState<Record<string, boolean>>\(\{\}\);/,
-    'keyed by order id so opening one card cannot open its neighbours'
-  );
-  assert.match(src, /setExpandedOrders\(prev => \(\{ \.\.\.prev, \[order\.id\]: !prev\[order\.id\] \}\)\)/,
-    'the toggle flips only its own card');
+check('one compact, responsive summary per order, not a second row of actions', () => {
+  assert.ok(summaryStart > 0 && familyStart > summaryStart, 'summary precedes the optional detail region');
+  const summary = src.slice(summaryStart, familyStart);
+  assert.match(summary, /lg:grid-cols-12/, 'desktop uses the admin-style order row');
+  assert.match(summary, /lg:col-span-3/, 'order number, language and date have their own column');
+  assert.match(summary, /lg:col-span-4/, 'name and service have their own column');
+  assert.match(summary, /lg:col-span-5/, 'payment, status and View details finish the row');
+  assert.match(summary, /\{getLangBadge\(\)\}/);
+  assert.match(summary, /\{orderPersonLabel\}/, 'the recipient is visible while collapsed');
+  assert.match(src, /\$\{personName\} \+ \$\{members\.length - 1\} more/, 'a family stays one card');
+  assert.match(src, /\$\{boy\?\.name \|\| 'Groom'\} & \$\{girl\?\.name \|\| 'Bride'\}/,
+    'wedding orders still show both names while collapsed');
 });
 
-check('the toggle is a real button wired to the region it opens', () => {
-  assert.match(src, /aria-expanded=\{!!expandedOrders\[order\.id\]\}/, 'state is announced, not implied');
-  assert.match(src, /aria-controls=\{`order-details-\$\{order\.id\}`\}/, 'and points at a real region');
-  assert.match(src, /id=\{`order-details-\$\{order\.id\}`\}/, 'the region exists to be pointed at');
-  assert.match(src, /<ChevronDown className=\{`h-4 w-4 transition-transform/, 'a visible affordance that turns');
-  assert.match(src, /\? 'Hide details'/, 'and a label that says what the tap does');
-  assert.match(src, /: 'View details'/, 'single order: view details');
-  assert.match(src, /hasDownload \? 'View details & download' : 'View details'/,
-    'single order with a delivered report: the tap promises the download too');
-  assert.match(src, /hasDownload \? 'View names & download' : 'View names & details'/,
-    'family: the tap promises the names and the downloads');
+check('the name and View details both toggle only their own order accessibly', () => {
+  assert.match(src, /const \[expandedOrders, setExpandedOrders\] = useState<Record<string, boolean>>\(\{\}\);/);
+  assert.match(src, /setExpandedOrders\(prev => \(\{ \.\.\.prev, \[order\.id\]: !prev\[order\.id\] \}\)\)/);
+  const summary = src.slice(summaryStart, familyStart);
+  assert.match(summary, /aria-label=\{`View details for \$\{orderPersonLabel\}`\}/,
+    'clicking the name still expands its order without activating the adjacent download icon');
+  assert.match(summary, /aria-expanded=\{!!expandedOrders\[order\.id\]\}/);
+  assert.match(summary, /aria-controls=\{`order-details-\$\{order\.id\}`\}/);
+  assert.match(src, /id=\{`order-details-\$\{order\.id\}`\}/);
+  assert.match(summary, /\? 'Hide details' : isFamily \? `\$\{members\.length\} Charts`/);
+  assert.match(summary, /: 'View details'/);
+  assert.match(summary, /<ChevronDown className=\{`h-4 w-4 transition-transform/);
 });
 
-check('the collapsed card still names the person', () => {
-  const toggleStart = src.indexOf('aria-controls={`order-details-${order.id}`}');
-  const regionStart = src.indexOf('{expandedOrders[order.id] && isFamily && (');
-  assert.ok(toggleStart > 0 && regionStart > toggleStart, 'the toggle precedes the expand-only region');
-  const header = src.slice(toggleStart, regionStart);
-  assert.match(header, /: personName\}/, 'a single-person order shows the name while collapsed');
-  assert.match(header, /boy\?\.name \|\| 'Groom'/, 'a marriage order shows both names while collapsed');
+check('only a frozen, delivered single report gets the icon by its summary name', () => {
+  const summary = src.slice(summaryStart, familyStart);
+  assert.match(src, /const singleReportReady = !isFamily && !order\.items\?\.length\s*&& memberDone\(order\) && order\.hasPdf && order\.hasReportSnapshot !== false;/,
+    'a multi-person order cannot show a misleading single-file icon beside the account holder');
+  const namePanel = summary.slice(summary.indexOf('{/* Only the report download icon'), summary.indexOf('grid-cols-[minmax(0,1fr)_auto]'));
+  assert.match(namePanel, /\{singleReportReady && \(/);
+  assert.match(namePanel, /onClick=\{\(\) => handleDownloadReport\(order\)\}/);
+  assert.match(namePanel, /aria-label=\{downloadingKey === order\.id \? 'Downloading…' : `Download Report — \$\{orderPersonLabel\}`\}/);
+  assert.match(namePanel, /h-9 w-9 shrink-0/, 'the control is an icon, not a full-width CTA');
+  assert.doesNotMatch(namePanel, />Download (PDF|Report)</, 'no download text is printed beside the icon');
 });
 
-check('birth details and payment info are expand-only', () => {
-  const regionStart = src.indexOf('{expandedOrders[order.id] && isFamily && (');
-  const bottomRow = src.indexOf('{/* Bottom Row: Delivery Status & Conditional Email Retry */}', regionStart);
-  assert.ok(regionStart > 0, 'the expand-only region exists');
-  assert.ok(bottomRow > regionStart, 'and it ends before the status row');
-  const region = src.slice(regionStart, bottomRow);
+check('birth details and payment details are still behind View details', () => {
+  assert.ok(familyStart > 0 && singleStart > familyStart && statusStart > singleStart);
+  const expanded = src.slice(familyStart, statusStart);
   for (const detail of ['User & Birth Details', 'Order & Payment Information', 'Date of Birth:', 'Exact Time:', 'Birth Place:', 'Delivery Email:']) {
-    assert.ok(region.includes(detail), `"${detail}" must sit inside the expand-only region`);
+    assert.ok(expanded.includes(detail), `"${detail}" still lives in expanded details`);
   }
-  // The name must not be stated twice on one card any more.
-  assert.ok(!region.includes('<span>{personName}</span>'), 'the name moved to the collapsed header');
 });
 
-check('nothing the customer must act on is hidden behind the toggle', () => {
-  const regionStart = src.indexOf('{expandedOrders[order.id] && isFamily && (');
-  const bottomRow = src.indexOf('{/* Bottom Row: Delivery Status & Conditional Email Retry */}', regionStart);
-  const downloadBand = src.indexOf('{downloadBandOpen && downloadableMembers.map(', regionStart);
-  assert.ok(regionStart > 0, 'the expand-only region exists');
-  assert.ok(bottomRow > regionStart, 'the status row follows it');
-  assert.ok(src.indexOf('{expandedOrders[order.id] && !isFamily && (') > regionStart,
-    'the single-order detail columns sit in the same expand-only band');
-  assert.ok(downloadBand > bottomRow, 'and the download band comes after the status row');
-  // Searched FROM the region onward: the same words also appear in the doc
-  // comment at the top of this component, and a whole-file indexOf would find
-  // that prose instead of the rendered button.
-  for (const actionable of [
-    'Email Delivery Failed / Bounced',
-    'Report Complete & Emailed',
-    'Processing in Vedic Astrology Queue',
-    'Update Email & Retry Delivery'
-  ]) {
-    const at = src.indexOf(actionable, regionStart);
-    assert.ok(at > bottomRow, `"${actionable}" must sit after the expand-only region, so it stays visible when the card is collapsed`);
-  }
-  // The band between the status row and the downloads renders unconditionally:
-  // no expandedOrders gate may wrap the banner or the retry button.
-  assert.doesNotMatch(src.slice(bottomRow, downloadBand), /expandedOrders\[order\.id\]/,
-    'the status banner and the retry button are never gated by the toggle');
-});
-
-check('the download icons open with View details — and never vanish mid-download', () => {
-  assert.match(src, /const downloadableMembers = members\.filter\(m => memberDone\(m\) && m\.hasPdf\);/,
-    'delivered charts are collected once per card');
-  assert.match(src, /const hasDownload = downloadableMembers\.length > 0;/,
-    'so the collapsed label can promise the file');
-  assert.match(src, /\{downloadBandOpen && downloadableMembers\.map\(downloadOrder => \{ const order = downloadOrder; return \(/,
-    'the tested download block renders only while the band is open');
-  assert.match(src, /const downloadBandOpen = !!expandedOrders\[order\.id\]/, 'it opens with the details…');
-  assert.ok(src.includes("downloadTouchedMember(downloadingKey ? downloadingKey.split(':')[0] : '')"),
-    '…a download in flight holds it open');
-  assert.ok(src.includes('downloadTouchedMember(downloadFeedback?.orderId)'), '…so does its success/error note');
-  assert.ok(src.includes('downloadTouchedMember(savedReport?.orderId)'),
-    'and so does the Save-the-PDF fallback, so iOS can never lose the link');
-});
-
-check('a family bundle is one card, with names behind the first tap', () => {
-  assert.match(src, /const orderGroups = useMemo\(\(\) => \{/, 'orders are grouped before rendering');
-  assert.match(src, /const key = entry\.groupId \|\| entry\.id;/, 'grouped by group_id, singletons by their own id');
-  assert.match(src, /\{orderGroups\.map\(members => \{/, 'the list renders one card per group');
-  assert.match(src, /key=\{order\.groupId \|\| order\.id\}/, 'and the card is keyed by the group, not by one chart');
-  assert.match(src, /\{members\.length\} charts · one order/, 'the collapsed card says how many charts are inside');
-  assert.match(src, /\$\{personName\} \+ \$\{members\.length - 1\} more/, 'and who the first one belongs to');
-});
-
-check('inside the family card, a tap on a name opens that person only', () => {
+check('family names each expand independently, with one icon at the far right', () => {
+  assert.match(src, /const orderGroups = useMemo\(\(\) => \{/);
+  assert.match(src, /const key = entry\.groupId \|\| entry\.id;/);
+  assert.match(src, /\{orderGroups\.map\(members => \{/);
+  assert.match(src, /key=\{order\.groupId \|\| order\.id\}/);
   assert.match(src, /const \[expandedPersons, setExpandedPersons\] = useState<Record<string, boolean>>\(\{\}\);/);
-  assert.match(src, /aria-controls=\{`person-details-\$\{member\.id\}`\}/);
-  assert.match(src, /id=\{`person-details-\$\{member\.id\}`\}/);
-  assert.match(src, /setExpandedPersons\(prev => \(\{ \.\.\.prev, \[member\.id\]: !prev\[member\.id\] \}\)\)/,
-    'opening one person cannot open a sibling');
-  const familyStart = src.indexOf('{expandedOrders[order.id] && isFamily && (');
-  const singleStart = src.indexOf('{expandedOrders[order.id] && !isFamily && (');
-  assert.ok(familyStart > 0 && singleStart > familyStart, 'both card shapes exist, family first');
-  for (const detail of ['Date of Birth:', 'Exact Time:', 'Birth Place:']) {
-    assert.ok(src.indexOf(detail, familyStart) > familyStart, `the family card carries "${detail}" behind the name tap`);
-    assert.ok(src.indexOf(detail, singleStart) > singleStart, `and the single-order card still carries it`);
+  const family = src.slice(familyStart, singleStart);
+  assert.match(family, /setExpandedPersons\(prev => \(\{ \.\.\.prev, \[member\.id\]: !prev\[member\.id\] \}\)\)/);
+  assert.match(family, /aria-controls=\{`person-details-\$\{member\.id\}`\}/);
+  assert.match(family, /id=\{`person-details-\$\{member\.id\}`\}/);
+  assert.match(family, /const \{ item: mItem, key: mKey \} = memberDownload\(member\);/);
+  assert.match(family, /\{memberDone\(member\) && member\.hasPdf && mReady && \(/);
+  assert.match(family, /onClick=\{\(\) => handleDownloadReport\(member, mItem\)\}/);
+  assert.match(family, /aria-label=\{mBusy \? 'Downloading…' : `Download Report — \$\{mName\}`\}/);
+  assert.doesNotMatch(family, />Download PDF</, 'family member rows show only an icon');
+});
+
+check('multi-person items each have their own eligible icon beside their name', () => {
+  const multi = src.slice(src.indexOf('{/* Multi-person reports:', singleStart), statusStart);
+  assert.match(multi, /\{\(order\.items \|\| \[\]\)\.map\(item => \{/);
+  assert.match(multi, /const itemReady = memberDone\(order\) && order\.hasPdf\s*&& item\.reportStatus === 'SENT' && item\.hasReportSnapshot !== false;/);
+  assert.match(multi, /\{item\.personName \|\| 'Report'\}/);
+  assert.match(multi, /onClick=\{\(\) => handleDownloadReport\(order, item\)\}/);
+  assert.match(multi, /aria-label=\{downloadingKey === itemKey \? 'Downloading…' : `Download Report — \$\{item\.personName \|\| 'report'\}`\}/);
+  assert.doesNotMatch(multi, />Download Report</, 'no second, labelled download button');
+});
+
+check('delivery warnings, resend and chat remain visible when collapsed', () => {
+  assert.ok(feedbackStart > statusStart && reviewStart > feedbackStart);
+  const status = src.slice(statusStart, feedbackStart);
+  for (const actionable of ['Email Delivery Failed / Bounced', 'Report Complete & Emailed', 'Processing in Vedic Astrology Queue', 'Update Email & Retry Delivery', 'Ask Astrologer']) {
+    assert.ok(status.includes(actionable), `"${actionable}" must not hide behind View details`);
   }
+  assert.match(status, /handleOpenResendModal\(bannerOrder\)/, 'the same member with a bounced email is the retry target');
+  assert.doesNotMatch(status, /expandedOrders\[order\.id\]/);
 });
 
-check('every delivered chart keeps its own download — on its name row', () => {
-  // Owner request (2026-10-22): "Download icon should be full right side of the
-  // user name, not in bottom — looks untidy." The family card's four stacked
-  // bare icons are gone; each member row carries its own icon at the right.
-  const familyStart = src.indexOf('{expandedOrders[order.id] && isFamily && (');
-  const singleStart = src.indexOf('{expandedOrders[order.id] && !isFamily && (');
-  const rowIcon = src.indexOf('onClick={() => handleDownloadReport(member, mItem)}');
-  assert.ok(rowIcon > familyStart && rowIcon < singleStart,
-    'the member-row download button lives inside the family (expanded) region');
-  assert.match(src, /const \{ item: mItem, key: mKey \} = memberDownload\(member\);/,
-    'a member downloads its first ready item, else the order — same keys as the band');
-  assert.match(src, /aria-label=\{mBusy \? 'Downloading…' : `Download Report — \$\{mName\}`\}/,
-    'and the row icon is named for the person it belongs to');
-  assert.match(src, /\{!isFamily && \(\(order\.items\?\.length \|\| 0\) > 0 \? \(/,
-    'the bottom band no longer stacks icons for family cards');
-  assert.match(src, /downloadableMembers\.map\(downloadOrder => \{ const order = downloadOrder; return \(/,
-    'the tested band is still re-bound per delivered member, for outcomes');
-  assert.match(src, /key=\{`download-\$\{order\.id\}`\}/, 'one block per member, keyed');
-  assert.match(src, /— \{orderServiceTitle\(order\)\}/,
-    'a single order without items labels its row instead of floating a bare icon');
+check('only download feedback and the real Safari save link remain in the footer', () => {
+  assert.match(src, /const downloadableMembers = members\.filter\(m => memberDone\(m\) && m\.hasPdf\);/);
+  assert.match(src, /const downloadBandOpen = !!expandedOrders\[order\.id\]/);
+  for (const state of [
+    "downloadTouchedMember(downloadingKey ? downloadingKey.split(':')[0] : '')",
+    'downloadTouchedMember(downloadFeedback?.orderId)',
+    'downloadTouchedMember(savedReport?.orderId)'
+  ]) assert.ok(src.includes(state), `${state} keeps the outcome visible`);
+  const footer = src.slice(feedbackStart, reviewStart);
+  assert.match(footer, /downloadableMembers\.map\(downloadOrder => \{/);
+  assert.match(footer, /key=\{`download-\$\{order\.id\}`\}/);
+  assert.match(footer, /data-saved-report=\{order\.id\}/);
+  assert.match(footer, /<span>Save the PDF<\/span>/);
+  assert.doesNotMatch(footer, /onClick=\{\(\) => handleDownloadReport/, 'no duplicate download buttons in the footer');
 });
 
-check('one status banner per family card, reporting the member that needs action', () => {
-  assert.match(src, /const bannerOrder = !isFamily/, 'a single order reports itself');
-  assert.match(src, /members\.find\(m => m\.emailStatus === 'FAILED'\)/, 'a bounced email wins over completed siblings');
-  assert.match(src, /\{bannerOrder\.emailStatus === 'FAILED' \? \(/, 'the banner reads the chosen member');
-  assert.match(src, /handleOpenResendModal\(bannerOrder\)/, 'and the retry acts on that same member');
+check('family summary shows the bundle amount, not only the first free chart', () => {
+  assert.match(src, /const totalAmount = members\.reduce\(\(sum, member\) => sum \+ \(Number\(member\.amount\) \|\| 0\), 0\);/);
+  assert.match(src, /const isFree = totalAmount === 0 && members\.every\(member => member\.serviceMode === 'FREE_BETA'\);/);
+  assert.match(src.slice(summaryStart, familyStart), /totalAmount\.toFixed\(2\)/);
 });
 
 let failures = 0;
@@ -187,7 +145,7 @@ for (const [name, fn] of checks) {
   }
 }
 
-if (failures > 0) {
+if (failures) {
   console.error(`\norder-card-collapse: ${failures} failing check(s)`);
   process.exitCode = 1;
 } else {

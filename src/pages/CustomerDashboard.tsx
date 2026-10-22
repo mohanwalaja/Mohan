@@ -187,10 +187,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
   // Frozen report download state (keyed per order / per order item).
   const [downloadingKey, setDownloadingKey] = useState('');
-  // Owner request (2026-10-21): the My Orders cards must stay small. A collapsed
-  // card shows the name and the order badges only; the birth details and the
-  // payment block are one tap away behind the name row. Keyed by order id so
-  // expanding one card never opens its neighbours.
+  // Keep one expand state per order: the admin-style summary stays compact,
+  // while birth details and payment information remain behind View details.
+  // Opening one card must never open its neighbours.
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
   // Second level of the family card: tapping a name opens that person's birth
   // details, without opening their siblings'.
@@ -1386,7 +1385,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                     delivery failed); the old copy quoted a "Resend to Email"
                     button that does not exist on this screen. */}
                 <p className="text-slate-400 leading-relaxed text-[11.5px]">
-                  Open an order's <strong>View details</strong> and tap the download icon to save the report exactly as prepared on your order date — never recalculated, so a new period needs a new order. Invoices are email-only; a failed delivery shows <strong>Update Email & Retry Delivery</strong> on that order.
+                  Tap the download icon beside a name to save its report exactly as prepared on the order date. For family or multi-person orders, open <strong>View details</strong> to see each name and its report. Invoices are email-only; a failed delivery shows <strong>Update Email & Retry Delivery</strong> on that order.
                 </p>
               </div>
             </div>
@@ -1462,12 +1461,11 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
               {orderGroups.map(members => {
                 const isFamily = members.length > 1;
                 const order = members[0];
-                const isCompleted = order.status === 'COMPLETED' || order.status === 'GENERATED';
-                const isFree = order.serviceMode === 'FREE_BETA';
-                // Refund & Cancellation Policy: 90% back if cancelled BEFORE admin
-                // approval, settled within 3 working days; non-refundable after
-                // approval. Both values below come from the server, never guessed.
-                const isRefunded = (order.refundStatus || '').toUpperCase() === 'REFUNDED' || (order.status || '').toUpperCase() === 'REFUNDED';
+                // A legacy family group has one row per chart; show its total,
+                // rather than calling the entire bundle free because its first
+                // (free-beta) member happens to be first in the list.
+                const totalAmount = members.reduce((sum, member) => sum + (Number(member.amount) || 0), 0);
+                const isFree = totalAmount === 0 && members.every(member => member.serviceMode === 'FREE_BETA');
                 // One status banner per card. For a family it reports the member
                 // that most needs the customer: a bounced email must not hide
                 // behind three completed siblings, and an order still in the
@@ -1481,30 +1479,17 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                     || members.find(memberRefunded)
                     || order;
                 const bannerCompleted = memberDone(bannerOrder);
-                const isOrderCompleted = bannerCompleted;
                 const bannerRefunded = memberRefunded(bannerOrder);
-                // Owner request (2026-10-21): "In user profile reports Download
-                // icon also should be inside view details" — a collapsed card is
-                // the badges and the name, and the download icons open with the
-                // rest of the details. Two guards keep that from costing the
-                // customer the file:
-                //   • the collapsed label promises the download when there is one,
-                //   • a download already in flight — or one that just produced a
-                //     file — holds the band open even if the card is collapsed, so
-                //     the "Save the PDF" fallback that fixed iOS Safari (2026-10-21)
-                //     can never be swallowed by a tap on Hide details.
+                // One icon beside the relevant name (single order, family member,
+                // or multi-person report). Keep download outcomes outside the
+                // expandable detail panel so an in-flight download, error, or
+                // iOS "Save the PDF" fallback cannot disappear when it closes.
                 const downloadableMembers = members.filter(m => memberDone(m) && m.hasPdf);
-                const hasDownload = downloadableMembers.length > 0;
                 const downloadTouchedMember = (id?: string) => Boolean(id) && members.some(m => m.id === id);
                 const downloadBandOpen = !!expandedOrders[order.id]
                   || downloadTouchedMember(downloadingKey ? downloadingKey.split(':')[0] : '')
                   || downloadTouchedMember(downloadFeedback?.orderId)
                   || downloadTouchedMember(savedReport?.orderId);
-                // Owner request (2026-10-22): "Download icon should be full right
-                // side of the user name, not in bottom — looks untidy." Each
-                // family member's icon therefore sits on that member's name row;
-                // a member order downloads its first ready item when it has one,
-                // otherwise the order itself, exactly like the tested band does.
                 const orderServiceTitle = (o: Order) =>
                   o.serviceType === 'BIRTH_JATHAGAM' ? 'Birth Jathagam'
                     : o.serviceType === 'MARRIAGE_COMPATIBILITY' ? 'Wedding Matching'
@@ -1515,10 +1500,6 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                   const item = (m.items || []).find(it => it.reportStatus === 'SENT' && it.hasReportSnapshot !== false);
                   return { item, key: item ? `${m.id}:${item.id}` : m.id };
                 };
-                // One download icon sits on the right of the user name; it is busy
-                // while that card's first downloadable chart is being rendered.
-                const cardDownloadBusy =
-                  hasDownload && downloadingKey === memberDownload(downloadableMembers[0]).key;
                 const refundAmountText = (o: Order) => {
                   const amount = o.refundAmount != null ? o.refundAmount : Math.round((Number(o.amount) || 0) * 0.9 * 100) / 100;
                   const currency = (o.refundCurrency || o.currency || 'USD').toUpperCase();
@@ -1527,59 +1508,14 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 const formatRefundDeadline = (deadline: string) =>
                   new Date(deadline.replace(' ', 'T')).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-                const getServiceName = () => {
-                  if (order.serviceType === 'BIRTH_JATHAGAM') {
-                    return {
-                      icon: '🪐',
-                      title: 'Birth Jathagam',
-                      sub: 'Comprehensive Birth Horoscope Report'
-                    };
-                  }
-                  if (order.serviceType === 'MARRIAGE_COMPATIBILITY') {
-                    return {
-                      icon: '💍',
-                      title: 'Wedding Matching',
-                      sub: '10-Porutham Wedding Synastry'
-                    };
-                  }
-                  if (order.serviceType === 'BABY_NAMING') {
-                    return {
-                      icon: '👶',
-                      title: 'Baby Naming Syllables',
-                      sub: 'Peyar Sooduthal & Nakshatra Syllables'
-                    };
-                  }
-                  if (order.serviceType === 'MUHURTHAM') {
-                    return {
-                      icon: '📅',
-                      title: 'Subha Muhurtham',
-                      sub: '6 Months of Auspicious Dates'
-                    };
-                  }
-                  if (order.serviceType === 'MULTI_PERSON') {
-                    // One order, up to 6 people, one report per service bought.
-                    const peopleCount = order.persons?.length || 0;
-                    const reportCount = order.items?.length || 0;
-                    return {
-                      icon: '👪',
-                      title: 'Multi-Person Order',
-                      sub: `${peopleCount} ${peopleCount === 1 ? 'person' : 'people'} · ${reportCount} ${reportCount === 1 ? 'report' : 'reports'}`
-                    };
-                  }
-                  return {
-                    icon: '📜',
-                    title: String(order.serviceType).replace(/_/g, ' '),
-                    sub: 'Vedic Astrology Consultation'
-                  };
-                };
-
-                const serviceInfo = getServiceName();
+                const serviceTitle = order.serviceType === 'MULTI_PERSON'
+                  ? 'Multi-Person Order'
+                  : orderServiceTitle(order);
                 const reviewEligibility = reviewableOrders.find(entry => entry.orderId === order.id) || null;
                 const personName = order.inputPayload?.name || order.userName || displayName || 'User';
                 const birthPlace = order.inputPayload?.birthPlace;
                 const dob = order.inputPayload?.dob;
                 const tob = order.inputPayload?.tob;
-                const gender = order.inputPayload?.gender;
 
                 // For Marriage Compatibility
                 const boy = order.inputPayload?.groom || order.inputPayload?.boy || (order.inputPayload?.groomName ? {
@@ -1606,28 +1542,35 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                   birthPlace: (order.calculatedResult as any).bridePlace
                 } : null);
 
+                const orderPersonLabel = isFamily
+                  ? `${personName} + ${members.length - 1} more`
+                  : order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl)
+                    ? `${boy?.name || 'Groom'} & ${girl?.name || 'Bride'}`
+                    : personName;
+                // A multi-person order has a different PDF for each report.
+                // Its icons belong beside those names in the expanded list,
+                // never beside the account holder's name in the summary.
+                const singleReportReady = !isFamily && !order.items?.length
+                  && memberDone(order) && order.hasPdf && order.hasReportSnapshot !== false;
                 const getLangBadge = () => {
                   const l = (order.language || 'ta').toLowerCase();
                   if (l === 'ta' || l === 'tamil') {
                     return (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-950/60 text-amber-300 border border-amber-700/60">
-                        <span>🇮🇳</span>
-                        <span>Tamil</span>
+                      <span className="inline-flex items-center rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                        Tamil
                       </span>
                     );
                   }
                   if (l === 'hi' || l === 'hindi') {
                     return (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-orange-950/60 text-orange-300 border border-orange-700/60">
-                        <span>🕉️</span>
-                        <span>Hindi</span>
+                      <span className="inline-flex items-center rounded-md border border-orange-500/25 bg-orange-500/10 px-2 py-0.5 text-[11px] font-bold text-orange-800 dark:text-orange-300">
+                        Hindi
                       </span>
                     );
                   }
                   return (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-950/60 text-blue-300 border border-blue-700/60">
-                      <span>🇬🇧</span>
-                      <span>English</span>
+                    <span className="inline-flex items-center rounded-md border border-blue-500/25 bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold text-blue-800 dark:text-blue-300">
+                      English
                     </span>
                   );
                 };
@@ -1635,179 +1578,119 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 return (
                   <div
                     key={order.groupId || order.id}
-                    className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                    data-profile-order-card={order.id}
+                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-colors hover:border-amber-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-amber-500/30"
                   >
-                    {/* Top Row: Order Badge, Language & Status */}
-                    <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/40 flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 dark:text-amber-400 font-bold text-base shrink-0 shadow-xs"
-                          aria-hidden="true"
-                        >
-                          {serviceInfo.icon}
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight">
-                              {serviceInfo.title}
+                    {/* Admin-style order summary: order, person/service, payment/status, action. */}
+                    <div className="grid grid-cols-1 gap-3 p-4 sm:p-5 lg:grid-cols-12 lg:items-center lg:gap-4">
+                      <div className="min-w-0 space-y-1.5 lg:col-span-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {isFamily ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-black text-slate-950">
+                              <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                              Family ({members.length})
                             </span>
-                            <span className="font-mono tabular-nums text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">
+                          ) : (
+                            <span className="rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-extrabold text-amber-800 dark:text-amber-300">
                               #{order.orderNumber || order.id}
                             </span>
-                            {getLangBadge()}
+                          )}
+                          {getLangBadge()}
+                        </div>
+                        {isFamily && order.groupId && (
+                          <div className="truncate font-mono text-[11px] text-slate-500 dark:text-slate-400" title={order.groupId}>
+                            ID: {order.groupId}
                           </div>
-
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex-wrap">
-                            <span>
-                              {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent'}
-                            </span>
-                            {isFamily && (
-                              <>
-                                <span className="text-slate-400">·</span>
-                                <span className="font-medium">{members.length} horoscopes</span>
-                              </>
-                            )}
-                          </div>
+                        )}
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                          <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                          <span>{order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent'}</span>
                         </div>
                       </div>
 
-                      {/* Right: Amount & Status */}
-                      <div className="flex items-center gap-2.5 sm:gap-3 ml-auto">
-                        <div className="text-right">
-                          <div className="text-xs font-mono font-bold tabular-nums text-slate-200">
-                            {isFree ? 'Free Beta' : `${order.currency || 'USD'} $${Number(order.amount || 0).toFixed(2)}`}
-                          </div>
-                          <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
-                            {order.paymentReference ? 'Verified' : 'Payment'}
-                          </div>
+                      {/* Only the report download icon goes to the right of a name. */}
+                      <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 dark:border-slate-700/60 dark:bg-slate-800/50 lg:col-span-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
+                            aria-expanded={!!expandedOrders[order.id]}
+                            aria-controls={`order-details-${order.id}`}
+                            aria-label={`View details for ${orderPersonLabel}`}
+                            className="min-w-0 flex-1 cursor-pointer space-y-0.5 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                          >
+                            <span className="block truncate text-sm font-extrabold tracking-tight text-slate-900 dark:text-white" title={orderPersonLabel}>
+                              {orderPersonLabel}
+                            </span>
+                            <span className="block text-xs font-bold text-amber-700 dark:text-amber-400">
+                              {isFamily ? `${members.length} charts · one order` : serviceTitle}
+                            </span>
+                            {!isFamily && (dob || birthPlace) && (
+                              <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                {dob && <span>DOB: {dob}</span>}
+                                {dob && birthPlace && <span> · </span>}
+                                {birthPlace && <span>{birthPlace}</span>}
+                              </span>
+                            )}
+                          </button>
+                          {singleReportReady && (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadReport(order)}
+                              disabled={downloadingKey === order.id}
+                              title={downloadingKey === order.id ? 'Downloading…' : 'Download Report'}
+                              aria-label={downloadingKey === order.id ? 'Downloading…' : `Download Report — ${orderPersonLabel}`}
+                              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                            >
+                              {downloadingKey === order.id
+                                ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                                : <Download className="h-4 w-4" aria-hidden="true" />}
+                            </button>
+                          )}
                         </div>
+                      </div>
 
-                        {/* Status Chip */}
-                        {bannerRefunded ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30">
-                            <RotateCcw className="w-3 h-3 text-purple-400" />
-                            <span>Refunded</span>
-                          </span>
-                        ) : isOrderCompleted ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                            <span>Completed</span>
-                          </span>
-                        ) : order.status === 'CANCELLED' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
-                            <AlertCircle className="w-3 h-3 text-rose-400" />
-                            <span>Cancelled</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                            <Clock className="w-3 h-3 text-amber-400 animate-spin" />
-                            <span>Processing</span>
-                          </span>
-                        )}
-
-                        {/* Collapsible Details Trigger */}
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 lg:col-span-5 lg:grid-cols-5">
+                        <div className="min-w-0 space-y-1.5 lg:col-span-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono text-sm font-extrabold text-slate-900 dark:text-amber-400">
+                              {isFree ? 'Free Beta' : `$${totalAmount.toFixed(2)} ${order.currency || 'USD'}`}
+                            </span>
+                            {bannerRefunded ? (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/25 bg-purple-500/10 px-2 py-0.5 text-[11px] font-bold text-purple-700 dark:text-purple-300">
+                                <RotateCcw className="h-3 w-3" aria-hidden="true" /> Refunded
+                              </span>
+                            ) : bannerCompleted ? (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                                <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> Completed
+                              </span>
+                            ) : bannerOrder.status === 'CANCELLED' ? (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/25 bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300">
+                                <AlertCircle className="h-3 w-3" aria-hidden="true" /> Cancelled
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                                <Clock className="h-3 w-3" aria-hidden="true" /> Processing
+                              </span>
+                            )}
+                          </div>
+                          <div className="truncate font-mono text-[11px] text-slate-500 dark:text-slate-400" title={order.paymentReference || undefined}>
+                            Ref: <span className="font-semibold text-slate-700 dark:text-slate-200">{order.paymentReference || order.orderNumber || 'N/A'}</span>
+                          </div>
+                          {bannerOrder.emailStatus === 'FAILED' && (
+                            <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400">Email Failed</span>
+                          )}
+                        </div>
                         <button
                           type="button"
                           onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
                           aria-expanded={!!expandedOrders[order.id]}
                           aria-controls={`order-details-${order.id}`}
-                          className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/90 border border-slate-700/80 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 lg:col-span-2"
                         >
-                          <span>
-                            {expandedOrders[order.id]
-                              ? 'Hide details'
-                              : (isFamily
-                                  ? (hasDownload ? 'View names & download' : 'View names & details')
-                                  : (hasDownload ? 'View details & download' : 'View details'))}
-                          </span>
-                          <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedOrders[order.id] ? 'rotate-180' : ''}`} />
+                          <span>{expandedOrders[order.id] ? 'Hide details' : isFamily ? `${members.length} Charts` : order.items?.length ? `${order.items.length} Reports` : 'View details'}</span>
+                          <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedOrders[order.id] ? 'rotate-180' : ''}`} aria-hidden="true" />
                         </button>
-                      </div>
-                    </div>
-
-                    {/* Middle Row: Name & Quick Actions */}
-                    <div className="px-4 sm:px-5 py-3.5 border-t border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-black text-amber-300 shadow-2xs"
-                          aria-hidden="true"
-                        >
-                          {isFamily ? <Users className="h-4 w-4" /> : personName.charAt(0).toUpperCase()}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                              {isFamily
-                                ? `${personName} + ${members.length - 1} more`
-                                : order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl)
-                                  ? `${boy?.name || 'Groom'} & ${girl?.name || 'Bride'}`
-                                  : personName}
-                            </span>
-                            {isFamily ? (
-                              <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                                {members.length} charts · one order
-                              </span>
-                            ) : gender && order.serviceType !== 'MARRIAGE_COMPATIBILITY' ? (
-                              <span className="shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300">
-                                {gender === 'M' || gender === 'Male' ? 'Male' : 'Female'}
-                              </span>
-                            ) : null}
-                          </div>
-                          {!isFamily && (dob || birthPlace) && (
-                            <div className="text-[11.5px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                              {dob && <span>DOB: {dob}</span>}
-                              {dob && birthPlace && <span> · </span>}
-                              {birthPlace && <span>{birthPlace}</span>}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right Action Affordances */}
-                      <div className="flex items-center gap-2 ml-auto shrink-0">
-                        {/* Ask about this report button (only if completed & delivered) */}
-                        {order.status === 'COMPLETED' && order.hasPdf && order.emailStatus === 'SENT' && order.emailSentAt && (
-                          <button
-                            type="button"
-                            onClick={() => { setAiChatOrder(order); setAiChatOpen(true); }}
-                            className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
-                          >
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                            <span className="hidden sm:inline">Ask Astrologer</span>
-                          </button>
-                        )}
-                        {/* Download icon on the right side of the user name */}
-                        {hasDownload && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const first = downloadableMembers[0];
-                              const { item } = memberDownload(first);
-                              handleDownloadReport(first, item);
-                            }}
-                            disabled={cardDownloadBusy}
-                            title={cardDownloadBusy ? 'Downloading report…' : 'Download Report PDF'}
-                            aria-label={
-                              cardDownloadBusy
-                                ? 'Downloading…'
-                                : `Download Report — ${
-                                    isFamily
-                                      ? `${personName} + ${members.length - 1} more`
-                                      : order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl)
-                                        ? `${boy?.name || 'Groom'} & ${girl?.name || 'Bride'}`
-                                        : personName
-                                  }`
-                            }
-                            className="shrink-0 p-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 transition-all cursor-pointer active:scale-95 disabled:opacity-60 shadow-xs"
-                          >
-                            {cardDownloadBusy ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Download className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        )}
                       </div>
                     </div>
 
@@ -1815,19 +1698,19 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                     {expandedOrders[order.id] && isFamily && (
                       <div
                         id={`order-details-${order.id}`}
-                        className="px-4 sm:px-5 pb-5 pt-1 space-y-4 border-t border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-950/40 animate-in fade-in duration-200"
+                        className="space-y-4 border-t border-slate-200 bg-slate-50/70 px-4 py-4 dark:border-slate-800 dark:bg-slate-950/40 sm:px-5"
                       >
                         {/* Family Members Breakdown */}
                         <div className="space-y-2.5">
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-wrap items-center justify-between gap-1.5">
                             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                              <Users className="h-3.5 w-3.5 text-amber-500" aria-hidden="true" />
+                              <Users className="h-3.5 w-3.5" aria-hidden="true" />
                               <span>Family Members ({members.length})</span>
                             </div>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">Tap name to view birth details</span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">Tap a name for birth details</span>
                           </div>
 
-                          <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                          <div className="grid gap-2 sm:grid-cols-2">
                             {members.map((member, idx) => {
                               const mName = member.inputPayload?.name || member.userName || `Member #${idx + 1}`;
                               const mGender = member.inputPayload?.gender;
@@ -1837,69 +1720,51 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               const mReady = mItem ? true : member.hasReportSnapshot !== false;
 
                               return (
-                                <div key={member.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/50 last:border-b-0">
-                                  <div className="flex items-center justify-between gap-3 p-3 sm:px-4">
+                                <div key={member.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                                  <div className="flex items-center gap-2 px-3 py-2.5">
                                     <button
                                       type="button"
                                       onClick={() => setExpandedPersons(prev => ({ ...prev, [member.id]: !prev[member.id] }))}
                                       aria-expanded={mOpen}
                                       aria-controls={`person-details-${member.id}`}
-                                      className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer"
+                                      className="flex min-w-0 flex-1 items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                                     >
-                                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-[11px] font-black text-amber-300 shadow-2xs" aria-hidden="true">
+                                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 text-[11px] font-black text-amber-700 dark:text-amber-300" aria-hidden="true">
                                         {mName.charAt(0).toUpperCase()}
                                       </span>
-                                      <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">{mName}</span>
-                                          {mGender && (
-                                            <span className="shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 text-[9.5px] font-semibold text-slate-700 dark:text-slate-300">
-                                              {mGender === 'M' || mGender === 'Male' ? 'Male' : 'Female'}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                      <span className="min-w-0 flex-1">
+                                        <span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{mName}</span>
+                                        <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">
                                           {orderServiceTitle(member)} · {reportLanguageName(member.language)}
-                                        </div>
-                                      </div>
-                                      <ChevronDown className={`h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0 ml-auto transition-transform duration-200 ${mOpen ? 'rotate-180' : ''}`} />
+                                          {mGender && ` · ${mGender === 'M' || mGender === 'Male' ? 'Male' : 'Female'}`}
+                                        </span>
+                                        {memberDone(member) && member.hasPdf && !mReady && (
+                                          <span className="block text-[11px] text-slate-500 dark:text-slate-400">Use email copy</span>
+                                        )}
+                                      </span>
+                                      <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-200 ${mOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                                     </button>
 
-                                    {/* Download Icon on Member Row */}
-                                    {memberDone(member) && member.hasPdf && (
-                                      mReady ? (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleDownloadReport(member, mItem)}
-                                          disabled={mBusy}
-                                          title={mBusy ? 'Downloading report…' : 'Download Report PDF'}
-                                          aria-label={mBusy ? 'Downloading…' : `Download Report — ${mName}`}
-                                          className="shrink-0 px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs disabled:opacity-60"
-                                        >
-                                          {mBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                                          <span className="hidden sm:inline">{mBusy ? 'Downloading…' : 'Download PDF'}</span>
-                                        </button>
-                                      ) : (
-                                        <span className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Use email copy</span>
-                                      )
+                                    {memberDone(member) && member.hasPdf && mReady && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDownloadReport(member, mItem)}
+                                        disabled={mBusy}
+                                        title={mBusy ? 'Downloading…' : `Download Report — ${mName}`}
+                                        aria-label={mBusy ? 'Downloading…' : `Download Report — ${mName}`}
+                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                                      >
+                                        {mBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Download className="h-4 w-4" aria-hidden="true" />}
+                                      </button>
                                     )}
                                   </div>
 
                                   {mOpen && (
-                                    <div id={`person-details-${member.id}`} className="px-4 pb-3 pt-1 border-t border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-950/40">
-                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                                        <div>
-                                          <span className="text-slate-600 dark:text-slate-400 font-medium">Date of Birth: </span>
-                                          <span className="text-slate-900 dark:text-white font-semibold">{member.inputPayload?.dob || 'N/A'}</span>
-                                        </div>
-                                        <div>
-                                          <span className="text-slate-600 dark:text-slate-400 font-medium">Exact Time: </span>
-                                          <span className="text-slate-900 dark:text-white font-semibold">{member.inputPayload?.tob || 'N/A'}</span>
-                                        </div>
-                                        <div>
-                                          <span className="text-slate-600 dark:text-slate-400 font-medium">Birth Place: </span>
-                                          <span className="text-slate-900 dark:text-white font-semibold">{member.inputPayload?.birthPlace || 'N/A'}</span>
-                                        </div>
+                                    <div id={`person-details-${member.id}`} className="border-t border-slate-200 bg-slate-50 px-3 py-3 text-xs dark:border-slate-800 dark:bg-slate-950/50">
+                                      <div className="grid gap-2 text-slate-500 dark:text-slate-400">
+                                        <div>Date of Birth: <strong className="text-slate-800 dark:text-slate-200">{member.inputPayload?.dob || 'N/A'}</strong></div>
+                                        <div>Exact Time: <strong className="text-slate-800 dark:text-slate-200">{member.inputPayload?.tob || 'N/A'}</strong></div>
+                                        <div>Birth Place: <strong className="text-slate-800 dark:text-slate-200">{member.inputPayload?.birthPlace || 'N/A'}</strong></div>
                                       </div>
                                     </div>
                                   )}
@@ -1910,33 +1775,33 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                         </div>
 
                         {/* Order & Payment Information */}
-                        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-3">
-                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                            <Wallet className="h-3.5 w-3.5 text-amber-500" aria-hidden="true" />
+                        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                            <Wallet className="h-3.5 w-3.5" aria-hidden="true" />
                             <span>Order & Payment Information</span>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                          <div className="grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
                             <div className="space-y-0.5">
-                              <span className="text-slate-600 dark:text-slate-400 font-medium">Ordered On: </span>
-                              <span className="text-slate-900 dark:text-white font-bold">
+                              <span className="font-medium text-slate-500 dark:text-slate-400">Ordered On: </span>
+                              <span className="font-bold text-slate-800 dark:text-slate-200">
                                 {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
                               </span>
                             </div>
                             <div className="space-y-0.5">
-                              <span className="text-slate-600 dark:text-slate-400 font-medium">Payment Mode: </span>
-                              <span className={isFree ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'}>
-                                {isFree ? 'Free Beta (1 Free Report)' : `Paid (${order.currency} $${order.amount})`}
+                              <span className="font-medium text-slate-500 dark:text-slate-400">Payment Mode: </span>
+                              <span className={isFree ? 'font-bold text-amber-700 dark:text-amber-400' : 'font-bold text-emerald-700 dark:text-emerald-400'}>
+                                {isFree ? 'Free Beta (1 Free Report)' : `Paid (${order.currency || 'USD'} $${totalAmount.toFixed(2)})`}
                               </span>
                             </div>
                             <div className="space-y-0.5">
-                              <span className="text-slate-600 dark:text-slate-400 font-medium">Payment Reference: </span>
-                              <span className="font-mono text-slate-700 dark:text-slate-200 font-semibold truncate">
+                              <span className="font-medium text-slate-500 dark:text-slate-400">Payment Reference: </span>
+                              <span className="truncate font-mono font-semibold text-slate-800 dark:text-slate-200">
                                 {order.paymentReference || 'Direct / Online'}
                               </span>
                             </div>
                             <div className="space-y-0.5">
-                              <span className="text-slate-600 dark:text-slate-400 font-medium">Delivery Email: </span>
-                              <span className="text-amber-600 dark:text-amber-400 font-semibold truncate">
+                              <span className="font-medium text-slate-500 dark:text-slate-400">Delivery Email: </span>
+                              <span className="truncate font-semibold text-amber-800 dark:text-amber-300">
                                 {order.userEmail}
                               </span>
                             </div>
@@ -1949,46 +1814,46 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                     {expandedOrders[order.id] && !isFamily && (
                       <div
                         id={`order-details-${order.id}`}
-                        className="px-4 sm:px-5 pb-5 pt-1 space-y-4 border-t border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-950/40 animate-in fade-in duration-200"
+                        className="space-y-4 border-t border-slate-200 bg-slate-50/70 px-4 py-4 dark:border-slate-800 dark:bg-slate-950/40 sm:px-5"
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid gap-3 md:grid-cols-2">
                           {/* User & Birth Details */}
-                          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2.5">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                              <User className="h-3.5 w-3.5 text-amber-500" aria-hidden="true" />
+                          <div className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                              <User className="h-3.5 w-3.5" aria-hidden="true" />
                               <span>User & Birth Details</span>
                             </div>
                             <div className="space-y-1.5 text-xs">
                               {order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl) ? (
                                 <div className="space-y-2">
                                   {boy && (
-                                      <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
-                                        <div className="font-bold text-slate-900 dark:text-white">Groom: {boy.name || 'Groom'}</div>
-                                        <div className="text-slate-600 dark:text-slate-400">Date of Birth: <span className="text-slate-700 dark:text-slate-200">{boy.dob || 'N/A'}</span> · Exact Time: <span className="text-slate-700 dark:text-slate-200">{boy.tob || 'N/A'}</span></div>
-                                        <div className="text-slate-600 dark:text-slate-400">Birth Place: <span className="text-slate-700 dark:text-slate-200">{boy.birthPlace || 'N/A'}</span></div>
-                                      </div>
+                                    <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950/50">
+                                      <div className="font-bold text-slate-800 dark:text-slate-200">Groom: {boy.name || 'Groom'}</div>
+                                      <div className="text-slate-500 dark:text-slate-400">Date of Birth: <span className="text-slate-800 dark:text-slate-200">{boy.dob || 'N/A'}</span> · Exact Time: <span className="text-slate-800 dark:text-slate-200">{boy.tob || 'N/A'}</span></div>
+                                      <div className="text-slate-500 dark:text-slate-400">Birth Place: <span className="text-slate-800 dark:text-slate-200">{boy.birthPlace || 'N/A'}</span></div>
+                                    </div>
                                   )}
                                   {girl && (
-                                      <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
-                                        <div className="font-bold text-slate-900 dark:text-white">Bride: {girl.name || 'Bride'}</div>
-                                        <div className="text-slate-600 dark:text-slate-400">Date of Birth: <span className="text-slate-700 dark:text-slate-200">{girl.dob || 'N/A'}</span> · Exact Time: <span className="text-slate-700 dark:text-slate-200">{girl.tob || 'N/A'}</span></div>
-                                        <div className="text-slate-600 dark:text-slate-400">Birth Place: <span className="text-slate-700 dark:text-slate-200">{girl.birthPlace || 'N/A'}</span></div>
-                                      </div>
+                                    <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950/50">
+                                      <div className="font-bold text-slate-800 dark:text-slate-200">Bride: {girl.name || 'Bride'}</div>
+                                      <div className="text-slate-500 dark:text-slate-400">Date of Birth: <span className="text-slate-800 dark:text-slate-200">{girl.dob || 'N/A'}</span> · Exact Time: <span className="text-slate-800 dark:text-slate-200">{girl.tob || 'N/A'}</span></div>
+                                      <div className="text-slate-500 dark:text-slate-400">Birth Place: <span className="text-slate-800 dark:text-slate-200">{girl.birthPlace || 'N/A'}</span></div>
+                                    </div>
                                   )}
                                 </div>
                               ) : (
                                 <>
                                   <div>
-                                    <span className="text-slate-600 dark:text-slate-400 font-medium">Date of Birth: </span>
-                                    <span className="text-slate-900 dark:text-white font-semibold">{dob || 'N/A'}</span>
+                                    <span className="font-medium text-slate-500 dark:text-slate-400">Date of Birth: </span>
+                                    <span className="font-semibold text-slate-800 dark:text-slate-200">{dob || 'N/A'}</span>
                                   </div>
                                   <div>
-                                    <span className="text-slate-600 dark:text-slate-400 font-medium">Exact Time: </span>
-                                    <span className="text-slate-900 dark:text-white font-semibold">{tob || 'N/A'}</span>
+                                    <span className="font-medium text-slate-500 dark:text-slate-400">Exact Time: </span>
+                                    <span className="font-semibold text-slate-800 dark:text-slate-200">{tob || 'N/A'}</span>
                                   </div>
                                   <div>
-                                    <span className="text-slate-600 dark:text-slate-400 font-medium">Birth Place: </span>
-                                    <span className="text-slate-900 dark:text-white font-semibold">{birthPlace || 'N/A'}</span>
+                                    <span className="font-medium text-slate-500 dark:text-slate-400">Birth Place: </span>
+                                    <span className="font-semibold text-slate-800 dark:text-slate-200">{birthPlace || 'N/A'}</span>
                                   </div>
                                 </>
                               )}
@@ -1996,63 +1861,121 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                           </div>
 
                           {/* Order & Payment Information */}
-                          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2.5">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                              <Wallet className="h-3.5 w-3.5 text-amber-500" aria-hidden="true" />
+                          <div className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                              <Wallet className="h-3.5 w-3.5" aria-hidden="true" />
                               <span>Order & Payment Information</span>
                             </div>
                             <div className="space-y-1.5 text-xs">
                               <div>
-                                <span className="text-slate-600 dark:text-slate-400 font-medium">Ordered On: </span>
-                                <span className="text-slate-900 dark:text-white font-semibold">
+                                <span className="font-medium text-slate-500 dark:text-slate-400">Ordered On: </span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
                                   {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-slate-600 dark:text-slate-400 font-medium">Payment Mode: </span>
-                                <span className={isFree ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-emerald-600 dark:text-emerald-400 font-semibold'}>
+                                <span className="font-medium text-slate-500 dark:text-slate-400">Payment Mode: </span>
+                                <span className={isFree ? 'font-semibold text-amber-700 dark:text-amber-400' : 'font-semibold text-emerald-700 dark:text-emerald-400'}>
                                   {isFree ? 'Free Beta (1 Free Report)' : `Paid (${order.currency} $${order.amount})`}
                                 </span>
                               </div>
                               {order.paymentReference && (
                                 <div>
-                                  <span className="text-slate-600 dark:text-slate-400 font-medium">Payment Reference: </span>
-                                  <span className="font-mono text-slate-700 dark:text-slate-200 font-semibold">
+                                  <span className="font-medium text-slate-500 dark:text-slate-400">Payment Reference: </span>
+                                  <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
                                     {order.paymentReference}
                                   </span>
                                 </div>
                               )}
                               <div>
-                                <span className="text-slate-600 dark:text-slate-400 font-medium">Delivery Email: </span>
-                                <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                                <span className="font-medium text-slate-500 dark:text-slate-400">Delivery Email: </span>
+                                <span className="font-semibold text-amber-800 dark:text-amber-300">
                                   {order.userEmail}
                                 </span>
                               </div>
                             </div>
                           </div>
                         </div>
+
+                        {/* Multi-person reports: one icon beside each report name. */}
+                        {(order.items?.length || 0) > 0 && (
+                          <div className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                              <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                              <span>Reports ({order.items!.length})</span>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {(order.items || []).map(item => {
+                                const itemReady = memberDone(order) && order.hasPdf
+                                  && item.reportStatus === 'SENT' && item.hasReportSnapshot !== false;
+                                const itemService = item.serviceCode === 'BIRTH_JATHAGAM'
+                                  ? 'Birth Jathagam'
+                                  : item.serviceCode === 'MARRIAGE_COMPATIBILITY'
+                                    ? 'Wedding Matching'
+                                    : item.serviceCode === 'BABY_NAMING'
+                                      ? 'Baby Naming'
+                                      : item.serviceCode === 'MUHURTHAM'
+                                        ? 'Subha Muhurtham'
+                                        : String(item.serviceCode).replace(/_/g, ' ');
+                                const itemKey = `${order.id}:${item.id}`;
+                                return (
+                                  <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-950/50">
+                                    <div className="min-w-0">
+                                      <div className="truncate text-xs font-bold text-slate-900 dark:text-white">{item.personName || 'Report'}</div>
+                                      <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">{itemService} · {reportLanguageName(item.language || order.language)}</div>
+                                      {!itemReady && (
+                                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                          {item.reportStatus === 'SENT' && item.hasReportSnapshot === false ? 'Use email copy' : 'Available after delivery'}
+                                        </div>
+                                      )}
+                                    </div>
+                                    {itemReady && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDownloadReport(order, item)}
+                                        disabled={downloadingKey === itemKey}
+                                        title={downloadingKey === itemKey ? 'Downloading…' : `Download Report — ${item.personName || 'report'}`}
+                                        aria-label={downloadingKey === itemKey ? 'Downloading…' : `Download Report — ${item.personName || 'report'}`}
+                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                                      >
+                                        {downloadingKey === itemKey
+                                          ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                                          : <Download className="h-4 w-4" aria-hidden="true" />}
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {!order.items?.length && memberDone(order) && order.hasPdf && order.hasReportSnapshot === false && (
+                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                            Report download unavailable — please use the PDF copy emailed to you.
+                          </p>
+                        )}
                       </div>
                     )}
 
                     {/* Bottom Row: Delivery Status & Conditional Email Retry */}
-                    <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/40 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                    <div className="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 bg-white px-4 py-3 text-xs dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:px-5">
                       <div className="flex-1 min-w-0">
                         {bannerOrder.emailStatus === 'FAILED' ? (
-                          <div className="rounded-xl border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/20 p-3.5 flex items-start gap-3">
-                            <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-2.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 dark:border-rose-800/60 dark:bg-rose-950/40">
+                            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-rose-800 dark:text-rose-300">Email Delivery Failed / Bounced</div>
-                              <div className="text-[11.5px] text-rose-700 dark:text-rose-300 leading-relaxed">
+                              <div className="font-bold text-rose-800 dark:text-rose-200">Email Delivery Failed / Bounced</div>
+                              <div className="text-[11px] leading-relaxed text-rose-700 dark:text-rose-300">
                                 We could not deliver your report to <strong>{bannerOrder.userEmail}</strong>. Please update your email address below to receive your Vedic Report.
                               </div>
                             </div>
                           </div>
                         ) : bannerRefunded ? (
-                          <div className="rounded-xl bg-purple-950/40 border border-purple-800/60 p-3.5 flex items-start gap-3">
+                          <div className="flex items-start gap-2.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 dark:border-purple-800/60 dark:bg-purple-950/40">
                             <RotateCcw className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-purple-200">Refund Approved — {refundAmountText(order)}</div>
-                              <div className="text-[11.5px] text-purple-300/90 leading-relaxed">
+                              <div className="font-bold text-purple-800 dark:text-purple-200">Refund Approved — {refundAmountText(order)}</div>
+                              <div className="text-[11px] leading-relaxed text-purple-700 dark:text-purple-300">
                                 Order cancelled before admin approval. 90% pre-approval refund applies.
                                 {order.refundDeadline && (
                                   <> Settles on or before <strong>{formatRefundDeadline(order.refundDeadline)}</strong> (3 working days).</>
@@ -2064,29 +1987,29 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                             </div>
                           </div>
                         ) : bannerCompleted ? (
-                          <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/20 p-3.5 flex items-start gap-3">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-800/60 dark:bg-emerald-950/30">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-emerald-800 dark:text-emerald-300">Report Complete & Emailed</div>
-                              <div className="text-[11.5px] text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                              <div className="font-bold text-emerald-800 dark:text-emerald-200">Report Complete & Emailed</div>
+                              <div className="text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300">
                                 Your Vedic Horoscope Report and Tax Invoice PDFs were emailed to <strong>{bannerOrder.userEmail}</strong>.
                               </div>
                             </div>
                           </div>
                         ) : order.status === 'CANCELLED' ? (
-                          <div className="rounded-xl border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/20 p-3 flex items-center gap-2 text-rose-600 dark:text-rose-400">
-                            <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
+                          <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-300">
+                            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
                             <span>This order was cancelled.</span>
                           </div>
                         ) : (
-                          <div className="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/20 p-3.5 flex items-start gap-3">
-                            <Clock className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800/50 dark:bg-amber-950/30">
+                            <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-amber-800 dark:text-amber-300">Processing in Vedic Astrology Queue</div>
-                              <div className="text-[11.5px] text-amber-700 dark:text-amber-300 leading-relaxed">
+                              <div className="font-bold text-amber-800 dark:text-amber-200">Processing in Vedic Astrology Queue</div>
+                              <div className="text-[11px] leading-relaxed text-amber-700 dark:text-amber-300">
                                 Our India Vedic scholars are reviewing your planetary charts. PDF Report and Tax Invoice will be emailed to <strong>{bannerOrder.userEmail}</strong>.
                               </div>
-                              <div className="text-[11px] text-amber-600 dark:text-amber-400 pt-0.5">
+                              <div className="pt-0.5 text-[11px] text-amber-700 dark:text-amber-400">
                                 Eligible for <strong>90% refund</strong> if cancelled before admin approval (contact <a href="mailto:admin@astrosivam.com" className="underline hover:text-amber-200">admin@astrosivam.com</a>, settles in 3 working days).
                               </div>
                             </div>
@@ -2094,142 +2017,84 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                         )}
                       </div>
 
-                      {/* Action buttons: Update Email if failed or pending */}
-                      {(bannerOrder.emailStatus === 'FAILED' || bannerOrder.status === 'PENDING' || bannerOrder.status === 'PENDING_APPROVAL') && (
-                        <div className="shrink-0 w-full sm:w-auto">
+                      {/* Keep delivery recovery and report chat outside the detail toggle. */}
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        {(bannerOrder.emailStatus === 'FAILED' || bannerOrder.status === 'PENDING' || bannerOrder.status === 'PENDING_APPROVAL') && (
                           <button
                             type="button"
                             onClick={() => handleOpenResendModal(bannerOrder)}
-                            className={`w-full sm:w-auto px-4 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 border ${
+                            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
                               bannerOrder.emailStatus === 'FAILED'
-                                ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-amber-500/20'
-                                : 'bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border-slate-700'
+                                ? 'border-amber-400 bg-amber-500 text-slate-950 hover:bg-amber-400'
+                                : 'border-slate-200 bg-slate-100 text-amber-800 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-amber-300 dark:hover:bg-slate-700'
                             }`}
                           >
-                            <Mail className="w-3.5 h-3.5" />
-                            <span>{bannerOrder.emailStatus === 'FAILED' ? "Update Email & Retry Delivery" : "Request Email Resend"}</span>
+                            <Mail className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>{bannerOrder.emailStatus === 'FAILED' ? 'Update Email & Retry Delivery' : 'Request Email Resend'}</span>
                           </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Download Section (when open and ready) */}
-                    {downloadBandOpen && downloadableMembers.map(downloadOrder => { const order = downloadOrder; return (
-                        <div key={`download-${order.id}`} className="px-4 sm:px-5 pb-4 space-y-2 border-t border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-950/40" data-frozen-download={order.id}>
-                        {!isFamily && ((order.items?.length || 0) > 0 ? (
-                          <div className="space-y-2">
-                            {(order.items || []).map(item => {
-                              const itemReady = item.reportStatus === 'SENT' && item.hasReportSnapshot !== false;
-                              const itemService = item.serviceCode === 'BIRTH_JATHAGAM'
-                                ? 'Birth Jathagam'
-                                : item.serviceCode === 'MARRIAGE_COMPATIBILITY'
-                                  ? 'Wedding Matching'
-                                  : item.serviceCode === 'BABY_NAMING'
-                                    ? 'Baby Naming'
-                                    : item.serviceCode === 'MUHURTHAM'
-                                      ? 'Subha Muhurtham'
-                                      : String(item.serviceCode).replace(/_/g, ' ');
-
-                              return (
-                                  <div key={item.id} className="flex items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 shadow-sm">
-                                    <div className="min-w-0 text-xs">
-                                      <span className="font-bold text-slate-900 dark:text-white">{item.personName || 'Report'}</span>
-                                      <span className="text-slate-500 dark:text-slate-400"> · {itemService}</span>
-                                    {downloadingKey === `${order.id}:${item.id}` && (
-                                      <span className="block text-[11px] font-bold text-amber-700 dark:text-amber-300">Rendering high-quality PDF…</span>
-                                    )}
-                                  </div>
-                                  {itemReady ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDownloadReport(order, item)}
-                                      disabled={downloadingKey === `${order.id}:${item.id}`}
-                                      title={downloadingKey === `${order.id}:${item.id}` ? 'Downloading…' : 'Download Report'}
-                                      aria-label={downloadingKey === `${order.id}:${item.id}` ? 'Downloading…' : `Download Report — ${item.personName || 'report'}`}
-                                      className="shrink-0 px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-60 shadow-xs"
-                                    >
-                                      {downloadingKey === `${order.id}:${item.id}`
-                                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                        : <Download className="h-3.5 w-3.5" />}
-                                      <span>{downloadingKey === `${order.id}:${item.id}` ? 'Downloading…' : 'Download Report'}</span>
-                                    </button>
-                                  ) : (
-                                    <span className="text-xs text-slate-500 dark:text-slate-400">Available after delivery</span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : order.hasReportSnapshot === false ? (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Report download unavailable — please use the PDF copy emailed to you.
-                        </p>
-                        ) : (
-                          <div className="flex items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 shadow-sm">
-                            <div className="min-w-0 text-xs">
-                              <span className="font-bold text-slate-900 dark:text-white">{order.inputPayload?.name || order.userName || personName} — {orderServiceTitle(order)}</span>
-                              {downloadingKey === order.id && (
-                                <span className="block text-[11px] font-bold text-amber-700 dark:text-amber-300">Rendering high-quality PDF…</span>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadReport(order)}
-                              disabled={downloadingKey === order.id}
-                              title={downloadingKey === order.id ? 'Downloading…' : 'Download Report'}
-                              aria-label={downloadingKey === order.id ? 'Downloading…' : 'Download Report'}
-                              className="shrink-0 px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-60 shadow-xs"
-                            >
-                              {downloadingKey === order.id
-                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                : <Download className="h-3.5 w-3.5" />}
-                              <span>{downloadingKey === order.id ? 'Downloading…' : 'Download Report'}</span>
-                            </button>
-                          </div>
-                        ))}
-
-                        {downloadFeedback?.orderId === order.id && (
-                          <div
-                            role="status"
-                            className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs ${
-                              downloadFeedback.type === 'success'
-                                ? 'bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                                : 'bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
-                            }`}
-                          >
-                            {downloadFeedback.type === 'success'
-                              ? <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
-                              : <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />}
-                            <span>{downloadFeedback.message}</span>
-                          </div>
                         )}
-
-                        {/* Save the PDF Fallback Link for Safari */}
-                        {savedReport?.orderId === order.id && (
-                          <div
-                            data-saved-report={order.id}
-                            className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 space-y-2"
+                        {order.status === 'COMPLETED' && order.hasPdf && order.emailStatus === 'SENT' && order.emailSentAt && (
+                          <button
+                            type="button"
+                            onClick={() => { setAiChatOrder(order); setAiChatOpen(true); }}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
                           >
-                            <p className="text-xs text-emerald-800 dark:text-emerald-300 break-all">
-                              <FileText className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
-                              {savedReport.fileName}
-                            </p>
-                            <a
-                              href={savedReport.url}
-                              download={savedReport.fileName}
-                              rel="noopener"
-                              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm active:scale-95 transition-all"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Save the PDF</span>
-                            </a>
-                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
-                              On iPhone/iPad this opens the report in Safari — tap Share, then “Save to Files”.
-                            </p>
-                          </div>
+                            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                            Ask Astrologer
+                          </button>
                         )}
                       </div>
-                    ); })}
+                    </div>
+
+                    {/* Feedback and the Safari save link survive collapsing the card. */}
+                    {downloadBandOpen && downloadableMembers.map(downloadOrder => {
+                      const order = downloadOrder;
+                      if (downloadFeedback?.orderId !== order.id && savedReport?.orderId !== order.id) return null;
+                      return (
+                        <div key={`download-${order.id}`} className="space-y-2 border-t border-slate-200 px-4 py-3 dark:border-slate-800 sm:px-5" data-frozen-download={order.id}>
+                          {downloadFeedback?.orderId === order.id && (
+                            <div
+                              role="status"
+                              className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs ${
+                                downloadFeedback.type === 'success'
+                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-200'
+                                  : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200'
+                              }`}
+                            >
+                              {downloadFeedback.type === 'success'
+                                ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                                : <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />}
+                              <span>{downloadFeedback.message}</span>
+                            </div>
+                          )}
+
+                          {/* Save the PDF Fallback Link for Safari */}
+                          {savedReport?.orderId === order.id && (
+                            <div
+                              data-saved-report={order.id}
+                              className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 dark:border-emerald-800/70 dark:bg-emerald-950/40"
+                            >
+                              <p className="break-all text-xs text-emerald-800 dark:text-emerald-200">
+                                <FileText className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
+                                {savedReport.fileName}
+                              </p>
+                              <a
+                                href={savedReport.url}
+                                download={savedReport.fileName}
+                                rel="noopener"
+                                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm active:scale-95 transition-all"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Save the PDF</span>
+                              </a>
+                              <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                                On iPhone/iPad this opens the report in Safari — tap Share, then “Save to Files”.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
 
                     {/* Verified Review Section */}
                     {reviewEligibility && (
