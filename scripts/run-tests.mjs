@@ -254,11 +254,10 @@ const testFiles = [
   // the admin button messages nobody twice. Includes real PHP execution under
   // PHP-WASM (date rules, dedupe, dry run, per-run cap, gateway failure).
   'tests/birthday-wishes.test.ts',
-  // My Orders cards (owner request 2026-10-21): collapsed shows the badges and
-  // the name only; birth details and payment info sit behind a tap on the name
-  // row, while every status banner and button stays visible. Static ordering
-  // contract, because hiding an actionable banner behind a toggle is the failure
-  // mode that matters.
+  // My Orders cards use the admin-style order/name/payment/action summary,
+  // but keep per-order/per-person expansion and the customer-only download
+  // icons beside report names. Delivery recovery stays visible even when closed.
+  // Static ordering contract also runs where a browser is unavailable.
   'tests/order-card-collapse.test.ts',
   // Payment trust popup (owner request 2026-10-22): one tap at payment time
   // explains own-currency billing, PayPal-enabled cards without an account,

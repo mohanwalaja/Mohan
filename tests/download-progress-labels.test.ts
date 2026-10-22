@@ -44,24 +44,20 @@ const sampleButton = read('src/components/common/SampleReportButton.tsx');
 
 console.log('--- DOWNLOAD PROGRESS LABELS ---');
 
-check('the user-profile download button says "Downloading…", not "Preparing…"', () => {
-  // Both dashboard layouts: the per-item (multi-person) row and the single-order
-  // footer. Each is a ternary on the key currently being downloaded.
-  assert.match(
-    dashboard,
-    /downloadingKey === `\$\{order\.id\}:\$\{item\.id\}` \? 'Downloading…' : 'Download Report'/,
-    'the per-item download button must show "Downloading…" while it downloads'
-  );
-  assert.match(
-    dashboard,
-    /downloadingKey === order\.id \? 'Downloading…' : 'Download Report'/,
-    'the single-order download button must show "Downloading…" while it downloads'
-  );
-  assert.doesNotMatch(
-    dashboard,
-    /downloadingKey === [^?]+\? 'Preparing…'/,
-    'no download button may say "Preparing…" any more'
-  );
+check('the profile’s icon-only downloads announce “Downloading…” while busy', () => {
+  // Buttons moved beside the person/report names; the loading label is now
+  // the accessible name and the visible affordance is a spinning icon.
+  assert.match(dashboard, /const itemKey = `\$\{order\.id\}:\$\{item\.id\}`;/);
+  assert.match(dashboard, /aria-label=\{downloadingKey === itemKey \? 'Downloading…' : `Download Report — \$\{item\.personName \|\| 'report'\}`\}/,
+    'each multi-person item announces its own busy state');
+  assert.match(dashboard, /aria-label=\{downloadingKey === order\.id \? 'Downloading…' : `Download Report — \$\{orderPersonLabel\}`\}/,
+    'the single order also announces its busy state');
+  assert.match(dashboard, /aria-label=\{mBusy \? 'Downloading…' : `Download Report — \$\{mName\}`\}/,
+    'each family chart announces its busy state');
+  assert.match(dashboard, /downloadingKey === itemKey\s*\? <Loader2 className="h-4 w-4 animate-spin"/,
+    'the item icon visibly spins while downloading');
+  assert.doesNotMatch(dashboard, /downloadingKey === [^?]+\? 'Preparing…'/,
+    'no download button may say “Preparing…” any more');
 });
 
 check('the preview / sample-preview button says "Downloading…"', () => {

@@ -344,7 +344,9 @@ check('the floating launcher hosts the email-gated source-based astrologer for c
   assert.match(panel, /Administrator access · unlimited questions/);
   assert.match(panel, /Unlimited questions/, 'customers must see the chat as unlimited too');
   assert.doesNotMatch(panel, /questions left today/, 'the remaining-counter UI must be gone');
-  assert.match(dashboard, /Ask about this report/);
+  assert.match(dashboard, /Ask Astrologer/);
+  assert.match(dashboard, /setAiChatOrder\(order\); setAiChatOpen\(true\)/,
+    'the shortcut stays functional after moving out of the name row');
   assert.match(dashboard, /order\.emailSentAt/,
     'the report-specific dashboard action must wait for email delivery');
   assert.match(dashboard, /status === 'COMPLETED' && order\.hasPdf && order\.emailStatus === 'SENT'/);
