@@ -1481,6 +1481,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                     || members.find(memberRefunded)
                     || order;
                 const bannerCompleted = memberDone(bannerOrder);
+                const isOrderCompleted = bannerCompleted;
                 const bannerRefunded = memberRefunded(bannerOrder);
                 // Owner request (2026-10-21): "In user profile reports Download
                 // icon also should be inside view details" — a collapsed card is
@@ -1630,414 +1631,436 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 return (
                   <div
                     key={order.groupId || order.id}
-                    className="bg-slate-900/95 border border-slate-800/80 hover:border-slate-700 rounded-2xl p-4 sm:p-5 shadow-lg shadow-black/10 transition-all space-y-3.5"
+                    className="group rounded-2xl border border-slate-800/90 hover:border-amber-500/30 bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950/95 shadow-md shadow-black/20 hover:shadow-xl hover:shadow-amber-500/5 transition-all duration-200 overflow-hidden"
                   >
-                    {/* Top Row: Order Badges */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs font-black px-2.5 py-1 rounded-full bg-amber-950/70 text-amber-300 border border-amber-700/60">
-                          #{order.orderNumber || order.id}
-                        </span>
-
-                        <span className={`text-[10.5px] font-bold px-2.5 py-1 rounded-full border ${
-                          order.serviceType === 'BIRTH_JATHAGAM'
-                            ? 'bg-amber-950/60 text-amber-300 border-amber-700/60'
-                            : order.serviceType === 'MARRIAGE_COMPATIBILITY'
-                            ? 'bg-pink-950/60 text-pink-300 border-pink-700/60'
-                            : order.serviceType === 'MULTI_PERSON'
-                            ? 'bg-violet-950/60 text-violet-300 border-violet-700/60'
-                            : 'bg-emerald-950/60 text-emerald-300 border-emerald-700/60'
-                        }`}>
-                          <span className="mr-1">{serviceInfo.icon}</span>
-                          <span className="font-extrabold">{serviceInfo.title}</span>
-                        </span>
-
-                        {getLangBadge()}
-
-                        {/* A family bundle is one checkout and one payment, so it
-                            is one card; the pill says how many charts are in it
-                            before the customer expands anything. */}
-                        {isFamily && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-violet-950/60 text-violet-300 border border-violet-700/60">
-                            <span>👪</span>
-                            <span>{members.length} charts · one order</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* This report-specific shortcut appears after delivery; the
-                          global floating launcher follows the same server entitlement. */}
-                      {order.status === 'COMPLETED' && order.hasPdf && order.emailStatus === 'SENT' && order.emailSentAt && (
-                        <button
-                          onClick={() => { setAiChatOrder(order); setAiChatOpen(true); }}
-                          className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-600/40 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>Ask about this report</span>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Owner request (2026-10-21): collapsed, a card is one line of
-                        identity — the name and gender, under the order badges.
-                        Tapping it expands the birth details, the payment block and
-                        the download icons. The status banner and the email-retry
-                        button stay outside it, so a delivery problem is never
-                        behind a toggle. */}
-                    <button
-                      type="button"
-                      onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
-                      aria-expanded={!!expandedOrders[order.id]}
-                      aria-controls={`order-details-${order.id}`}
-                      className="w-full flex items-center justify-between gap-3 rounded-xl px-1.5 py-1 text-left cursor-pointer hover:bg-slate-800/40 transition-colors"
-                    >
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        {/* Owner request (2026-10-22): modernise the card — every
-                            row now leads with a face: an initial medallion for a
-                            person, the family glyph for a bundle. */}
-                        <span
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-[11px] font-black text-amber-300"
+                    {/* Top Row: Clean Order Banner & Primary Meta */}
+                    <div className="p-4 sm:p-5 border-b border-slate-800/80 bg-slate-950/40 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Service Icon Monogram Avatar */}
+                        <div
+                          className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-700/10 border border-amber-500/30 flex items-center justify-center text-amber-300 font-bold text-base shrink-0 shadow-xs"
                           aria-hidden="true"
                         >
-                          {isFamily ? <Users className="h-3.5 w-3.5" /> : personName.charAt(0).toUpperCase()}
-                        </span>
-                        <span className="truncate text-sm font-bold text-white">
-                          {isFamily
-                            ? `${personName} + ${members.length - 1} more`
-                            : order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl)
-                              ? `${boy?.name || 'Groom'} & ${girl?.name || 'Bride'}`
-                              : personName}
-                        </span>
-                        {gender && order.serviceType !== 'MARRIAGE_COMPATIBILITY' && (
-                          <span className="shrink-0 rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
-                            {gender === 'M' || gender === 'Male' ? 'Male' : 'Female'}
+                          {serviceInfo.icon}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-sm sm:text-base text-white tracking-tight">
+                              {serviceInfo.title}
+                            </span>
+                            <span className="font-mono tabular-nums text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/25">
+                              #{order.orderNumber || order.id}
+                            </span>
+                          </div>
+
+                          {/* Unboxed clean metadata line */}
+                          <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5 flex-wrap">
+                            <span>{order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent'}</span>
+                            <span aria-hidden="true" className="text-slate-600">·</span>
+                            <span>{order.language ? ((order.language.toLowerCase() === 'ta' || order.language.toLowerCase() === 'tamil') ? 'Tamil' : (order.language.toLowerCase() === 'hi' || order.language.toLowerCase() === 'hindi') ? 'Hindi' : 'English') : 'Tamil'}</span>
+                            {isFamily && (
+                              <>
+                                <span aria-hidden="true" className="text-slate-600">·</span>
+                                <span className="text-violet-300 font-medium">{members.length} horoscopes</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Status Badge & Amount */}
+                      <div className="flex items-center gap-2.5 sm:gap-3 ml-auto">
+                        <div className="text-right">
+                          <div className="text-xs font-mono font-bold tabular-nums text-slate-200">
+                            {isFree ? 'Free Beta' : `${order.currency || 'USD'} $${Number(order.amount || 0).toFixed(2)}`}
+                          </div>
+                          <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                            {order.paymentReference ? 'Verified' : 'Payment'}
+                          </div>
+                        </div>
+
+                        {/* Status Chip */}
+                        {bannerRefunded ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                            <RotateCcw className="w-3 h-3 text-purple-400" />
+                            <span>Refunded</span>
+                          </span>
+                        ) : isOrderCompleted ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                            <span>Completed</span>
+                          </span>
+                        ) : order.status === 'CANCELLED' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                            <AlertCircle className="w-3 h-3 text-rose-400" />
+                            <span>Cancelled</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            <Clock className="w-3 h-3 text-amber-400 animate-spin" />
+                            <span>Processing</span>
                           </span>
                         )}
-                      </span>
-                      <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold text-amber-300">
-                        {expandedOrders[order.id]
-                          ? 'Hide details'
-                          : isFamily
-                            ? hasDownload ? 'View names & download' : 'View names & details'
-                            : hasDownload ? 'View details & download' : 'View details'}
-                        <ChevronDown className={`h-4 w-4 transition-transform ${expandedOrders[order.id] ? 'rotate-180' : ''}`} />
-                      </span>
-                    </button>
 
-                    {/* Middle, FAMILY: one card for the whole bundle (owner
-                        request, 2026-10-21). The payment is stated once, then one
-                        row per chart; a tap on a name opens that person's birth
-                        details — names first, details behind the name. */}
-                    {expandedOrders[order.id] && isFamily && (
-                    <div id={`order-details-${order.id}`} className="space-y-3">
-                      <div className="space-y-2 rounded-xl border border-slate-800/60 bg-slate-950/50 p-3.5 text-xs">
-                        <div className="flex items-center gap-1.5 text-[10.5px] uppercase font-bold tracking-wider text-slate-400">
-                          <Wallet className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
-                          Order & Payment Information
-                        </div>
-                        <div className="divide-y divide-slate-800/60 text-[11.5px]">
-                          <div className="flex justify-between gap-3 py-1.5 text-slate-300">
-                            <span className="flex items-center gap-1.5 text-slate-400"><CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />Ordered On:</span>
-                            <strong className="text-slate-200">
-                              {order.createdAt
-                                ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-                                : 'N/A'}
-                            </strong>
-                          </div>
-                          <div className="flex justify-between gap-3 py-1.5 text-slate-300">
-                            <span className="flex items-center gap-1.5 text-slate-400"><Wallet className="h-3.5 w-3.5" aria-hidden="true" />Payment Mode:</span>
-                            <strong className={isFree ? 'text-amber-400' : 'text-emerald-400'}>
-                              {isFree ? '★ Free Beta (Your 1 Free Report)' : `Paid (${order.currency} $${order.amount})`}
-                            </strong>
-                          </div>
-                          {order.paymentReference && (
-                            <div className="flex justify-between gap-3 py-1.5 text-slate-300">
-                              <span className="text-slate-400">Payment Ref:</span>
-                              <span className="font-mono text-[11px] text-slate-200">{order.paymentReference}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between gap-3 py-1.5 text-slate-300">
-                            <span className="flex items-center gap-1.5 text-slate-400"><Mail className="h-3.5 w-3.5" aria-hidden="true" />Delivery Email:</span>
-                            <strong className="text-amber-300">{order.userEmail}</strong>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-1.5 text-[10.5px] uppercase font-bold tracking-wider text-amber-400">
-                          <Users className="h-3.5 w-3.5" aria-hidden="true" />
-                          Family Members & Birth Details
-                        </div>
-                        <div className="divide-y divide-slate-800/60 overflow-hidden rounded-xl border border-slate-800/60 bg-slate-950/50">
-                        {members.map(member => {
-                          const mName = member.inputPayload?.name || member.userName || 'Family member';
-                          const mGender = member.inputPayload?.gender;
-                          const mOpen = !!expandedPersons[member.id];
-                          const { item: mItem, key: mKey } = memberDownload(member);
-                          const mBusy = downloadingKey === mKey;
-                          const mReady = mItem ? true : member.hasReportSnapshot !== false;
-                          return (
-                            <div key={member.id}>
-                              {/* One row per chart: the name leads, and that
-                                  chart's download icon sits at the full right
-                                  side of the name (owner, 2026-10-22) instead of
-                                  in a stack at the bottom of the card. */}
-                              <div className="flex items-center gap-1 px-1.5 py-1">
-                              <button
-                                type="button"
-                                onClick={() => setExpandedPersons(prev => ({ ...prev, [member.id]: !prev[member.id] }))}
-                                aria-expanded={mOpen}
-                                aria-controls={`person-details-${member.id}`}
-                                className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left cursor-pointer hover:bg-slate-800/40 transition-colors"
-                              >
-                                <span className="flex min-w-0 items-center gap-2">
-                                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-[10px] font-black text-slate-200" aria-hidden="true">
-                                    {mName.charAt(0).toUpperCase()}
-                                  </span>
-                                  <span className="truncate text-xs font-bold text-white">{mName}</span>
-                                  {mGender && (
-                                    <span className="shrink-0 rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
-                                      {mGender === 'M' || mGender === 'Male' ? 'Male' : 'Female'}
-                                    </span>
-                                  )}
-                                  <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${
-                                    member.emailStatus === 'FAILED'
-                                      ? 'bg-rose-950/60 text-rose-300 border-rose-700/60'
-                                      : memberDone(member)
-                                        ? 'bg-emerald-950/60 text-emerald-300 border-emerald-700/60'
-                                        : 'bg-amber-950/60 text-amber-300 border-amber-700/60'
-                                  }`}>
-                                    {member.emailStatus === 'FAILED' ? 'Email failed' : memberDone(member) ? 'Delivered' : 'In progress'}
-                                  </span>
-                                </span>
-                                <ChevronDown className={`h-4 w-4 shrink-0 text-amber-300 transition-transform ${mOpen ? 'rotate-180' : ''}`} />
-                              </button>
-                              {memberDone(member) && member.hasPdf && (
-                                mReady ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDownloadReport(member, mItem)}
-                                    disabled={mBusy}
-                                    title={mBusy ? 'Downloading…' : 'Download Report'}
-                                    aria-label={mBusy ? 'Downloading…' : `Download Report — ${mName}`}
-                                    className="shrink-0 h-9 w-9 rounded-lg flex items-center justify-center border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 disabled:opacity-60 transition-all cursor-pointer active:scale-95"
-                                  >
-                                    {mBusy
-                                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                                      : <Download className="h-4 w-4" />}
-                                  </button>
-                                ) : (
-                                  <span className="shrink-0 px-1 text-[10px] font-semibold text-slate-500" title="Download unavailable for this report — please use the emailed copy.">
-                                    Use emailed copy
-                                  </span>
-                                )
-                              )}
-                              </div>
-                              {mOpen && (
-                                <div id={`person-details-${member.id}`} className="space-y-1.5 px-3.5 pb-3">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-300 text-[11.5px]">
-                                    {member.inputPayload?.dob && (
-                                      <div>
-                                        <span className="text-slate-400 font-medium">Date of Birth:</span>{' '}
-                                        <strong className="text-amber-200 font-semibold">{member.inputPayload.dob}</strong>
-                                      </div>
-                                    )}
-                                    {member.inputPayload?.tob && (
-                                      <div>
-                                        <span className="text-slate-400 font-medium">Exact Time:</span>{' '}
-                                        <strong className="text-amber-200 font-semibold">{member.inputPayload.tob}</strong>
-                                      </div>
-                                    )}
-                                    {member.inputPayload?.birthPlace && (
-                                      <div className="sm:col-span-2">
-                                        <span className="text-slate-400 font-medium">Birth Place:</span>{' '}
-                                        <strong className="text-slate-200 font-semibold">{member.inputPayload.birthPlace}</strong>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="text-[11px] text-slate-400">
-                                    #{member.orderNumber || member.id} • {reportLanguageName(member.language)}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                        </div>
+                        {/* Collapsible Details Trigger */}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
+                          aria-expanded={!!expandedOrders[order.id]}
+                          aria-controls={`order-details-${order.id}`}
+                          className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/90 border border-slate-700/80 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                        >
+                          <span>
+                            {expandedOrders[order.id]
+                              ? 'Hide details'
+                              : (isFamily
+                                  ? (hasDownload ? 'View names & download' : 'View names & details')
+                                  : (hasDownload ? 'View details & download' : 'View details'))}
+                          </span>
+                          <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedOrders[order.id] ? 'rotate-180' : ''}`} />
+                        </button>
                       </div>
                     </div>
-                    )}
 
-                    {/* Middle: Complete Order & User Details (expanded only) */}
-                    {expandedOrders[order.id] && !isFamily && (
-                    <div id={`order-details-${order.id}`} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      
-                      {/* Left Column: User & Astrological Input Details */}
-                      <div className="space-y-2 bg-slate-950/50 rounded-xl p-3.5 border border-slate-800/60">
-                        <div className="text-[10.5px] uppercase font-bold text-amber-400 tracking-wider">
-                          User & Birth Details
+                    {/* Middle Row: Primary Person Identity & Expand Toggle */}
+                    <div className="px-4 sm:px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-xs font-black text-amber-300 shadow-2xs"
+                          aria-hidden="true"
+                        >
+                          {isFamily ? <Users className="h-4 w-4" /> : personName.charAt(0).toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-white truncate">
+                              {isFamily
+                                ? `${personName} + ${members.length - 1} more`
+                                : order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl)
+                                  ? `${boy?.name || 'Groom'} & ${girl?.name || 'Bride'}`
+                                  : personName}
+                            </span>
+                            {isFamily ? (
+                              <span className="text-xs text-amber-300/80 font-medium">
+                                {members.length} charts · one order
+                              </span>
+                            ) : gender && order.serviceType !== 'MARRIAGE_COMPATIBILITY' ? (
+                              <span className="shrink-0 rounded-md border border-slate-700/80 bg-slate-800/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-300">
+                                {gender === 'M' || gender === 'Male' ? 'Male' : 'Female'}
+                              </span>
+                            ) : null}
+                          </div>
+                          {!isFamily && (dob || birthPlace) && (
+                            <div className="text-[11.5px] text-slate-400 truncate mt-0.5">
+                              {dob && <span>DOB: {dob}</span>}
+                              {dob && birthPlace && <span> · </span>}
+                              {birthPlace && <span>{birthPlace}</span>}
+                            </div>
+                          )}
                         </div>
-                        
-                        {order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl) ? (
-                          <div className="space-y-2 text-xs">
-                            <div className="text-slate-200">
-                              <span className="font-bold text-blue-300">Groom:</span> {boy?.name || 'Groom'}{' '}
-                              <span className="text-slate-400">({boy?.dob} • {boy?.tob} • {boy?.birthPlace})</span>
-                            </div>
-                            <div className="text-slate-200">
-                              <span className="font-bold text-pink-300">Bride:</span> {girl?.name || 'Bride'}{' '}
-                              <span className="text-slate-400">({girl?.dob} • {girl?.tob} • {girl?.birthPlace})</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-1.5 text-xs">
-                            {/* The name and gender live in the collapsed header now
-                                (owner request, 2026-10-21); repeating them here would
-                                say the same thing twice on one card. */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-slate-300 text-[11.5px]">
-                              {dob && (
-                                <div>
-                                  <span className="text-slate-400 font-medium">Date of Birth:</span>{' '}
-                                  <strong className="text-amber-200 font-semibold">{dob}</strong>
-                                </div>
-                              )}
-                              {tob && (
-                                <div>
-                                  <span className="text-slate-400 font-medium">Exact Time:</span>{' '}
-                                  <strong className="text-amber-200 font-semibold">{tob}</strong>
-                                </div>
-                              )}
-                              {birthPlace && (
-                                <div className="sm:col-span-2">
-                                  <span className="text-slate-400 font-medium">Birth Place:</span>{' '}
-                                  <strong className="text-slate-200 font-semibold">{birthPlace}</strong>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                      </div>
+
+                      {/* Right Action Affordances */}
+                      <div className="flex items-center gap-2 ml-auto shrink-0">
+                        {/* Ask about this report button (only if completed & delivered) */}
+                        {order.status === 'COMPLETED' && order.hasPdf && order.emailStatus === 'SENT' && order.emailSentAt && (
+                          <button
+                            type="button"
+                            onClick={() => { setAiChatOrder(order); setAiChatOpen(true); }}
+                            className="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                            <span className="hidden sm:inline">Ask Astrologer</span>
+                          </button>
                         )}
                       </div>
+                    </div>
 
-                      {/* Right Column: Financial & Booking Metadata */}
-                      <div className="space-y-2 bg-slate-950/50 rounded-xl p-3.5 border border-slate-800/60 text-xs">
-                        <div className="text-[10.5px] uppercase font-bold text-slate-400 tracking-wider">
-                          Order & Payment Information
+                    {/* Middle: Expanded Details View - Family */}
+                    {expandedOrders[order.id] && isFamily && (
+                      <div
+                        id={`order-details-${order.id}`}
+                        className="px-4 sm:px-5 pb-5 pt-1 space-y-4 border-t border-slate-800/60 bg-slate-950/30 animate-in fade-in duration-200"
+                      >
+                        {/* Family Members Breakdown */}
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+                              <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                              <span>Family Members ({members.length})</span>
+                            </div>
+                            <span className="text-[11px] text-slate-400">Tap name to view birth details</span>
+                          </div>
+
+                          <div className="divide-y divide-slate-800/70 rounded-xl border border-slate-800/80 bg-slate-900/40 overflow-hidden">
+                            {members.map((member, idx) => {
+                              const mName = member.inputPayload?.name || member.userName || `Member #${idx + 1}`;
+                              const mGender = member.inputPayload?.gender;
+                              const mOpen = !!expandedPersons[member.id];
+                              const { item: mItem, key: mKey } = memberDownload(member);
+                              const mBusy = downloadingKey === mKey;
+                              const mReady = mItem ? true : member.hasReportSnapshot !== false;
+
+                              return (
+                                <div key={member.id} className="transition-colors hover:bg-slate-800/20">
+                                  <div className="flex items-center justify-between gap-3 p-3 sm:px-4">
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpandedPersons(prev => ({ ...prev, [member.id]: !prev[member.id] }))}
+                                      aria-expanded={mOpen}
+                                      aria-controls={`person-details-${member.id}`}
+                                      className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer"
+                                    >
+                                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-[11px] font-black text-amber-300" aria-hidden="true">
+                                        {mName.charAt(0).toUpperCase()}
+                                      </span>
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-bold text-xs sm:text-sm text-white truncate">{mName}</span>
+                                          {mGender && (
+                                            <span className="shrink-0 rounded border border-slate-700 bg-slate-800/80 px-1.5 py-0.5 text-[9.5px] font-semibold text-slate-300">
+                                              {mGender === 'M' || mGender === 'Male' ? 'Male' : 'Female'}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-[11px] text-slate-400 truncate">
+                                          {orderServiceTitle(member)} · {reportLanguageName(member.language)}
+                                        </div>
+                                      </div>
+                                      <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 ml-auto transition-transform duration-200 ${mOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {/* Download Icon on Member Row */}
+                                    {memberDone(member) && member.hasPdf && (
+                                      mReady ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDownloadReport(member, mItem)}
+                                          disabled={mBusy}
+                                          title={mBusy ? 'Downloading report…' : 'Download Report PDF'}
+                                          aria-label={mBusy ? 'Downloading…' : `Download Report — ${mName}`}
+                                          className="shrink-0 px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs disabled:opacity-60"
+                                        >
+                                          {mBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                                          <span className="hidden sm:inline">{mBusy ? 'Downloading…' : 'Download PDF'}</span>
+                                        </button>
+                                      ) : (
+                                        <span className="shrink-0 text-[11px] text-slate-400 font-medium">Use email copy</span>
+                                      )
+                                    )}
+                                  </div>
+
+                                  {mOpen && (
+                                    <div id={`person-details-${member.id}`} className="px-4 pb-3 pt-1 border-t border-slate-800/60 bg-slate-950/40">
+                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                                        <div>
+                                          <span className="text-slate-400 font-medium">Date of Birth: </span>
+                                          <span className="text-slate-200 font-semibold">{member.inputPayload?.dob || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-slate-400 font-medium">Exact Time: </span>
+                                          <span className="text-slate-200 font-semibold">{member.inputPayload?.tob || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-slate-400 font-medium">Birth Place: </span>
+                                          <span className="text-slate-200 font-semibold">{member.inputPayload?.birthPlace || 'N/A'}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
 
-                        <div className="space-y-1.5 text-[11.5px]">
-                          <div className="flex justify-between text-slate-300">
-                            <span className="text-slate-400">Ordered On:</span>
-                            <strong className="text-slate-200">
-                              {order.createdAt
-                                ? new Date(order.createdAt).toLocaleDateString('en-GB', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric'
-                                  })
-                                : 'N/A'}
-                            </strong>
+                        {/* Order & Payment Information */}
+                        <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4 space-y-3">
+                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300/90">
+                            <Wallet className="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
+                            <span>Order & Payment Information</span>
                           </div>
-
-                          <div className="flex justify-between text-slate-300">
-                            <span className="text-slate-400">Payment Mode:</span>
-                            <strong className={isFree ? 'text-amber-400' : 'text-emerald-400'}>
-                              {isFree ? '★ Free Beta (Your 1 Free Report)' : `Paid (${order.currency} $${order.amount})`}
-                            </strong>
-                          </div>
-
-                          {order.paymentReference && (
-                            <div className="flex justify-between text-slate-300">
-                              <span className="text-slate-400">Payment Ref:</span>
-                              <span className="font-mono text-[11px] text-slate-200">{order.paymentReference}</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                            <div className="space-y-0.5">
+                              <span className="text-slate-400 font-medium">Ordered On: </span>
+                              <span className="text-slate-200 font-bold">
+                                {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                              </span>
                             </div>
-                          )}
-
-                          <div className="flex justify-between text-slate-300">
-                            <span className="text-slate-400">Delivery Email:</span>
-                            <strong className="text-amber-300">{order.userEmail}</strong>
+                            <div className="space-y-0.5">
+                              <span className="text-slate-400 font-medium">Payment Mode: </span>
+                              <span className={isFree ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}>
+                                {isFree ? 'Free Beta (1 Free Report)' : `Paid (${order.currency} $${order.amount})`}
+                              </span>
+                            </div>
+                            <div className="space-y-0.5">
+                              <span className="text-slate-400 font-medium">Payment Reference: </span>
+                              <span className="font-mono text-slate-300 font-semibold truncate">
+                                {order.paymentReference || 'Direct / Online'}
+                              </span>
+                            </div>
+                            <div className="space-y-0.5">
+                              <span className="text-slate-400 font-medium">Delivery Email: </span>
+                              <span className="text-amber-300 font-semibold truncate">
+                                {order.userEmail}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* Middle: Expanded Details View - Single Order */}
+                    {expandedOrders[order.id] && !isFamily && (
+                      <div
+                        id={`order-details-${order.id}`}
+                        className="px-4 sm:px-5 pb-5 pt-1 space-y-4 border-t border-slate-800/60 bg-slate-950/30 animate-in fade-in duration-200"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* User & Birth Details */}
+                          <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4 space-y-2.5">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300/90">
+                              <User className="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
+                              <span>User & Birth Details</span>
+                            </div>
+                            <div className="space-y-1.5 text-xs">
+                              {order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl) ? (
+                                <div className="space-y-2">
+                                  {boy && (
+                                    <div className="p-2 rounded-lg bg-slate-800/40 border border-slate-800 space-y-1">
+                                      <div className="font-bold text-slate-200">Groom: {boy.name || 'Groom'}</div>
+                                      <div className="text-slate-400">Date of Birth: <span className="text-slate-300">{boy.dob || 'N/A'}</span> · Exact Time: <span className="text-slate-300">{boy.tob || 'N/A'}</span></div>
+                                      <div className="text-slate-400">Birth Place: <span className="text-slate-300">{boy.birthPlace || 'N/A'}</span></div>
+                                    </div>
+                                  )}
+                                  {girl && (
+                                    <div className="p-2 rounded-lg bg-slate-800/40 border border-slate-800 space-y-1">
+                                      <div className="font-bold text-slate-200">Bride: {girl.name || 'Bride'}</div>
+                                      <div className="text-slate-400">Date of Birth: <span className="text-slate-300">{girl.dob || 'N/A'}</span> · Exact Time: <span className="text-slate-300">{girl.tob || 'N/A'}</span></div>
+                                      <div className="text-slate-400">Birth Place: <span className="text-slate-300">{girl.birthPlace || 'N/A'}</span></div>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <>
+                                  <div>
+                                    <span className="text-slate-400 font-medium">Date of Birth: </span>
+                                    <span className="text-slate-200 font-semibold">{dob || 'N/A'}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 font-medium">Exact Time: </span>
+                                    <span className="text-slate-200 font-semibold">{tob || 'N/A'}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 font-medium">Birth Place: </span>
+                                    <span className="text-slate-200 font-semibold">{birthPlace || 'N/A'}</span>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Order & Payment Information */}
+                          <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4 space-y-2.5">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300/90">
+                              <Wallet className="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
+                              <span>Order & Payment Information</span>
+                            </div>
+                            <div className="space-y-1.5 text-xs">
+                              <div>
+                                <span className="text-slate-400 font-medium">Ordered On: </span>
+                                <span className="text-slate-200 font-semibold">
+                                  {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 font-medium">Payment Mode: </span>
+                                <span className={isFree ? 'text-amber-400 font-semibold' : 'text-emerald-400 font-semibold'}>
+                                  {isFree ? 'Free Beta (1 Free Report)' : `Paid (${order.currency} $${order.amount})`}
+                                </span>
+                              </div>
+                              {order.paymentReference && (
+                                <div>
+                                  <span className="text-slate-400 font-medium">Payment Reference: </span>
+                                  <span className="font-mono text-slate-300 font-semibold">
+                                    {order.paymentReference}
+                                  </span>
+                                </div>
+                              )}
+                              <div>
+                                <span className="text-slate-400 font-medium">Delivery Email: </span>
+                                <span className="text-amber-300 font-semibold">
+                                  {order.userEmail}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )}
 
                     {/* Bottom Row: Delivery Status & Conditional Email Retry */}
-                    <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-slate-800/80">
-                      
-                      {/* Delivery Status Message */}
-                      <div className="flex-1 text-xs">
+                    <div className="p-4 sm:p-5 border-t border-slate-800/80 bg-slate-950/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
                         {bannerOrder.emailStatus === 'FAILED' ? (
-                          <div className="text-rose-200 bg-rose-950/60 border border-rose-700/80 rounded-xl px-3.5 py-2.5 flex items-start gap-2.5">
+                          <div className="rounded-xl bg-rose-950/40 border border-rose-800/60 p-3.5 flex items-start gap-3">
                             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-rose-300">
-                                Email Delivery Failed / Bounced
-                              </div>
-                              <div className="text-[11.5px] text-rose-200">
-                                We could not deliver your report to <strong>{bannerOrder.userEmail}</strong>. Please update your email address using the button on the right to receive your Vedic Report.
+                              <div className="font-bold text-rose-200">Email Delivery Failed / Bounced</div>
+                              <div className="text-[11.5px] text-rose-300/90 leading-relaxed">
+                                We could not deliver your report to <strong>{bannerOrder.userEmail}</strong>. Please update your email address below to receive your Vedic Report.
                               </div>
                             </div>
                           </div>
                         ) : bannerRefunded ? (
-                          <div className="text-emerald-200 bg-emerald-950/50 border border-emerald-700/70 rounded-xl px-3.5 py-2.5 flex items-start gap-2.5">
-                            <RotateCcw className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                          <div className="rounded-xl bg-purple-950/40 border border-purple-800/60 p-3.5 flex items-start gap-3">
+                            <RotateCcw className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-emerald-300">
-                                Refund Approved — {refundAmountText(order)}
-                              </div>
-                              <div className="text-[11.5px] text-emerald-200/90">
-                                This order was cancelled before admin approval, so the 90% pre-approval refund applies (the remaining 10% covers the non-refundable payment gateway fee).
+                              <div className="font-bold text-purple-200">Refund Approved — {refundAmountText(order)}</div>
+                              <div className="text-[11.5px] text-purple-300/90 leading-relaxed">
+                                Order cancelled before admin approval. 90% pre-approval refund applies.
                                 {order.refundDeadline && (
-                                  <> The amount returns to your original payment method on or before <strong>{formatRefundDeadline(order.refundDeadline)}</strong> — within 3 working days.</>
+                                  <> Settles on or before <strong>{formatRefundDeadline(order.refundDeadline)}</strong> (3 working days).</>
                                 )}
                                 {order.refundMethod && order.refundMethod.toUpperCase() === 'GATEWAY' && order.refundReference && (
-                                  <> It has already been sent back by the payment provider (reference <strong>{order.refundReference}</strong>).</>
+                                  <> Sent back by payment provider (Ref: <strong>{order.refundReference}</strong>).</>
                                 )}
                               </div>
                             </div>
                           </div>
                         ) : bannerCompleted ? (
-                          <div className="text-emerald-300 bg-emerald-950/40 border border-emerald-800/60 rounded-xl px-3.5 py-2.5 flex items-start gap-2.5">
+                          <div className="rounded-xl bg-emerald-950/30 border border-emerald-800/50 p-3.5 flex items-start gap-3">
                             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-white">
-                                Report Complete & Emailed
-                              </div>
-                              {/* Owner request (2026-10-21): one fact only — what
-                                  was emailed, and where. The refund wording lives
-                                  on the pending banner below and nowhere else: a
-                                  completed order can no longer be refunded, so
-                                  quoting the 90% pre-approval window here is
-                                  something the customer cannot act on. */}
-                              <div className="text-[11.5px] text-emerald-200">
-                                Your Vedic Report and Tax Invoice PDFs were emailed to <strong>{bannerOrder.userEmail}</strong>.
+                              <div className="font-bold text-emerald-200">Report Complete & Emailed</div>
+                              <div className="text-[11.5px] text-emerald-300/90 leading-relaxed">
+                                Your Vedic Horoscope Report and Tax Invoice PDFs were emailed to <strong>{bannerOrder.userEmail}</strong>.
                               </div>
                             </div>
                           </div>
                         ) : order.status === 'CANCELLED' ? (
-                          <div className="text-rose-300 bg-rose-950/40 border border-rose-800/60 rounded-xl px-3.5 py-2 flex items-center gap-2 text-[11.5px]">
+                          <div className="rounded-xl bg-rose-950/40 border border-rose-800/60 p-3 flex items-center gap-2 text-rose-300">
                             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
                             <span>This order was cancelled.</span>
                           </div>
                         ) : (
-                          <div className="text-amber-300 bg-amber-950/40 border border-amber-800/60 rounded-xl px-3.5 py-2.5 flex items-start gap-2.5">
+                          <div className="rounded-xl bg-amber-950/30 border border-amber-800/50 p-3.5 flex items-start gap-3">
                             <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-amber-200">
-                                Processing in Vedic Astrology Queue
+                              <div className="font-bold text-amber-200">Processing in Vedic Astrology Queue</div>
+                              <div className="text-[11.5px] text-amber-300/90 leading-relaxed">
+                                Our India Vedic scholars are reviewing your planetary charts. PDF Report and Tax Invoice will be emailed to <strong>{bannerOrder.userEmail}</strong>.
                               </div>
-                              <div className="text-[11.5px] text-amber-300/90">
-                                Our India Vedic astrology scholars are reviewing your planetary chart. Your PDF Report and Tax Invoice will be emailed to <strong>{bannerOrder.userEmail}</strong>.
-                              </div>
-                              <div className="text-[11px] text-amber-300/80 pt-0.5">
-                                Not approved yet — you are eligible for a <strong>90% refund</strong> if you cancel before admin approval (the other 10% is the non-refundable payment gateway fee). Approved refunds settle within <strong>3 working days</strong>. To request one, email <strong>admin@astrosivam.com</strong> with this order number.
+                              <div className="text-[11px] text-amber-400/80 pt-0.5">
+                                Eligible for <strong>90% refund</strong> if cancelled before admin approval (contact <a href="mailto:admin@astrosivam.com" className="underline hover:text-amber-200">admin@astrosivam.com</a>, settles in 3 working days).
                               </div>
                             </div>
                           </div>
                         )}
                       </div>
 
-                      {/* Request Email Resend / Update Email Button: ONLY ENABLED IF DELIVERY FAILED OR PENDING */}
+                      {/* Action buttons: Update Email if failed or pending */}
                       {(bannerOrder.emailStatus === 'FAILED' || bannerOrder.status === 'PENDING' || bannerOrder.status === 'PENDING_APPROVAL') && (
                         <div className="shrink-0 w-full sm:w-auto">
                           <button
@@ -2048,31 +2071,17 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-amber-500/20'
                                 : 'bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border-slate-700'
                             }`}
-                            title={bannerOrder.emailStatus === 'FAILED' ? "Update email address and re-dispatch report" : "Update delivery email address"}
                           >
                             <Mail className="w-3.5 h-3.5" />
-                            <span>{bannerOrder.emailStatus === 'FAILED' ? "Update Email & Retry Delivery" : "Update Delivery Email"}</span>
+                            <span>{bannerOrder.emailStatus === 'FAILED' ? "Update Email & Retry Delivery" : "Request Email Resend"}</span>
                           </button>
                         </div>
                       )}
-
                     </div>
 
-                    {/* Frozen report download (delivered orders only): the file
-                        is rendered from the snapshot prepared on the order
-                        date and never recalculates. Report only — the tax
-                        invoice stays email-only. */}
-                    {/* One download block per DELIVERED member, so a family card
-                        keeps every chart's download exactly as a single order
-                        keeps its own. The block below is byte-for-byte the tested
-                        one — `order` is merely re-bound per member. It opens with
-                        "View details" (owner, 2026-10-21), and stays open while a
-                        download runs so its outcome is never hidden. */}
+                    {/* Download Section (when open and ready) */}
                     {downloadBandOpen && downloadableMembers.map(downloadOrder => { const order = downloadOrder; return (
-                      <div key={`download-${order.id}`} className="pt-1 space-y-2" data-frozen-download={order.id}>
-                        {/* A family card carries its icons on the member name
-                            rows (owner, 2026-10-22), so the band keeps only the
-                            outcomes there: feedback and the Save-the-PDF link. */}
+                      <div key={`download-${order.id}`} className="px-4 sm:px-5 pb-4 space-y-2" data-frozen-download={order.id}>
                         {!isFamily && ((order.items?.length || 0) > 0 ? (
                           <div className="space-y-2">
                             {(order.items || []).map(item => {
@@ -2086,20 +2095,14 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                     : item.serviceCode === 'MUHURTHAM'
                                       ? 'Subha Muhurtham'
                                       : String(item.serviceCode).replace(/_/g, ' ');
-                              // Owner request (2026-10-21): the row is a name and
-                              // an icon. No wide button, no "Prepared on" line —
-                              // the date and language added height to every card
-                              // and told the customer nothing they act on. The
-                              // label ternary stays in title/aria-label so the
-                              // button is still named for a screen reader and
-                              // still promises "Downloading…" while it works.
+
                               return (
-                                <div key={item.id} className="flex items-center justify-between gap-2 bg-slate-950/50 border border-slate-800/60 rounded-xl px-3.5 py-2">
-                                  <div className="min-w-0 text-[11.5px] text-slate-300">
+                                <div key={item.id} className="flex items-center justify-between gap-3 bg-slate-900/80 border border-slate-800/80 rounded-xl px-4 py-2.5 shadow-2xs">
+                                  <div className="min-w-0 text-xs">
                                     <span className="font-bold text-white">{item.personName || 'Report'}</span>
-                                    <span className="text-slate-400"> — {itemService}</span>
+                                    <span className="text-slate-400"> · {itemService}</span>
                                     {downloadingKey === `${order.id}:${item.id}` && (
-                                      <span className="block text-[11px] font-bold text-amber-300">Downloading…</span>
+                                      <span className="block text-[11px] font-bold text-amber-300">Rendering high-quality PDF…</span>
                                     )}
                                   </div>
                                   {itemReady ? (
@@ -2109,79 +2112,71 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                       disabled={downloadingKey === `${order.id}:${item.id}`}
                                       title={downloadingKey === `${order.id}:${item.id}` ? 'Downloading…' : 'Download Report'}
                                       aria-label={downloadingKey === `${order.id}:${item.id}` ? 'Downloading…' : `Download Report — ${item.personName || 'report'}`}
-                                      className="shrink-0 h-9 w-9 rounded-lg flex items-center justify-center border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 disabled:opacity-60 transition-all cursor-pointer active:scale-95"
+                                      className="shrink-0 px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-60 shadow-xs"
                                     >
                                       {downloadingKey === `${order.id}:${item.id}`
-                                        ? <Loader2 className="h-4 w-4 animate-spin" />
-                                        : <Download className="h-4 w-4" />}
+                                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        : <Download className="h-3.5 w-3.5" />}
+                                      <span>{downloadingKey === `${order.id}:${item.id}` ? 'Downloading…' : 'Download Report'}</span>
                                     </button>
                                   ) : (
-                                    <span className="text-[11px] text-slate-500">
-                                      {item.reportStatus === 'SENT' ? 'Download unavailable for this report — please use the emailed copy.' : 'Available after delivery.'}
-                                    </span>
+                                    <span className="text-xs text-slate-500">Available after delivery</span>
                                   )}
                                 </div>
                               );
                             })}
                           </div>
                         ) : order.hasReportSnapshot === false ? (
-                          <p className="text-[11px] text-slate-500">
-                            Report download is unavailable for this order — please use the PDF copy emailed to you.
+                          <p className="text-xs text-slate-400">
+                            Report download unavailable — please use the PDF copy emailed to you.
                           </p>
                         ) : (
-                          <div className="flex items-center justify-between gap-2 bg-slate-950/50 border border-slate-800/60 rounded-xl px-3.5 py-2">
-                            <div className="min-w-0 text-[11.5px] text-slate-300">
-                              <span className="font-bold text-white">{order.inputPayload?.name || order.userName || personName}</span>
-                              <span className="text-slate-400"> — {orderServiceTitle(order)}</span>
+                          <div className="flex items-center justify-between gap-3 bg-slate-900/80 border border-slate-800/80 rounded-xl px-4 py-2.5 shadow-2xs">
+                            <div className="min-w-0 text-xs">
+                              <span className="font-bold text-white">{order.inputPayload?.name || order.userName || personName} — {orderServiceTitle(order)}</span>
+                              {downloadingKey === order.id && (
+                                <span className="block text-[11px] font-bold text-amber-300">Rendering high-quality PDF…</span>
+                              )}
                             </div>
-                            <span className="flex shrink-0 items-center gap-2">
-                            {downloadingKey === order.id && (
-                              <span className="text-[11px] font-bold text-amber-300">Downloading…</span>
-                            )}
                             <button
                               type="button"
                               onClick={() => handleDownloadReport(order)}
                               disabled={downloadingKey === order.id}
                               title={downloadingKey === order.id ? 'Downloading…' : 'Download Report'}
                               aria-label={downloadingKey === order.id ? 'Downloading…' : 'Download Report'}
-                              className="shrink-0 h-9 w-9 rounded-lg flex items-center justify-center border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 disabled:opacity-60 transition-all cursor-pointer active:scale-95"
+                              className="shrink-0 px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-60 shadow-xs"
                             >
                               {downloadingKey === order.id
-                                ? <Loader2 className="h-4 w-4 animate-spin" />
-                                : <Download className="h-4 w-4" />}
+                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                : <Download className="h-3.5 w-3.5" />}
+                              <span>{downloadingKey === order.id ? 'Downloading…' : 'Download Report'}</span>
                             </button>
-                            </span>
                           </div>
                         ))}
+
                         {downloadFeedback?.orderId === order.id && (
                           <div
                             role="status"
-                            className={`p-3 rounded-xl border flex items-start gap-2 text-[11.5px] ${
+                            className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs ${
                               downloadFeedback.type === 'success'
-                                ? 'bg-emerald-950/50 border-emerald-800 text-emerald-300'
-                                : 'bg-rose-950/50 border-rose-800 text-rose-300'
+                                ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
+                                : 'bg-rose-950/40 border-rose-800/60 text-rose-200'
                             }`}
                           >
                             {downloadFeedback.type === 'success'
-                              ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-                              : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+                              ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                              : <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />}
                             <span>{downloadFeedback.message}</span>
                           </div>
                         )}
-                        {/* The rendered file, as a REAL link the customer taps.
 
-                            A scripted anchor click only counts as a download
-                            while the gesture that started it is still alive;
-                            after a tens-of-seconds print capture it is not, and
-                            iOS Safari then drops it without a word. This link is
-                            the same bytes at the same print density — the tap is
-                            a fresh gesture every browser honours. */}
+                        {/* Save the PDF Fallback Link for Safari */}
                         {savedReport?.orderId === order.id && (
                           <div
                             data-saved-report={order.id}
-                            className="p-3 rounded-xl border border-emerald-800/70 bg-emerald-950/40 space-y-2"
+                            className="p-3.5 rounded-xl border border-emerald-800/70 bg-emerald-950/40 space-y-2"
                           >
-                            <p className="text-[11.5px] text-emerald-200 break-all">
+                            <p className="text-xs text-emerald-200 break-all">
                               <FileText className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
                               {savedReport.fileName}
                             </p>
@@ -2189,21 +2184,20 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               href={savedReport.url}
                               download={savedReport.fileName}
                               rel="noopener"
-                              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm active:scale-95 transition-all"
+                              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm active:scale-95 transition-all"
                             >
                               <Download className="w-3.5 h-3.5" />
                               <span>Save the PDF</span>
                             </a>
                             <p className="text-[11px] text-emerald-300/70">
-                              On iPhone and iPad this opens the report in Safari — tap the Share icon, then
-                              “Save to Files”.
+                              On iPhone/iPad this opens the report in Safari — tap Share, then “Save to Files”.
                             </p>
                           </div>
                         )}
                       </div>
                     ); })}
 
-                    {/* Verified review — paid, delivered orders only (server-decided). */}
+                    {/* Verified Review Section */}
                     {reviewEligibility && (
                       <OrderReviewStrip
                         eligibility={reviewEligibility}
@@ -2211,7 +2205,6 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                         onOpen={() => { setReviewNotice(null); setReviewOrderId(order.id); }}
                       />
                     )}
-
                   </div>
                 );
               })}

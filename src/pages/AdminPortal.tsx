@@ -2346,20 +2346,20 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                       const l = (lang || 'ta').toLowerCase();
                       if (l === 'ta' || l === 'tamil') {
                         return (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/70 dark:border-amber-700/60">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/25">
                             Tamil
                           </span>
                         );
                       }
                       if (l === 'hi' || l === 'hindi') {
                         return (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-50 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 border border-orange-300/70 dark:border-orange-700/60">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-500/10 text-orange-800 dark:text-orange-300 border border-orange-500/25">
                             Hindi
                           </span>
                         );
                       }
                       return (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300/70 dark:border-blue-700/60">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-500/10 text-blue-800 dark:text-blue-300 border border-blue-500/25">
                           English
                         </span>
                       );
@@ -2369,46 +2369,46 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                       const s = st.toUpperCase();
                       if (s === 'COMPLETED') {
                         return (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400"></span>
-                            <span>COMPLETED</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span>Completed</span>
                           </span>
                         );
                       }
                       if (s === 'GENERATED') {
                         return (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-sky-100 dark:bg-sky-950/70 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700/60 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-sky-600 dark:bg-sky-400"></span>
-                            <span>GENERATED</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                            <span>Generated</span>
                           </span>
                         );
                       }
                       if (s === 'PENDING' || s === 'PENDING_APPROVAL') {
                         return (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 animate-pulse shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-ping"></span>
-                            <span>PENDING</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25 animate-pulse">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                            <span>Pending</span>
                           </span>
                         );
                       }
                       if (s === 'REFUNDED') {
                         return (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-purple-100 dark:bg-purple-950/70 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-700/60 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400"></span>
-                            <span>REFUNDED</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/25">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                            <span>Refunded</span>
                           </span>
                         );
                       }
                       if (s === 'CANCELLED') {
                         return (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700/60 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 dark:bg-rose-400"></span>
-                            <span>CANCELLED</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/25">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            <span>Cancelled</span>
                           </span>
                         );
                       }
                       return (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                           {st}
                         </span>
                       );
@@ -2418,19 +2418,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                       const isApprovingGroup = isProcessing(`family-approve-${groupId}`);
                       const isEmailingGroup = isProcessing(`family-email-${groupId}`);
                       const isCancellingGroup = isProcessing(`family-cancel-${groupId}`);
-                      const isDownloadingInv = isProcessing(`family-inv-${groupId}`);
                       const isRefundingGroup = isProcessing(`refund-${unit.mainOrder?.id || groupId}`);
 
                       return (
-                        <div key={groupId} className="p-4 space-y-3.5 bg-gradient-to-br from-amber-500/5 via-transparent to-purple-500/5 border-l-4 border-l-amber-500 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                        <div key={groupId} className="p-4 sm:p-5 space-y-3.5 bg-gradient-to-b from-amber-500/[0.04] to-transparent dark:from-amber-500/[0.03] dark:to-transparent hover:bg-slate-50/60 dark:hover:bg-slate-800/20 transition-all">
                           {/* 1. Header: Family Group Badge & Status */}
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-500 text-slate-950 shadow-xs">
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-xs">
                                 <Users className="w-3.5 h-3.5" />
                                 <span>Family Order ({unit.orders.length} People)</span>
                               </span>
-                              <span className="font-mono text-[11px] text-amber-700 dark:text-amber-400 bg-amber-100/70 dark:bg-amber-950/70 px-2 py-0.5 rounded-md border border-amber-300/70 dark:border-amber-700/60">
+                              <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
                                 {groupId}
                               </span>
                             </div>
@@ -2446,61 +2445,61 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                           </div>
 
                           {/* 2. Family Summary Info */}
-                          <div className="bg-slate-800/70 border border-amber-500/30 rounded-xl p-3.5 space-y-2">
+                          <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl p-3.5 space-y-2">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="text-sm font-extrabold text-[#fffdfa] tracking-tight">
+                              <span className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
                                 {unit.userName}
                               </span>
                               {unit.country && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-700/80 text-amber-300 border border-slate-600">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-700/80 text-slate-700 dark:text-amber-300 border border-slate-300 dark:border-slate-600">
                                   {unit.country}
                                 </span>
                               )}
                             </div>
 
-                            <div className="text-xs text-slate-300 font-mono flex items-center gap-1.5">
-                              <Mail className="w-3 h-3 text-amber-400" />
+                            <div className="text-xs text-slate-600 dark:text-slate-300 font-mono flex items-center gap-1.5">
+                              <Mail className="w-3.5 h-3.5 text-amber-500" />
                               <span className="truncate">{unit.userEmail}</span>
                             </div>
 
                             {/* Total Paid & Payment Ref */}
-                            <div className="flex items-center justify-between pt-1 border-t border-slate-700/60 text-xs">
+                            <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700/60 text-xs">
                               <div className="flex items-center gap-1.5">
-                                <span className="text-slate-400 font-medium">Total Paid:</span>
-                                <span className="font-black text-amber-400 text-sm">
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">Total Paid:</span>
+                                <span className="font-mono font-bold text-slate-900 dark:text-amber-400 text-sm">
                                   ${unit.totalAmount.toFixed(2)} {unit.currency}
                                 </span>
                               </div>
                               {unit.paymentReference && (
-                                <div className="font-mono text-[11px] text-slate-300">
-                                  <span className="text-slate-400 uppercase text-[9px] font-bold">Ref: </span>
-                                  <strong className="text-amber-300 font-bold">{unit.paymentReference}</strong>
+                                <div className="font-mono text-[11px] text-slate-500 dark:text-slate-300">
+                                  <span className="uppercase text-[9px] font-bold text-slate-400">Ref: </span>
+                                  <strong className="text-slate-700 dark:text-amber-300 font-bold">{unit.paymentReference}</strong>
                                 </div>
                               )}
                             </div>
 
                             {/* IP Address with Quick Copy */}
                             {unit.ipAddress && (
-                              <div className="flex items-center gap-1.5 text-[10.5px] font-mono text-slate-400 pt-1 border-t border-slate-700/60">
+                              <div className="flex items-center gap-1.5 text-[10.5px] font-mono text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-700/60">
                                 <span className="text-[9.5px] uppercase font-bold text-slate-400">IP:</span>
                                 <button
                                   type="button"
                                   onClick={() => handleCopyIp(unit.ipAddress!)}
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-700/80 hover:bg-slate-600 text-slate-200 transition-colors cursor-pointer"
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-700/80 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
                                   title="Click to copy IP for Block List"
                                 >
                                   <span className="font-semibold">{unit.ipAddress}</span>
                                   {copiedIp === unit.ipAddress ? (
-                                    <Check className="w-3 h-3 text-emerald-400" />
+                                    <Check className="w-3 h-3 text-emerald-500" />
                                   ) : (
                                     <Copy className="w-3 h-3 text-slate-400" />
                                   )}
                                 </button>
                                 {copiedIp === unit.ipAddress && (
-                                  <span className="text-[10px] text-emerald-400 font-bold">Copied!</span>
+                                  <span className="text-[10px] text-emerald-500 font-bold">Copied!</span>
                                 )}
                                 {bannedIps.some(b => b.ipAddress === unit.ipAddress) && (
-                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/40">
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-500/20 text-rose-500 border border-rose-500/40">
                                     BANNED
                                   </span>
                                 )}
@@ -2539,7 +2538,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             <button
                               type="button"
                               onClick={() => toggleGroupExpand(groupId)}
-                              className="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-200/60 dark:border-slate-700/60"
+                              className="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-200 dark:border-slate-700/60 shadow-2xs"
                             >
                               {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-amber-500" /> : <ChevronDown className="w-3.5 h-3.5 text-amber-500" />}
                               <span>{isExpanded ? 'Hide Horoscopes' : `View ${unit.orders.length} Horoscopes`}</span>
@@ -2550,7 +2549,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                               type="button"
                               onClick={() => handlePreviewFamilyInvoice(unit.orders, groupId)}
                               title="View official family tax invoice"
-                              className="flex-1 py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-amber-400/50"
+                              className="flex-1 py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-amber-500/30 shadow-2xs"
                             >
                               <Eye className="w-3.5 h-3.5" />
                               <span>View Invoice</span>
@@ -2562,7 +2561,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                 type="button"
                                 onClick={() => handleApproveFamilyGroup(groupId, unit.orders)}
                                 disabled={isApprovingGroup}
-                                title={`Approve all ${unit.orders.length} family charts and deliver every preview-quality report plus one consolidated invoice in one email when within the mail-size limit; unusually large PDFs may be split`}
+                                title={`Approve all ${unit.orders.length} family charts and deliver reports`}
                                 className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
                               >
                                 <Send className={`w-3.5 h-3.5 ${isApprovingGroup ? 'animate-spin' : ''}`} />
@@ -2570,8 +2569,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                               </button>
                             )}
 
-                            {/* Cancel Family Order if pending AND unpaid — a paid bundle is
-                                cancelled through the one-click refund above (API enforces) */}
+                            {/* Cancel Family Order if pending AND unpaid */}
                             {isPending && !canOneClickRefundGroup(unit.orders) && (
                               <button
                                 type="button"
@@ -2585,15 +2583,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                               </button>
                             )}
 
-                            {/* ONE-CLICK 90% REFUND (family bundle) — only while every chart is
-                                still awaiting approval: approving the bundle generates and emails
-                                the reports, which makes it completed and non-refundable. */}
+                            {/* ONE-CLICK 90% REFUND (family bundle) */}
                             {canOneClickRefundGroup(unit.orders) && (
                               <button
                                 type="button"
                                 onClick={() => handleProcessRefund(unit.mainOrder, true)}
                                 disabled={isRefundingGroup}
-                                title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(unit.totalAmount), unit.currency)}) for all ${unit.orders.length} charts in this family bundle. The other 10% is the non-refundable payment gateway fee. Settles within 3 working days.`}
+                                title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(unit.totalAmount), unit.currency)}) for all ${unit.orders.length} charts. Settles within 3 working days.`}
                                 className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
                               >
                                 <RotateCcw className={`w-3.5 h-3.5 ${isRefundingGroup ? 'animate-spin' : ''}`} />
@@ -2616,30 +2612,30 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             )}
                           </div>
 
-                          {/* Refunded bundle: what was returned and when it settles (3 working days). */}
+                          {/* Refunded bundle: what was returned and when it settles */}
                           {refundSummaryText(unit.mainOrder) && (
-                            <div className="text-[11px] font-bold text-emerald-300 bg-emerald-950/40 border border-emerald-800/60 rounded-xl px-3 py-2">
+                            <div className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl px-3 py-2">
                               💸 {refundSummaryText(unit.mainOrder)}
                             </div>
                           )}
 
                           {/* 4. Expanded Sub-items List (Individual Family Members) */}
                           {isExpanded && (
-                            <div className="mt-3 pt-3 border-t border-amber-500/20 space-y-2.5 animate-in fade-in">
-                              <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5 animate-in fade-in">
+                              <div className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                                 <Package className="w-3.5 h-3.5" />
-                                <span>Individual User Calculations ({unit.orders.length}):</span>
+                                <span>Individual Horoscopes ({unit.orders.length}):</span>
                               </div>
                               <div className="space-y-2">
                                 {unit.orders.map((mOrder, idx) => (
-                                  <div key={mOrder.id} className="p-3 bg-slate-900/90 border border-slate-700/70 rounded-xl space-y-1.5">
+                                  <div key={mOrder.id} className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5 shadow-2xs">
                                     <div className="flex items-center justify-between gap-2">
-                                      <span className="font-extrabold text-xs text-white">
+                                      <span className="font-extrabold text-xs text-slate-900 dark:text-white">
                                         #{idx + 1}. {mOrder.userName || mOrder.inputPayload?.name || 'User'}
                                       </span>
                                       {getLanguageBadge(mOrder.language)}
                                     </div>
-                                    <div className="text-[11px] font-semibold text-amber-400">
+                                    <div className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
                                       {mOrder.serviceType === 'BIRTH_JATHAGAM'
                                         ? '🪐 Birth Jathagam'
                                         : mOrder.serviceType === 'MARRIAGE_COMPATIBILITY'
@@ -2651,19 +2647,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                         : mOrder.serviceType}
                                     </div>
                                     {(mOrder.inputPayload?.dob || mOrder.inputPayload?.birthPlace) && (
-                                      <div className="text-[10.5px] text-slate-400 flex flex-wrap gap-2">
-                                        {mOrder.inputPayload?.dob && <span>DOB: <strong className="text-slate-200">{mOrder.inputPayload.dob}</strong></span>}
-                                        {mOrder.inputPayload?.tob && <span>Time: <strong className="text-slate-200">{mOrder.inputPayload.tob}</strong></span>}
-                                        {mOrder.inputPayload?.birthPlace && <span>Place: <strong className="text-slate-200">{mOrder.inputPayload.birthPlace}</strong></span>}
+                                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400 flex flex-wrap gap-2">
+                                        {mOrder.inputPayload?.dob && <span>DOB: <strong className="text-slate-700 dark:text-slate-200">{mOrder.inputPayload.dob}</strong></span>}
+                                        {mOrder.inputPayload?.tob && <span>Time: <strong className="text-slate-700 dark:text-slate-200">{mOrder.inputPayload.tob}</strong></span>}
+                                        {mOrder.inputPayload?.birthPlace && <span>Place: <strong className="text-slate-700 dark:text-slate-200">{mOrder.inputPayload.birthPlace}</strong></span>}
                                       </div>
                                     )}
                                     <div className="flex items-center gap-2 pt-1">
                                       <button
                                         type="button"
                                         onClick={() => setSelectedOrder(mOrder)}
-                                        className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] flex items-center gap-1 border border-slate-700 cursor-pointer"
+                                        className="py-1 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
                                       >
-                                        <Eye className="w-3 h-3 text-amber-400" />
+                                        <Eye className="w-3 h-3 text-amber-500" />
                                         <span>View Chart</span>
                                       </button>
                                     </div>
@@ -2686,11 +2682,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                     const isItemsExpanded = !!expandedItemOrderIds[order.id];
 
                     return (
-                      <div key={order.id} className="p-4 space-y-3.5 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                      <div key={order.id} className="p-4 sm:p-5 space-y-3.5 bg-white dark:bg-slate-900 hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors">
                         {/* 1. Header: Order #, Language, Status */}
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono font-black text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-700/60 px-2.5 py-1 rounded-lg shadow-2xs">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-xs text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
                               #{order.orderNumber || order.id}
                             </span>
                             {getLanguageBadge(order.language)}
@@ -2698,8 +2694,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                           <div className="flex items-center gap-1.5">
                             {getStatusBadge(order.status)}
                             {((order.emailStatus || '').toUpperCase() === 'FAILED' || (order.emailStatus || '').toUpperCase() === 'ERROR') && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/40" title="Email delivery failed">
-                                <AlertTriangle className="w-3 h-3 text-rose-400" />
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-500/20 text-rose-500 border border-rose-500/40" title="Email delivery failed">
+                                <AlertTriangle className="w-3 h-3 text-rose-500" />
                                 <span>Email Failed</span>
                               </span>
                             )}
@@ -2707,19 +2703,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         </div>
 
                         {/* 2. Customer & Service Details */}
-                        <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5 space-y-1.5">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-xl p-3.5 space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-extrabold text-[#fffdfa] tracking-tight">
+                            <span className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
                               {order.userName || order.inputPayload?.name || 'User'}
                             </span>
                             {order.country && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-700/80 text-amber-300 border border-slate-600">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-700/80 text-slate-700 dark:text-amber-300 border border-slate-300 dark:border-slate-600">
                                 {order.country}
                               </span>
                             )}
                           </div>
 
-                          <div className="text-xs font-bold text-amber-400">
+                          <div className="text-xs font-bold text-amber-600 dark:text-amber-400">
                             {isMultiPerson
                               ? `👪 Multi-Person Order (${orderItems.length} report${orderItems.length === 1 ? '' : 's'})`
                               : serviceDisplayName(order.serviceType)}
@@ -2727,39 +2723,39 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
                           {/* Micro birth details */}
                           {(order.inputPayload?.dob || order.inputPayload?.birthPlace) && (
-                            <div className="text-[11px] text-slate-300 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 pt-0.5 font-sans">
+                            <div className="text-[11px] text-slate-600 dark:text-slate-300 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 pt-0.5 font-sans">
                               {order.inputPayload?.dob && (
                                 <span>
                                   <span className="text-[9.5px] uppercase font-bold text-slate-400">DOB:</span>{' '}
-                                  <strong className="font-bold text-slate-200">{order.inputPayload.dob}</strong>
+                                  <strong className="font-bold text-slate-700 dark:text-slate-200">{order.inputPayload.dob}</strong>
                                 </span>
                               )}
                               {order.inputPayload?.tob && (
                                 <span>
                                   <span className="text-[9.5px] uppercase font-bold text-slate-400">Time:</span>{' '}
-                                  <strong className="font-bold text-slate-200">{order.inputPayload.tob}</strong>
+                                  <strong className="font-bold text-slate-700 dark:text-slate-200">{order.inputPayload.tob}</strong>
                                 </span>
                               )}
                               {order.inputPayload?.birthPlace && (
                                 <span className="truncate max-w-[200px]">
                                   <span className="text-[9.5px] uppercase font-bold text-slate-400">Place:</span>{' '}
-                                  <strong className="font-bold text-slate-200">{order.inputPayload.birthPlace}</strong>
+                                  <strong className="font-bold text-slate-700 dark:text-slate-200">{order.inputPayload.birthPlace}</strong>
                                 </span>
                               )}
                             </div>
                           )}
 
-                          <div className="text-xs text-slate-300 font-mono flex items-center gap-1.5 pt-0.5">
+                          <div className="text-xs text-slate-600 dark:text-slate-300 font-mono flex items-center gap-1.5 pt-0.5">
                             <span className="truncate">{order.userEmail}</span>
                           </div>
                         </div>
 
                         {/* 3. Date & Payment Details Bar */}
-                        <div className="flex flex-col gap-1 text-[11px] text-slate-400 px-1">
+                        <div className="flex flex-col gap-1 text-[11px] text-slate-500 dark:text-slate-400 px-1">
                           <div className="flex items-center justify-between">
                             <div>
                               <span className="text-[10px] uppercase font-bold text-slate-400">Ordered:</span>{' '}
-                              <strong className="font-bold text-slate-200">
+                              <strong className="font-bold text-slate-700 dark:text-slate-200">
                                 {order.createdAt
                                   ? new Date(order.createdAt).toLocaleDateString('en-GB', {
                                       day: '2-digit',
@@ -2770,34 +2766,34 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                               </strong>
                             </div>
                             {order.paymentReference && (
-                              <div className="font-mono text-[11px] text-slate-400">
+                              <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
                                 <span className="text-[10px] uppercase font-bold text-slate-400">Ref:</span>{' '}
-                                <strong className="font-bold text-amber-300">{order.paymentReference}</strong>
+                                <strong className="font-bold text-slate-700 dark:text-amber-300">{order.paymentReference}</strong>
                               </div>
                             )}
                           </div>
 
                           {order.ipAddress && (
                             <div className="flex items-center gap-1.5 text-[10.5px] font-mono text-slate-400">
-                              <span className="text-[9.5px] uppercase font-bold text-slate-500">IP:</span>
+                              <span className="text-[9.5px] uppercase font-bold text-slate-400">IP:</span>
                               <button
                                 type="button"
                                 onClick={() => handleCopyIp(order.ipAddress!)}
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-700/80 hover:bg-slate-600 text-slate-200 transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
                                 title="Click to copy IP for Block List"
                               >
                                 <span className="font-semibold">{order.ipAddress}</span>
                                 {copiedIp === order.ipAddress ? (
-                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <Check className="w-3 h-3 text-emerald-500" />
                                 ) : (
                                   <Copy className="w-3 h-3 text-slate-400" />
                                 )}
                               </button>
                               {copiedIp === order.ipAddress && (
-                                <span className="text-[10px] text-emerald-400 font-bold">Copied!</span>
+                                <span className="text-[10px] text-emerald-500 font-bold">Copied!</span>
                               )}
                               {bannedIps.some(b => b.ipAddress === order.ipAddress) && (
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/40">
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-500/20 text-rose-500 border border-rose-500/40">
                                   BANNED
                                 </span>
                               )}
@@ -2805,14 +2801,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                           )}
                         </div>
 
-                        {/* 4. Action Buttons (View available for all, Approve/Cancel only when pending, Resend Email only when email failed) */}
+                        {/* 4. Action Buttons */}
                         <div className="flex items-center gap-2 pt-0.5">
                           {/* View button to review horoscope calculations, report & invoice */}
                           <button
                             type="button"
                             onClick={() => isMultiPerson ? toggleItemsExpand(order.id) : setSelectedOrder(order)}
                             title={isMultiPerson ? 'Show every person and preview/send their reports individually' : 'View full horoscope calculations, report and invoice'}
-                            className="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs border border-slate-200/60 dark:border-slate-700/60"
+                            className="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs border border-slate-200 dark:border-slate-700/60"
                           >
                             {isMultiPerson && isItemsExpanded
                               ? <ChevronUp className="w-3.5 h-3.5 text-amber-500" />
@@ -2834,9 +2830,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             </button>
                           )}
 
-                          {/* Cancel button: STRICTLY ONLY when order is pending approval AND nothing
-                              was paid. A paid order is cancelled through the one-click refund above,
-                              otherwise the money would be kept without a refund (API enforces this). */}
+                          {/* Cancel button: STRICTLY ONLY when order is pending approval AND nothing was paid */}
                           {isPending && !canOneClickRefund(order) && (
                             <button
                               type="button"
@@ -2850,15 +2844,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             </button>
                           )}
 
-                          {/* ONE-CLICK 90% REFUND — shown only while the order is still awaiting
-                              approval. Once approved the report is generated and emailed, which
-                              completes the order and ends refund eligibility (Refund Policy). */}
+                          {/* ONE-CLICK 90% REFUND */}
                           {canOneClickRefund(order) && (
                             <button
                               type="button"
                               onClick={() => handleProcessRefund(order)}
                               disabled={isRefunding}
-                              title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(order.amount), order.currency)}) to ${order.userEmail}. The other 10% is the non-refundable payment gateway fee. Settles within 3 working days.`}
+                              title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(order.amount), order.currency)}) to ${order.userEmail}. Settles within 3 working days.`}
                               className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
                             >
                               <RotateCcw className={`w-3.5 h-3.5 ${isRefunding ? 'animate-spin' : ''}`} />
@@ -2880,7 +2872,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             </button>
                           )}
 
-                          {/* Consolidated order invoice (one document for all reports) */}
+                          {/* Consolidated order invoice */}
                           {isMultiPerson && (
                             <button
                               type="button"
@@ -2895,7 +2887,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                           )}
                         </div>
 
-                        {/* Refunded order: what was returned and when it settles (3 working days) */}
+                        {/* Refunded order: summary */}
                         {refundSummaryText(order) && (
                           <div className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl px-3 py-2">
                             💸 {refundSummaryText(order)}
@@ -2936,20 +2928,20 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         const l = (lang || 'ta').toLowerCase();
                         if (l === 'ta' || l === 'tamil') {
                           return (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/70 dark:border-amber-700/60">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
                               Tamil
                             </span>
                           );
                         }
                         if (l === 'hi' || l === 'hindi') {
                           return (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-50 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 border border-orange-300/70 dark:border-orange-700/60">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-500/10 text-orange-800 dark:text-orange-300 border border-orange-500/20">
                               Hindi
                             </span>
                           );
                         }
                         return (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300/70 dark:border-blue-700/60">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-500/10 text-blue-800 dark:text-blue-300 border border-blue-500/20">
                             English
                           </span>
                         );
@@ -2959,7 +2951,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         const s = st.toUpperCase();
                         if (s === 'COMPLETED') {
                           return (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                               <span>Completed</span>
                             </span>
@@ -2967,7 +2959,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         }
                         if (s === 'GENERATED') {
                           return (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/25">
                               <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
                               <span>Generated</span>
                             </span>
@@ -2975,7 +2967,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         }
                         if (s === 'PENDING' || s === 'PENDING_APPROVAL') {
                           return (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 animate-pulse">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25 animate-pulse">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
                               <span>Pending</span>
                             </span>
@@ -2983,7 +2975,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         }
                         if (s === 'REFUNDED') {
                           return (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/25">
                               <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
                               <span>Refunded</span>
                             </span>
@@ -2991,14 +2983,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         }
                         if (s === 'CANCELLED') {
                           return (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/25">
                               <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                               <span>Cancelled</span>
                             </span>
                           );
                         }
                         return (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                             {st}
                           </span>
                         );
@@ -3011,7 +3003,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         const isCancellingGroup = isProcessing(`family-cancel-${groupId}`);
 
                         return (
-                          <div key={groupId} className="bg-amber-500/[0.03] dark:bg-amber-500/[0.04] hover:bg-amber-500/[0.07] dark:hover:bg-amber-500/[0.08] transition-all border-l-4 border-l-amber-500">
+                          <div key={groupId} className="bg-amber-500/[0.02] dark:bg-amber-500/[0.03] hover:bg-amber-500/[0.06] transition-all">
                             <div className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
                               {/* 1. Order & Language */}
                               <div className="col-span-3 space-y-1.5">
@@ -3177,15 +3169,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                     </button>
                                   )}
 
-                                  {/* ONE-CLICK 90% REFUND (family bundle) — offered only while every
-                                      chart is still awaiting approval; approving the bundle emails the
-                                      reports, which completes it and ends refund eligibility. */}
+                                  {/* ONE-CLICK 90% REFUND (family bundle) */}
                                   {canOneClickRefundGroup(unit.orders) && (
                                     <button
                                       type="button"
                                       onClick={() => handleProcessRefund(unit.mainOrder, true)}
                                       disabled={isProcessing(`refund-${unit.mainOrder?.id || groupId}`)}
-                                      title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(unit.totalAmount), unit.currency)}) for all ${unit.orders.length} charts. The other 10% is the non-refundable gateway fee. Settles within 3 working days.`}
+                                      title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(unit.totalAmount), unit.currency)}) for all ${unit.orders.length} charts. Settles within 3 working days.`}
                                       className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
                                     >
                                       <RotateCcw className={`w-3.5 h-3.5 ${isProcessing(`refund-${unit.mainOrder?.id || groupId}`) ? 'animate-spin' : ''}`} />
@@ -3193,8 +3183,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                     </button>
                                   )}
 
-                                  {/* Cancel Family Order Button (pending and unpaid only — a paid
-                                      bundle goes through the one-click refund above) */}
+                                  {/* Cancel Family Order Button */}
                                   {isPending && !canOneClickRefundGroup(unit.orders) && (
                                     <button
                                       type="button"
@@ -3211,7 +3200,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                               </div>
                             </div>
 
-                            {/* Refunded bundle: what was returned and when it settles (3 working days). */}
+                            {/* Refunded bundle summary */}
                             {refundSummaryText(unit.orders[0]) && (
                               <div className="px-6 py-2 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-t border-emerald-200 dark:border-emerald-800/60">
                                 💸 {refundSummaryText(unit.orders[0])}
@@ -3220,7 +3209,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
                             {/* Expanded Nested Member Cards */}
                             {isExpanded && (
-                              <div className="px-6 pb-4 pt-1 bg-slate-50/70 dark:bg-slate-900/70 border-t border-amber-200/40 dark:border-amber-900/40">
+                              <div className="px-6 pb-4 pt-1 bg-slate-50/70 dark:bg-slate-900/70 border-t border-slate-200 dark:border-slate-800">
                                 <div className="p-3.5 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-2xs space-y-2.5">
                                   <div className="text-xs font-bold text-slate-700 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-100 dark:border-slate-800">
                                     <Package className="w-3.5 h-3.5 text-amber-500" />
@@ -3286,7 +3275,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             {/* 1. Order & Language */}
                             <div className="col-span-3 space-y-1.5">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-mono font-extrabold text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-2 py-0.5 rounded-md shadow-2xs">
+                                <span className="font-mono font-extrabold text-xs text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md shadow-2xs">
                                   #{order.orderNumber || order.id}
                                 </span>
                                 {getLanguageDisplay(order.language)}
@@ -3317,7 +3306,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                               <div className="font-bold text-slate-900 dark:text-white text-sm">
                                 {order.userName || order.inputPayload?.name || 'User'}
                               </div>
-                              <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                              <div className="text-xs font-semibold text-amber-600 dark:text-amber-400">
                                 {isMultiPerson
                                   ? `👪 Multi-Person Order (${orderItems.length} report${orderItems.length === 1 ? '' : 's'})`
                                   : serviceDisplayName(order.serviceType)}
@@ -3383,7 +3372,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             {/* 4. Payment & Status */}
                             <div className="col-span-2 space-y-1.5">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-extrabold text-sm text-slate-900 dark:text-amber-400">
+                                <span className="font-extrabold text-sm text-slate-900 dark:text-amber-400 font-mono">
                                   ${order.totalAmount ? order.totalAmount.toFixed(2) : '0.00'} {order.currency || 'USD'}
                                 </span>
                                 {getStatusBadge(order.status)}
@@ -3449,14 +3438,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                   </button>
                                 )}
 
-                                {/* ONE-CLICK 90% REFUND — pre-approval orders only (see the
-                                    Refund & Cancellation Policy: non-refundable once approved). */}
+                                {/* ONE-CLICK 90% REFUND */}
                                 {canOneClickRefund(order) && (
                                   <button
                                     type="button"
                                     onClick={() => handleProcessRefund(order)}
                                     disabled={isProcessing(`refund-${order.id}`)}
-                                    title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(order.amount), order.currency)}) to ${order.userEmail}. The other 10% is the non-refundable gateway fee. Settles within 3 working days.`}
+                                    title={`One-click refund: return 90% (${moneyLabel(preApprovalRefundAmount(order.amount), order.currency)}) to ${order.userEmail}. Settles within 3 working days.`}
                                     className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
                                   >
                                     <RotateCcw className={`w-3.5 h-3.5 ${isProcessing(`refund-${order.id}`) ? 'animate-spin' : ''}`} />
@@ -3464,8 +3452,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                   </button>
                                 )}
 
-                                {/* Cancel Button (shown only when pending and unpaid — a paid order
-                                    goes through the one-click refund instead, enforced by the API) */}
+                                {/* Cancel Button (shown only when pending and unpaid) */}
                                 {isPending && !canOneClickRefund(order) && (
                                   <button
                                     type="button"
@@ -3479,7 +3466,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                                   </button>
                                 )}
 
-                                {/* Consolidated order invoice (one document for all reports) */}
+                                {/* Consolidated order invoice */}
                                 {isMultiPerson && (
                                   <button
                                     type="button"
