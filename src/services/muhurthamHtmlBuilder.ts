@@ -1,4 +1,4 @@
-import rulesData from '../lib/muhurtham/rules.json';
+import rulesData from '../lib/muhurtham/rules.json' with { type: 'json' };
 import { rasiMetaByNumber } from '../lib/muhurtham/scanner';
 import { REPORT_FONT_LINK_TAG } from './reportFonts';
 import { normalizeReportLanguage } from './reportLanguage';
@@ -314,9 +314,9 @@ function personalNoteFor(day: MuhurthamDayRow, lang: AppLanguage): string {
  * Reserve space for the guide before choosing density / splitting date rows.
  */
 export const MUHURTHAM_TOTAL_PAGES = 3;
-// Leave room for wrapped devotee / place details as well as the A4 footer.
-export const MUHURTHAM_PAGE1_DATE_BUDGET_MM = 160;
-export const MUHURTHAM_PAGE2_DATE_BUDGET_MM = 78;
+// Leave room for wrapped devotee / place details, glossary pointer, and the A4 footer.
+export const MUHURTHAM_PAGE1_DATE_BUDGET_MM = 162;
+export const MUHURTHAM_PAGE2_DATE_BUDGET_MM = 74;
 // Extra height the two-person (bride + groom) particulars panel needs on page 1.
 export const MUHURTHAM_COUPLE_PANEL_EXTRA_MM = 12;
 // Vertical space reserved on page 1 for the ♥ legend line whenever at least
@@ -325,7 +325,7 @@ export const MUHURTHAM_PERSONAL_NOTE_RESERVE_MM = 11;
 // A4 midpoint is 148.5mm; the guide belongs in the lower half of page 2. The
 // reserved height leaves room for the full explanation (three paragraphs in
 // Tamil / Hindi) plus the authorisation block inside the same two pages.
-export const MUHURTHAM_PAGE2_NOTES_START_MM = 114;
+export const MUHURTHAM_PAGE2_NOTES_START_MM = 149.5;
 export const MUHURTHAM_DENSITY_TIERS = [
   { fontPx: 9.4, padMm: 1.5 },
   { fontPx: 8.6, padMm: 1.15 },
@@ -933,9 +933,16 @@ ${REPORT_FONT_LINK_TAG}
 
   /* Keep the guide in the second half of page 2, without covering dates.
      The upper block may grow for a longer continuation; it never clips rows. */
+  .muhurtham-dates-page { padding: 4.5mm 11mm 4.5mm; }
+  .muhurtham-dates-page .header { margin-bottom: 0.6mm; }
+  .muhurtham-dates-page .header .header-logo { width: 50px; height: 50px; }
+  .muhurtham-dates-page .modern-divider { margin: 0.4mm 0 1mm; }
+  .muhurtham-dates-page .inner { gap: 1.2mm; }
+  .muhurtham-dates-page .glossary-pointer { margin: 0; line-height: 1.2; }
+  .muhurtham-continuation-page .inner { gap: 1.2mm; }
   .muhurtham-page2-upper {
-    min-height: calc(${MUHURTHAM_PAGE2_NOTES_START_MM}mm - 7mm - 1.8mm);
-    display: flex; flex-direction: column; gap: 1.8mm;
+    min-height: calc(${MUHURTHAM_PAGE2_NOTES_START_MM}mm - 4.5mm - 1.2mm);
+    display: flex; flex-direction: column; gap: 1.5mm;
     /* Grows with the continuation table so page 2 fills the sheet too. */
     flex: 1 1 auto;
   }
@@ -947,13 +954,13 @@ ${REPORT_FONT_LINK_TAG}
   .muhurtham-selection-notes {
     flex: 1 0 auto; display: flex; flex-direction: column; justify-content: space-evenly;
     border: 1px solid var(--slate-border); border-left: 3px solid var(--gold);
-    border-radius: 6px; background: #fffaf0; padding: 2.4mm 3.4mm;
-    color: var(--ink-light); font-size: 14.4px; line-height: 1.36;
+    border-radius: 6px; background: #fffaf0; padding: 1.4mm 3.4mm;
+    color: var(--ink-light); font-size: 14.4px; line-height: 1.18;
   }
-  .muhurtham-selection-notes h2 { color: var(--maroon); font-size: 16.5px; font-weight: 800; line-height: 1.28; }
-  .muhurtham-selection-notes p { margin-top: 1.6mm; }
+  .muhurtham-selection-notes h2 { color: var(--maroon); font-size: 16.5px; font-weight: 800; line-height: 1.15; }
+  .muhurtham-selection-notes p { margin-top: 0.8mm; }
   .muhurtham-selection-notes strong { display: block; color: var(--maroon); font-size: 15px; font-weight: 800; }
-  .muhurtham-selection-notes .selection-counts { display: block; color: var(--green); font-weight: 700; margin-bottom: 0.8mm; }
+  .muhurtham-selection-notes .selection-counts { display: block; color: var(--green); font-weight: 700; margin-bottom: 0.3mm; }
 
   /* Personally favourable dates (Tara Balam + no Chandrashtama) */
   .six-month-table .row-personal td { background: #fff1f2 !important; }
@@ -972,7 +979,7 @@ ${REPORT_FONT_LINK_TAG}
   .muhurtham-attestation {
     display: flex; align-items: center; justify-content: space-between; gap: 3mm;
     border: 1px solid var(--gold-border); border-radius: 6px; background: #fffdf5;
-    padding: 1.8mm 3mm; flex-shrink: 0;
+    padding: 1.1mm 3mm; flex-shrink: 0;
   }
   .muhurtham-attestation .attest-line { display: flex; flex-direction: column; gap: 0.4mm; min-width: 0; }
   .muhurtham-attestation .attest-label { color: var(--gold); font-size: 7.2px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; }

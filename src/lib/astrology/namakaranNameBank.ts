@@ -3,14 +3,14 @@
  *
  * Source of truth : data/namakaran_name_bank.psv
  * Generator       : scripts/build_namakaran_bank.mjs
- * Content hash    : cf3675358b56b120
+ * Content hash    : 324cc71c98585af0
  *
  * The same hash is written into api/astrology/namakaran_name_bank.php so the
  * live preview, the browser-side TypeScript and the official report can be proven to
  * show an identical name bank.
  */
 
-export const NAMAKARAN_BANK_HASH = 'cf3675358b56b120';
+export const NAMAKARAN_BANK_HASH = '324cc71c98585af0';
 
 /** Page 2 of the Namakaran report shows at most this many names per side. */
 export const NAMAKARAN_MAX_PER_SIDE = 8;
@@ -117,5 +117,6 @@ export const NAMAKARAN_BANK: Record<string, NamakaranBankAkshara> = {
   "சீ": { M: { south: [{n:"Seenivasan",t:"சீனிவாசன்",h:"श्रीनिवासन",m:"Lord Venkateswara"},{n:"Seenu",t:"சீனு",h:"सीनु",m:"Lord Vishnu"},{n:"Seetharaman",t:"சீதாராமன்",h:"सीतारामन",m:"Lord Rama with Sita"}], north: [] }, F: { south: [{n:"Seetha",t:"சீதா",h:"सीता",m:"Goddess Sita"},{n:"Seelavathi",t:"சீலாவதி",h:"शीलवती",m:"Of good conduct"}], north: [{n:"Seerath",t:"சீரத்",h:"सीरत",m:"Inner virtue"}] } },
   "சூ": { M: { south: [{n:"Surya",t:"சூர்யா",h:"सूर्या",m:"The Sun"},{n:"Sooriyan",t:"சூரியன்",h:"सूरियन",m:"The Sun god"},{n:"Soodan",t:"சூடன்",h:"सूडन",m:"A bright and able soul"}], north: [{n:"Suryansh",t:"சூர்யான்ஷ்",h:"सूर्यांश",m:"A part of the Sun"}] }, F: { south: [{n:"Sooriya",t:"சூரியா",h:"सूरिया",m:"The Sun"}], north: [{n:"Soorika",t:"சூரிகா",h:"सूरिका",m:"A bright flame"}] } },
   "த": { M: { south: [{n:"Thamizh",t:"தமிழ்",h:"तमिळ",m:"Sweet Tamil"},{n:"Thamizhselvan",t:"தமிழ்செல்வன்",h:"तमिळसेल्वन",m:"A treasure of Tamil"},{n:"Thandapani",t:"தண்டபாணி",h:"दंडपाणि",m:"Lord Murugan"},{n:"Thangaraju",t:"தங்கராஜு",h:"तंगराजु",m:"A golden king"},{n:"Thavam",t:"தவம்",h:"तवम",m:"Penance and devotion"},{n:"Tharun",t:"தருண்",h:"तरुण",m:"A young and bright soul"}], north: [{n:"Tanmay",t:"தன்மய்",h:"तन्मय",m:"Absorbed in the divine"},{n:"Tanish",t:"தனிஷ்",h:"तनीश",m:"Lord of the night"},{n:"Tanishq",t:"தனிஷ்க்",h:"तनिष्क",m:"A precious jewel"},{n:"Tanush",t:"தனுஷ்",h:"तनुष",m:"A bow"}] }, F: { south: [{n:"Thamizhselvi",t:"தமிழ்செல்வி",h:"तमिळसेल्वी",m:"A graceful Tamil lady"},{n:"Thamizharasi",t:"தமிழரசி",h:"तमिळरसी",m:"Queen of Tamil"},{n:"Thangam",t:"தங்கம்",h:"तंगम",m:"Gold"},{n:"Thavamalar",t:"தவமலர்",h:"तवमलर",m:"A flower of penance"},{n:"Tharani",t:"தரணி",h:"तरणि",m:"The earth"}], north: [{n:"Tanishka",t:"தனிஷ்கா",h:"तनिष्का",m:"A small star"},{n:"Tanya",t:"தன்யா",h:"तन्या",m:"A fairy queen"},{n:"Taruna",t:"தருணா",h:"तरुणा",m:"Young and tender"},{n:"Tanvi",t:"தன்வி",h:"तन्वी",m:"A slender lady"}] } },
-  "ஜ": { M: { south: [{n:"Jagan",t:"ஜகன்",h:"जगन",m:"The world"},{n:"Jagannathan",t:"ஜகன்னாதன்",h:"जगन्नाथन",m:"Lord of the world"},{n:"Jagadheesan",t:"ஜகதீசன்",h:"जगदीशन",m:"Lord of the universe"},{n:"Jambulingam",t:"ஜம்புலிங்கம்",h:"जम्बुलिंगम",m:"Lord Shiva"},{n:"Jayanthan",t:"ஜயந்தன்",h:"जयंतन",m:"The victorious one"}], north: [{n:"Jatin",t:"ஜதின்",h:"जतिन",m:"A disciplined ascetic"},{n:"Jagat",t:"ஜகத்",h:"जगत",m:"The universe"}] }, F: { south: [{n:"Jaya",t:"ஜயா",h:"जया",m:"Victory"},{n:"Janani",t:"ஜனனி",h:"जननी",m:"A mother, a creator"},{n:"Jayanthi",t:"ஜயந்தி",h:"जयंती",m:"A victorious festival"},{n:"Jananya",t:"ஜனன்யா",h:"जनन्या",m:"A motherly soul"}], north: [{n:"Jasmin",t:"ஜஸ்மின்",h:"जैस्मिन",m:"A jasmine flower"}] } }
+  "ஜ": { M: { south: [{n:"Jagan",t:"ஜகன்",h:"जगन",m:"The world"},{n:"Jagannathan",t:"ஜகன்னாதன்",h:"जगन्नाथन",m:"Lord of the world"},{n:"Jagadheesan",t:"ஜகதீசன்",h:"जगदीशन",m:"Lord of the universe"},{n:"Jambulingam",t:"ஜம்புலிங்கம்",h:"जम्बुलिंगम",m:"Lord Shiva"},{n:"Jayanthan",t:"ஜயந்தன்",h:"जयंतन",m:"The victorious one"}], north: [{n:"Jatin",t:"ஜதின்",h:"जतिन",m:"A disciplined ascetic"},{n:"Jagat",t:"ஜகத்",h:"जगत",m:"The universe"}] }, F: { south: [{n:"Jaya",t:"ஜயா",h:"जया",m:"Victory"},{n:"Janani",t:"ஜனனி",h:"जननी",m:"A mother, a creator"},{n:"Jayanthi",t:"ஜயந்தி",h:"जयंती",m:"A victorious festival"},{n:"Jananya",t:"ஜனன்யா",h:"जनन्या",m:"A motherly soul"}], north: [{n:"Jasmin",t:"ஜஸ்மின்",h:"जैस्मिन",m:"A jasmine flower"}] } },
+  "ஞ": { M: { south: [{n:"Nyamalan",t:"ஞமலன்",h:"ञमलन",m:"A noble soul"},{n:"Nyaman",t:"ஞமன்",h:"ञमन",m:"A sage"}], north: [{n:"Jnapakan",t:"ஞபகன்",h:"ज्ञापकन",m:"Peaceful"},{n:"Nyayan",t:"ஞயன்",h:"ञयन",m:"Golden"}] }, F: { south: [{n:"Nyamali",t:"ஞமலி",h:"ञमली",m:"A graceful lady"},{n:"Nyamalini",t:"ஞமலினி",h:"ञमलिनी",m:"A shining lady"}], north: [{n:"Jnapaki",t:"ஞபகி",h:"ज्ञापकी",m:"A goddess of wisdom"},{n:"Nyaya",t:"ஞயா",h:"ञया",m:"A wise lady"}] } }
 };

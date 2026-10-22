@@ -25,7 +25,7 @@ import {
   getServicePrices
 } from '../services/pricing';
 import { MAX_FAMILY_ORDER_ITEMS, hasFamilyOrderCapacity } from '../services/familyOrderLimits';
-import rulesData from '../lib/muhurtham/rules.json';
+import rulesData from '../lib/muhurtham/rules.json' with { type: 'json' };
 import {
   scanMonthMuhurtham,
   describePersonForMuhurtham,

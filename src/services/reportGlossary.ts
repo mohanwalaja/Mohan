@@ -23,7 +23,7 @@
  *   • a meaning explains the word in everyday language — never another jargon
  *     word ("the lord of the bhava" is not an explanation).
  */
-import glossaryData from '../../api/astrology/report_glossary.json';
+import glossaryData from '../../api/astrology/report_glossary.json' with { type: 'json' };
 import type { AppLanguage } from '../lib/astrology/types';
 
 export type ReportKind = 'BIRTH_JATHAGAM' | 'MARRIAGE_COMPATIBILITY' | 'BABY_NAMING' | 'MUHURTHAM';
@@ -205,72 +205,84 @@ export function reportGlossaryHtml(
  * split across the two columns (or across the page break after it).
  */
 export const REPORT_GLOSSARY_CSS = `
-  .glossary-head { margin-bottom: 3mm; }
+  .glossary-head { margin-bottom: 1.5mm; flex-shrink: 0; }
   .glossary-title {
     font-size: 13px;
     font-weight: 800;
     color: var(--maroon, #881337);
-    margin: 0 0 1mm;
+    margin: 0 0 0.8mm;
     letter-spacing: 0.2px;
   }
   .glossary-intro {
-    font-size: 10px;
-    line-height: 1.35;
+    font-size: 9.5px;
+    line-height: 1.32;
     color: var(--ink-light, #334155);
     margin: 0;
   }
   .glossary-grid {
-    column-count: 2;
-    column-gap: 7mm;
-    column-rule: 1px dotted var(--gold, #b45309);
+    flex: 1 0 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+    gap: 1.1mm 5mm;
   }
   .glossary-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.7mm 2mm;
+    border-left: 2px solid var(--gold, #b45309);
+    background: #fcfcfd;
+    border-radius: 3px;
     break-inside: avoid;
     page-break-inside: avoid;
-    margin: 0 0 2.4mm;
+    margin: 0;
   }
   .glossary-term {
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 800;
     color: var(--maroon, #881337);
-    line-height: 1.25;
+    line-height: 1.22;
   }
   .glossary-meaning {
-    font-size: 9.5px;
-    line-height: 1.35;
+    font-size: 9px;
+    line-height: 1.3;
     color: var(--ink, #0f172a);
   }
   .glossary-note {
-    font-size: 9.5px;
-    line-height: 1.35;
+    flex-shrink: 0;
+    font-size: 9px;
+    line-height: 1.3;
     color: var(--ink-muted, #64748b);
     border-top: 1px dotted var(--gold, #b45309);
-    padding-top: 1.6mm;
-    margin: 2mm 0 0;
+    padding-top: 1.2mm;
+    margin: 1.5mm 0 1.4mm;
   }
   /* "5 words you'll meet" — a self-contained answer box, not a teaser. */
   .glossary-quick {
+    flex-shrink: 0;
     border: 1px solid var(--slate-border, #e2e8f0);
     border-left: 3px solid var(--gold, #b45309);
     background: #fffdf7;
     border-radius: 4px;
-    padding: 1.6mm 2.6mm 1.4mm;
-    margin: 1.6mm 0 2mm;
+    padding: 1.3mm 2.4mm 1.1mm;
+    margin: 0 0 1.6mm;
     break-inside: avoid;
     page-break-inside: avoid;
   }
   .glossary-quick-title {
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 800;
     color: var(--maroon, #881337);
-    margin-bottom: 1mm;
+    margin-bottom: 0.7mm;
     letter-spacing: 0.2px;
   }
   .glossary-quick-row {
-    font-size: 9.5px;
-    line-height: 1.32;
+    font-size: 9px;
+    line-height: 1.28;
     color: var(--ink, #0f172a);
-    margin: 0 0 0.7mm;
+    margin: 0 0 0.5mm;
   }
   .glossary-quick-term {
     font-weight: 800;
@@ -279,16 +291,17 @@ export const REPORT_GLOSSARY_CSS = `
   .glossary-quick-meaning { color: var(--ink-light, #334155); }
   .glossary-quick-more {
     font-size: 8.5px;
-    line-height: 1.3;
+    line-height: 1.28;
     color: var(--ink-muted, #64748b);
     border-top: 1px dotted var(--gold, #b45309);
-    padding-top: 0.8mm;
-    margin-top: 0.6mm;
+    padding-top: 0.6mm;
+    margin-top: 0.5mm;
   }
   .glossary-pointer {
+    flex-shrink: 0;
     font-size: 9px;
-    line-height: 1.3;
+    line-height: 1.28;
     color: var(--ink-muted, #64748b);
-    margin: 1.4mm 0 0;
+    margin: 0.6mm 0 1mm;
   }
 `;

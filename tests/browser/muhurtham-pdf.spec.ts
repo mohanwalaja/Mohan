@@ -1,9 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 import type { AppLanguage } from '../../src/types';
 
-// A4 at 300 dpi — the print-quality floor the PHP gate enforces
-// (ASTRO_FAMILY_DOC_MIN_PREVIEW_WIDTH_PX / _HEIGHT_PX in api/admin/family_docs.php).
-const A4_PRINT_MIN_WIDTH_PX = 2480;
+import { A4_PRINT_MIN_WIDTH_PX } from '../../src/services/jathagamPdfExporter';
 
 // Avoid CDN / font-download races in the regression test. The app already
 // ships these Indic and Latin fonts. Plus Jakarta Sans is aliased to the
@@ -52,6 +51,9 @@ function sampleResult(daysPerMonth = 4) {
 
 async function openReport(page: Page, language: AppLanguage, daysPerMonth = 4, result?: ReturnType<typeof sampleResult>) {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: fontCss }));
+  await page.route('**/fonts/*.ttf', route => route.fulfill({
+    contentType: 'font/ttf', body: readFileSync(new URL('../../api/astrology/fonts/' + route.request().url().split('/').pop(), import.meta.url))
+  }));
   // Test the real Tailwind preflight, without starting the app / database / API.
   await page.route('http://127.0.0.1:4173/', route => route.fulfill({
     contentType: 'text/html', body: '<!doctype html><html><head></head><body></body></html>'
@@ -117,8 +119,8 @@ for (const language of ['en', 'ta', 'hi'] as const) {
         const images = Object.values((pdf.internal as any).collections.addImage_images) as any[];
         return { pageCount: pdf.getNumberOfPages(), jpegs: images.map(image => btoa(image.data)), width: images[0].width, height: images[0].height };
       }, { fromHtml: mode.fromHtml });
-      expect(captured.pageCount).toBe(2);
-      // The capture must clear the 300 dpi print floor the API enforces.
+      expect(captured.pageCount).toBe(3);
+      // The capture must clear the print floor the API enforces.
       expect(captured.width).toBeGreaterThanOrEqual(A4_PRINT_MIN_WIDTH_PX);
 
       const comparisons = await page.evaluate(async ({ references, captured }) => {
@@ -170,15 +172,16 @@ for (const language of ['en', 'ta', 'hi'] as const) {
     });
   }
 
-  test(`${language}: 60 dates and the explanations fit inside two A4 pages`, async ({ page }) => {
+  test(`${language}: 60 dates and the explanations fit inside two A4 pages plus glossary`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     const frame = await openReport(page, language, 10);
-    await expect(frame.locator('.page')).toHaveCount(2);
+    await expect(frame.locator('.page')).toHaveCount(3);
     await expect(frame.locator('.date-row:not(.row-empty-month)')).toHaveCount(60);
     await expect(frame.locator('.muhurtham-selection-notes')).toHaveCount(1);
     const bounds = await frame.evaluate(() => {
-      const notes = document.querySelector('.muhurtham-selection-notes')!.getBoundingClientRect();
-      const page = document.querySelector('.page:last-of-type')!.getBoundingClientRect();
+      const notesEl = document.querySelector('.muhurtham-selection-notes')!;
+      const notes = notesEl.getBoundingClientRect();
+      const page = notesEl.closest('.page')!.getBoundingClientRect();
       const rows = Array.from(document.querySelectorAll('.date-row')).map(row => {
         const panel = row.closest('.table-panel')!.getBoundingClientRect();
         const rect = row.getBoundingClientRect();
@@ -194,12 +197,13 @@ for (const language of ['en', 'ta', 'hi'] as const) {
 
   test(`${language}: the guide stays in the lower half when every date fits on page 1`, async ({ page }) => {
     const frame = await openReport(page, language, 2);
-    await expect(frame.locator('.page')).toHaveCount(2);
+    await expect(frame.locator('.page')).toHaveCount(3);
     await expect(frame.locator('.date-row:not(.row-empty-month)')).toHaveCount(12);
-    await expect(frame.locator('.page').last().locator('.date-row')).toHaveCount(0);
+    await expect(frame.locator('.page').nth(1).locator('.date-row')).toHaveCount(0);
     const bounds = await frame.evaluate(() => {
-      const notes = document.querySelector('.muhurtham-selection-notes')!.getBoundingClientRect();
-      const page = document.querySelector('.page:last-of-type')!.getBoundingClientRect();
+      const notesEl = document.querySelector('.muhurtham-selection-notes')!;
+      const notes = notesEl.getBoundingClientRect();
+      const page = notesEl.closest('.page')!.getBoundingClientRect();
       return { top: notes.top, bottom: notes.bottom, midpoint: page.top + page.height / 2, pageBottom: page.bottom };
     });
     expect(bounds.top).toBeGreaterThanOrEqual(bounds.midpoint);
@@ -227,7 +231,7 @@ test('ta: the lower half of page 2 is one larger-type explanation and still fits
     });
   }
   const frame = await openReport(page, 'ta', 6, result);
-  await expect(frame.locator('.page')).toHaveCount(2);
+  await expect(frame.locator('.page')).toHaveCount(3);
   const metrics = await frame.evaluate(() => {
     const guide = document.querySelector<HTMLElement>('.muhurtham-selection-notes')!;
     const pageEl = guide.closest('.page')!;
@@ -306,9 +310,9 @@ test('The shared isolated HTML exporter still renders the other reports and invo
       userName: 'PDF Test', userEmail: 'test@example.com', inputPayload: { name: 'PDF Test' }
     };
     const reports = [
-      ['Jathagam', buildJathagamHtml(horoscope, 'ta'), 3],
-      ['Baby Naming', buildBabyNamingHtml(baby, 'hi'), 2],
-      ['Marriage Matching', buildWeddingMatchHtml(wedding, 'en'), 2], // Includes the existing disclaimer page.
+      ['Jathagam', buildJathagamHtml(horoscope, 'ta'), 4],
+      ['Baby Naming', buildBabyNamingHtml(baby, 'hi'), 3],
+      ['Marriage Matching', buildWeddingMatchHtml(wedding, 'en'), 3], // Includes disclaimer + glossary pages.
       ['Invoice', buildInvoiceHtml(order), 1],
       ['Family Invoice', buildFamilyInvoiceHtml([order], 'PDF-TEST-FAMILY'), 1]
     ];

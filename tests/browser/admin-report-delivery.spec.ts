@@ -35,10 +35,11 @@ const sha256 = (base64: string) => createHash('sha256').update(Buffer.from(base6
 
 test.skip(!runtimeInstalled, 'php-wasm is not installed (npm install --no-save @php-wasm/node@3.1.54 @php-wasm/universal@3.1.54)');
 
-// 300 dpi A4 = 2480 × 3508 px per page. Mirrors PRINT_CAPTURE_SCALE /
-// A4_PRINT_MIN_* in src/services/jathagamPdfExporter.ts and the API's floor.
-const A4_PRINT_MIN_WIDTH_PX = 2480;
-const A4_PRINT_MIN_HEIGHT_PX = 3508;
+import {
+  A4_PRINT_MIN_HEIGHT_PX,
+  A4_PRINT_MIN_WIDTH_PX,
+  REPORT_PRINT_DPI
+} from '../../src/services/jathagamPdfExporter';
 
 const approvalCases = [
   { language: 'en' as const, device: 'desktop', viewport: { width: 1280, height: 900 } },
@@ -46,7 +47,7 @@ const approvalCases = [
 ];
 
 for (const { language, device, viewport } of approvalCases) {
-test(`browser-rendered ${language} report + invoice reach the real approval gate from a ${device} and are emailed at 300 dpi`, async ({ page }) => {
+test(`browser-rendered ${language} report + invoice reach the real approval gate from a ${device} and are emailed at ${REPORT_PRINT_DPI} dpi`, async ({ page }) => {
   test.setTimeout(300_000);
   // An admin on a phone must produce the same print-quality document.
   await page.setViewportSize(viewport);

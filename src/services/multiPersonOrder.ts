@@ -26,7 +26,7 @@ import {
   normalizeBirthTime,
   normalizePersonName
 } from '../utils/birthDetails';
-import rulesData from '../lib/muhurtham/rules.json';
+import rulesData from '../lib/muhurtham/rules.json' with { type: 'json' };
 
 /** A single order can contain at most six people and at least one. */
 export const MULTI_PERSON_MAX_PEOPLE = 6;

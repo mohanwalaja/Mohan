@@ -13,7 +13,7 @@
  * buildJathagamLifeCards in src/services/jathagamHtmlBuilder.ts (lines 122,
  * 192-193, 256-262) — see the _extractedFrom note in the JSON.
  */
-import rulesData from '../../../api/astrology/life_cards_rules.json';
+import rulesData from '../../../api/astrology/life_cards_rules.json' with { type: 'json' };
 
 export type PredLang = 'en' | 'ta' | 'hi';
 

@@ -80,7 +80,7 @@ async function openCheckout(page: Page, options: {
     const { mountCheckout } = await import(modulePath);
     mountCheckout({ serviceType: options.serviceType || 'BIRTH_JATHAGAM', family: !!options.family });
   }, { options, serviceTypes });
-  await expect(page.getByText(options.family ? 'Unified Family Order Checkout' : 'ASTRO SIVAM CHECKOUT', { exact: true })).toBeVisible();
+  await expect(page.getByText(options.family ? 'Family Checkout — Up To 6 People' : 'ASTRO SIVAM CHECKOUT', { exact: true })).toBeVisible();
   return { submitted, gatewayCalls, errors };
 }
 
@@ -90,8 +90,8 @@ for (const mode of ['PAID', 'FREE_BETA'] as const) {
       const { submitted, gatewayCalls, errors } = await openCheckout(page, { role: 'admin', mode, serviceType });
       await expect(page.getByText('Admin — All Reports Are Always Free', { exact: true })).toBeVisible();
       await expect(page.getByText('★ FREE 1ST REPORT', { exact: true })).toHaveCount(0);
-      await expect(page.getByPlaceholder('e.g. TXN1049281 / MP849204 / UPI Ref')).toHaveCount(0);
-      await expect(page.getByRole('button', { name: '₹ INR', exact: true })).toHaveCount(0);
+      await expect(page.getByPlaceholder('e.g. PayPal Transaction ID / UPI Ref / Card Receipt')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: /GPay \/ UPI/i })).toHaveCount(0);
       await page.getByRole('button', { name: 'Confirm Free Order →' }).click();
       await expect(page.getByText('Order Submitted Successfully!', { exact: true })).toBeVisible();
       expect(submitted).toHaveLength(1);
@@ -106,7 +106,7 @@ for (const mode of ['PAID', 'FREE_BETA'] as const) {
   test(`all admin family reports are free in ${mode} mode`, async ({ page }) => {
     const { submitted, gatewayCalls, errors } = await openCheckout(page, { role: 'admin', mode, family: true });
     await expect(page.getByText('Admin order — all charts are free', { exact: true })).toBeVisible();
-    await expect(page.getByText('FREE (Admin Order)', { exact: true })).toHaveCount(5); // 4 charts + total
+    await expect(page.getByText(/^FREE \(Admin( Order)?\)$/)).toHaveCount(5); // 4 charts + total
     await expect(page.getByText('2. Choose Your Payment Method', { exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Confirm Free Order →' }).click();
     await expect(page.getByText('Admin Order Placed Successfully!', { exact: true })).toBeVisible();
@@ -123,16 +123,16 @@ for (const mode of ['PAID', 'FREE_BETA'] as const) {
 for (const mode of ['PAID', 'FREE_BETA'] as const) {
   test(`customer still needs a receipt in ${mode} mode after beta is used`, async ({ page }) => {
     const { submitted, errors } = await openCheckout(page, { role: 'customer', mode });
-    const receipt = page.getByPlaceholder('e.g. TXN1049281 / MP849204 / UPI Ref');
+    const receipt = page.getByPlaceholder('e.g. PayPal Transaction ID / UPI Ref / Card Receipt');
     await expect(receipt).toBeVisible();
     await expect(receipt).toHaveAttribute('required', '');
     await expect(page.getByRole('button', { name: 'Confirm Free Order →' })).toHaveCount(0);
     // Payment selection must continue to derive currency correctly after the
     // admin UI fix (there is no separate setCurrency method in CartContext).
-    await page.getByRole('button', { name: 'US$', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Place Order • US$18 USD' })).toBeVisible();
+    await page.getByRole('button', { name: /Worldwide.*PayPal/i }).click();
+    await expect(page.getByRole('button', { name: 'Place Order • $18 USD' })).toBeVisible();
     await receipt.fill('CUSTOMER-RECEIPT-2026');
-    await page.getByRole('button', { name: 'Place Order • US$18 USD' }).click();
+    await page.getByRole('button', { name: 'Place Order • $18 USD' }).click();
     await expect(page.getByText('Order Submitted Successfully!', { exact: true })).toBeVisible();
     expect(submitted[0]).toMatchObject({ paymentMethod: 'PAYPAL', currency: 'USD', paymentReference: 'CUSTOMER-RECEIPT-2026' });
     expect(errors).toEqual([]);
@@ -141,7 +141,7 @@ for (const mode of ['PAID', 'FREE_BETA'] as const) {
 
 test('customer family beta allowance still covers only the first chart', async ({ page }) => {
   const { submitted } = await openCheckout(page, { role: 'customer', mode: 'FREE_BETA', family: true, betaFreeChartAvailable: true });
-  await expect(page.getByText('FREE (Free Beta)', { exact: true })).toHaveCount(1);
+  await expect(page.getByText('FREE (1st Free)', { exact: true })).toHaveCount(1);
   await expect(page.getByText('2. Choose Your Payment Method', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Confirm Free Order →' })).toHaveCount(0);
   expect(submitted).toEqual([]);

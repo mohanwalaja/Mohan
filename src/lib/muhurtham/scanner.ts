@@ -1,5 +1,5 @@
 import * as Astronomy from 'astronomy-engine';
-import rulesData from './rules.json';
+import rulesData from './rules.json' with { type: 'json' };
 import {
   getLocalDateKey,
   getTimeZoneIdForCoordinates,

@@ -163,7 +163,7 @@ export function fitJathagamSummaryText(root: ParentNode): void {
   // Never shrink below the CSS floor (10.5px). Scale up so a short summary
   // fills the A4 instead of leaving empty space.
   let low = 1;
-  let high = 1.7;
+  let high = 1.9;
   let fitted = 1;
   if (fits(high)) {
     fitted = high;

@@ -66,33 +66,52 @@ const writeInto = (virtualPath, contents) => {
   php.writeFile(virtualPath, contents);
 };
 
-for (const rel of MOUNT_FILES) {
-  const host = join(repoRoot, rel);
+const mountTree = relDir => {
+  const hostDir = join(repoRoot, relDir);
+  let entries;
   try {
-    writeInto('/repo/' + rel, readFileSync(host));
+    entries = readdirSync(hostDir, { withFileTypes: true });
   } catch {
-    /* optional file */
+    return;
   }
+  for (const entry of entries) {
+    const childRel = relDir + '/' + entry.name;
+    if (entry.isDirectory()) {
+      mountTree(childRel);
+    } else if (entry.isFile()) {
+      writeInto('/repo/' + childRel, readFileSync(join(repoRoot, childRel)));
+    }
+  }
+};
+
+for (const dir of ['api', 'data', 'src', 'tests', 'public']) {
+  mountTree(dir);
 }
-// Fonts are needed only by the PDF exporter; mount the folder's names anyway so
-// a probe can list them without failing.
+mkdirp('/tmp');
 try {
-  const fontDir = join(repoRoot, 'api/astrology/fonts');
-  for (const name of readdirSync(fontDir)) {
-    writeInto('/repo/api/astrology/fonts/' + name, readFileSync(join(fontDir, name)));
-  }
+  php.chdir('/repo');
 } catch {
-  /* no fonts */
+  /* optional */
 }
 
 if (mountSpec) {
   const [hostPath, virtualPath] = mountSpec.split('=');
   writeInto('/repo/' + (virtualPath || 'tmp/mount.json'), readFileSync(hostPath));
 }
-writeInto('/repo/' + relative(repoRoot, probePath).replaceAll('\\', '/'), readFileSync(probePath));
+const virtualProbe = '/repo/' + relative(repoRoot, probePath).replaceAll('\\', '/');
+writeInto(virtualProbe, readFileSync(probePath));
+writeInto(
+  '/repo/__wasm_cli_entry.php',
+  "<?php\n" +
+    "if (!defined('STDIN')) define('STDIN', fopen('php://stdin', 'r'));\n" +
+    "if (!defined('STDOUT')) define('STDOUT', fopen('php://stdout', 'w'));\n" +
+    "if (!defined('STDERR')) define('STDERR', fopen('php://stderr', 'w'));\n" +
+    'chdir(' + JSON.stringify('/repo') + ");\n" +
+    'require ' + JSON.stringify(virtualProbe) + ";\n"
+);
 
 const result = await php.run({
-  scriptPath: '/repo/' + relative(repoRoot, probePath).replaceAll('\\', '/'),
+  scriptPath: '/repo/__wasm_cli_entry.php',
   relativeUri: '/',
   env: { REPO_ROOT: '/repo' }
 });

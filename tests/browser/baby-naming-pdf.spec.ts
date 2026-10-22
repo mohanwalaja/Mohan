@@ -111,7 +111,7 @@ for (const language of ['en', 'ta', 'hi'] as const) {
         const frame = await openReport(page, buildBabyNamingHtml(result, language));
         const metrics = await layout(frame);
         const label = ALL_NAKSHATRA_LETTERS[star].nakshatraNameEn;
-        await expect(frame.locator('.page')).toHaveCount(2);
+        await expect(frame.locator('.page')).toHaveCount(3);
         await expect(frame.locator('.sound-medallion')).toHaveCount(0);
         await expect(frame.locator('.sound-big-char')).toContainText(
           language === 'ta' ? result.primaryPadaInfo.letterTa : language === 'hi' ? result.primaryPadaInfo.letterHi : result.primaryPadaInfo.letterEn
@@ -182,7 +182,7 @@ for (const language of ['en', 'ta', 'hi'] as const) {
         const images = Object.values((pdf.internal as any).collections.addImage_images) as any[];
         return { pageCount: pdf.getNumberOfPages(), width: images[1].width, jpeg: btoa(images[1].data) };
       }, fromHtml);
-      expect(captured.pageCount).toBe(2);
+      expect(captured.pageCount).toBe(3);
       const comparisons = await page.evaluate(async ({ captured, references }) => {
         const load = (src: string) => new Promise<HTMLImageElement>(resolve => {
           const image = new Image(); image.onload = () => resolve(image); image.src = src;
@@ -246,6 +246,6 @@ test('Aarav corrected Tamil report fits two A4 pages with no overlapping name in
   await page.setContent(html);
   await page.evaluate(() => document.fonts.ready);
   const pdf = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
-  expect((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length).toBe(2);
+  expect((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length).toBe(3);
   await testInfo.attach('Aarav Tamil PDF', { body: pdf, contentType: 'application/pdf' });
 });

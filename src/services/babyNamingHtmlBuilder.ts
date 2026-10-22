@@ -643,7 +643,7 @@ ${REPORT_FONT_LINK_TAG}
     font-family: ${fontFamilies};
     color: var(--ink);
     position: relative;
-    padding: 7.5mm 11mm 7.5mm;
+    padding: 5.5mm 11mm 5.5mm;
     box-sizing: border-box;
   }
 
@@ -662,15 +662,15 @@ ${REPORT_FONT_LINK_TAG}
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.6mm;
-    margin-bottom: 2mm;
+    gap: 0.4mm;
+    margin-bottom: 1.2mm;
     text-align: center;
     flex-shrink: 0;
   }
   /* Centered, outline-free emblem above the brand copy. */
   .header .header-logo {
-    width: 72px;
-    height: 72px;
+    width: 52px;
+    height: 52px;
     object-fit: contain;
     display: block;
     border-radius: 50%;
@@ -726,7 +726,7 @@ ${REPORT_FONT_LINK_TAG}
   .modern-divider {
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--maroon), var(--gold), var(--maroon), transparent);
-    margin: 0.8mm 0 2.5mm;
+    margin: 0.5mm 0 1.4mm;
     flex-shrink: 0;
   }
 
@@ -752,8 +752,8 @@ ${REPORT_FONT_LINK_TAG}
     background: #ffffff;
     border: 1px solid var(--slate-border);
     border-radius: 10px;
-    padding: 3.4mm 4.2mm;
-    margin-bottom: 2.6mm;
+    padding: 2.2mm 3.6mm;
+    margin-bottom: 1.5mm;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -774,21 +774,21 @@ ${REPORT_FONT_LINK_TAG}
   /* The "why the first sound" note: one short paragraph, never a second sheet. */
   .why-sound-panel { flex: 0 0 auto; min-height: 0; }
   .why-sound-panel p {
-    font-size: 9.5px;
-    line-height: 1.38;
+    font-size: 9.2px;
+    line-height: 1.32;
     color: var(--ink-light);
     text-align: justify;
   }
   .panel h2 {
     font-family: ${headerFont};
     color: var(--maroon);
-    font-size: clamp(11px, 1.7vw, 13px);
+    font-size: clamp(11px, 1.7vw, 12.5px);
     font-weight: 800;
-    line-height: 1.3;
+    line-height: 1.25;
     letter-spacing: 0.4px;
-    margin-bottom: 2mm;
+    margin-bottom: 1.2mm;
     border-bottom: 1px solid var(--slate-border);
-    padding-bottom: 1.2mm;
+    padding-bottom: 0.8mm;
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -815,7 +815,7 @@ ${REPORT_FONT_LINK_TAG}
   .baby-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1.8mm 2.4mm;
+    gap: 1.2mm 2.2mm;
     min-width: 0;
     flex: 1 0 auto;
     min-height: 0;
@@ -825,7 +825,7 @@ ${REPORT_FONT_LINK_TAG}
     background: var(--slate-bg);
     border: 1px solid var(--slate-border);
     border-radius: 7px;
-    padding: 2mm 2.6mm;
+    padding: 1.4mm 2.2mm;
     min-width: 0;
     overflow-wrap: anywhere;
     white-space: normal;
@@ -875,9 +875,9 @@ ${REPORT_FONT_LINK_TAG}
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 1.4mm;
+    gap: 0.9mm;
     min-width: 0;
-    padding: 8mm 2.6mm 3mm;
+    padding: 6.4mm 2.2mm 2mm;
     background: var(--slate-bg);
     border: 1px solid var(--slate-border);
     border-radius: 9px;
@@ -925,37 +925,37 @@ ${REPORT_FONT_LINK_TAG}
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1.6mm;
+    gap: 1mm;
     flex: 1 1 auto;
     min-width: 0;
     width: 100%;
-    padding: 1mm 0;
+    padding: 0.5mm 0;
   }
   /* Language 1 — the very big letter, on the birth card also carrying the
      .sound-big-char hook the report tooling has always used. line-height keeps
      Tamil and Devanagari ascenders and descenders inside the line box. */
   .pada-big-letter, .sound-big-char {
-    font-size: clamp(30px, 7.2vw, 58px);
+    font-size: clamp(26px, 5.6vw, 44px);
     font-weight: 800;
-    line-height: 1.35;
+    line-height: 1.25;
     color: var(--ink);
     overflow-wrap: anywhere;
     white-space: normal;
   }
   /* Language 2 — large and bold. */
   .pada-mid-letter {
-    font-size: clamp(12px, 2.3vw, 19px);
+    font-size: clamp(11.5px, 2vw, 16px);
     font-weight: 800;
-    line-height: 1.35;
+    line-height: 1.25;
     color: var(--ink-light);
     overflow-wrap: anywhere;
     white-space: normal;
   }
   /* Language 3 and any further language — medium. */
   .pada-small-letter {
-    font-size: clamp(10px, 1.9vw, 15px);
+    font-size: clamp(9.5px, 1.6vw, 13px);
     font-weight: 700;
-    line-height: 1.35;
+    line-height: 1.25;
     color: var(--ink-muted);
     overflow-wrap: anywhere;
     white-space: normal;
@@ -966,12 +966,12 @@ ${REPORT_FONT_LINK_TAG}
   .pada-card.is-janma .pada-small-letter { color: var(--maroon); }
   .pada-rasi-line {
     width: 100%;
-    font-size: clamp(9px, 1.25vw, 10.4px);
+    font-size: clamp(9px, 1.25vw, 10px);
     font-weight: 700;
-    line-height: 1.35;
+    line-height: 1.28;
     color: var(--ink-muted);
     border-top: 1px solid var(--slate-border);
-    padding-top: 1.4mm;
+    padding-top: 0.9mm;
     overflow-wrap: anywhere;
     white-space: normal;
   }
@@ -998,7 +998,7 @@ ${REPORT_FONT_LINK_TAG}
     background: var(--slate-bg);
     border: 1px solid var(--slate-border);
     border-radius: 7px;
-    padding: 2.4mm 2.6mm;
+    padding: 1.6mm 2.2mm;
     min-width: 0;
     overflow-wrap: anywhere;
     white-space: normal;
@@ -1035,12 +1035,12 @@ ${REPORT_FONT_LINK_TAG}
     border: 1px solid var(--slate-border);
     border-left: 4px solid var(--maroon);
     border-radius: 9px;
-    padding: 3mm 3.6mm;
-    margin-bottom: 2.6mm;
+    padding: 2.1mm 3.2mm;
+    margin-bottom: 1.5mm;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 2.5mm 4mm;
+    gap: 2mm 4mm;
     flex-wrap: wrap;
     flex-shrink: 0;
     page-break-inside: avoid;
@@ -1365,7 +1365,7 @@ ${REPORT_FONT_LINK_TAG}
     line-height: 1.6;
   }
   .sug-name-primary {
-    color: var(--maroon);
+    color: var(--ink);
     font-weight: 800;
   }
   .sug-name-secondary {

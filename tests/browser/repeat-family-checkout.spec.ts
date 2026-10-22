@@ -83,7 +83,7 @@ async function mountRepeatCheckout(page: Page) {
     mountCheckout({ serviceType: 'BIRTH_JATHAGAM', family: true });
   }, { serviceTypes });
 
-  await expect(page.getByText('Unified Family Order Checkout', { exact: true })).toBeVisible();
+  await expect(page.getByText('Family Checkout — Up To 6 People', { exact: true })).toBeVisible();
   return { submitted, errors };
 }
 
@@ -95,14 +95,14 @@ test('a customer can place another family order with a fresh payment reference a
   await receipt.fill('MANUAL-RECEIPT-ORDER-ONE-2026');
   await page.getByRole('button', { name: 'Complete Payment • ₹2196.00 INR', exact: true }).click();
 
-  await expect(page.getByText('Payment Receipt Submitted!', { exact: true })).toBeVisible();
+  await expect(page.getByText('Payment Receipt Submitted & Orders Placed!', { exact: true })).toBeVisible();
   await expect(page.getByText(/₹2196\.00 INR/)).toBeVisible();
-  await expect(page.getByText('Single payment for all 4 family charts', { exact: true })).toBeVisible();
+  await expect(page.getByText(/for all 4 report\(s\)\./)).toBeVisible();
   expect(submitted).toHaveLength(1);
   expect(submitted[0].items).toHaveLength(4);
   expect(submitted[0].paymentReference).toBe('MANUAL-RECEIPT-ORDER-ONE-2026');
 
-  await page.getByRole('button', { name: 'Place Another Order', exact: true }).click();
+  await page.getByRole('button', { name: /Place (Next|Another) Order/ }).click();
   await page.getByTestId('add-next-family-checkout').click();
 
   const followUpReceipt = page.getByPlaceholder('e.g. 12-Digit UPI Ref / UTR Number (or pay online above)');
@@ -112,7 +112,7 @@ test('a customer can place another family order with a fresh payment reference a
   await followUpReceipt.fill('MANUAL-RECEIPT-ORDER-TWO-2026');
   await page.getByRole('button', { name: 'Complete Payment • ₹499.00 INR', exact: true }).click();
 
-  await expect(page.getByText('Payment Receipt Submitted!', { exact: true })).toBeVisible();
+  await expect(page.getByText('Payment Receipt Submitted & Orders Placed!', { exact: true })).toBeVisible();
   expect(submitted).toHaveLength(2);
   expect(submitted[1].items).toHaveLength(1);
   expect(submitted[1].paymentReference).toBe('MANUAL-RECEIPT-ORDER-TWO-2026');

@@ -5,12 +5,16 @@ import {dismissBootSplash, capturePrerenderedPage} from './services/bootSplash';
 import './index.css';
 
 // Prerendered documents (scripts/prerender.mjs) carry the page's SEO head
-// tags baked into the static HTML for crawlers that never run JavaScript.
+// tags baked into the static HTML for crawlers that never run JavaScript, and
+// raw dev / SPA fallback loads carry index.html's static head tags.
 // React 19 hoists its own <title>/<meta>/<link> when the SPA mounts, so the
-// baked copies must go first — otherwise SPA navigation would leave the first
-// page's stale title/canonical sitting next to the current one. The baked
-// body inside #root needs no cleanup: createRoot replaces it on first render.
-for (const el of Array.from(document.querySelectorAll('[data-prerender-seo]'))) {
+// initial copies must go first — otherwise SPA navigation leaves duplicate
+// <title> and <link rel="canonical"> elements in <head>.
+for (const el of Array.from(
+  document.head.querySelectorAll(
+    '[data-prerender-seo], title, link[rel="canonical"], meta[name="description"], meta[name="robots"], meta[property^="og:"]:not([property="og:locale"]), meta[name^="twitter:"]'
+  )
+)) {
   el.remove();
 }
 
@@ -44,7 +48,7 @@ createRoot(document.getElementById('root')!).render(
 // The value sits below the splash's own 8 s CSS escape hatch (index.html), so
 // the CSS fallback remains what saves a document where this file never runs —
 // a stale deploy whose entry chunk 404s, or a wrong content-encoding.
-const BOOT_SPLASH_GIVE_UP_MS = 6000;
+const BOOT_SPLASH_GIVE_UP_MS = 3500;
 window.setTimeout(dismissBootSplash, BOOT_SPLASH_GIVE_UP_MS);
 
 // NOTE (2026-10-12): the offline service worker was removed (cache-first
