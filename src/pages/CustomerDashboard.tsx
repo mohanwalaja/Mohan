@@ -1556,20 +1556,20 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                   const l = (order.language || 'ta').toLowerCase();
                   if (l === 'ta' || l === 'tamil') {
                     return (
-                      <span className="inline-flex items-center rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                      <span className="inline-flex items-center rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-extrabold tracking-wide text-slate-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
                         Tamil
                       </span>
                     );
                   }
                   if (l === 'hi' || l === 'hindi') {
                     return (
-                      <span className="inline-flex items-center rounded-md border border-orange-500/25 bg-orange-500/10 px-2 py-0.5 text-[11px] font-bold text-orange-800 dark:text-orange-300">
+                      <span className="inline-flex items-center rounded-md border border-orange-300 bg-orange-50 px-2 py-0.5 text-[11px] font-extrabold tracking-wide text-slate-950 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300">
                         Hindi
                       </span>
                     );
                   }
                   return (
-                    <span className="inline-flex items-center rounded-md border border-blue-500/25 bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold text-blue-800 dark:text-blue-300">
+                    <span className="inline-flex items-center rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 text-[11px] font-extrabold tracking-wide text-slate-950 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
                       English
                     </span>
                   );
@@ -1579,37 +1579,37 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                   <div
                     key={order.groupId || order.id}
                     data-profile-order-card={order.id}
-                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-colors hover:border-amber-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-amber-500/30"
+                    className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/5 transition-all hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:ring-0 dark:hover:border-amber-500/30"
                   >
                     {/* Admin-style order summary: order, person/service, payment/status, action. */}
-                    <div className="grid grid-cols-1 gap-3 p-4 sm:p-5 lg:grid-cols-12 lg:items-center lg:gap-4">
+                    <div className="grid grid-cols-1 gap-3.5 p-4 sm:p-5 lg:grid-cols-12 lg:items-center lg:gap-4">
                       <div className="min-w-0 space-y-1.5 lg:col-span-3">
                         <div className="flex flex-wrap items-center gap-2">
                           {isFamily ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-black text-slate-950">
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400 bg-amber-400 px-2.5 py-1 text-xs font-black tracking-tight text-slate-950 shadow-xs">
                               <Users className="h-3.5 w-3.5" aria-hidden="true" />
                               Family ({members.length})
                             </span>
                           ) : (
-                            <span className="rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-extrabold text-amber-800 dark:text-amber-300">
+                            <span className="rounded-md border border-slate-300 bg-slate-100 px-2.5 py-0.5 font-mono text-xs font-black tracking-tight text-slate-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
                               #{order.orderNumber || order.id}
                             </span>
                           )}
                           {getLangBadge()}
                         </div>
                         {isFamily && order.groupId && (
-                          <div className="truncate font-mono text-[11px] text-slate-500 dark:text-slate-400" title={order.groupId}>
-                            ID: {order.groupId}
+                          <div className="truncate font-mono text-xs font-semibold text-slate-900 dark:text-slate-300" title={order.groupId}>
+                            ID: <span className="font-bold text-slate-950 dark:text-white">{order.groupId}</span>
                           </div>
                         )}
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                          <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-300">
+                          <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-700 dark:text-slate-400" aria-hidden="true" />
                           <span>{order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent'}</span>
                         </div>
                       </div>
 
                       {/* Only the report download icon goes to the right of a name. */}
-                      <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 dark:border-slate-700/60 dark:bg-slate-800/50 lg:col-span-4">
+                      <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50/90 p-3.5 dark:border-slate-700/60 dark:bg-slate-800/50 lg:col-span-4">
                         <div className="flex items-center justify-between gap-3">
                           <button
                             type="button"
@@ -1617,17 +1617,17 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                             aria-expanded={!!expandedOrders[order.id]}
                             aria-controls={`order-details-${order.id}`}
                             aria-label={`View details for ${orderPersonLabel}`}
-                            className="min-w-0 flex-1 cursor-pointer space-y-0.5 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                            className="min-w-0 flex-1 cursor-pointer space-y-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950"
                           >
-                            <span className="block truncate text-sm font-extrabold tracking-tight text-slate-900 dark:text-white" title={orderPersonLabel}>
+                            <span className="block truncate text-base font-black tracking-tight text-slate-950 dark:text-white" title={orderPersonLabel}>
                               {orderPersonLabel}
                             </span>
-                            <span className="block text-xs font-bold text-amber-700 dark:text-amber-400">
+                            <span className="block text-xs font-extrabold text-slate-900 dark:text-amber-400">
                               {isFamily ? `${members.length} charts · one order` : serviceTitle}
                             </span>
                             {!isFamily && (dob || birthPlace) && (
-                              <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">
-                                {dob && <span>DOB: {dob}</span>}
+                              <span className="block truncate text-xs font-semibold text-slate-900 dark:text-slate-300">
+                                {dob && <span>DOB: <strong className="font-bold text-slate-950 dark:text-white">{dob}</strong></span>}
                                 {dob && birthPlace && <span> · </span>}
                                 {birthPlace && <span>{birthPlace}</span>}
                               </span>
@@ -1640,7 +1640,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               disabled={downloadingKey === order.id}
                               title={downloadingKey === order.id ? 'Downloading…' : 'Download Report'}
                               aria-label={downloadingKey === order.id ? 'Downloading…' : `Download Report — ${orderPersonLabel}`}
-                              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-950 shadow-xs transition-all hover:bg-slate-950 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 disabled:opacity-60 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
                             >
                               {downloadingKey === order.id
                                 ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -1653,32 +1653,32 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 lg:col-span-5 lg:grid-cols-5">
                         <div className="min-w-0 space-y-1.5 lg:col-span-3">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-sm font-extrabold text-slate-900 dark:text-amber-400">
+                            <span className="font-mono text-base font-black tracking-tight text-slate-950 dark:text-amber-400">
                               {isFree ? 'Free Beta' : `$${totalAmount.toFixed(2)} ${order.currency || 'USD'}`}
                             </span>
                             {bannerRefunded ? (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/25 bg-purple-500/10 px-2 py-0.5 text-[11px] font-bold text-purple-700 dark:text-purple-300">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-purple-300 bg-purple-50 px-2.5 py-0.5 text-xs font-extrabold text-purple-950 dark:border-purple-500/25 dark:bg-purple-500/10 dark:text-purple-300">
                                 <RotateCcw className="h-3 w-3" aria-hidden="true" /> Refunded
                               </span>
                             ) : bannerCompleted ? (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-xs font-extrabold text-emerald-950 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-300">
                                 <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> Completed
                               </span>
                             ) : bannerOrder.status === 'CANCELLED' ? (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/25 bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-rose-700 dark:text-rose-300">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-rose-300 bg-rose-50 px-2.5 py-0.5 text-xs font-extrabold text-rose-950 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-300">
                                 <AlertCircle className="h-3 w-3" aria-hidden="true" /> Cancelled
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-extrabold text-amber-950 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
                                 <Clock className="h-3 w-3" aria-hidden="true" /> Processing
                               </span>
                             )}
                           </div>
-                          <div className="truncate font-mono text-[11px] text-slate-500 dark:text-slate-400" title={order.paymentReference || undefined}>
-                            Ref: <span className="font-semibold text-slate-700 dark:text-slate-200">{order.paymentReference || order.orderNumber || 'N/A'}</span>
+                          <div className="truncate font-mono text-xs font-semibold text-slate-900 dark:text-slate-300" title={order.paymentReference || undefined}>
+                            Ref: <span className="font-extrabold text-slate-950 dark:text-slate-100">{order.paymentReference || order.orderNumber || 'N/A'}</span>
                           </div>
                           {bannerOrder.emailStatus === 'FAILED' && (
-                            <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400">Email Failed</span>
+                            <span className="text-xs font-black text-rose-700 dark:text-rose-400">Email Failed</span>
                           )}
                         </div>
                         <button
@@ -1686,7 +1686,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                           onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
                           aria-expanded={!!expandedOrders[order.id]}
                           aria-controls={`order-details-${order.id}`}
-                          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 lg:col-span-2"
+                          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-black tracking-tight text-slate-950 shadow-xs transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 lg:col-span-2"
                         >
                           <span>{expandedOrders[order.id] ? 'Hide details' : isFamily ? `${members.length} Charts` : order.items?.length ? `${order.items.length} Reports` : 'View details'}</span>
                           <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedOrders[order.id] ? 'rotate-180' : ''}`} aria-hidden="true" />
@@ -1703,14 +1703,14 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                         {/* Family Members Breakdown */}
                         <div className="space-y-2.5">
                           <div className="flex flex-wrap items-center justify-between gap-1.5">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-950 dark:text-amber-400">
                               <Users className="h-3.5 w-3.5" aria-hidden="true" />
                               <span>Family Members ({members.length})</span>
                             </div>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">Tap a name for birth details</span>
+                            <span className="text-xs font-semibold text-slate-900 dark:text-slate-300">Tap a name for birth details</span>
                           </div>
 
-                          <div className="grid gap-2 sm:grid-cols-2">
+                          <div className="grid gap-2.5 sm:grid-cols-2">
                             {members.map((member, idx) => {
                               const mName = member.inputPayload?.name || member.userName || `Member #${idx + 1}`;
                               const mGender = member.inputPayload?.gender;
@@ -1721,28 +1721,28 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
                               return (
                                 <div key={member.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
-                                  <div className="flex items-center gap-2 px-3 py-2.5">
+                                  <div className="flex items-center gap-2 px-3.5 py-3">
                                     <button
                                       type="button"
                                       onClick={() => setExpandedPersons(prev => ({ ...prev, [member.id]: !prev[member.id] }))}
                                       aria-expanded={mOpen}
                                       aria-controls={`person-details-${member.id}`}
-                                      className="flex min-w-0 flex-1 items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                                      className="flex min-w-0 flex-1 items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950"
                                     >
-                                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 text-[11px] font-black text-amber-700 dark:text-amber-300" aria-hidden="true">
+                                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-xs font-black text-slate-950 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300" aria-hidden="true">
                                         {mName.charAt(0).toUpperCase()}
                                       </span>
                                       <span className="min-w-0 flex-1">
-                                        <span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white sm:text-sm">{mName}</span>
-                                        <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                        <span className="block truncate text-sm font-black text-slate-950 dark:text-white">{mName}</span>
+                                        <span className="block truncate text-xs font-semibold text-slate-900 dark:text-slate-300">
                                           {orderServiceTitle(member)} · {reportLanguageName(member.language)}
                                           {mGender && ` · ${mGender === 'M' || mGender === 'Male' ? 'Male' : 'Female'}`}
                                         </span>
                                         {memberDone(member) && member.hasPdf && !mReady && (
-                                          <span className="block text-[11px] text-slate-500 dark:text-slate-400">Use email copy</span>
+                                          <span className="block text-xs font-bold text-slate-900 dark:text-slate-300">Use email copy</span>
                                         )}
                                       </span>
-                                      <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-200 ${mOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                                      <ChevronDown className={`h-4 w-4 shrink-0 text-slate-700 transition-transform duration-200 dark:text-slate-400 ${mOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                                     </button>
 
                                     {memberDone(member) && member.hasPdf && mReady && (
@@ -1752,7 +1752,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                         disabled={mBusy}
                                         title={mBusy ? 'Downloading…' : `Download Report — ${mName}`}
                                         aria-label={mBusy ? 'Downloading…' : `Download Report — ${mName}`}
-                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-950 shadow-xs transition-all hover:bg-slate-950 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 disabled:opacity-60 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
                                       >
                                         {mBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Download className="h-4 w-4" aria-hidden="true" />}
                                       </button>
@@ -1760,11 +1760,11 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                   </div>
 
                                   {mOpen && (
-                                    <div id={`person-details-${member.id}`} className="border-t border-slate-200 bg-slate-50 px-3 py-3 text-xs dark:border-slate-800 dark:bg-slate-950/50">
-                                      <div className="grid gap-2 text-slate-500 dark:text-slate-400">
-                                        <div>Date of Birth: <strong className="text-slate-800 dark:text-slate-200">{member.inputPayload?.dob || 'N/A'}</strong></div>
-                                        <div>Exact Time: <strong className="text-slate-800 dark:text-slate-200">{member.inputPayload?.tob || 'N/A'}</strong></div>
-                                        <div>Birth Place: <strong className="text-slate-800 dark:text-slate-200">{member.inputPayload?.birthPlace || 'N/A'}</strong></div>
+                                    <div id={`person-details-${member.id}`} className="border-t border-slate-200 bg-slate-50 px-3.5 py-3 text-xs dark:border-slate-800 dark:bg-slate-950/50">
+                                      <div className="grid gap-2 text-slate-900 dark:text-slate-300">
+                                        <div>Date of Birth: <strong className="font-bold text-slate-950 dark:text-slate-100">{member.inputPayload?.dob || 'N/A'}</strong></div>
+                                        <div>Exact Time: <strong className="font-bold text-slate-950 dark:text-slate-100">{member.inputPayload?.tob || 'N/A'}</strong></div>
+                                        <div>Birth Place: <strong className="font-bold text-slate-950 dark:text-slate-100">{member.inputPayload?.birthPlace || 'N/A'}</strong></div>
                                       </div>
                                     </div>
                                   )}
@@ -1776,32 +1776,32 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
                         {/* Order & Payment Information */}
                         <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-950 dark:text-amber-400">
                             <Wallet className="h-3.5 w-3.5" aria-hidden="true" />
                             <span>Order & Payment Information</span>
                           </div>
                           <div className="grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
                             <div className="space-y-0.5">
-                              <span className="font-medium text-slate-500 dark:text-slate-400">Ordered On: </span>
-                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                              <span className="font-semibold text-slate-900 dark:text-slate-300">Ordered On: </span>
+                              <span className="font-extrabold text-slate-950 dark:text-white">
                                 {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
                               </span>
                             </div>
                             <div className="space-y-0.5">
-                              <span className="font-medium text-slate-500 dark:text-slate-400">Payment Mode: </span>
-                              <span className={isFree ? 'font-bold text-amber-700 dark:text-amber-400' : 'font-bold text-emerald-700 dark:text-emerald-400'}>
+                              <span className="font-semibold text-slate-900 dark:text-slate-300">Payment Mode: </span>
+                              <span className={isFree ? 'font-black text-slate-950 dark:text-amber-400' : 'font-black text-slate-950 dark:text-emerald-400'}>
                                 {isFree ? 'Free Beta (1 Free Report)' : `Paid (${order.currency || 'USD'} $${totalAmount.toFixed(2)})`}
                               </span>
                             </div>
                             <div className="space-y-0.5">
-                              <span className="font-medium text-slate-500 dark:text-slate-400">Payment Reference: </span>
-                              <span className="truncate font-mono font-semibold text-slate-800 dark:text-slate-200">
+                              <span className="font-semibold text-slate-900 dark:text-slate-300">Payment Reference: </span>
+                              <span className="truncate font-mono font-bold text-slate-950 dark:text-slate-100">
                                 {order.paymentReference || 'Direct / Online'}
                               </span>
                             </div>
                             <div className="space-y-0.5">
-                              <span className="font-medium text-slate-500 dark:text-slate-400">Delivery Email: </span>
-                              <span className="truncate font-semibold text-amber-800 dark:text-amber-300">
+                              <span className="font-semibold text-slate-900 dark:text-slate-300">Delivery Email: </span>
+                              <span className="truncate font-bold text-slate-950 dark:text-amber-300">
                                 {order.userEmail}
                               </span>
                             </div>
@@ -1819,7 +1819,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                         <div className="grid gap-3 md:grid-cols-2">
                           {/* User & Birth Details */}
                           <div className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-950 dark:text-amber-400">
                               <User className="h-3.5 w-3.5" aria-hidden="true" />
                               <span>User & Birth Details</span>
                             </div>
@@ -1827,33 +1827,33 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                               {order.serviceType === 'MARRIAGE_COMPATIBILITY' && (boy || girl) ? (
                                 <div className="space-y-2">
                                   {boy && (
-                                    <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950/50">
-                                      <div className="font-bold text-slate-800 dark:text-slate-200">Groom: {boy.name || 'Groom'}</div>
-                                      <div className="text-slate-500 dark:text-slate-400">Date of Birth: <span className="text-slate-800 dark:text-slate-200">{boy.dob || 'N/A'}</span> · Exact Time: <span className="text-slate-800 dark:text-slate-200">{boy.tob || 'N/A'}</span></div>
-                                      <div className="text-slate-500 dark:text-slate-400">Birth Place: <span className="text-slate-800 dark:text-slate-200">{boy.birthPlace || 'N/A'}</span></div>
+                                    <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950/50">
+                                      <div className="font-black text-slate-950 dark:text-white">Groom: {boy.name || 'Groom'}</div>
+                                      <div className="font-semibold text-slate-900 dark:text-slate-300">Date of Birth: <span className="font-bold text-slate-950 dark:text-slate-100">{boy.dob || 'N/A'}</span> · Exact Time: <span className="font-bold text-slate-950 dark:text-slate-100">{boy.tob || 'N/A'}</span></div>
+                                      <div className="font-semibold text-slate-900 dark:text-slate-300">Birth Place: <span className="font-bold text-slate-950 dark:text-slate-100">{boy.birthPlace || 'N/A'}</span></div>
                                     </div>
                                   )}
                                   {girl && (
-                                    <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950/50">
-                                      <div className="font-bold text-slate-800 dark:text-slate-200">Bride: {girl.name || 'Bride'}</div>
-                                      <div className="text-slate-500 dark:text-slate-400">Date of Birth: <span className="text-slate-800 dark:text-slate-200">{girl.dob || 'N/A'}</span> · Exact Time: <span className="text-slate-800 dark:text-slate-200">{girl.tob || 'N/A'}</span></div>
-                                      <div className="text-slate-500 dark:text-slate-400">Birth Place: <span className="text-slate-800 dark:text-slate-200">{girl.birthPlace || 'N/A'}</span></div>
+                                    <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950/50">
+                                      <div className="font-black text-slate-950 dark:text-white">Bride: {girl.name || 'Bride'}</div>
+                                      <div className="font-semibold text-slate-900 dark:text-slate-300">Date of Birth: <span className="font-bold text-slate-950 dark:text-slate-100">{girl.dob || 'N/A'}</span> · Exact Time: <span className="font-bold text-slate-950 dark:text-slate-100">{girl.tob || 'N/A'}</span></div>
+                                      <div className="font-semibold text-slate-900 dark:text-slate-300">Birth Place: <span className="font-bold text-slate-950 dark:text-slate-100">{girl.birthPlace || 'N/A'}</span></div>
                                     </div>
                                   )}
                                 </div>
                               ) : (
                                 <>
                                   <div>
-                                    <span className="font-medium text-slate-500 dark:text-slate-400">Date of Birth: </span>
-                                    <span className="font-semibold text-slate-800 dark:text-slate-200">{dob || 'N/A'}</span>
+                                    <span className="font-semibold text-slate-900 dark:text-slate-300">Date of Birth: </span>
+                                    <span className="font-bold text-slate-950 dark:text-slate-100">{dob || 'N/A'}</span>
                                   </div>
                                   <div>
-                                    <span className="font-medium text-slate-500 dark:text-slate-400">Exact Time: </span>
-                                    <span className="font-semibold text-slate-800 dark:text-slate-200">{tob || 'N/A'}</span>
+                                    <span className="font-semibold text-slate-900 dark:text-slate-300">Exact Time: </span>
+                                    <span className="font-bold text-slate-950 dark:text-slate-100">{tob || 'N/A'}</span>
                                   </div>
                                   <div>
-                                    <span className="font-medium text-slate-500 dark:text-slate-400">Birth Place: </span>
-                                    <span className="font-semibold text-slate-800 dark:text-slate-200">{birthPlace || 'N/A'}</span>
+                                    <span className="font-semibold text-slate-900 dark:text-slate-300">Birth Place: </span>
+                                    <span className="font-bold text-slate-950 dark:text-slate-100">{birthPlace || 'N/A'}</span>
                                   </div>
                                 </>
                               )}
@@ -1862,34 +1862,34 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
 
                           {/* Order & Payment Information */}
                           <div className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-950 dark:text-amber-400">
                               <Wallet className="h-3.5 w-3.5" aria-hidden="true" />
                               <span>Order & Payment Information</span>
                             </div>
                             <div className="space-y-1.5 text-xs">
                               <div>
-                                <span className="font-medium text-slate-500 dark:text-slate-400">Ordered On: </span>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                <span className="font-semibold text-slate-900 dark:text-slate-300">Ordered On: </span>
+                                <span className="font-bold text-slate-950 dark:text-slate-100">
                                   {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
                                 </span>
                               </div>
                               <div>
-                                <span className="font-medium text-slate-500 dark:text-slate-400">Payment Mode: </span>
-                                <span className={isFree ? 'font-semibold text-amber-700 dark:text-amber-400' : 'font-semibold text-emerald-700 dark:text-emerald-400'}>
+                                <span className="font-semibold text-slate-900 dark:text-slate-300">Payment Mode: </span>
+                                <span className={isFree ? 'font-bold text-slate-950 dark:text-amber-400' : 'font-bold text-slate-950 dark:text-emerald-400'}>
                                   {isFree ? 'Free Beta (1 Free Report)' : `Paid (${order.currency} $${order.amount})`}
                                 </span>
                               </div>
                               {order.paymentReference && (
                                 <div>
-                                  <span className="font-medium text-slate-500 dark:text-slate-400">Payment Reference: </span>
-                                  <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                                  <span className="font-semibold text-slate-900 dark:text-slate-300">Payment Reference: </span>
+                                  <span className="font-mono font-bold text-slate-950 dark:text-slate-100">
                                     {order.paymentReference}
                                   </span>
                                 </div>
                               )}
                               <div>
-                                <span className="font-medium text-slate-500 dark:text-slate-400">Delivery Email: </span>
-                                <span className="font-semibold text-amber-800 dark:text-amber-300">
+                                <span className="font-semibold text-slate-900 dark:text-slate-300">Delivery Email: </span>
+                                <span className="font-bold text-slate-950 dark:text-amber-300">
                                   {order.userEmail}
                                 </span>
                               </div>
@@ -1900,7 +1900,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                         {/* Multi-person reports: one icon beside each report name. */}
                         {(order.items?.length || 0) > 0 && (
                           <div className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-950 dark:text-amber-400">
                               <FileText className="h-3.5 w-3.5" aria-hidden="true" />
                               <span>Reports ({order.items!.length})</span>
                             </div>
@@ -1921,10 +1921,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                 return (
                                   <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-950/50">
                                     <div className="min-w-0">
-                                      <div className="truncate text-xs font-bold text-slate-900 dark:text-white">{item.personName || 'Report'}</div>
-                                      <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">{itemService} · {reportLanguageName(item.language || order.language)}</div>
+                                      <div className="truncate text-xs font-bold text-slate-950 dark:text-white">{item.personName || 'Report'}</div>
+                                      <div className="truncate text-xs font-semibold text-slate-900 dark:text-slate-300">{itemService} · {reportLanguageName(item.language || order.language)}</div>
                                       {!itemReady && (
-                                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                        <div className="text-xs font-medium text-slate-700 dark:text-slate-400">
                                           {item.reportStatus === 'SENT' && item.hasReportSnapshot === false ? 'Use email copy' : 'Available after delivery'}
                                         </div>
                                       )}
@@ -1936,7 +1936,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                                         disabled={downloadingKey === itemKey}
                                         title={downloadingKey === itemKey ? 'Downloading…' : `Download Report — ${item.personName || 'report'}`}
                                         aria-label={downloadingKey === itemKey ? 'Downloading…' : `Download Report — ${item.personName || 'report'}`}
-                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-60 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-950 shadow-xs transition-all hover:bg-slate-950 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 disabled:opacity-60 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
                                       >
                                         {downloadingKey === itemKey
                                           ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -1950,7 +1950,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                           </div>
                         )}
                         {!order.items?.length && memberDone(order) && order.hasPdf && order.hasReportSnapshot === false && (
-                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                          <p className="text-xs font-medium text-slate-900 dark:text-slate-400">
                             Report download unavailable — please use the PDF copy emailed to you.
                           </p>
                         )}
@@ -1961,56 +1961,56 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                     <div className="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 bg-white px-4 py-3 text-xs dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:px-5">
                       <div className="flex-1 min-w-0">
                         {bannerOrder.emailStatus === 'FAILED' ? (
-                          <div className="flex items-start gap-2.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 dark:border-rose-800/60 dark:bg-rose-950/40">
-                            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-2.5 rounded-lg border border-rose-300 bg-rose-50 px-3.5 py-2.5 dark:border-rose-800/60 dark:bg-rose-950/40">
+                            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-rose-800 dark:text-rose-200">Email Delivery Failed / Bounced</div>
-                              <div className="text-[11px] leading-relaxed text-rose-700 dark:text-rose-300">
-                                We could not deliver your report to <strong>{bannerOrder.userEmail}</strong>. Please update your email address below to receive your Vedic Report.
+                              <div className="font-black text-rose-950 dark:text-rose-200">Email Delivery Failed / Bounced</div>
+                              <div className="text-xs font-medium leading-relaxed text-rose-950 dark:text-rose-300">
+                                We could not deliver your report to <strong className="font-bold text-rose-950 dark:text-white">{bannerOrder.userEmail}</strong>. Please update your email address below to receive your Vedic Report.
                               </div>
                             </div>
                           </div>
                         ) : bannerRefunded ? (
-                          <div className="flex items-start gap-2.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 dark:border-purple-800/60 dark:bg-purple-950/40">
-                            <RotateCcw className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-2.5 rounded-lg border border-purple-300 bg-purple-50 px-3.5 py-2.5 dark:border-purple-800/60 dark:bg-purple-950/40">
+                            <RotateCcw className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-purple-800 dark:text-purple-200">Refund Approved — {refundAmountText(order)}</div>
-                              <div className="text-[11px] leading-relaxed text-purple-700 dark:text-purple-300">
+                              <div className="font-black text-purple-950 dark:text-purple-200">Refund Approved — {refundAmountText(order)}</div>
+                              <div className="text-xs font-medium leading-relaxed text-purple-950 dark:text-purple-300">
                                 Order cancelled before admin approval. 90% pre-approval refund applies.
                                 {order.refundDeadline && (
-                                  <> Settles on or before <strong>{formatRefundDeadline(order.refundDeadline)}</strong> (3 working days).</>
+                                  <> Settles on or before <strong className="font-bold text-purple-950 dark:text-white">{formatRefundDeadline(order.refundDeadline)}</strong> (3 working days).</>
                                 )}
                                 {order.refundMethod && order.refundMethod.toUpperCase() === 'GATEWAY' && order.refundReference && (
-                                  <> Sent back by payment provider (Ref: <strong>{order.refundReference}</strong>).</>
+                                  <> Sent back by payment provider (Ref: <strong className="font-bold text-purple-950 dark:text-white">{order.refundReference}</strong>).</>
                                 )}
                               </div>
                             </div>
                           </div>
                         ) : bannerCompleted ? (
-                          <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-800/60 dark:bg-emerald-950/30">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-2.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3.5 py-2.5 dark:border-emerald-800/60 dark:bg-emerald-950/30">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-emerald-800 dark:text-emerald-200">Report Complete & Emailed</div>
-                              <div className="text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300">
-                                Your Vedic Horoscope Report and Tax Invoice PDFs were emailed to <strong>{bannerOrder.userEmail}</strong>.
+                              <div className="font-black text-emerald-950 dark:text-emerald-200">Report Complete & Emailed</div>
+                              <div className="text-xs font-medium leading-relaxed text-emerald-950 dark:text-emerald-300">
+                                Your Vedic Horoscope Report and Tax Invoice PDFs were emailed to <strong className="font-bold text-emerald-950 dark:text-white">{bannerOrder.userEmail}</strong>.
                               </div>
                             </div>
                           </div>
                         ) : order.status === 'CANCELLED' ? (
-                          <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-300">
-                            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                          <div className="flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-3.5 py-2.5 font-bold text-rose-950 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-300">
+                            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                             <span>This order was cancelled.</span>
                           </div>
                         ) : (
-                          <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800/50 dark:bg-amber-950/30">
-                            <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-2.5 dark:border-amber-800/50 dark:bg-amber-950/30">
+                            <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
-                              <div className="font-bold text-amber-800 dark:text-amber-200">Processing in Vedic Astrology Queue</div>
-                              <div className="text-[11px] leading-relaxed text-amber-700 dark:text-amber-300">
-                                Our India Vedic scholars are reviewing your planetary charts. PDF Report and Tax Invoice will be emailed to <strong>{bannerOrder.userEmail}</strong>.
+                              <div className="font-black text-amber-950 dark:text-amber-200">Processing in Vedic Astrology Queue</div>
+                              <div className="text-xs font-medium leading-relaxed text-amber-950 dark:text-amber-300">
+                                Our India Vedic scholars are reviewing your planetary charts. PDF Report and Tax Invoice will be emailed to <strong className="font-bold text-amber-950 dark:text-white">{bannerOrder.userEmail}</strong>.
                               </div>
-                              <div className="pt-0.5 text-[11px] text-amber-700 dark:text-amber-400">
-                                Eligible for <strong>90% refund</strong> if cancelled before admin approval (contact <a href="mailto:admin@astrosivam.com" className="underline hover:text-amber-200">admin@astrosivam.com</a>, settles in 3 working days).
+                              <div className="pt-0.5 text-xs font-medium text-amber-950 dark:text-amber-400">
+                                Eligible for <strong className="font-bold text-amber-950 dark:text-white">90% refund</strong> if cancelled before admin approval (contact <a href="mailto:admin@astrosivam.com" className="font-bold underline hover:text-black dark:hover:text-amber-200">admin@astrosivam.com</a>, settles in 3 working days).
                               </div>
                             </div>
                           </div>
@@ -2023,10 +2023,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                           <button
                             type="button"
                             onClick={() => handleOpenResendModal(bannerOrder)}
-                            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
+                            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-black shadow-xs transition-colors ${
                               bannerOrder.emailStatus === 'FAILED'
-                                ? 'border-amber-400 bg-amber-500 text-slate-950 hover:bg-amber-400'
-                                : 'border-slate-200 bg-slate-100 text-amber-800 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-amber-300 dark:hover:bg-slate-700'
+                                ? 'border-amber-400 bg-amber-400 text-slate-950 hover:bg-amber-300'
+                                : 'border-slate-300 bg-white text-slate-950 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-amber-300 dark:hover:bg-slate-700'
                             }`}
                           >
                             <Mail className="h-3.5 w-3.5" aria-hidden="true" />
@@ -2037,9 +2037,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                           <button
                             type="button"
                             onClick={() => { setAiChatOrder(order); setAiChatOpen(true); }}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-black text-slate-950 shadow-xs transition-colors hover:bg-slate-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/50"
                           >
-                            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                            <Sparkles className="h-3.5 w-3.5 text-amber-500" aria-hidden="true" />
                             Ask Astrologer
                           </button>
                         )}
