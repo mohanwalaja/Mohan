@@ -91,9 +91,11 @@ foreach ($fixture['cases'] as $case) {
 
 checkSummaryParity($checked === count($fixture['cases']), "Every fixture case was checked ({$checked})");
 
-// The nine-graha worst case must stay complete: never hide a flagged planet.
+// Both supportive and care sections strictly cap at the top 3 planets.
 $allNine = null;
 foreach ($fixture['cases'] as $case) {
+    checkSummaryParity(count($case['expected']['supportive'] ?? []) <= 3, ($case['id'] ?? '?') . ': at most 3 supportive planets');
+    checkSummaryParity(count($case['expected']['needsCare'] ?? []) <= 3, ($case['id'] ?? '?') . ': at most 3 care planets');
     if (($case['id'] ?? '') === 'all-nine-needing-care|en') {
         $allNine = $case;
     }
@@ -102,8 +104,8 @@ if ($allNine === null) {
     throw new RuntimeException('The all-nine fixture case is missing');
 }
 $result = AstroReportViews::classifyJathagamPlanetsForSummary($allNine['input'], 'en');
-checkSummaryParity(count($result['needsCare']) === 9, 'All nine flagged grahas are shown in the compact table');
-checkSummaryParity($result['compact'] === true, 'Nine flagged grahas switch the page to the compact table');
+checkSummaryParity(count($result['needsCare']) === 3, 'Only the top 3 flagged grahas are shown in the care table');
+checkSummaryParity($result['compact'] === false, 'Top-3 cap keeps full 4-line remedies');
 checkSummaryParity($result['supportive'] === [], 'A graha needing care is never also counted supportive');
 
 // An unreadable placement must never read as a clean chart.

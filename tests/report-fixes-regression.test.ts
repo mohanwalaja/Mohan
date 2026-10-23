@@ -94,11 +94,21 @@ for (const [idx, chart] of charts.entries()) {
   for (const lang of ['en', 'ta', 'hi'] as const) {
     const summary = classifyJathagamPlanetsForSummary(chart, lang);
     assert.ok(
-      summary.needsCare.length > 0 && summary.needsCare.length < NAVAGRAHA_ORDER.length,
-      `chart#${idx} (${lang}): flags only afflicted planets (${summary.needsCare.length}/9)`
+      summary.supportive.length <= 3,
+      `chart#${idx} (${lang}): shows at most 3 supportive planets (${summary.supportive.length})`
+    );
+    assert.ok(
+      summary.needsCare.length > 0 && summary.needsCare.length <= 3,
+      `chart#${idx} (${lang}): shows only top <= 3 afflicted planets (${summary.needsCare.length}/9)`
     );
     const html = buildJathagamHtml(chart, lang);
+    const supportSection = html.split('id="summary-supportive"')[1]?.split('id="summary-care"')[0] ?? '';
     const careSection = html.split('id="summary-care"')[1]?.split('id="summary-short"')[0] ?? '';
+    assert.equal(
+      (supportSection.match(/class="summary-planet"/g) || []).length,
+      summary.supportive.length,
+      `chart#${idx} (${lang}): HTML supportive box count (${summary.supportive.length} <= 3)`
+    );
     assert.ok(careSection.length > 0, `chart#${idx} (${lang}): summary-care section rendered`);
     assert.ok(
       !html.includes('class="navagraha-table"'),
@@ -112,7 +122,7 @@ for (const [idx, chart] of charts.entries()) {
       assert.equal(
         inCareRow,
         flaggedSet.has(key),
-        `chart#${idx} (${lang}): ${key} presence in care table strictly matches dosha classification`
+        `chart#${idx} (${lang}): ${key} presence in care table strictly matches top-3 dosha classification`
       );
     }
   }
@@ -120,10 +130,13 @@ for (const [idx, chart] of charts.entries()) {
 
 const modalSrc = fs.readFileSync(path.resolve('src/components/common/OrderReportModal.tsx'), 'utf8');
 assert.ok(
-  modalSrc.includes("(result.doshas || []).filter((d: any) => d?.isPresent !== false)"),
-  'OrderReportModal filters out non-present doshas'
+  modalSrc.includes('classifyJathagamPlanetsForSummary(resultAny, summaryLang)') &&
+    modalSrc.includes('planetSummary.supportive.map') &&
+    modalSrc.includes('planetSummary.needsCare.map') &&
+    !modalSrc.includes('result.doshas'),
+  'OrderReportModal renders strictly top-3 planetSummary.supportive and top-3 planetSummary.needsCare without extra dosha rows'
 );
-console.log('[PASS] Browser HTML & OrderReportModal display ONLY user-afflicted planets across en, ta, and hi');
+console.log('[PASS] Browser HTML & OrderReportModal display ONLY top <= 3 supportive and top <= 3 afflicted planets across en, ta, and hi');
 
 // ---------------------------------------------------------------------------
 // 3. Full 18-document Hindi grammar + PHP parity check across BOTH PHP files
@@ -177,7 +190,7 @@ $w1 = AstroEngine::calculateMatchmaking([
   "bride"=>["name"=>"Priya Devi","dob"=>"1990-07-27","tob"=>"06:30","birthPlace"=>"Chennai","latitude"=>13.0827,"longitude"=>80.2707,"timezoneOffsetHours"=>5.5]
 ]);
 $b1 = AstroEngine::calculateBabyNaming(["babyName"=>"आर्या","dob"=>"1990-07-27","tob"=>"06:30","birthPlace"=>"Chennai","latitude"=>13.0827,"longitude"=>80.2707,"timezoneOffsetHours"=>5.5,"gender"=>"F"]);
-$jSunCompact = AstroEngine::calculateHoroscope(["name"=>"Divya Bharathi","dob"=>"1998-10-18","tob"=>"05:20","birthPlace"=>"Salem","latitude"=>11.6643,"longitude"=>78.1460,"timezoneOffsetHours"=>5.5,"gender"=>"F"]);
+$jSunCompact = AstroEngine::calculateHoroscope(["name"=>"Priya Devi","dob"=>"1998-06-15","tob"=>"06:30","birthPlace"=>"Chennai","latitude"=>13.0827,"longitude"=>80.2707,"timezoneOffsetHours"=>5.5,"gender"=>"F"]);
 $jNoSun = AstroEngine::calculateHoroscope(["name"=>"Meenakshi Sundaram","dob"=>"1994-05-02","tob"=>"09:40","birthPlace"=>"Coimbatore","latitude"=>11.0168,"longitude"=>76.9558,"timezoneOffsetHours"=>5.5,"gender"=>"F"]);
 file_put_contents(${JSON.stringify(sharedJsonPath)}, json_encode(["j1"=>$j1,"j2"=>$j2,"jSun"=>$jSunCompact,"jNoSun"=>$jNoSun,"w1"=>$w1,"b1"=>$b1,"m1"=>$m1], JSON_UNESCAPED_UNICODE));
 $ordHi = ["order_number"=>"ORD-PHP-HI","language"=>"hi"];
@@ -247,16 +260,12 @@ echo json_encode([
       !noSunCareTable.includes('சூரியன்'),
       `${phpLabel}: omits Surya from remedies table when user has NO Surya dosha`
     );
-    assert.ok(
-      noSunSupportTable.includes('சூரியன்') && noSunSupportTable.includes('குரு') && noSunSupportTable.includes('செவ்வாய்'),
-      `${phpLabel}: shows ALL supportive planets (including 4th/5th supportive planet) under உங்களுக்கு ஆதரவாக இருக்கும் கிரகங்கள்`
-    );
     const supportCount = (noSunSupportTable.match(/class="summary-planet"/g) || []).length;
-    assert.equal(supportCount, 4, `${phpLabel}: renders all 4 supportive planets without 3-box cap`);
+    assert.equal(supportCount, 3, `${phpLabel}: renders strictly first 3 supportive planets`);
     const rowCount = (taNoSunHtml.match(/class="summary-care-planet"/g) || []).length;
-    assert.ok(rowCount > 0 && rowCount < 9, `${phpLabel}: renders only user's afflicted planets (${rowCount}/9)`);
+    assert.equal(rowCount, 3, `${phpLabel}: renders strictly first 3 afflicted planets`);
   }
-  console.log('[PASS] Both PHP renderers (report_views.php & pdf_mpdf_reports.php) show all supportive planets and filter care remedies strictly to user doshas');
+  console.log('[PASS] Both PHP renderers (report_views.php & pdf_mpdf_reports.php) strictly show only first 3 supportive and first 3 afflicted planets');
 
   const docs: Array<[string, string]> = [
     ...charts.map((c, i) => [`ts:jathagam#${i}`, buildJathagamHtml(c, 'hi')] as [string, string]),

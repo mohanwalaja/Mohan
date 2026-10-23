@@ -168,7 +168,9 @@ for (const language of ['en', 'ta', 'hi'] as const) {
       const classified = classifyJathagamPlanetsForSummary(testCase.chart as never, language);
       expect(measured.compact, `${language}/${testCase.name}: compact mode`).toBe(classified.compact);
 
-      // Every graha the shared rule flags must be on the page, with its complete remedy text.
+      // Both sections strictly cap at the top 3 planets with complete remedy text.
+      expect(classified.supportive.length).toBeLessThanOrEqual(3);
+      expect(classified.needsCare.length).toBeLessThanOrEqual(3);
       expect(measured.careRows).toBe(classified.needsCare.length);
       for (const planet of classified.needsCare) {
         if (classified.compact) {
@@ -181,7 +183,7 @@ for (const language of ['en', 'ta', 'hi'] as const) {
         }
       }
       if (testCase.name === 'all nine needing care') {
-        expect(classified.needsCare).toHaveLength(9);
+        expect(classified.needsCare).toHaveLength(3);
       }
 
       // Review artifacts: every page of this case and language, as rendered.

@@ -2873,7 +2873,8 @@ CSS;
         $malefics = ['mars', 'saturn', 'rahu', 'ketu'];
         $nodeDebilitation = ['rahu' => 8, 'ketu' => 2];
         $conjunctionOrb = 10;
-        $supportiveLimit = 9;
+        $supportiveLimit = 3;
+        $careLimit = 3;
         $compactThreshold = 5;
 
         $validRasi = static function ($value): bool {
@@ -3014,7 +3015,7 @@ CSS;
             ];
         }
         $needsCareOut = [];
-        foreach ($needsCare as $entry) {
+        foreach (array_slice($needsCare, 0, $careLimit) as $entry) {
             $needsCareOut[] = [
                 'key' => $entry['key'],
                 'house' => $entry['house'],
