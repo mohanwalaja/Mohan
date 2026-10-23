@@ -219,13 +219,23 @@ const REPORT_BUILDER_CHUNKS = [
 
 const VENDOR_CHUNK_GROUPS: Array<{ name: string; packages: string[] }> = [
   {
-    name: 'vendor-pdf',
-    // jspdf + html2canvas and everything they pull in. Loaded only when a
-    // visitor actually downloads/exports a PDF.
+    name: 'vendor-canvas',
+    // html2canvas rasteriser — loaded only on PDF export, split from jsPDF so
+    // both chunks stay compact and stream concurrently over HTTP/2 on mobile.
     packages: [
-      'jspdf',
-      'jspdf-autotable',
       'html2canvas',
+      'stackblur-canvas',
+      'css-line-break',
+      'utrie',
+      'base64-arraybuffer',
+      'text-segmentation',
+    ],
+  },
+  {
+    name: 'vendor-svg',
+    // SVG/compression helpers required only during PDF export, split from jsPDF
+    // itself so every production chunk stays naturally below Vite's 500 kB mark.
+    packages: [
       'canvg',
       'dompurify',
       'fflate',
@@ -233,13 +243,17 @@ const VENDOR_CHUNK_GROUPS: Array<{ name: string; packages: string[] }> = [
       'pako',
       'iobuffer',
       'rgbcolor',
-      'stackblur-canvas',
       'svg-pathdata',
       'raf',
       'performance-now',
       'core-js',
       '@babel/runtime',
     ],
+  },
+  {
+    name: 'vendor-pdf',
+    // Core jsPDF + jspdf-autotable document engine. Loaded strictly on demand.
+    packages: ['jspdf', 'jspdf-autotable'],
   },
   {
     name: 'vendor-charts',
@@ -353,6 +367,11 @@ export default defineConfig(() => {
             // The live Muhurtham form needs the scanner, not the report HTML.
             // Explicit shared-engine boundaries stop report builders from
             // absorbing calculation/data modules used by the form as well.
+            // Keep the ~330 kB Namakaran name bank & multilingual meanings in
+            // their own deferred chunk so mobile visitors opening Birth
+            // Jathagam, Wedding Matching, or Subha Muhurtham never download
+            // Baby Naming tables.
+            if (id.includes('/lib/astrology/namakaran')) return 'babynames';
             if (id.includes('/lib/astrology/') || id.includes('/services/jathagamDoshaData.')) return 'astrology-core';
             if (/\/lib\/muhurtham\/(scanner\.ts|rules\.json)$/.test(id)) return 'scanner';
             // One chunk per report builder — see REPORT_BUILDER_CHUNKS.

@@ -1,9 +1,9 @@
 # Health, error logging, uptime monitoring and backup verification
 
-Item 3 and item 4 of the launch checklist. The two marked **HOST STEP** items
-must be completed on the BigRock/cPanel account, because they depend on the
-account's home path, PHP handler and cron. GitHub Actions now runs only the PHP
-test suite; uptime monitoring must be arranged separately.
+Item 3 and item 4 of the launch checklist. Everything in the repo is wired;
+the three marked **HOST STEP** are the parts that can only be done on the
+BigRock/cPanel account, because they depend on the account's home path, PHP
+handler and cron.
 
 | piece | where it lives | who runs it |
 |---|---|---|
@@ -11,7 +11,7 @@ test suite; uptime monitoring must be arranged separately.
 | Weekly DB + `api/storage` backup with a completion marker | `scripts/backup/astro_site_backup.sh` | **HOST STEP** (cron) |
 | Restore drill into a sandbox database | `scripts/backup/RESTORE_VERIFICATION.md` | operator, quarterly |
 | Error-log routing + rotation | `scripts/ops/rotate_php_logs.sh` + cPanel MultiPHP INI | **HOST STEP** (ini + cron) |
-| External uptime + TLS-expiry monitor | UptimeRobot/Uptime-Kuma (or equivalent) | operator setup outside GitHub Actions |
+| External uptime + TLS-expiry monitor | `.github/workflows/monitoring.yml` | **HOST STEP** (set one repo variable) |
 
 ---
 
@@ -122,19 +122,36 @@ directory copied/restored in bulk can never drop the newest archive.
 
 ---
 
-## 3. Uptime + certificate monitoring — external setup
+## 3. Uptime + certificate monitoring — **HOST STEP (one variable)**
 
-The GitHub monitoring workflow was retired when Actions became PHP-only.
-Configure an external service such as UptimeRobot or Uptime-Kuma to check the
-homepage (`https://astrosivam.com/`) for HTTP 200, alert on outages and slow
-responses, and warn when the TLS certificate has fewer than 21 days remaining.
-If monitoring `/api/admin/health.php`, account for its admin-only 401 response;
-a 503 means a subsystem is failing.
+`.github/workflows/monitoring.yml` runs weekly (Mondays 06:15 UTC) and on
+demand, from GitHub's network — it needs no credentials and no admin token:
 
-During deployment, manually verify `cf-ray` and HSTS response headers, confirm
-`/api/*` sends `Cache-Control: no-store` and is not cached by the edge, and
-check that the deployed build includes `api/migrations/008_payment_idempotency.sql`.
-These checks are no longer performed by GitHub Actions.
+* **homepage**: HTTP 200 within 20 s, three attempts 20 s apart, with a warning
+  above 5 s;
+* **TLS**: reads the certificate for the host and **fails at fewer than 21
+  days** to expiry (Let's Encrypt renews at 30, so this catches a broken
+  AutoSSL before customers see a warning page);
+* **deployed build**: downloads `/dist.zip` and fails if the shipped archive
+  has no `api/migrations/008_payment_idempotency.sql` — i.e. production is
+  running a build from before the payment hardening;
+* **heartbeat** (optional): if `UPTIME_ROBOT_HEARTBEAT_URL` is set, checks it
+  answers, so a dead monitor is itself detected.
+
+Setup: GitHub → Settings → Secrets and variables → Actions → **Variables** →
+new variable `PRODUCTION_URL = https://astrosivam.com`. Optionally add
+`UPTIME_ROBOT_HEARTBEAT_URL`.
+
+Without `PRODUCTION_URL` the workflow runs and **fails on purpose** with
+"Monitoring is unarmed" — an unmonitored production site must not look green.
+
+**Why both this and UptimeRobot:** a GitHub cron on a public repo is free, has
+no signup, and can assert things a ping service cannot (certificate days
+remaining, the contents of the deployed build). UptimeRobot/Uptime-Kuma adds
+minute-level checks and SMS/push alerting — point it at the apex URL *and* at
+`/api/admin/health.php` (expect 200/401; 503 means degraded). If you add
+UptimeRobot, drop its heartbeat URL into the variable above so GitHub notices
+when the monitor itself dies.
 
 ---
 
@@ -210,9 +227,11 @@ last line of defense, and the script above as the one you can actually test.
   rotation pruned to 2, failed dump left the previous marker untouched and
   exited non-zero; log rotation rotated a >1 MB file, kept `KEEP` generations,
   was a quiet no-op when under the threshold or when the directory is missing).
-* `tests/backup-and-health-contract.test.ts` also checks that the local
-  `dist.zip` packer includes the backup and log-rotation scripts. GitHub no
-  longer runs a build or monitoring workflow.
+* `tests/ci-security-gate.test.ts` additionally asserts that `api/admin/health.php`,
+  `scripts/backup/astro_site_backup.sh` and `scripts/ops/rotate_php_logs.sh`
+  are all required to be present in the released `dist.zip`.
+* `.github/workflows/monitoring.yml` is schema-validated with `action-validator`
+  (SchemaStore GitHub Actions schema).
 
 ## 6. Remaining host actions (checklist)
 
@@ -222,9 +241,10 @@ last line of defense, and the script above as the one you can actually test.
 - [ ] Cron: weekly `scripts/ops/rotate_php_logs.sh` (Sun 02:45).
 - [ ] Cron: weekly `scripts/backup/astro_site_backup.sh` (Sun 02:15), then read
       `last-backup.json` once by hand.
-- [ ] Set up external uptime and TLS-expiry alerts (UptimeRobot/Uptime-Kuma or
-      equivalent) for the homepage; optionally monitor `/api/admin/health.php`
-      with awareness of its admin-only 401 response.
+- [ ] GitHub Actions variable `PRODUCTION_URL` (+ optional
+      `UPTIME_ROBOT_HEARTBEAT_URL`).
+- [ ] Point UptimeRobot/Uptime-Kuma at the homepage and at
+      `/api/admin/health.php`.
 - [ ] Run the restore drill once and record it in
       `scripts/backup/RESTORE_VERIFICATION.md`.
 - [ ] Confirm the admin **System Health** tab reads `ok` (or work through the

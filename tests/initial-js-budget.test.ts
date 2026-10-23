@@ -77,6 +77,8 @@ const LEAFLET_CODE_MARKER = 'leaflet-container';
  */
 const DEFERRED_CHUNK_NAMES = [
   'vendor-pdf',
+  'vendor-svg',
+  'vendor-canvas',
   'vendor-maps',
   'vendor-astrology',
   'vendor-timezone',

@@ -80,11 +80,11 @@ type SpeechEnvelope = {
 
 const TOTAL_VIDEO_DURATION = 90.3;
 const WAVEFORM_BAR_COUNT = 28;
-const AUDIO_BASE = '/audio/step-';
+const AUDIO_BASE = '/assets/audio/step-';
 // Bumped whenever the narration clips are re-recorded, so returning visitors
 // do not hear a stale cached voice-over (the filenames stay stable).
 const AUDIO_REV = '20261015';
-const SCENE_BASE = '/video-scenes/';
+const SCENE_BASE = '/assets/video-scenes/';
 
 const STEPS: StepDetail[] = [
   {

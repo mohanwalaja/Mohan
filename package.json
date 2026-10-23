@@ -1,7 +1,8 @@
 {
-  "name": "astrosivam-web",
+  "name": "astrosivam",
+  "description": "ASTRO SIVAM — Authentic Vedic Astrology Platform & 200 DPI Live-Preview Report Engine (astrosivam.com)",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "test": "node scripts/run-tests.mjs",

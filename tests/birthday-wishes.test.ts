@@ -51,7 +51,7 @@ const admin = read('api/admin/index.php');
 const api = read('src/services/api.ts');
 const dashboard = read('src/pages/CustomerDashboard.tsx');
 const adminPanel = read('src/components/admin/ChatAlertConfigPanel.tsx');
-const guide = read('BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md');
+const guide = read('docs/BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md');
 
 /**
  * The "must not appear" scans read CODE only. This feature's own doc comment

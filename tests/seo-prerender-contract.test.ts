@@ -304,12 +304,12 @@ if (!fs.existsSync(distDir)) {
   process.exit(0);
 }
 
-check('dist/ top-level folders are exactly the approved four, including pages/', () => {
+check('dist/ top-level folders are minimal (assets, pages)', () => {
   const entries = fs.readdirSync(distDir, { withFileTypes: true }).filter((e) => e.isDirectory());
   // Dot-dirs are deploy metadata, not route sprawl: the only one allowed is
   // .well-known/ (RFC 9116 security.txt, pinned by tests/security-txt.test.ts).
   const top = entries.filter((e) => !e.name.startsWith('.')).map((e) => e.name).sort();
-  assert.deepEqual(top, ['assets', 'audio', 'pages', 'video-scenes'], `dist/ top-level folders changed: ${top.join(', ')}`);
+  assert.deepEqual(top, ['assets', 'pages'], `dist/ top-level folders changed: ${top.join(', ')}`);
   const dots = entries.filter((e) => e.name.startsWith('.')).map((e) => e.name).sort();
   assert.deepEqual(dots, ['.well-known'], 'the only dot-dir in dist/ may be .well-known (security.txt)');
   assert.ok(!fs.existsSync(path.join(distDir, '.vite')), 'dist/.vite (build manifest) must be deleted after prerendering');
