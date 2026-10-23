@@ -390,6 +390,15 @@ CREATE TABLE IF NOT EXISTS `customer_reviews` (
 -- User accounts are never seeded with shared/default credentials.
 -- Create the first administrator with the trusted CLI provisioning tool.
 
+-- TABLE: birthday_email_preferences (1-click customer opt-in for birthday email cards)
+CREATE TABLE IF NOT EXISTS `birthday_email_preferences` (
+  `user_id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `enabled` TINYINT(1) NOT NULL DEFAULT 0,
+  `language` VARCHAR(8) NOT NULL DEFAULT 'en',
+  `enabled_at` DATETIME NULL,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- SEED DATA: Default Settings
 INSERT INTO `system_settings` (`id`, `service_mode`, `free_beta_active`, `currency`, `pricing`, `payment_methods`, `email_settings`, `general_settings`, `updated_at`)
 VALUES (

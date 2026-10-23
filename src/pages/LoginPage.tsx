@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff, KeyRound, RefreshCw, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { GoogleLoginButton } from '../components/common/GoogleLoginButton';
@@ -8,34 +8,49 @@ import { RouteLink } from '../components/common/RouteLink';
 import { BrandLockup } from '../components/common/BrandLockup';
 import { ForgotPasswordForm } from '../components/common/ForgotPasswordForm';
 import { postAuthRoute } from '../services/authReturnRoute';
+import type { User } from '../types';
 
 interface LoginPageProps {
   onNavigate: (route: string) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
-  const { login } = useAuth();
-  const { t } = useLanguage();
+  const { login, verifyRegisterOtp, resendRegisterOtp } = useAuth();
+  useLanguage();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const [notice, setNotice] = useState('');
+  const [otpPendingEmail, setOtpPendingEmail] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState('');
+  const [resendingOtp, setResendingOtp] = useState(false);
+
+  const finishEmailSignIn = (res: { user?: User }) => {
+    // Routing follows the server-issued role; no email address is privileged
+    // client-side. A customer who left a report page to sign in goes back to
+    // it — with their half-filled form restored — instead of the dashboard.
+    onNavigate(postAuthRoute(res.user?.role));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
+    setNotice('');
     setIsLoading(true);
 
     try {
-      const res = await login(email, password);
+      const normalizedEmail = email.trim().toLowerCase();
+      const res = await login(normalizedEmail, password);
       if (res.success) {
-        // Routing follows the server-issued role; no email address is privileged
-        // client-side. A customer who left a report page to sign in goes back to
-        // it — with their half-filled form restored — instead of the dashboard.
-        onNavigate(postAuthRoute(res.user?.role));
+        finishEmailSignIn(res);
+      } else if (res.status === 'otp_required') {
+        setOtpPendingEmail(res.email || normalizedEmail);
+        setOtpCode('');
+        setNotice(res.message || `Enter the 6-digit verification code sent to ${normalizedEmail}.`);
       } else {
         setErrorMessage(res.message || 'Invalid email or password');
       }
@@ -43,6 +58,48 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
       setErrorMessage(err.message || 'Login failed');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpPendingEmail) return;
+    const cleaned = otpCode.replace(/\D/g, '').slice(0, 6);
+    if (cleaned.length !== 6) {
+      setErrorMessage('Please enter the 6-digit verification code from your email.');
+      return;
+    }
+    setErrorMessage('');
+    setIsLoading(true);
+    try {
+      const res = await verifyRegisterOtp(otpPendingEmail, cleaned, password);
+      if (res.success) {
+        finishEmailSignIn(res);
+      } else {
+        setErrorMessage(res.message || 'Verification failed. Please check the code or click Resend Code.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Verification failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!otpPendingEmail) return;
+    setErrorMessage('');
+    setResendingOtp(true);
+    try {
+      const res = await resendRegisterOtp(otpPendingEmail);
+      if (res.success) {
+        setNotice(res.message || `A fresh 6-digit code was sent to ${otpPendingEmail}.`);
+      } else {
+        setErrorMessage(res.message || 'Could not resend verification code.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Could not resend verification code.');
+    } finally {
+      setResendingOtp(false);
     }
   };
 
@@ -54,7 +111,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
         canonical="https://astrosivam.com/login"
         noindex={true}
       />
-      
+
       {/* Brand Header — emblem with the name and the slogan under it */}
       <div className="text-center space-y-3">
         <BrandLockup className="customer-login-brand" />
@@ -73,7 +130,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
 
       {/* Login Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-        
+
         {notice && !errorMessage && (
           <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs leading-relaxed">
             {notice}
@@ -89,101 +146,182 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
               setNotice(msg || '');
             }}
           />
+        ) : otpPendingEmail ? (
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            {errorMessage && (
+              <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                <div className="flex-1 leading-relaxed">
+                  <span>{errorMessage}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <div className="text-sm font-extrabold text-slate-900 dark:text-white">
+                Verify Your Email Address
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Enter the 6-digit verification code sent to <strong className="text-slate-800 dark:text-slate-200">{otpPendingEmail}</strong> to activate your session.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="login-verify-otp" className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                6-Digit Verification Code
+              </label>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  id="login-verify-otp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  required
+                  value={otpCode}
+                  onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="123456"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono tracking-[0.35em] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50 cursor-pointer"
+            >
+              <span>{isLoading ? 'Verifying...' : 'Verify Email & Sign In'}</span>
+            </button>
+
+            <div className="flex items-center justify-between pt-1 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setOtpPendingEmail(null);
+                  setErrorMessage('');
+                  setNotice('');
+                }}
+                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 dark:hover:text-white font-semibold"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Sign In</span>
+              </button>
+              <button
+                type="button"
+                disabled={resendingOtp}
+                onClick={handleResendOtp}
+                className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${resendingOtp ? 'animate-spin' : ''}`} />
+                <span>{resendingOtp ? 'Sending...' : 'Resend Code'}</span>
+              </button>
+            </div>
+          </form>
         ) : (
           <>
-        {errorMessage && (
-          <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
-            <div className="flex-1 leading-relaxed">
-              <span>{errorMessage}</span>
-            </div>
-          </div>
-        )}
+            {errorMessage && (
+              <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
+                <div className="flex-1 leading-relaxed">
+                  <span>{errorMessage}</span>
+                </div>
+              </div>
+            )}
 
-        {/* 1-Click Social Sign In Options */}
-        <div className="space-y-2.5">
-          <GoogleLoginButton
-            mode="signin"
-            onSuccess={signedIn => onNavigate(postAuthRoute(signedIn?.role))}
-            onError={msg => setErrorMessage(msg)}
-          />
-          <div className="relative flex items-center justify-center my-1 pt-1">
-            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-            <span className="bg-white dark:bg-slate-900 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
-              or sign in with email
-            </span>
-            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-              Customer Email Address
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            {/* 1-Click Social Sign In Options */}
+            <div className="space-y-2.5">
+              <GoogleLoginButton
+                mode="signin"
+                onSuccess={signedIn => onNavigate(postAuthRoute(signedIn?.role))}
+                onError={msg => setErrorMessage(msg)}
               />
+              <div className="relative flex items-center justify-center my-1 pt-1">
+                <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+                <span className="bg-white dark:bg-slate-900 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                  or sign in with email
+                </span>
+                <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-              Account Password
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-              <input
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Customer Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Account Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-end -mt-2">
+                <button
+                  type="button"
+                  onClick={() => { setErrorMessage(''); setNotice(''); setShowForgot(true); }}
+                  className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50 cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>{isLoading ? 'Signing In...' : 'Sign In to Customer Dashboard'}</span>
+              </button>
+            </form>
+
+            {/* Register link */}
+            <div className="text-center text-xs text-slate-500 pt-2">
+              Don&apos;t have an ASTRO SIVAM customer account?{' '}
+              <RouteLink
+                route="register"
+                onNavigate={onNavigate}
+                className="font-bold text-amber-600 dark:text-amber-400 hover:underline"
+              >
+                Register Here
+              </RouteLink>
             </div>
-          </div>
-
-          <div className="flex justify-end -mt-2">
-            <button
-              type="button"
-              onClick={() => { setErrorMessage(''); setNotice(''); setShowForgot(true); }}
-              className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline"
-            >
-              Forgot password?
-            </button>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-98 disabled:opacity-50 cursor-pointer"
-          >
-            <LogIn className="w-3.5 h-3.5" />
-            <span>{isLoading ? 'Signing In...' : 'Sign In to Customer Dashboard'}</span>
-          </button>
-        </form>
-
-        {/* Register link */}
-        <div className="text-center text-xs text-slate-500 pt-2">
-          Don&apos;t have an ASTRO SIVAM customer account?{' '}
-          <RouteLink
-            route="register"
-            onNavigate={onNavigate}
-            className="font-bold text-amber-600 dark:text-amber-400 hover:underline"
-          >
-            Register Here
-          </RouteLink>
-        </div>
           </>
         )}
 
@@ -192,4 +330,3 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
     </div>
   );
 };
-

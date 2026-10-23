@@ -11,7 +11,7 @@ interface AuthContextType {
   settingsResolved: boolean;
   isLoading: boolean;
   isAdmin: boolean;
-  login: (email: string, pass: string) => Promise<{ success: boolean; message?: string; user?: User }>;
+  login: (email: string, pass: string) => Promise<{ success: boolean; message?: string; user?: User; status?: string; email?: string }>;
   adminLogin: (email: string, pass: string) => Promise<{ success: boolean; message?: string; user?: User }>;
   register: (data: any) => Promise<{ success: boolean; message?: string; user?: User; status?: string; email?: string }>;
   verifyRegisterOtp: (email: string, otp: string, password: string) => Promise<{ success: boolean; message?: string; user?: User }>;

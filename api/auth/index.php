@@ -166,6 +166,38 @@ function sendAccountExistsEmail($pdo, $toEmail, $toName) {
 }
 
 /**
+ * Helps customers who created their account with Google/Facebook Sign-In and
+ * later forgot and requested a password reset. The HTTP response remains
+ * identical to ASTRO_FORGOT_PASSWORD_MESSAGE so account existence/provider
+ * is never leaked to an unauthenticated caller.
+ */
+function sendSocialSignInReminderEmail($pdo, $toEmail, $toName, $provider) {
+    $safeToName = htmlspecialchars((string)$toName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $providerLabel = $provider === 'google' ? 'Google Sign-In' : ($provider === 'facebook' ? 'Facebook Login' : ucfirst((string)$provider));
+    $html = astro_wrap_branded_email_html(
+        'Sign-In Instructions for Your Account',
+        "<p style='margin:0 0 12px;color:#1e1508;font-size:15px;'>Namaste <strong>{$safeToName}</strong>,</p>"
+        . "<p style='margin:0 0 14px;'>A password reset was just requested for your ASTRO SIVAM account. Your account is linked to <strong>{$providerLabel}</strong>, so it does not use a separate email password.</p>"
+        . "<div style='background:#fbf6ea;border:1px solid #e8d9b8;border-left:4px solid #7a1f1f;border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:13.5px;color:#3d3222;'>"
+        . "<strong>How to sign in immediately:</strong> Return to the ASTRO SIVAM Sign In page and select <strong>Continue with Google</strong> using this email address."
+        . "</div>"
+        . "<p style='margin:0;color:#6b5c3e;font-size:12px;'>If you did not request this reminder, you can safely ignore this message.</p>",
+        'astrosivam.com &bull; admin@astrosivam.com'
+    );
+
+    $emailSettings = getEmailSettingsForAuth($pdo);
+    return AstroMailer::sendEmailWithAttachments(
+        $toEmail,
+        $toName,
+        "ASTRO SIVAM: Sign-In Instructions ({$providerLabel})",
+        $html,
+        [],
+        $emailSettings,
+        function_exists('astro_inline_logo_attachment') ? astro_inline_logo_attachment() : []
+    );
+}
+
+/**
  * Verifies the immutable provider-subject columns exist — WITHOUT running DDL.
  *
  * Social sign-in keys accounts by (auth_provider, provider_subject) so it
@@ -228,7 +260,6 @@ if ($isForgotPasswordRoute) {
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
-        // Social-only accounts have no password to reset; say nothing special.
         $provider = strtolower(trim((string)($user['auth_provider'] ?? 'local')));
         if ($user && ($provider === '' || $provider === 'local')) {
             $code = generateOtp();
@@ -242,6 +273,11 @@ if ($isForgotPasswordRoute) {
                 error_log('ASTRO SIVAM: password reset email could not be sent for user ' . $user['id']);
             } else {
                 logAudit($pdo, $user['id'], $user['name'], $user['role'], 'PASSWORD_RESET_REQUESTED', 'Reset code emailed');
+            }
+        } elseif ($user) {
+            $reminderResult = sendSocialSignInReminderEmail($pdo, $user['email'], $user['name'], $provider);
+            if (empty($reminderResult['success'])) {
+                error_log('ASTRO SIVAM: social sign-in reminder email could not be sent for user ' . $user['id']);
             }
         }
 
@@ -639,6 +675,9 @@ if ($isRegisterRoute) {
     if (empty($name) || empty($email) || empty($mobile) || trim($password) === '') {
         jsonResponse(['success' => false, 'message' => 'Name, email, mobile, and password are required.'], 400);
     }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 254) {
+        jsonResponse(['success' => false, 'message' => 'Please enter a valid email address.'], 400);
+    }
     if (strlen($password) < 6 || strlen($password) > 72) {
         jsonResponse(['success' => false, 'message' => 'Password must be 6 to 72 UTF-8 bytes long.'], 400);
     }
@@ -992,6 +1031,9 @@ if ($isRegisterRoute) {
         $user = $stmt->fetch();
 
         if (!$user) {
+            // Equalise bcrypt verification latency against valid accounts so
+            // response timing does not disclose registered email addresses.
+            password_verify($password, '$2y$10$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG');
             // Unknown account: a real failed guess - count it against the
             // per-IP / per-endpoint / global credential-stuffing budgets (H1).
             astro_auth_failure_record($pdo, $loginClientIp, $loginEndpoint);
@@ -1024,12 +1066,24 @@ if ($isRegisterRoute) {
         // a verified email before it can authenticate. An admin account is
         // created or promoted only by the trusted provisioning procedure.
         if ((int)($user['email_verified'] ?? 1) === 0) {
+            $freshSent = false;
+            if (empty($user['otp_expires_at']) || strtotime((string)$user['otp_expires_at']) < time()) {
+                $freshOtp = generateOtp();
+                $freshHash = hashOtp($freshOtp, $user['email']);
+                $freshExp = date('Y-m-d H:i:s', time() + 600);
+                $pdo->prepare("UPDATE users SET otp_hash = ?, otp_expires_at = ? WHERE id = ?")
+                    ->execute([$freshHash, $freshExp, $user['id']]);
+                $refreshMail = sendRegistrationOtpEmail($pdo, $user['email'], $user['name'], $freshOtp);
+                $freshSent = !empty($refreshMail['success']);
+            }
             jsonResponse([
                 'success' => false,
                 'status' => 'otp_required',
                 'requiresOtp' => true,
                 'email' => $user['email'],
-                'message' => 'Please verify your email before logging in. Check your inbox for the verification code, or request a new one.'
+                'message' => $freshSent
+                    ? "Your previous verification code expired, so we sent a fresh 6-digit code to {$user['email']}. Enter it below to complete sign-in."
+                    : 'Please verify your email before logging in. Enter the 6-digit verification code sent to your inbox, or click Resend Code.'
             ], 403);
         }
 

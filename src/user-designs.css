@@ -368,3 +368,35 @@
   [class*="bg-rose-950"],[class*="bg-rose-900"],[class*="bg-red-950"],[class*="bg-red-900"]
 ):not([class*=":bg-"]) { background:#fdf2f3!important; }
 [data-user-design] [class*="hover:bg-rose-950"]:hover { background:#fdf2f3!important; }
+
+/* Solid action buttons & native picker icons: keep crisp white foreground ink
+   on saturated button fills, give dark slate action buttons a visible espresso
+   fill instead of white-on-white, and restore dark calendar/clock icons on
+   light inputs. Every selector starts with [data-user-design] per contract. */
+[data-user-design] :is(button,a):is(
+  [class*="bg-emerald-600"],[class*="bg-emerald-500"],
+  [class*="bg-pink-600"],[class*="bg-pink-500"],
+  [class*="bg-rose-600"],[class*="bg-red-600"],
+  [class*="bg-amber-600"],[class*="bg-blue-600"],
+  [class*="bg-indigo-600"],[class*="bg-purple-600"]
+)[class*="text-white"] { color:#ffffff!important; }
+[data-user-design] :is(button,a):is([class*="bg-slate-900"],[class*="bg-slate-800"]):not([class*=":bg-"])[class*="text-white"] {
+  background:#34271d!important;
+  border-color:#34271d!important;
+  color:#ffffff!important;
+}
+[data-user-design] :is(button,a):is([class*="bg-slate-900"],[class*="bg-slate-800"]):not([class*=":bg-"])[class*="text-white"]:hover {
+  background:var(--accent)!important;
+  border-color:var(--accent)!important;
+  color:#ffffff!important;
+}
+[data-user-design] :is(button,a)[class*="from-amber-500"] {
+  background:var(--accent)!important;
+  color:#ffffff!important;
+}
+[data-user-design] :is(button,a)[class*="from-amber-500"] svg { color:#ffffff!important; }
+[data-user-design] :is(input[type="date"],input[type="time"],input[type="datetime-local"])::-webkit-calendar-picker-indicator {
+  filter:none!important;
+  opacity:.72;
+}
+

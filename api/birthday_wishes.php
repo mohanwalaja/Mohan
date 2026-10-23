@@ -111,6 +111,13 @@ class AstroBirthdayWishes
                 UNIQUE KEY `uq_birthday_wish_once_per_year` (`user_id`, `person_key`, `wish_year`, `channel`),
                 INDEX `idx_birthday_wishes_user` (`user_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            $pdo->exec("CREATE TABLE IF NOT EXISTS `birthday_email_preferences` (
+                `user_id` VARCHAR(64) NOT NULL PRIMARY KEY,
+                `enabled` TINYINT(1) NOT NULL DEFAULT 0,
+                `language` VARCHAR(8) NOT NULL DEFAULT 'en',
+                `enabled_at` DATETIME NULL,
+                `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         } catch (\Throwable $e) {
             error_log('AstroBirthdayWishes: tables could not be ensured (run api/migrations/020_birthday_wishes.sql): ' . $e->getMessage());
         }
@@ -153,6 +160,7 @@ class AstroBirthdayWishes
 
         return [
             'enabled' => !empty($stored['enabled']),
+            'emailEnabled' => !empty($stored['emailEnabled']),
             'chatEnabled' => !empty($chat['enabled']),
             'timezone' => $timezone,
             'includeFamilyMembers' => !array_key_exists('includeFamilyMembers', $stored)
@@ -455,6 +463,28 @@ class AstroBirthdayWishes
         $contact = $pdo && $userId !== '' ? AstroChatAlerts::getChatContact($pdo, $userId) : null;
         $verifiedAny = !empty($contact['whatsapp_verified_at']) || !empty($contact['viber_verified_at']);
 
+        $emailRow = null;
+        $userEmail = '';
+        if ($pdo && $userId !== '' && self::tablesReady($pdo)) {
+            try {
+                $eStmt = $pdo->prepare("SELECT enabled, language, enabled_at FROM birthday_email_preferences WHERE user_id = ? LIMIT 1");
+                $eStmt->execute([$userId]);
+                $emailRow = $eStmt->fetch() ?: null;
+            } catch (\Throwable $e) {
+                $emailRow = null;
+            }
+            try {
+                $uStmt = $pdo->prepare("SELECT email FROM users WHERE id = ? LIMIT 1");
+                $uStmt->execute([$userId]);
+                $candidateEmail = trim((string)($uStmt->fetchColumn() ?: ''));
+                if ($candidateEmail !== '' && filter_var($candidateEmail, FILTER_VALIDATE_EMAIL)) {
+                    $userEmail = $candidateEmail;
+                }
+            } catch (\Throwable $e) {
+                $userEmail = '';
+            }
+        }
+
         return [
             'enabled' => $row ? (bool)$row['enabled'] : false,
             'language' => self::normalizeLanguage($row['language'] ?? 'en'),
@@ -468,7 +498,283 @@ class AstroBirthdayWishes
             ])),
             'savedPeople' => $pdo && $userId !== '' ? self::savedPeopleCount($pdo, $userId, $settings) : 0,
             'featureEnabled' => (bool)$settings['enabled'],
+            // Effortless 1-click Email Birthday Wishes (works out-of-the-box with cPanel SMTP).
+            'emailEnabled' => $emailRow ? (bool)$emailRow['enabled'] : false,
+            'emailLanguage' => self::normalizeLanguage($emailRow['language'] ?? ($row['language'] ?? 'en')),
+            'emailEnabledAt' => $emailRow['enabled_at'] ?? null,
+            'emailAvailable' => (bool)(!empty($settings['emailEnabled']) && $userEmail !== ''),
+            'userEmail' => $userEmail,
+            'upcomingBirthdays' => $pdo && $userId !== '' ? self::upcomingSavedBirthdays($pdo, $userId, null, $settings) : [],
         ];
+    }
+
+    /**
+     * Upcoming saved birthdays for this customer (self + saved family members),
+     * sorted soonest-first with exact day countdowns and Feb-29 -> Feb-28 handling.
+     */
+    public static function upcomingSavedBirthdays($pdo, string $userId, ?string $fromDate = null, ?array $wishSettings = null): array
+    {
+        if (!$pdo || $userId === '') {
+            return [];
+        }
+        $settings = $wishSettings ?: self::getWishSettings($pdo);
+        $baseStr = trim((string)$fromDate);
+        if ($baseStr === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $baseStr)) {
+            $baseStr = self::todayString($settings);
+        }
+        $baseDate = \DateTimeImmutable::createFromFormat('!Y-m-d', $baseStr) ?: new \DateTimeImmutable('today');
+        $baseYear = (int)$baseDate->format('Y');
+
+        $candidates = [];
+        try {
+            $bpStmt = $pdo->prepare("SELECT name, dob, gender FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
+            $bpStmt->execute([$userId]);
+            $bp = $bpStmt->fetch();
+            if ($bp && !empty($bp['dob'])) {
+                $candidates[] = [
+                    'personKey' => 'self',
+                    'name' => trim((string)($bp['name'] ?? '')),
+                    'relation' => 'SELF',
+                    'dob' => (string)$bp['dob'],
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Best-effort profile lookup.
+        }
+
+        if (!empty($settings['includeFamilyMembers'])) {
+            try {
+                $fmStmt = $pdo->prepare("SELECT id, name, relation, dob FROM family_members WHERE user_id = ? ORDER BY created_at ASC");
+                $fmStmt->execute([$userId]);
+                foreach ($fmStmt->fetchAll() as $fm) {
+                    if (empty($fm['id']) || empty($fm['dob'])) continue;
+                    $candidates[] = [
+                        'personKey' => 'fm:' . trim((string)$fm['id']),
+                        'name' => trim((string)($fm['name'] ?? '')),
+                        'relation' => strtoupper(trim((string)($fm['relation'] ?? 'OTHER'))),
+                        'dob' => (string)$fm['dob'],
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Best-effort family lookup.
+            }
+        }
+
+        $items = [];
+        foreach ($candidates as $cand) {
+            $parts = self::birthdayParts($cand['dob']);
+            if (!$parts) continue;
+            $nextDate = null;
+            for ($offset = 0; $offset <= 1; $offset++) {
+                $yr = $baseYear + $offset;
+                $month = $parts['month'];
+                $day = $parts['day'];
+                $isLeap = ($yr % 4 === 0 && $yr % 100 !== 0) || ($yr % 400 === 0);
+                if ($month === 2 && $day === 29 && !$isLeap) {
+                    $day = 28;
+                }
+                $probe = \DateTimeImmutable::createFromFormat('!Y-m-d', sprintf('%04d-%02d-%02d', $yr, $month, $day));
+                if ($probe && $probe >= $baseDate) {
+                    $nextDate = $probe;
+                    break;
+                }
+            }
+            if (!$nextDate) continue;
+            $daysUntil = (int)$baseDate->diff($nextDate)->days;
+            $items[] = [
+                'personKey' => $cand['personKey'],
+                'name' => $cand['name'],
+                'relation' => $cand['relation'],
+                'dob' => $cand['dob'],
+                'nextDate' => $nextDate->format('Y-m-d'),
+                'daysUntil' => $daysUntil,
+            ];
+        }
+
+        usort($items, static function ($a, $b) {
+            return ($a['daysUntil'] <=> $b['daysUntil']) ?: strcmp((string)$a['name'], (string)$b['name']);
+        });
+        return $items;
+    }
+
+    /**
+     * One-click opt-in / opt-out for Email Birthday Wishes.
+     * Requires only a valid account email address — no phone number or chat API needed.
+     */
+    public static function saveEmailPreference($pdo, string $userId, bool $enabled, ?string $language = null): array
+    {
+        if (!$pdo || $userId === '') {
+            return ['success' => false, 'message' => 'Sign in to change your birthday wishes.'];
+        }
+        if (!self::tablesReady($pdo)) {
+            return [
+                'success' => false,
+                'message' => 'Birthday wishes are not set up on this server yet. Please apply api/migrations/020_birthday_wishes.sql.',
+            ];
+        }
+        $settings = self::getWishSettings($pdo);
+        if ($enabled && empty($settings['emailEnabled'])) {
+            return [
+                'success' => false,
+                'message' => 'Email birthday wishes are not switched on for this site yet.',
+            ];
+        }
+
+        $uStmt = $pdo->prepare("SELECT email FROM users WHERE id = ? LIMIT 1");
+        $uStmt->execute([$userId]);
+        $userEmail = trim((string)($uStmt->fetchColumn() ?: ''));
+        if ($enabled && ($userEmail === '' || !filter_var($userEmail, FILTER_VALIDATE_EMAIL))) {
+            return [
+                'success' => false,
+                'message' => 'A valid account email address is required to receive birthday greeting emails.',
+            ];
+        }
+
+        $lang = self::normalizeLanguage($language);
+        self::ensureTables($pdo);
+        try {
+            $stmt = $pdo->prepare("SELECT user_id FROM birthday_email_preferences WHERE user_id = ? LIMIT 1");
+            $stmt->execute([$userId]);
+            if ($stmt->fetch()) {
+                $pdo->prepare("UPDATE birthday_email_preferences SET enabled = ?, language = ?, enabled_at = ? WHERE user_id = ?")
+                    ->execute([$enabled ? 1 : 0, $lang, $enabled ? date('Y-m-d H:i:s') : null, $userId]);
+            } else {
+                $pdo->prepare("INSERT INTO birthday_email_preferences (user_id, enabled, language, enabled_at) VALUES (?, ?, ?, ?)")
+                    ->execute([$userId, $enabled ? 1 : 0, $lang, $enabled ? date('Y-m-d H:i:s') : null]);
+            }
+        } catch (\Throwable $e) {
+            error_log('AstroBirthdayWishes: saveEmailPreference failed: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Your email birthday wish setting could not be saved. Please try again.'];
+        }
+
+        $state = self::preferenceState($pdo, $userId);
+        $people = (int)$state['savedPeople'];
+        return [
+            'success' => true,
+            'message' => $enabled
+                ? ($people > 0
+                    ? 'Email birthday wishes are on! We will send a warm greeting card in '
+                        . self::languageName($lang) . ' to ' . $userEmail . ' on each birthday ('
+                        . $people . ' saved ' . ($people === 1 ? 'person' : 'people') . ').'
+                    : 'Email birthday wishes are on! Save your birth details or a family member and we will email a birthday greeting on their special day.')
+                : 'Email birthday wishes are off.',
+            'birthdayWishes' => $state,
+        ];
+    }
+
+    /** Pure non-promotional birthday email subject in English / Tamil / Hindi. */
+    public static function wishEmailSubject(string $language, string $personName, bool $isSelf): string
+    {
+        $language = self::normalizeLanguage($language);
+        $name = $personName !== '' ? $personName : ($language === 'en' ? 'Friend' : ($language === 'ta' ? 'நண்பரே' : 'मित्र'));
+        if ($language === 'ta') {
+            return $isSelf
+                ? "இனிய பிறந்தநாள் நல்வாழ்த்துகள், {$name} — ASTRO SIVAM"
+                : "இன்று பிறந்தநாள்: {$name} — இனிய வாழ்த்துகள் (ASTRO SIVAM)";
+        }
+        if ($language === 'hi') {
+            return $isSelf
+                ? "जन्मदिन की हार्दिक शुभकामनाएँ, {$name} — ASTRO SIVAM"
+                : "आज जन्मदिन है: {$name} — हार्दिक शुभकामनाएँ (ASTRO SIVAM)";
+        }
+        return $isSelf
+            ? "Happy Birthday, {$name} — Warm Wishes from ASTRO SIVAM"
+            : "Birthday Today: {$name} — Warm Wishes from ASTRO SIVAM";
+    }
+
+    /** Pure non-promotional Royal Maroon & Gold HTML greeting card (no offers, links, or attachments). */
+    public static function wishEmailHtml(string $language, string $personName, bool $isSelf, string $relation = 'OTHER', string $gender = 'M'): string
+    {
+        $text = self::wishMessage($language, $personName, $isSelf, $relation, $gender);
+        $safeLines = nl2br(htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+        $subtitleMap = [
+            'en' => 'Warm Birthday Blessings',
+            'ta' => 'இனிய பிறந்தநாள் நல்வாழ்த்துகள்',
+            'hi' => 'जन्मदिन की मंगलकामनाएँ',
+        ];
+        $subtitle = $subtitleMap[self::normalizeLanguage($language)] ?? $subtitleMap['en'];
+        $inner = "<div style='background:#fbf6ea;border:1px solid #e8d9b8;border-radius:10px;padding:20px 22px;text-align:center;font-size:15px;line-height:1.8;color:#2b1d12;'>"
+            . $safeLines
+            . "</div>";
+        if (function_exists('astro_wrap_branded_email_html')) {
+            return astro_wrap_branded_email_html($subtitle, $inner);
+        }
+        return "<div style='font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:20px;background:#fffdf9;border:2px solid #c9962c;border-radius:12px;'>{$inner}</div>";
+    }
+
+    /** Find opted-in Email Birthday Wishes due on $date (YYYY-MM-DD). */
+    public static function dueEmailPeople($pdo, string $date, ?array $wishSettings = null): array
+    {
+        if (!$pdo || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $date, $m)) {
+            return [];
+        }
+        $settings = $wishSettings ?: self::getWishSettings($pdo);
+        $year = (int)$m[1];
+        $month = (int)$m[2];
+        $day = (int)$m[3];
+        $patterns = self::birthdayMatchStrings($year, $month, $day);
+        if (!$patterns) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($patterns), '?'));
+
+        $unions = [
+            "SELECT ep.user_id, ep.language AS pref_language, u.email AS account_email, 'self' AS person_source,
+                    bp.id AS person_id, bp.name AS person_name, 'SELF' AS relation, bp.gender, bp.dob
+             FROM birthday_email_preferences ep
+             INNER JOIN users u ON u.id = ep.user_id
+             INNER JOIN birth_profiles bp ON bp.user_id = ep.user_id
+             WHERE ep.enabled = 1 AND SUBSTR(bp.dob, 6, 5) IN ({$placeholders})"
+        ];
+        $params = $patterns;
+
+        if (!empty($settings['includeFamilyMembers'])) {
+            $unions[] =
+                "SELECT ep.user_id, ep.language AS pref_language, u.email AS account_email, 'family' AS person_source,
+                        fm.id AS person_id, fm.name AS person_name, fm.relation, fm.gender, fm.dob
+                 FROM birthday_email_preferences ep
+                 INNER JOIN users u ON u.id = ep.user_id
+                 INNER JOIN family_members fm ON fm.user_id = ep.user_id
+                 WHERE ep.enabled = 1 AND SUBSTR(fm.dob, 6, 5) IN ({$placeholders})";
+            $params = array_merge($params, $patterns);
+        }
+
+        try {
+            $stmt = $pdo->prepare(implode(' UNION ALL ', $unions));
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            error_log('AstroBirthdayWishes: dueEmailPeople query failed: ' . $e->getMessage());
+            return [];
+        }
+
+        $people = [];
+        foreach ($rows as $row) {
+            $email = trim((string)($row['account_email'] ?? ''));
+            if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            $isSelf = ((string)($row['person_source'] ?? '')) === 'self';
+            $memberId = trim((string)($row['person_id'] ?? ''));
+            if (!$isSelf && $memberId === '') {
+                continue;
+            }
+            if (!self::isBirthdayOn($row['dob'] ?? '', $year, $month, $day)) {
+                continue;
+            }
+            $people[] = [
+                'userId' => (string)$row['user_id'],
+                'email' => $email,
+                'language' => self::normalizeLanguage($row['pref_language'] ?? 'en'),
+                'personKey' => $isSelf ? 'self' : ('fm:' . $memberId),
+                'personName' => trim((string)($row['person_name'] ?? '')),
+                'relation' => $isSelf ? 'SELF' : strtoupper((string)$row['relation']),
+                'gender' => strtoupper((string)($row['gender'] ?? '')),
+                'dob' => (string)($row['dob'] ?? ''),
+                'isSelf' => $isSelf,
+            ];
+        }
+        return $people;
     }
 
     /** How many saved people a wish could cover (the profile holder + family). */
@@ -691,13 +997,18 @@ class AstroBirthdayWishes
             $summary['date'] = $date;
             $year = (int)$m[1];
 
-            if (empty($settings['chatEnabled'])) {
-                $summary['message'] = 'Chat alerts are switched off, so no birthday wishes were sent.';
-                return $summary;
-            }
-            if (empty($settings['enabled'])) {
-                $summary['message'] = 'Birthday wishes are switched off in the admin panel.';
-                return $summary;
+            $chatActive = !empty($settings['chatEnabled']) && !empty($settings['enabled']);
+            $emailActive = !empty($settings['emailEnabled']);
+
+            if (empty($settings['emailEnabled'])) {
+                if (empty($settings['chatEnabled'])) {
+                    $summary['message'] = 'Chat alerts are switched off, so no birthday wishes were sent.';
+                    return $summary;
+                }
+                if (empty($settings['enabled'])) {
+                    $summary['message'] = 'Birthday wishes are switched off in the admin panel.';
+                    return $summary;
+                }
             }
             if (!self::tablesReady($pdo)) {
                 $summary['success'] = false;
@@ -705,15 +1016,17 @@ class AstroBirthdayWishes
                 return $summary;
             }
 
-            $people = self::duePeople($pdo, $date, $settings);
-            $summary['due'] = count($people);
-            if (!$people) {
+            $people = $chatActive ? self::duePeople($pdo, $date, $settings) : [];
+            $emailPeople = $emailActive ? self::dueEmailPeople($pdo, $date, $settings) : [];
+            $summary['due'] = count($people) + count($emailPeople);
+            if (!$people && !$emailPeople) {
                 $summary['message'] = 'No opted-in birthdays on ' . $date . '.';
                 return $summary;
             }
 
             $limit = isset($options['limit']) ? max(0, (int)$options['limit']) : self::MAX_MESSAGES_PER_RUN;
             $transport = isset($options['transport']) && is_callable($options['transport']) ? $options['transport'] : null;
+            $emailTransport = isset($options['emailTransport']) && is_callable($options['emailTransport']) ? $options['emailTransport'] : null;
             $targetCache = [];
 
             foreach ($people as $person) {
@@ -808,6 +1121,108 @@ class AstroBirthdayWishes
                         'person' => $person['personName'],
                         'relation' => $person['relation'],
                         'channel' => $channel,
+                        'status' => $ok ? 'SENT' : 'FAILED',
+                        'reason' => $ok ? '' : $detail,
+                    ];
+                }
+            }
+
+            if ($emailPeople) {
+                if (!class_exists('AstroMailer')) {
+                    require_once __DIR__ . '/mailer.php';
+                }
+                $emailSettings = [];
+                try {
+                    $esStmt = $pdo->query("SELECT email_settings FROM system_settings ORDER BY id ASC LIMIT 1");
+                    $esRow = $esStmt ? $esStmt->fetch() : false;
+                    $emailSettings = $esRow ? (json_decode($esRow['email_settings'] ?? '{}', true) ?: []) : [];
+                } catch (\Throwable $e) {
+                    $emailSettings = [];
+                }
+
+                foreach ($emailPeople as $person) {
+                    $userId = (string)$person['userId'];
+                    $recipientEmail = (string)$person['email'];
+                    if ($limit > 0 && ($summary['sent'] + $summary['failed']) >= $limit) {
+                        $summary['skipped'] += 1;
+                        $summary['details'][] = [
+                            'person' => $person['personName'],
+                            'channel' => 'email',
+                            'status' => 'SKIPPED',
+                            'reason' => 'per-run message limit reached',
+                        ];
+                        continue;
+                    }
+                    if (self::alreadyWished($pdo, $userId, (string)$person['personKey'], $year, 'email')) {
+                        $summary['skipped'] += 1;
+                        $summary['details'][] = [
+                            'person' => $person['personName'],
+                            'channel' => 'email',
+                            'status' => 'SKIPPED',
+                            'reason' => 'already wished this year',
+                        ];
+                        continue;
+                    }
+
+                    $subject = self::wishEmailSubject((string)$person['language'], (string)$person['personName'], (bool)$person['isSelf']);
+                    $plainWish = self::wishMessage(
+                        (string)$person['language'],
+                        (string)$person['personName'],
+                        (bool)$person['isSelf'],
+                        (string)$person['relation'],
+                        (string)$person['gender']
+                    );
+                    $htmlCard = self::wishEmailHtml(
+                        (string)$person['language'],
+                        (string)$person['personName'],
+                        (bool)$person['isSelf'],
+                        (string)$person['relation'],
+                        (string)$person['gender']
+                    );
+
+                    if (!empty($options['dryRun'])) {
+                        $summary['sent'] += 1;
+                        $summary['details'][] = [
+                            'person' => $person['personName'],
+                            'relation' => $person['relation'],
+                            'channel' => 'email',
+                            'status' => 'DRY_RUN',
+                            'message' => $plainWish,
+                        ];
+                        continue;
+                    }
+
+                    if ($emailTransport) {
+                        $mailResult = (array)call_user_func($emailTransport, $recipientEmail, $subject, $htmlCard, $person);
+                    } else {
+                        $mailResult = (array)AstroMailer::sendEmailWithAttachments(
+                            $recipientEmail,
+                            (string)$person['personName'],
+                            $subject,
+                            $htmlCard,
+                            [],
+                            $emailSettings,
+                            function_exists('astro_inline_logo_attachment') ? astro_inline_logo_attachment() : []
+                        );
+                    }
+
+                    $ok = !empty($mailResult['success']);
+                    $detail = (string)($mailResult['message'] ?? '');
+                    $logged = self::logWish($pdo, $person, $year, $date, 'email', $recipientEmail, $ok ? 'SENT' : 'FAILED', $detail);
+                    if (!$logged) {
+                        $summary['skipped'] += 1;
+                        continue;
+                    }
+                    if ($ok) {
+                        $summary['sent'] += 1;
+                    } else {
+                        $summary['failed'] += 1;
+                        error_log("AstroBirthdayWishes email -> {$recipientEmail} ({$person['personName']}): {$detail}");
+                    }
+                    $summary['details'][] = [
+                        'person' => $person['personName'],
+                        'relation' => $person['relation'],
+                        'channel' => 'email',
                         'status' => $ok ? 'SENT' : 'FAILED',
                         'reason' => $ok ? '' : $detail,
                     ];

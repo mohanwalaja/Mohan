@@ -66,7 +66,8 @@ function fitPageToA4Element(pageEl: HTMLElement) {
   inner.style.transform = 'none';
   inner.style.width = '100%';
 
-  const style = window.getComputedStyle(pageEl);
+  const view = pageEl.ownerDocument?.defaultView || window;
+  const style = view.getComputedStyle(pageEl);
   const paddingTop = parseFloat(style.paddingTop) || 0;
   const paddingBottom = parseFloat(style.paddingBottom) || 0;
   const naturalInnerPx = inner.scrollHeight || inner.offsetHeight;

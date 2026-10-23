@@ -1523,7 +1523,7 @@ if (strpos($path, 'admin/settings') !== false && !strpos($path, 'test-email')) {
         if (isset($body['chatAlertSettings']) && is_array($body['chatAlertSettings'])) {
             $existingChat = is_array($existingGeneral['chatAlertSettings'] ?? null) ? $existingGeneral['chatAlertSettings'] : [];
             $mergedChat = array_merge($existingChat, $body['chatAlertSettings']);
-            foreach (['whatsapp', 'viber'] as $chatChannelKey) {
+            foreach (['whatsapp', 'viber', 'birthdayWishes'] as $chatChannelKey) {
                 if (isset($body['chatAlertSettings'][$chatChannelKey]) && is_array($body['chatAlertSettings'][$chatChannelKey])) {
                     $mergedChat[$chatChannelKey] = array_merge(
                         is_array($existingChat[$chatChannelKey] ?? null) ? $existingChat[$chatChannelKey] : [],
@@ -1591,15 +1591,18 @@ if (($strpos_test_email = (strpos($path, 'admin/settings/test-email') !== false 
         jsonResponse(['success' => false, 'message' => 'SMTP is not configured with a host, username and saved app password. No email was sent.'], 400);
     }
 
-    $html = "
-    <div style='font-family: Arial, sans-serif; padding: 20px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;'>
-      <h2 style='color: #b45309; margin-top: 0;'>ASTRO SIVAM - SMTP Diagnostic Test</h2>
-      <p>This is an automated test email confirming that your PHP SMTP email system on BigRock cPanel is functioning properly.</p>
-      <p style='background: #fffbeb; padding: 10px; border-left: 4px solid #f59e0b; color: #92400e;'>
-        <strong>Note:</strong> If this email appeared in your Spam folder, check your SPF, DKIM, and DMARC records in cPanel Email Deliverability.
-      </p>
-      <p style='color: #64748b; font-size: 12px;'>Timestamp: " . date('Y-m-d H:i:s') . "</p>
-    </div>";
+    $safeHostDisplay = htmlspecialchars((string)($emailConfig['smtpHost'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $safePortDisplay = (int)($emailConfig['smtpPort'] ?? 587);
+    $html = astro_wrap_branded_email_html(
+        'SMTP Delivery Diagnostic Verification',
+        "<p style='margin:0 0 12px;font-size:15px;color:#1e1508;'><strong>SMTP Diagnostic Succeeded</strong></p>"
+        . "<p style='margin:0 0 14px;'>This automated test message confirms that your PHP SMTP transport on <strong>{$safeHostDisplay}:{$safePortDisplay}</strong> authenticated cleanly and delivered both plain-text and branded HTML parts with inline emblem embedding.</p>"
+        . "<div style='background:#fffbeb;padding:12px 14px;border-left:4px solid #c9962c;border-radius:6px;color:#92400e;font-size:12.5px;margin-bottom:14px;'>"
+        . "<strong>Inbox Placement Check:</strong> If this email arrived in Primary Inbox, your SPF, DKIM, and DMARC records are properly aligned. If it landed in Spam, inspect cPanel &rarr; Email Deliverability."
+        . "</div>"
+        . "<p style='margin:0;color:#6b5c3e;font-size:12px;'>Dispatched at: " . date('Y-m-d H:i:s T') . "</p>",
+        'ASTRO SIVAM System Administration Diagnostic'
+    );
 
     $res = AstroMailer::sendEmailWithAttachments(
         $targetEmail,
@@ -1607,7 +1610,8 @@ if (($strpos_test_email = (strpos($path, 'admin/settings/test-email') !== false 
         "ASTRO SIVAM: PHP SMTP Diagnostic Test Email",
         $html,
         [],
-        $emailConfig
+        $emailConfig,
+        astro_inline_logo_attachment()
     );
 
     jsonResponse([

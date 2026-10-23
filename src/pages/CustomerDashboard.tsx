@@ -271,7 +271,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
       const result = await api.getChatDelivery();
       if (result.success && result.chatDelivery) {
         setChatDelivery(result.chatDelivery);
-        setChatPhoneInput(result.chatDelivery.phone || '');
+        setChatPhoneInput(result.chatDelivery.phone || user?.mobile || '');
       }
     } catch {
       /* panel simply stays in its default state */
@@ -390,6 +390,30 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
       setChatBusy(false);
     }
   };
+
+  const handleToggleEmailBirthdayWishes = async (next: boolean) => {
+    setChatBusy(true);
+    setChatFeedback(null);
+    try {
+      const result = await api.saveEmailBirthdayWishPreference(next, appLanguage);
+      if (result.birthdayWishes) setBirthdayWishes(result.birthdayWishes);
+      setChatFeedback({
+        type: result.success ? 'success' : 'error',
+        message: result.message || (result.success ? 'Email birthday wishes updated.' : 'Could not save email wish setting.')
+      });
+    } catch (err: any) {
+      setChatFeedback({ type: 'error', message: err?.message || 'Could not save email wish setting.' });
+    } finally {
+      setChatBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      loadBirthdayWishes();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [birthProfile?.dob, familyMembers.length]);
 
   // Email Resend / Update Modal State
   const [resendOrder, setResendOrder] = useState<Order | null>(null);
@@ -1272,7 +1296,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
             goes only to a number verified in that app, only once a year per
             person, and it is text only: reports and invoices stay on email. */}
         {birthdayWishes && (
-          <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-1">
                 <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -1312,6 +1336,34 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 }`}
               >
                 {birthdayWishes.enabled ? 'On — turn off' : 'Turn on'}
+              </button>
+            </div>
+
+            {/* Effortless 1-click Email Birthday Wishes (no WhatsApp/Viber setup needed) */}
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-700/70 flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-amber-500" />
+                  <span>1-Click Email Birthday Greeting Card</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {birthdayWishes.emailAvailable
+                    ? `Instant setup with no phone code required — sent in ${reportLanguageName(appLanguage)} to ${birthdayWishes.userEmail || user?.email}.`
+                    : 'Email greeting cards can be switched on as soon as the site administrator enables Email Birthday Wishes.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleToggleEmailBirthdayWishes(!birthdayWishes.emailEnabled)}
+                disabled={chatBusy || !birthdayWishes.emailAvailable}
+                aria-pressed={!!birthdayWishes.emailEnabled}
+                className={`shrink-0 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  birthdayWishes.emailEnabled
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                }`}
+              >
+                {birthdayWishes.emailEnabled ? 'Email On — turn off' : 'Turn on Email Wishes'}
               </button>
             </div>
           </div>
@@ -2116,6 +2168,74 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           Picked explicitly on order forms; never auto-filled. */}
       {activeTab === 'family' && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          {/* Guided Easy Birthday Wishes Banner right where Birth Details live */}
+          {birthdayWishes && (
+            <div className="p-4 sm:p-5 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/20 space-y-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Automatic Birthday Wishes ({reportLanguageName(appLanguage)})</span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
+                    Receive a warm non-promotional birthday blessing automatically for yourself and every saved family member below — in one click by Email, or on your verified WhatsApp / Viber number.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {birthdayWishes.emailAvailable && (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEmailBirthdayWishes(!birthdayWishes.emailEnabled)}
+                      disabled={chatBusy}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50 ${
+                        birthdayWishes.emailEnabled
+                          ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                          : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                      }`}
+                    >
+                      {birthdayWishes.emailEnabled ? '✓ Email Wishes On' : '1-Click Enable Email Wishes'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAlertsOpen(true);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                  >
+                    {birthdayWishes.enabled ? '✓ Chat Wishes On' : 'WhatsApp / Viber Setup'}
+                  </button>
+                </div>
+              </div>
+
+              {chatFeedback && (
+                <p className={`text-xs font-medium ${chatFeedback.type === 'success' ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
+                  {chatFeedback.message}
+                </p>
+              )}
+
+              {(birthdayWishes.upcomingBirthdays || []).length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {(birthdayWishes.upcomingBirthdays || []).map(item => (
+                    <span
+                      key={item.personKey}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-white dark:bg-slate-900 border border-amber-200 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                    >
+                      <span>{item.name || 'Saved Profile'}</span>
+                      <span className="text-amber-700 dark:text-amber-400 font-bold">
+                        {item.daysUntil === 0
+                          ? '· Today!'
+                          : item.daysUntil === 1
+                            ? '· Tomorrow'
+                            : `· in ${item.daysUntil}d`}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">

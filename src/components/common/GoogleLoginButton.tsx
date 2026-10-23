@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { X, ShieldAlert } from 'lucide-react';
 import type { User } from '../../types';
@@ -31,6 +31,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [modalError, setModalError] = useState('');
+  const pendingPopupRef = useRef(false);
 
   const isEnabled = settings?.googleLoginEnabled !== false;
   const clientId = settings?.googleClientId?.trim();
@@ -47,6 +48,27 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
     }
   }, []);
 
+  // Recover cleanly if the user closes the Google popup window in browsers that
+  // do not dispatch GIS error_callback reliably.
+  useEffect(() => {
+    if (!isLoading) return;
+    let focusTimer: ReturnType<typeof setTimeout> | null = null;
+    const onWindowFocus = () => {
+      if (!pendingPopupRef.current) return;
+      focusTimer = setTimeout(() => {
+        if (pendingPopupRef.current) {
+          pendingPopupRef.current = false;
+          setIsLoading(false);
+        }
+      }, 1200);
+    };
+    window.addEventListener('focus', onWindowFocus);
+    return () => {
+      window.removeEventListener('focus', onWindowFocus);
+      if (focusTimer) clearTimeout(focusTimer);
+    };
+  }, [isLoading]);
+
   if (!isEnabled) {
     return null;
   }
@@ -55,14 +77,33 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
     // If Google Client ID is configured, attempt official Google OAuth2 / GIS popup
     if (clientId && window.google?.accounts) {
       setIsLoading(true);
+      pendingPopupRef.current = true;
       try {
         if (window.google.accounts.oauth2) {
           const tokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: clientId,
             scope: 'email profile openid',
+            error_callback: (err: any) => {
+              pendingPopupRef.current = false;
+              setIsLoading(false);
+              const errType = String(err?.type || '').toLowerCase();
+              if (errType === 'popup_closed') {
+                // User intentionally closed the popup — re-enable button quietly.
+                return;
+              }
+              const msg =
+                errType === 'popup_failed_to_open'
+                  ? 'Your browser blocked the Google sign-in pop-up. Please allow pop-ups for this site and click Continue with Google again.'
+                  : 'Google sign-in could not be completed. Please try again or use your email and password.';
+              setModalError(msg);
+              setShowConfigModal(true);
+              onError?.(msg);
+            },
             callback: async (tokenResponse: any) => {
+              pendingPopupRef.current = false;
               if (tokenResponse.error) {
                 setIsLoading(false);
+                if (tokenResponse.error === 'access_denied') return;
                 setModalError('Google sign-in was cancelled or blocked by your browser. Please allow pop-ups for astrosivam.com and try again.');
                 setShowConfigModal(true);
                 return;
@@ -94,6 +135,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
           window.google.accounts.id.initialize({
             client_id: clientId,
             callback: async (response: any) => {
+              pendingPopupRef.current = false;
               if (response.credential) {
                 // Send ONLY the signed ID token. The server verifies it with
                 // Google and derives the identity itself.
@@ -113,6 +155,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
 
           window.google.accounts.id.prompt((notification: any) => {
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              pendingPopupRef.current = false;
               setIsLoading(false);
               setModalError('The Google sign-in prompt could not be displayed. Please allow third-party cookies / pop-ups for astrosivam.com, or sign in with your e-mail and password instead.');
               setShowConfigModal(true);
@@ -121,6 +164,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
           return;
         }
       } catch (err: any) {
+        pendingPopupRef.current = false;
         console.warn('Google GIS error:', err);
         setIsLoading(false);
       }

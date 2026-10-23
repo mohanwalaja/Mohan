@@ -27,14 +27,14 @@
     </IfModule>
 </FilesMatch>
 
-# Block direct web access to vendor and bundled knowledge folders
+# Block direct web access to vendor, knowledge, staging storage, and migrations
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^(vendor|knowledge)(/.*)?$ - [F,L]
+    RewriteRule ^(vendor|knowledge|storage|migrations)(/.*)?$ - [F,L]
 </IfModule>
 
-# Block direct access to internal include files
-<FilesMatch "^(config|db)\.php$">
+# Block direct access to internal include-only PHP library files
+<FilesMatch "^(config|db|client_ip|rate_limit|request_body|mailer|payments|refunds|reviews|birth_profiles|branding|chat_alerts|birthday_wishes)\.php$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
