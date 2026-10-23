@@ -220,7 +220,8 @@ export const aiAstrologer = {
    * `question` (free text) is accepted from administrator sessions only.
    */
   async ask(sessionId: string, input: { questionId?: string; question?: string; complaintDetails?: string }, language: ChatLanguage): Promise<{
-    messageId: number; content: string; bubbles: string[]; sources: string;
+    messageId: number; language: ChatLanguage; customerMessage?: string;
+    content: string; bubbles: string[]; sources: string;
     areaId: string | null; handoff: boolean; latencyMs: number;
     remainingToday: number | null; unlimited: boolean;
     /** The curated option id the server answered, when one was sent. */
