@@ -87,6 +87,10 @@
      {
       "key": "venus",
       "house": 11
+     },
+     {
+      "key": "ketu",
+      "house": 9
      }
     ],
     "needsCare": [
@@ -222,6 +226,10 @@
      {
       "key": "venus",
       "house": 11
+     },
+     {
+      "key": "ketu",
+      "house": 9
      }
     ],
     "needsCare": [
@@ -357,6 +365,10 @@
      {
       "key": "venus",
       "house": 11
+     },
+     {
+      "key": "ketu",
+      "house": 9
      }
     ],
     "needsCare": [
@@ -1431,6 +1443,18 @@
      {
       "key": "mars",
       "house": 5
+     },
+     {
+      "key": "jupiter",
+      "house": 7
+     },
+     {
+      "key": "rahu",
+      "house": 10
+     },
+     {
+      "key": "ketu",
+      "house": 4
      }
     ],
     "needsCare": [
@@ -1546,6 +1570,18 @@
      {
       "key": "mars",
       "house": 5
+     },
+     {
+      "key": "jupiter",
+      "house": 7
+     },
+     {
+      "key": "rahu",
+      "house": 10
+     },
+     {
+      "key": "ketu",
+      "house": 4
      }
     ],
     "needsCare": [
@@ -1661,6 +1697,18 @@
      {
       "key": "mars",
       "house": 5
+     },
+     {
+      "key": "jupiter",
+      "house": 7
+     },
+     {
+      "key": "rahu",
+      "house": 10
+     },
+     {
+      "key": "ketu",
+      "house": 4
      }
     ],
     "needsCare": [
@@ -1776,6 +1824,10 @@
      {
       "key": "mars",
       "house": 1
+     },
+     {
+      "key": "venus",
+      "house": 10
      }
     ],
     "needsCare": [
@@ -1911,6 +1963,10 @@
      {
       "key": "mars",
       "house": 1
+     },
+     {
+      "key": "venus",
+      "house": 10
      }
     ],
     "needsCare": [
@@ -2046,6 +2102,10 @@
      {
       "key": "mars",
       "house": 1
+     },
+     {
+      "key": "venus",
+      "house": 10
      }
     ],
     "needsCare": [

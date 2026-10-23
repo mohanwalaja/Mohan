@@ -78,8 +78,8 @@ export const SUMMARY_NODE_DEBILITATION_SIGN: Record<string, Rasi> = {
   [Graha.KETU]: Rasi.RISHABAM
 };
 
-/** Supportive boxes are capped so the Short Summary always fits one A4 page. */
-export const SUMMARY_SUPPORTIVE_LIMIT = 3;
+/** Show all supportive grahas present in the user's chart on Page 3. */
+export const SUMMARY_SUPPORTIVE_LIMIT = 9;
 
 /** From this many flagged grahas the page switches to the compact table. */
 export const SUMMARY_COMPACT_THRESHOLD = 5;

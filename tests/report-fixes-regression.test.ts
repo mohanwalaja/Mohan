@@ -242,14 +242,21 @@ echo json_encode([
       `${phpLabel}: renders full Tamil Surya remedial sentence when Surya has dosha`
     );
     const noSunCareTable = taNoSunHtml.split('<table class="summary-care">')[1]?.split('</table>')[0] ?? '';
+    const noSunSupportTable = taNoSunHtml.split('<table class="summary-good">')[1]?.split('</table>')[0] ?? '';
     assert.ok(
       !noSunCareTable.includes('சூரியன்'),
       `${phpLabel}: omits Surya from remedies table when user has NO Surya dosha`
     );
+    assert.ok(
+      noSunSupportTable.includes('சூரியன்') && noSunSupportTable.includes('குரு') && noSunSupportTable.includes('செவ்வாய்'),
+      `${phpLabel}: shows ALL supportive planets (including 4th/5th supportive planet) under உங்களுக்கு ஆதரவாக இருக்கும் கிரகங்கள்`
+    );
+    const supportCount = (noSunSupportTable.match(/class="summary-planet"/g) || []).length;
+    assert.equal(supportCount, 4, `${phpLabel}: renders all 4 supportive planets without 3-box cap`);
     const rowCount = (taNoSunHtml.match(/class="summary-care-planet"/g) || []).length;
     assert.ok(rowCount > 0 && rowCount < 9, `${phpLabel}: renders only user's afflicted planets (${rowCount}/9)`);
   }
-  console.log('[PASS] Both PHP renderers (report_views.php & pdf_mpdf_reports.php) filter planets and render full Tamil remedies');
+  console.log('[PASS] Both PHP renderers (report_views.php & pdf_mpdf_reports.php) show all supportive planets and filter care remedies strictly to user doshas');
 
   const docs: Array<[string, string]> = [
     ...charts.map((c, i) => [`ts:jathagam#${i}`, buildJathagamHtml(c, 'hi')] as [string, string]),

@@ -201,7 +201,7 @@ push('        $lordSupportiveHouses = [1, 2, 4, 5, 7, 9, 10, 11];');
 push('        $malefics = [\'mars\', \'saturn\', \'rahu\', \'ketu\'];');
 push('        $nodeDebilitation = [\'rahu\' => 8, \'ketu\' => 2];');
 push('        $conjunctionOrb = 10;');
-push('        $supportiveLimit = 3;');
+push('        $supportiveLimit = 9;');
 push('        $compactThreshold = 5;');
 push('');
 push('        $validRasi = static function ($value): bool {');

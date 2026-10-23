@@ -2218,16 +2218,27 @@ HTML;
             . $summaryCell($isTa ? 'நட்சத்திரம்' : ($isHi ? 'नक्षत्र' : 'Nakshatra'), $nakName . ' — ' . self::e($padaText), 2)
             . '</tr></table>';
 
-        $summaryGoodCells = '';
-        foreach ($summary['supportive'] as $planet) {
-            $summaryGoodCells .= '<td class="summary-planet">'
-                . '<div class="summary-planet-name">' . $summaryPlanetName((string) $planet['key']) . '</div>'
-                . '<div class="summary-planet-note">'
-                . self::e((string) ($summaryRemedyData[$planet['key']]['support'][$lang] ?? '')) . '</div></td>';
+        $summaryGoodRows = '';
+        if (!empty($summary['supportive'])) {
+            $perRow = count($summary['supportive']) === 4 ? 4 : 3;
+            foreach (array_chunk($summary['supportive'], $perRow) as $rowPlanets) {
+                $rowCells = '';
+                foreach ($rowPlanets as $planet) {
+                    $rowCells .= '<td class="summary-planet">'
+                        . '<div class="summary-planet-name">' . $summaryPlanetName((string) $planet['key']) . '</div>'
+                        . '<div class="summary-planet-note">'
+                        . self::e((string) ($summaryRemedyData[$planet['key']]['support'][$lang] ?? '')) . '</div></td>';
+                }
+                while (count($rowPlanets) < $perRow) {
+                    $rowCells .= '<td class="summary-planet-empty"></td>';
+                    $rowPlanets[] = null;
+                }
+                $summaryGoodRows .= '<tr>' . $rowCells . '</tr>';
+            }
         }
-        $summaryGoodHtml = $summaryGoodCells === ''
+        $summaryGoodHtml = $summaryGoodRows === ''
             ? '<div class="summary-empty">' . self::e($summaryText['noSupportPlanet']) . '</div>'
-            : '<table class="summary-good"><tr>' . $summaryGoodCells . '</tr></table>';
+            : '<table class="summary-good">' . $summaryGoodRows . '</table>';
 
         $summaryCareRows = '';
         foreach ($summary['needsCare'] as $planet) {
@@ -2392,7 +2403,8 @@ HTML;
     #birth-summary-sheet table.summary-details td.summary-cell { background: #ffffff; border: 0.6px solid #e5e7eb; border-radius: 4px; padding: 0.7mm 1mm; vertical-align: top; }
     #birth-summary-sheet .summary-detail-label { font-size: 10.5px; color: #6b7280; line-height: 1.3; }
     #birth-summary-sheet .summary-detail-value { font-size: 11.5px; font-weight: bold; color: #1f2937; line-height: 1.35; word-wrap: break-word; }
-    #birth-summary-sheet table.summary-good { width: 100%; border-collapse: separate; border-spacing: 0.8mm 0; table-layout: fixed; }
+    #birth-summary-sheet table.summary-good { width: 100%; border-collapse: separate; border-spacing: 0.8mm 0.8mm; table-layout: fixed; }
+    #birth-summary-sheet td.summary-planet-empty { border: none; background: transparent; padding: 0; }
     #birth-summary-sheet td.summary-planet { background: #ffffff; border: 0.6px solid #bfe6d3; border-radius: 4px; padding: 0.8mm 1mm; vertical-align: top; }
     #birth-summary-sheet .summary-planet-name { font-size: 13px; font-weight: bold; color: #0f6b4a; line-height: 1.3; }
     #birth-summary-sheet .summary-planet-note { font-size: 11.5px; color: #1f2937; line-height: 1.45; }
@@ -3363,7 +3375,7 @@ CSS;
         $malefics = ['mars', 'saturn', 'rahu', 'ketu'];
         $nodeDebilitation = ['rahu' => 8, 'ketu' => 2];
         $conjunctionOrb = 10;
-        $supportiveLimit = 3;
+        $supportiveLimit = 9;
         $compactThreshold = 5;
 
         $validRasi = static function ($value): bool {

@@ -11,6 +11,8 @@ import { buildOrderInvoiceHtmlForItems, orderItemAsOrder, prepareOrderItemPdfs }
 import { describeFamilyRenderQuality } from '../../services/formatUtils';
 import { normalizeReportLanguage } from '../../services/reportLanguage';
 import { withDerivedNavamsa } from '../../services/navamsa';
+import { classifyJathagamPlanetsForSummary } from '../../services/jathagamPlanetSummary';
+import { JATHAGAM_PLANET_PROFILES, NAVAGRAHA_DOSHA_DATA, SHORT_SUMMARY_TEXT } from '../../services/jathagamDoshaData';
 
 const RASI_NAMES_ORDER_MODAL: Record<number, string> = {
   1: 'Mesham', 2: 'Rishabam', 3: 'Mithunam', 4: 'Kadagam',
@@ -873,24 +875,81 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
                     </div>
                   </div>
 
-                  {/* Dosha Assessment Box */}
-                  <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-                    <h4 className="text-xs font-bold uppercase text-amber-900 dark:text-amber-300 mb-2">
-                      Astrological Doshas & Remedial Guidance
-                    </h4>
-                    <div className="space-y-3 text-xs">
-                      {(result.doshas || []).filter((d: any) => d?.isPresent !== false).map((d: any, idx: number) => (
-                        <div key={idx} className="border-b border-amber-200/50 dark:border-amber-800/50 pb-2 last:border-none last:pb-0">
-                          <div className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
-                            <span>{d.nameEn}</span>
-                            <span className="font-normal text-amber-700 dark:text-amber-400">{d.severityEn}</span>
-                          </div>
-                          <p className="text-slate-600 dark:text-slate-400 mt-0.5">{d.descriptionEn}</p>
-                          <p className="text-slate-800 dark:text-slate-200 font-medium mt-1">★ Remedy: {d.traditionalRemedyEn}</p>
+                  {/* Supportive Planets + Active Dosha / Care Planets */}
+                  {(() => {
+                    const summaryLang = (selectedLang === 'ta' || selectedLang === 'hi') ? selectedLang : 'en';
+                    const planetSummary = classifyJathagamPlanetsForSummary(resultAny, summaryLang);
+                    const summaryCopy = SHORT_SUMMARY_TEXT[summaryLang];
+                    const activeDoshas = (result.doshas || []).filter((d: any) => d?.isPresent !== false);
+
+                    return (
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800">
+                          <h4 className="text-xs font-bold uppercase text-emerald-900 dark:text-emerald-300 mb-2.5">
+                            {summaryCopy.supportiveTitle}
+                          </h4>
+                          {planetSummary.supportive.length === 0 ? (
+                            <p className="text-xs font-medium text-emerald-800 dark:text-emerald-300">
+                              {summaryCopy.noSupportPlanet}
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
+                              {planetSummary.supportive.map(planet => {
+                                const name = NAVAGRAHA_DOSHA_DATA[planet.key]?.name?.[summaryLang] || planet.key;
+                                const note = JATHAGAM_PLANET_PROFILES[planet.key]?.support?.[summaryLang] || '';
+                                return (
+                                  <div
+                                    key={planet.key}
+                                    className="p-2.5 rounded-lg bg-white dark:bg-slate-900/70 border border-emerald-200/80 dark:border-emerald-800/70"
+                                  >
+                                    <div className="font-bold text-emerald-800 dark:text-emerald-300">{name}</div>
+                                    <div className="text-slate-600 dark:text-slate-300 mt-0.5 leading-snug">{note}</div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+
+                        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                          <h4 className="text-xs font-bold uppercase text-amber-900 dark:text-amber-300 mb-2">
+                            {summaryCopy.careTitle}
+                          </h4>
+                          <div className="space-y-3 text-xs">
+                            {planetSummary.needsCare.map(planet => {
+                              const name = NAVAGRAHA_DOSHA_DATA[planet.key]?.name?.[summaryLang] || planet.key;
+                              return (
+                                <div
+                                  key={planet.key}
+                                  className="border-b border-amber-200/50 dark:border-amber-800/50 pb-2 last:border-none last:pb-0"
+                                >
+                                  <div className="font-bold text-slate-900 dark:text-white">{name}</div>
+                                  <p className="text-slate-600 dark:text-slate-400 mt-0.5">{planet.difficulties}</p>
+                                  <p className="text-slate-800 dark:text-slate-200 font-medium mt-1">★ {planet.compactLine}</p>
+                                </div>
+                              );
+                            })}
+                            {activeDoshas.map((d: any, idx: number) => (
+                              <div key={`dosha-${idx}`} className="border-b border-amber-200/50 dark:border-amber-800/50 pb-2 last:border-none last:pb-0">
+                                <div className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
+                                  <span>{summaryLang === 'ta' ? (d.nameTa || d.nameEn) : summaryLang === 'hi' ? (d.nameHi || d.nameEn) : d.nameEn}</span>
+                                  <span className="font-normal text-amber-700 dark:text-amber-400">
+                                    {summaryLang === 'ta' ? (d.severityTa || d.severityEn) : summaryLang === 'hi' ? (d.severityHi || d.severityEn) : d.severityEn}
+                                  </span>
+                                </div>
+                                <p className="text-slate-600 dark:text-slate-400 mt-0.5">
+                                  {summaryLang === 'ta' ? (d.descriptionTa || d.descriptionEn) : summaryLang === 'hi' ? (d.descriptionHi || d.descriptionEn) : d.descriptionEn}
+                                </p>
+                                <p className="text-slate-800 dark:text-slate-200 font-medium mt-1">
+                                  ★ {summaryLang === 'ta' ? (d.traditionalRemedyTa || d.traditionalRemedyEn) : summaryLang === 'hi' ? (d.traditionalRemedyHi || d.traditionalRemedyEn) : d.traditionalRemedyEn}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
