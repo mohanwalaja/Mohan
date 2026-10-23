@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * ASTRO SIVAM AI Astrologer — Tamil-only citation policy.
  *
@@ -12,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (rel: string) => fs.readFileSync(path.join(projectRoot, rel), 'utf8');
+const read = (p: string) => readRepoSource(p);
 
 let passed = 0;
 function check(name: string, fn: () => void) {

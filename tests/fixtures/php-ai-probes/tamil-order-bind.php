@@ -32,15 +32,8 @@ file_put_contents('/repo/api/config.php', "<?php\n// probe stub\n");
 require_once '/repo/api/astrology/ai_astrologer_provider.php';
 require_once '/repo/api/astrology/engine.php';
 
-$endpoint = file_get_contents('/repo/api/ai_astrologer.php');
-$evalFromEndpoint = function (string $from, string $to) use ($endpoint) {
-    $start = strpos($endpoint, $from);
-    $end = strpos($endpoint, $to, $start);
-    eval(str_replace('__DIR__', "'/repo/api'", substr($endpoint, $start, $end - $start)));
-};
-$evalFromEndpoint('function astro_ai_guided_path(', '/* ================================================================== */');
-$evalFromEndpoint('function astro_ai_report_result(', 'function astro_ai_chart_facts(');
-$evalFromEndpoint('function astro_ai_chart_facts(', '/* ================================================================== */');
+require_once '/repo/api/astrology/ai_astrologer/guided_and_binding.php';
+require_once '/repo/api/astrology/ai_astrologer/chart_and_report_facts.php';
 
 $taMenu = astro_ai_guided_menu('ta', ['MARRIAGE_COMPATIBILITY'], true);
 $taAllTamil = true;

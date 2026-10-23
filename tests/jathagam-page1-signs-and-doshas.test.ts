@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * BIRTH JATHAGAM PAGE 1 — requested additions (2026-10-20).
  *
@@ -31,7 +32,7 @@ import {
 import type { AppLanguage } from '../src/lib/astrology/types.js';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relative: string) => fs.readFileSync(path.join(projectRoot, relative), 'utf8');
+const read = (p: string) => readRepoSource(p);
 
 const page1Json = JSON.parse(read('api/astrology/jathagam_page1.json'));
 const reportViewsPhp = read('api/astrology/report_views.php');

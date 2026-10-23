@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * ASTRO SIVAM AI Astrologer — Part 4: access control, rate limit and history.
  *
@@ -16,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { sliceText, assertNonEmptySet } from './helpers/sourceSlice';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8');
+const read = (p: string) => readRepoSource(p);
 
 const endpoint = read('api/ai_astrologer.php');
 const migration = read('api/migrations/007_ai_astrologer_chat.sql');

@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * REPORT READABILITY GUARD (owner request, Oct 2026)
  *
@@ -27,7 +28,7 @@ import { buildJathagamHtml } from '../src/services/jathagamHtmlBuilder.js';
 import type { AppLanguage } from '../src/lib/astrology/types.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');
+const read = (p: string) => readRepoSource(p);
 const builderTs = read('src/services/jathagamHtmlBuilder.ts');
 const rendererPhp = read('api/astrology/report_views.php');
 

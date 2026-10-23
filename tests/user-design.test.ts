@@ -1,8 +1,9 @@
+import { readRepoSource } from './helpers/module-sources.js';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { COLOR_MODE_STORAGE_KEY, getSavedColorMode, saveColorMode } from '../src/services/colorMode';
 
-const read = (path: string) => readFileSync(path, 'utf8');
+const read = (p: string) => readRepoSource(p);
 const app = read('src/App.tsx');
 const css = read('src/user-designs.css');
 const navbar = read('src/components/layout/Navbar.tsx');

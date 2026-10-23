@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * Astrology team portraits are UPLOADED from the admin panel, not pasted as a
  * URL (2026-10-21 request): "site asking for photo url I can't do that ... can
@@ -36,7 +37,7 @@ import {
 } from '../src/services/teamPhoto';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');
+const read = (p: string) => readRepoSource(p);
 
 let passed = 0;
 function check(name: string, fn: () => void) {

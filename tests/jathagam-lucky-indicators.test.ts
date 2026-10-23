@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Graha, HoroscopeResult } from '../src/lib/astrology/types.js';
@@ -106,7 +107,7 @@ for (const lang of ['en', 'ta', 'hi'] as const) {
 console.log('[PASS] page 3 prints the lucky-indicator card in en / ta / hi');
 
 // 5. PHP mirror carries the same table
-const php = readFileSync(new URL('../api/astrology/report_views.php', import.meta.url), 'utf8');
+const php = readRepoSource(new URL('../api/astrology/report_views.php', import.meta.url));
 assert.ok(php.includes('function resolveJathagamLuckyIndicators'), 'PHP resolver exists');
 assert.ok(php.includes('class="summary-card lucky"'), 'PHP page 3 prints the lucky card');
 for (const [, exp] of Object.entries(expectedTa)) {

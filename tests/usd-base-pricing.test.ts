@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * USD is the base price; India (INR) is ALWAYS auto-calculated from it.
  *
@@ -27,7 +28,7 @@ import {
 } from '../src/services/pricing';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');
+const read = (p: string) => readRepoSource(p);
 
 let passed = 0;
 function check(name: string, fn: () => void) {

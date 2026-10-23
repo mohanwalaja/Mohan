@@ -14,22 +14,11 @@ file_put_contents('/repo/api/config.php', "<?php\n// probe stub\n");
 require_once '/repo/api/astrology/ai_astrologer_provider.php';
 require_once '/repo/api/astrology/engine.php';
 
-// Load the endpoint helpers this probe needs without starting the endpoint's
-// session/CORS/database dispatch.
-$endpoint = file_get_contents('/repo/api/ai_astrologer.php');
 if (!function_exists('astro_normalize_report_language')) {
     function astro_normalize_report_language($l) { return in_array($l, ['en', 'ta', 'hi'], true) ? $l : 'ta'; }
 }
-$evalFromEndpoint = function (string $from, string $to) use ($endpoint) {
-    $start = strpos($endpoint, $from);
-    $end = strpos($endpoint, $to, $start);
-    eval(str_replace('__DIR__', "'/repo/api'", substr($endpoint, $start, $end - $start)));
-};
-$evalFromEndpoint('function astro_ai_guided_path(', '/* ================================================================== */');
-// astro_ai_chart_facts() now reads the shared, memoised rebuild helper, so
-// that helper has to be in scope too.
-$evalFromEndpoint('function astro_ai_report_result(', 'function astro_ai_chart_facts(');
-$evalFromEndpoint('function astro_ai_chart_facts(', '/* ================================================================== */');
+require_once '/repo/api/astrology/ai_astrologer/guided_and_binding.php';
+require_once '/repo/api/astrology/ai_astrologer/chart_and_report_facts.php';
 
 $out = ['menu' => null, 'gatedMenu' => null, 'replies' => []];
 

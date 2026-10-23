@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as Astronomy from 'astronomy-engine';
@@ -447,7 +448,7 @@ check(
 // suite does. Every rule above must exist on both stacks.
 // ---------------------------------------------------------------------------
 {
-  const phpReport = readFileSync(new URL('../api/astrology/report_views.php', import.meta.url), 'utf8');
+  const phpReport = readRepoSource(new URL('../api/astrology/report_views.php', import.meta.url));
   // The life-card code sits above the page-3 Short Summary banner. The banner is
   // the boundary because page 3 needs the engine's node convention (Rahu in
   // Viruchigam, Ketu in Rishabam), while the life-card tables must stay free of
@@ -455,7 +456,7 @@ check(
   const page3Banner = phpReport.indexOf('// BIRTH JATHAGAM - PAGE 3 (SHORT SUMMARY)');
   const lifeCardRegion = page3Banner > 0 ? phpReport.slice(0, page3Banner) : phpReport;
   const page3Region = page3Banner > 0 ? phpReport.slice(page3Banner) : '';
-  const phpEngine = readFileSync(new URL('../api/astrology/engine.php', import.meta.url), 'utf8');
+  const phpEngine = readRepoSource(new URL('../api/astrology/engine.php', import.meta.url));
   const phpConfig = readFileSync(new URL('../api/config.php', import.meta.url), 'utf8');
 
   check(

@@ -56,7 +56,12 @@ const MOUNT_FILES = [
 ];
 
 /** Mounted whole: the provider resolves it two levels up from api/astrology/. */
-const MOUNT_DIRS = ['knowledge/ai-astrologer'];
+const MOUNT_DIRS = [
+  'knowledge/ai-astrologer',
+  'api/astrology/engine',
+  'api/astrology/report_views',
+  'api/astrology/ai_astrologer',
+];
 
 const php = new PHP(await loadNodeRuntime('8.4', { emscriptenOptions: { processId: 42 } }));
 

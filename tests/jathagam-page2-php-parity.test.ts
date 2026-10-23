@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * PARITY between the PHP PDF generator and the shared life-card rules.
  *
@@ -22,7 +23,7 @@ import { sliceText, sliceToEnd, assertNonEmptySet } from './helpers/sourceSlice'
 import { LIFE_CARD_RULES } from '../src/lib/astrology/lifeCardPredictions';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const php = fs.readFileSync(path.join(root, 'api/astrology/report_views.php'), 'utf8');
+const php = readRepoSource(path.join(root, 'api/astrology/report_views.php'));
 const rules = JSON.parse(
   fs.readFileSync(path.join(root, 'api/astrology/life_cards_rules.json'), 'utf8')
 ) as {

@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * AI astrologer chat language follows the report language.
  *
@@ -18,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { sliceText } from './helpers/sourceSlice';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8');
+const read = (p: string) => readRepoSource(p);
 
 const endpoint = read('api/ai_astrologer.php');
 const panel = read('src/components/ai-astrologer/AiAstrologerPanel.tsx');

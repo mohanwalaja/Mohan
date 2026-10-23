@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * Curated life-area options each answer their own question.
  *
@@ -16,7 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8');
+const read = (p: string) => readRepoSource(p);
 
 const guided = JSON.parse(read('knowledge/ai-astrologer/rules/guided-questions.json'));
 const areas = JSON.parse(read('knowledge/ai-astrologer/rules/life-areas.json'));

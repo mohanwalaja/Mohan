@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * ASTRO SIVAM source-based astrologer — local reply and safety contracts.
  *
@@ -12,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { sliceText, sliceToEnd, assertNonEmptySet } from './helpers/sourceSlice';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8');
+const read = (p: string) => readRepoSource(p);
 
 const provider = read('api/astrology/ai_astrologer_provider.php');
 const offline = read('api/astrology/ai_astrologer_offline.php');
