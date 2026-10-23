@@ -182,6 +182,13 @@ class AstroAiOffline
             return self::finish([$text], '', null, true, $lang);
         }
 
+        // 1b. A TYPED question about how reports are prepared, verified and
+        // emailed is answered here — the same four steps every public page
+        // states (src/data/orderJourney.ts), in the customer's language.
+        if (self::isOrderProcessQuestion($q)) {
+            return self::finish([self::orderProcessText($lang)], '', null, false, $lang);
+        }
+
         // 2. Small talk and greetings are answered here, never handed to the astrologer.
         $talk = self::smallTalkBubbles($q, $lang);
         if (self::isGreeting($q)) {
@@ -549,6 +556,64 @@ class AstroAiOffline
     // ------------------------------------------------------------------
 
     /**
+     * THE ORDER JOURNEY, in the customer's language.
+     *
+     * One answer for the guided option, the typed question and (through the
+     * website copy in src/data/orderJourney.ts) every public page: the order
+     * goes to our India-based Vedic priest team, they calculate the chart and
+     * verify the report, the administrator approves it, and the PDF report +
+     * tax invoice are emailed to the registered address with the verification
+     * line naming the priest team.
+     */
+    private static function orderProcessText(string $lang): string
+    {
+        return self::t($lang, [
+            'en' => "Every ASTRO SIVAM order follows the same four steps.\n"
+                . "1. Your order goes to our India-based Vedic priest team.\n"
+                . "2. The priests calculate the chart from your birth details with the Chitra Paksha Lahiri ephemeris and verify the charts, dashas and verdicts by hand.\n"
+                . "3. The administrator then approves the finished report.\n"
+                . "4. Your official PDF report and Tax Invoice are emailed to your registered email address. The email carries a verification line naming the India-based priest team that calculated and verified your report. Please check your Spam / Junk folder as well.",
+            'ta' => "ஒவ்வொரு ASTRO SIVAM ஆர்டரும் ஒரே நான்கு படிகளைப் பின்பற்றுகிறது.\n"
+                . "1. உங்கள் ஆர்டர் இந்தியாவில் உள்ள எங்கள் வேத பூசாரி குழுவுக்குச் செல்கிறது.\n"
+                . "2. உங்கள் பிறப்பு விவரங்களிலிருந்து சித்ரா பக்ஷ லஹிரி பஞ்சாங்கத்தால் ஜாதகத்தைக் கணித்து, கட்டங்கள், தசைகள், முடிவுகளை அவர்கள் கைப்பட சரிபார்க்கிறார்கள்.\n"
+                . "3. பின்னர் நிர்வாகி தயாராகிவிட்ட அறிக்கையை அனுமதிக்கிறார்.\n"
+                . "4. உங்கள் அதிகாரப்பூர்வ PDF அறிக்கையும் வரி விலைப்பட்டியலும் உங்கள் பதிவு செய்யப்பட்ட மின்னஞ்சல் முகவரிக்கு அனுப்பப்படும். அந்த மின்னஞ்சலில், இந்தியாவில் உள்ள எங்கள் பூசாரி குழு அறிக்கையைக் கணித்து சரிபார்த்தது என்பதை உறுதி செய்யும் வரி இடம்பெறும். ஸ்பேம் / ஜங்க் கோப்புறையையும் பார்க்கவும்.",
+            'hi' => "हर ASTRO SIVAM ऑर्डर इन्हीं चार चरणों से गुजरता है।\n"
+                . "1. आपका ऑर्डर भारत में हमारी वैदिक पुजारी टीम के पास जाता है।\n"
+                . "2. वे आपके जन्म विवरण से चित्रा पक्ष लाहिरी पंचांग के अनुसार कुंडली की गणना करते हैं और कुंडली, दशाएँ तथा निर्णय हाथ से जाँचते हैं।\n"
+                . "3. इसके बाद प्रशासक तैयार रिपोर्ट को स्वीकृति देता है।\n"
+                . "4. आपकी आधिकारिक PDF रिपोर्ट और कर चालान आपके पंजीकृत ईमेल पते पर भेजे जाते हैं। उस ईमेल में यह सत्यापन पंक्ति होती है कि भारत की हमारी पुजारी टीम ने रिपोर्ट की गणना और सत्यापन किया है। कृपया स्पैम / जंक फ़ोल्डर भी देखें।",
+        ]);
+    }
+
+    /**
+     * True when a TYPED question is about how reports are prepared, verified and
+     * delivered. Phrase-level matching only: "when will I get married" must
+     * never be read as a delivery question.
+     */
+    private static function isOrderProcessQuestion(string $q): bool
+    {
+        $phrases = [
+            'who prepares', 'who calculates', 'who verifies', 'who makes my report',
+            'how is my report prepared', 'how are reports prepared', 'how do you prepare',
+            'what happens after i order', 'what happens after i pay', 'what happens after order',
+            'priest team', 'priest prepares', 'verified by priest', 'admin approval',
+            'administrator approves', 'after approval', 'when will i receive my report',
+            'when will my report be emailed', 'email delivery', 'report delivery',
+            'யார் தயாரிப்பார்', 'யார் தயாரிக்கிறார்கள்', 'பூசாரி', 'அர்ச்சகர்',
+            'அனுமதிக்குப் பிறகு', 'எப்போது மின்னஞ்சல்', 'அறிக்கை அனுப்பப்படும்',
+            'कौन तैयार करता है', 'कौन तैयार करते हैं', 'पुजारी', 'पुरोहित',
+            'स्वीकृति के बाद', 'रिपोर्ट कब भेजी', 'ईमेल द्वारा',
+        ];
+        foreach ($phrases as $phrase) {
+            if ($phrase !== '' && mb_strpos($q, mb_strtolower($phrase, 'UTF-8'), 0, 'UTF-8') !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Answers the "My Order & Report" options from the customer's own order
      * row only. Facts (order number, dates, amounts, birth details) are read
      * from $context['orderDetails'], which the endpoint built from this
@@ -557,11 +622,17 @@ class AstroAiOffline
     private static function orderBubbles(array $guided, string $lang, array $context, ?array $chart, string $name): array
     {
         $details = (string) ($context['orderDetails'] ?? '');
+        $topic = (string) ($guided['topic'] ?? 'status');
+        // "Who prepares my report?" is a question about how ASTRO SIVAM works,
+        // not about one order row, so it is answered before the order check —
+        // a visitor who has not ordered yet must get the same answer.
+        if ($topic === 'process') {
+            return [self::orderProcessText($lang)];
+        }
         if ($details === '' || strpos($details, 'no order attached') !== false) {
             return [self::personalHint($lang)];
         }
         $who = $name !== '' ? $name . ', ' : '';
-        $topic = (string) ($guided['topic'] ?? 'status');
 
         if ($topic === 'payment') {
             $paid = '';

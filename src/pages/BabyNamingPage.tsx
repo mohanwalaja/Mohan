@@ -47,6 +47,7 @@ import { SEO } from '../components/common/SEO';
 import { RouteLink } from '../components/common/RouteLink';
 import { JsonLd } from '../components/common/JsonLd';
 import { ServiceFaqSection } from '../components/common/ServiceFaqSection';
+import { OrderJourneyNotice } from '../components/common/OrderJourneyNotice';
 import { RelatedReports } from '../components/common/RelatedReports';
 import { BABY_NAMING_FAQ_ITEMS } from '../data/serviceFaqs';
 import { buildBreadcrumbJsonLd } from '../services/structuredData';
@@ -786,6 +787,9 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
           { route: 'marriage-compatibility', label: '10 Porutham marriage compatibility' }
         ]}
       />
+
+      {/* Order journey — priest team → admin approval → emailed PDF + invoice. */}
+      <OrderJourneyNotice className="site-container mt-12" />
 
       {/* Service FAQ — visible answers + this page's FAQPage JSON-LD (index-coverage audit 2026-10-16). */}
       <ServiceFaqSection

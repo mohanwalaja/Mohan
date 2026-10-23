@@ -9,10 +9,12 @@ export interface FaqItem {
   answer: string;
 }
 
+import { ORDER_JOURNEY_FAQ_ANSWER } from './orderJourney';
+
 export const HOME_FAQ_ITEMS: readonly FaqItem[] = [
   {
     question: 'When and how will I receive my report?',
-    answer: 'Our India-based priest team checks all reports every 6 hours. Once every report is reviewed and the administrator approves it, your official PDF report and Tax Invoice are emailed directly to your registered address.'
+    answer: ORDER_JOURNEY_FAQ_ANSWER
   },
   {
     question: 'What birth details do I need?',

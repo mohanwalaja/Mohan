@@ -150,7 +150,9 @@ check('every option routes to exactly one supported answer path', () => {
     }
     if (q.kind === 'order') {
       assert.ok(
-        ['status', 'payment', 'details', 'correction'].includes(q.topic),
+        // 'process' answers "who prepares my report, and when is it emailed?"
+        // from the order journey (src/data/orderJourney.ts) — no order row needed.
+        ['status', 'payment', 'details', 'correction', 'process'].includes(q.topic),
         `option ${q.id} names an unknown order topic ${q.topic}`
       );
     }

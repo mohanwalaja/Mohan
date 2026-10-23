@@ -143,6 +143,14 @@ const testFiles = [
   // base, the order preview table — or the sample PDF a visitor opens before
   // paying, which this renders for real in en/ta/hi.
   'tests/muhurtham-good-time-only.test.ts',
+  // Order journey (owner request 2026-10-24): every public page, every delivery
+  // FAQ and the AI Astrologer must state the same four steps — the order goes
+  // to the India-based priest team, they calculate and verify it, the
+  // administrator approves it, and the PDF report + tax invoice are emailed to
+  // the registered address with the priest-team verification line. The copy
+  // test pins the surfaces; the runtime test EXECUTES the chat answer in en/ta/hi.
+  'tests/order-journey-copy.test.ts',
+  'tests/ai-astrologer-order-journey.test.ts',
   'tests/sample-engine-meaning.test.ts',
   'tests/report-dob-format.test.ts',
   'tests/ai-astrologer-sources.test.ts',

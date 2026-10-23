@@ -5,6 +5,7 @@ import { SEO } from '../components/common/SEO';
 import { JsonLd } from '../components/common/JsonLd';
 import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import fullLogoImg from '../assets/astrosivam_full_logo.png';
+import { OrderJourneyNotice } from '../components/common/OrderJourneyNotice';
 
 interface AboutPageProps {
   onNavigate: (route: string) => void;
@@ -48,6 +49,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
           Based in Chennai, India — serving Australia, New Zealand, USA, UK, Canada, Southeast Asia and the worldwide global community with sacred Vedic Jyotish wisdom — ASTRO SIVAM (astrosivam.com) is an authentic Vedic platform. Every reading, calculation, and horoscope is prepared directly by our revered India-based Vedic priest team daily between 9:00 AM – 11:00 AM IST, delivering mathematical precision, multilingual accessibility, and verified email delivery upon admin approval.
         </p>
       </div>
+
+      {/* The order journey, stated once and identically everywhere. */}
+      <OrderJourneyNotice id="order-journey" />
 
       {/* Pillars Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

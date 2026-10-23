@@ -6,6 +6,7 @@ import { SEO } from '../components/common/SEO';
 import { RouteLink } from '../components/common/RouteLink';
 import { JsonLd } from '../components/common/JsonLd';
 import { buildBreadcrumbJsonLd } from '../services/structuredData';
+import { OrderJourneyNotice } from '../components/common/OrderJourneyNotice';
 
 interface AstrologyTeamPageProps {
   onNavigate: (route: string) => void;
@@ -105,6 +106,8 @@ export const AstrologyTeamPage: React.FC<AstrologyTeamPageProps> = ({ onNavigate
             </p>
           </div>
         </div>
+
+        <OrderJourneyNotice className="pt-2" />
 
         <div className="pt-4 flex justify-center">
           <RouteLink

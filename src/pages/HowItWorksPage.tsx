@@ -36,6 +36,7 @@ import { JsonLd } from '../components/common/JsonLd';
 import { buildBreadcrumbJsonLd } from '../services/structuredData';
 import { RouteLink } from '../components/common/RouteLink';
 import './HowItWorksPage.css';
+import { OrderJourneyNotice } from '../components/common/OrderJourneyNotice';
 
 interface HowItWorksPageProps {
   onNavigate: (route: string) => void;
@@ -1070,6 +1071,8 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onNavigate }) =>
           <div className="hiw-trust-band__copy"><span>TRADITIONAL REVIEW · CLEAR DELIVERY</span><h2>Thoughtful astrology, with a process you can follow.</h2><p>Our team reviews each order before delivery. Your astrological report and tax invoice are prepared as separate documents and sent together after approval.</p></div>
           <RouteLink route="birth-jathagam" onNavigate={onNavigate}>Explore services <ArrowRight aria-hidden="true" /></RouteLink>
         </section>
+
+        <OrderJourneyNotice />
 
         <section className="hiw-final-cta">
           <div className="hiw-final-cta__ornament">✦</div>

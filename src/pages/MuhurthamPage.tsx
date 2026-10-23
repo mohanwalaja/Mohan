@@ -3,6 +3,7 @@ import { CalendarDays, Check, CheckCircle2, Eye, FileText, Mail, MapPin, ShieldC
 import { SEO } from '../components/common/SEO';
 import { JsonLd } from '../components/common/JsonLd';
 import { ServiceFaqSection } from '../components/common/ServiceFaqSection';
+import { OrderJourneyNotice } from '../components/common/OrderJourneyNotice';
 import { RelatedReports } from '../components/common/RelatedReports';
 import { MUHURTHAM_FAQ_ITEMS } from '../data/serviceFaqs';
 import { buildBreadcrumbJsonLd } from '../services/structuredData';
@@ -1243,6 +1244,9 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
           { route: 'baby-naming', label: 'Baby naming by nakshatra (Namakaran)' }
         ]}
       />
+
+      {/* Order journey — priest team → admin approval → emailed PDF + invoice. */}
+      <OrderJourneyNotice className="site-container mt-12" />
 
       {/* Service FAQ — visible answers + this page's FAQPage JSON-LD (index-coverage audit 2026-10-16). */}
       <ServiceFaqSection

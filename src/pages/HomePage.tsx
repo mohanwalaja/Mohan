@@ -26,6 +26,7 @@ import { getServicePrices } from '../services/pricing';
 import { ASTRO_CHAT_WINDOW_DAYS } from '../services/servicePromise';
 import type { ServiceType } from '../types';
 import logoImg from '../assets/astrosivam_appicon.png';
+import { OrderJourneyNotice } from '../components/common/OrderJourneyNotice';
 
 interface HomePageProps {
   onNavigate: (route: string) => void;
@@ -298,6 +299,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       {/* 4. REVIEWS */}
       <section id="reviews" className="site-container scroll-mt-24">
         <TestimonialsSection onNavigate={onNavigate} />
+      </section>
+
+      {/* 5. ORDER JOURNEY — priest team → admin approval → emailed report + invoice */}
+      <section id="order-journey" className="site-container scroll-mt-24">
+        <OrderJourneyNotice />
       </section>
 
       {/* 5. FAQ */}

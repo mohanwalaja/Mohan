@@ -169,7 +169,7 @@ export const PoliciesPage: React.FC<PoliciesProps> = ({ type, onNavigate }) => {
               3. Service Delivery
             </h3>
             <p>
-              Reports and official tax invoices are generated in digital PDF format and delivered directly to your registered email address upon priest team verification. Order history and live delivery tracking are maintained in your Customer Dashboard.
+              Your order goes to our India-based Vedic priest team, who calculate the chart and verify the report by hand. Once the priest team’s verification and the administrator’s approval are complete, your official PDF report and Tax Invoice — carrying a verification line naming the priest team that calculated and verified it — are emailed to your registered email address. Order history and live delivery tracking are maintained in your Customer Dashboard.
             </p>
           </div>
         )}

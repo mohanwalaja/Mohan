@@ -23,6 +23,7 @@ import { ServicePromiseStrip } from '../components/common/ServicePromiseStrip';
 // the day count; the shared CHAT_INCLUDED_LINE constant is no longer repeated on
 // every price card (owner request, 2026-10-21).
 import { ASTRO_CHAT_WINDOW_DAYS } from '../services/servicePromise';
+import { OrderJourneyNotice } from '../components/common/OrderJourneyNotice';
 
 interface ServicesPageProps {
   onNavigate: (route: string) => void;
@@ -278,6 +279,8 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
             ))}
           </div>
         </section>
+
+        <OrderJourneyNotice className="mt-2" />
 
         <section className="beta-banner services-guided-banner flex flex-col items-start justify-between gap-5 p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8">
           <div className="relative z-10 max-w-2xl space-y-2">

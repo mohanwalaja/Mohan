@@ -1,6 +1,6 @@
 /**
  * Exhaustive end-to-end verification of the AI Astrologer across:
- *   - All 65 curated guided options x 3 languages (en/ta/hi) x chart / no-chart (390 runs)
+ *   - All 66 curated guided options x 3 languages (en/ta/hi) x chart / no-chart (396 runs)
  *   - 110+ free-text astrology queries across English, Tamil, and Hindi
  *   - Pure script separation (0 Tamil leaks in en/hi, 0 Devanagari leaks in en/ta)
  *   - Full Ketu + Rahu remedy coverage, localized practical steps, moonNakshatraLord,
@@ -31,12 +31,12 @@ function check(name: string, fn: () => void) {
   }
 }
 
-check('all 390 guided answers (65 options x 3 languages x chart/no-chart) pass safety guardrails cleanly', () => {
-  assert.equal(probe.guidedRuns, 390);
+check('all 396 guided answers (66 options x 3 languages x chart/no-chart) pass safety guardrails cleanly', () => {
+  assert.equal(probe.guidedRuns, 396);
   assert.deepEqual(probe.guidedFailures, []);
 });
 
-check('zero cross-script leaks occur across all 390 guided answers in English, Tamil, and Hindi', () => {
+check('zero cross-script leaks occur across all 396 guided answers in English, Tamil, and Hindi', () => {
   assert.deepEqual(probe.scriptLeaks, []);
 });
 

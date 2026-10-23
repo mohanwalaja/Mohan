@@ -43,6 +43,7 @@ import { AppLanguage } from '../types';
 import { SEO } from '../components/common/SEO';
 import { JsonLd } from '../components/common/JsonLd';
 import { ServiceFaqSection } from '../components/common/ServiceFaqSection';
+import { OrderJourneyNotice } from '../components/common/OrderJourneyNotice';
 import { RelatedReports } from '../components/common/RelatedReports';
 import { MARRIAGE_COMPATIBILITY_FAQ_ITEMS } from '../data/serviceFaqs';
 import { buildBreadcrumbJsonLd } from '../services/structuredData';
@@ -1061,6 +1062,9 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
           { route: 'baby-naming', label: 'Baby naming by nakshatra (Namakaran)' }
         ]}
       />
+
+      {/* Order journey — priest team → admin approval → emailed PDF + invoice. */}
+      <OrderJourneyNotice className="site-container mt-12" />
 
       {/* Service FAQ — visible answers + this page's FAQPage JSON-LD (index-coverage audit 2026-10-16). */}
       <ServiceFaqSection
