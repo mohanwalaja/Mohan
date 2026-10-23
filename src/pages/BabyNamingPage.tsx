@@ -27,6 +27,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
 import { BirthDateField, BirthTimeField, BirthTimeZoneNotice } from '../components/common/BirthDateTimeFields';
+import { BirthDetailsSummaryCard } from '../components/common/BirthDetailsSummaryCard';
 import { PersonNameField } from '../components/common/PersonNameField';
 import { ServicePageHeader } from '../components/common/ServicePageHeader';
 import { AuthModal } from '../components/common/AuthModal';
@@ -553,10 +554,20 @@ export const BabyNamingPage: React.FC<BabyNamingPageProps> = ({ onNavigate }) =>
                 <GooglePlacesPicker
                   value={location || undefined}
                   onChange={setLocation}
-                  label="Baby Birth Place (Google Maps Location)"
+                  label="Baby Birth Place (Worldwide Location)"
                   required
                 />
                 <BirthTimeZoneNotice resolution={locationTimezone} date={dob} time={tob} theme="dark" />
+                <BirthDetailsSummaryCard
+                  name={babyName}
+                  nameOptional
+                  dob={dob}
+                  tob={tob}
+                  location={location}
+                  timezoneResolution={locationTimezone}
+                  subjectLabel="Baby Birth Chart Readiness"
+                  theme="dark"
+                />
               </div>
 
               {/* 2. Language Selection: English, Tamil, Hindi */}

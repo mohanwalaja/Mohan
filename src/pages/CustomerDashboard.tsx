@@ -987,17 +987,33 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
             />
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                Gender:
-              </label>
-              <select
-                value={pGender}
-                onChange={e => setPGender(e.target.value as 'M' | 'F')}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-              >
-                <option value="M">Male</option>
-                <option value="F">Female</option>
-              </select>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5">
+                Gender *
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPGender('M')}
+                  className={`py-2.5 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    pGender === 'M'
+                      ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 border-amber-500 font-black shadow-xs'
+                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-amber-500/50'
+                  }`}
+                >
+                  <span>👨 Male</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPGender('F')}
+                  className={`py-2.5 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    pGender === 'F'
+                      ? 'bg-gradient-to-r from-pink-400 to-rose-500 text-white border-pink-500 font-black shadow-xs'
+                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-pink-500/50'
+                  }`}
+                >
+                  <span>👩 Female</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1020,7 +1036,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           <GooglePlacesPicker
             value={pLocation || undefined}
             onChange={setPLocation}
-            label="Birth Place (Google Maps)"
+            label="Birth Place (Worldwide Location)"
           />
           <BirthTimeZoneNotice resolution={profileTimezone} date={pDob} time={pTob} />
 
@@ -2332,8 +2348,16 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                   <select
                     id="family-member-relation"
                     value={fRelation}
-                    onChange={e => setFRelation(e.target.value as FamilyRelation)}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
+                    onChange={e => {
+                      const nextRelation = e.target.value as FamilyRelation;
+                      setFRelation(nextRelation);
+                      if (['MOTHER', 'DAUGHTER', 'SISTER'].includes(nextRelation)) {
+                        setFGender('F');
+                      } else if (['FATHER', 'SON', 'BROTHER'].includes(nextRelation)) {
+                        setFGender('M');
+                      }
+                    }}
+                    className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-2xl text-xs font-semibold cursor-pointer"
                   >
                     {FAMILY_RELATION_OPTIONS.map(option => (
                       <option key={option.value} value={option.value}>
@@ -2344,18 +2368,33 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1" htmlFor="family-member-gender">
-                    Gender:
-                  </label>
-                  <select
-                    id="family-member-gender"
-                    value={fGender}
-                    onChange={e => setFGender(e.target.value as 'M' | 'F')}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs"
-                  >
-                    <option value="M">Male</option>
-                    <option value="F">Female</option>
-                  </select>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5">
+                    Gender *
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFGender('M')}
+                      className={`py-2.5 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        fGender === 'M'
+                          ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 border-amber-500 font-black shadow-xs'
+                          : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-amber-500/50'
+                      }`}
+                    >
+                      <span>👨 Male</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFGender('F')}
+                      className={`py-2.5 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        fGender === 'F'
+                          ? 'bg-gradient-to-r from-pink-400 to-rose-500 text-white border-pink-500 font-black shadow-xs'
+                          : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-pink-500/50'
+                      }`}
+                    >
+                      <span>👩 Female</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -2378,7 +2417,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
               <GooglePlacesPicker
                 value={fLocation || undefined}
                 onChange={setFLocation}
-                label="Birth Place (Google Maps)"
+                label="Birth Place (Worldwide Location)"
               />
               <BirthTimeZoneNotice resolution={familyTimezone} date={fDob} time={fTob} />
 

@@ -1,5 +1,6 @@
 import React, { useId } from 'react';
-import { User } from 'lucide-react';
+import { Check, User, X } from 'lucide-react';
+import { normalizePersonName } from '../../utils/birthDetails';
 
 export interface PersonNameFieldProps {
   value: string;
@@ -36,6 +37,7 @@ export const PersonNameField: React.FC<PersonNameFieldProps> = ({
   const hintId = `${fieldId}-hint`;
   const isDark = theme === 'dark';
   const padding = size === 'sm' ? 'py-2.5 text-base sm:text-sm' : 'py-3.5 text-base sm:text-sm';
+  const normalized = normalizePersonName(value);
 
   return (
     <div className={className}>
@@ -69,14 +71,45 @@ export const PersonNameField: React.FC<PersonNameFieldProps> = ({
           required={required}
           value={value}
           onChange={event => onChange(event.target.value)}
+          onBlur={() => {
+            if (value && normalized !== value) {
+              onChange(normalized);
+            }
+          }}
           placeholder={placeholder}
           aria-describedby={helpText ? hintId : undefined}
-          className={`min-w-0 w-full bg-transparent px-2 pr-4 font-semibold outline-none touch-manipulation ${padding} ${
+          className={`min-w-0 w-full bg-transparent px-2 pr-14 font-semibold outline-none touch-manipulation ${padding} ${
             isDark
               ? 'text-white placeholder:text-slate-500'
               : 'text-slate-900 placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500'
           }`}
         />
+
+        {value && (
+          <div className="flex shrink-0 items-center gap-1 pr-2.5">
+            {normalized.length >= 2 && (
+              <span
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500"
+                aria-hidden="true"
+              >
+                <Check className="h-3 w-3 stroke-[3]" />
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => onChange('')}
+              aria-label={`Clear ${label}`}
+              title="Clear name"
+              className={`flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-colors ${
+                isDark
+                  ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  : 'text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {helpText && <p id={hintId} className="mt-1.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400">{helpText}</p>}

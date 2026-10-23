@@ -14,6 +14,7 @@ require_once __DIR__ . '/../chat_alerts.php';
 // Birthday wishes reuse the same verified chat targets and gateway settings;
 // only the consent and the once-a-year dedupe log are new (migration 020).
 require_once __DIR__ . '/../birthday_wishes.php';
+require_once __DIR__ . '/../geocoding_and_birth_details.php';
 // Payment primitives: the idempotency ledger + structured DB retry that make
 // a repeated checkout submission replay instead of duplicating an order.
 require_once __DIR__ . '/../payments.php';
@@ -885,6 +886,50 @@ if (preg_match('#/services/birthday-wishes/?$#', $path) || $action === 'birthday
         'message' => (string)($result['message'] ?? ''),
         'birthdayWishes' => $result['birthdayWishes'] ?? AstroBirthdayWishes::preferenceState($pdo, $userId)
     ], !empty($result['success']) ? 200 : 400);
+}
+
+// 3g. GET /api/services/geocode & GET /api/services/reverse-geocode
+if ((preg_match('#/services/geocode/?$#', $path) || $action === 'geocode') && $method === 'GET') {
+    astro_rate_limit_enforce($pdo, 'geocode-search-ip', getClientIpAddress(), 60, 60,
+        'Too many location searches. Please wait a moment and try again.');
+    $q = trim((string)($_GET['q'] ?? ''));
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 8;
+    jsonResponse([
+        'success' => true,
+        'results' => astro_geocode_search($q, $limit),
+    ]);
+}
+
+if ((preg_match('#/services/reverse-geocode/?$#', $path) || $action === 'reverse-geocode') && $method === 'GET') {
+    astro_rate_limit_enforce($pdo, 'reverse-geocode-ip', getClientIpAddress(), 40, 60,
+        'Too many map coordinate lookups. Please wait a moment and try again.');
+    $lat = isset($_GET['lat']) ? (float)$_GET['lat'] : NAN;
+    $lng = isset($_GET['lng']) ? (float)$_GET['lng'] : NAN;
+    $place = astro_reverse_geocode($lat, $lng);
+    if ($place === null) {
+        jsonResponse(['success' => false, 'message' => 'Valid latitude and longitude are required.'], 400);
+    }
+    jsonResponse(['success' => true, 'location' => $place]);
+}
+
+// 3h. POST /api/services/orders/:id/birth-details (Pre-delivery typo fix by owner or admin)
+if ((preg_match('#/services/orders/([^/]+)/birth-details/?$#', $path, $bdMatches) || $action === 'update-order-birth-details') && $method === 'POST') {
+    $user = requireAuth($pdo);
+    astro_rate_limit_enforce($pdo, 'order-birth-details-edit', (string)$user['id'], 15, 600,
+        'Too many birth-detail edits in a short time. Please wait a moment.');
+    $body = getJsonBody();
+    $orderId = !empty($bdMatches[1]) ? $bdMatches[1] : (string)($body['orderId'] ?? $_GET['id'] ?? '');
+    if ($orderId === '') {
+        jsonResponse(['success' => false, 'message' => 'Order ID is required.'], 400);
+    }
+    $outcome = astro_update_order_birth_details(
+        $pdo,
+        $orderId,
+        is_array($body) ? $body : [],
+        ($user['role'] ?? '') === 'admin',
+        (string)$user['id']
+    );
+    jsonResponse($outcome['body'], $outcome['httpStatus']);
 }
 
 // 4. POST /api/services/calculate-preview

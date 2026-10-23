@@ -6,8 +6,10 @@ import {
   MONTH_SHORT_NAMES,
   WEEKDAY_LABELS,
   daysInMonth,
+  describeBirthTimePeriod,
   describeDobProblem,
   describeTobProblem,
+  formatBirthWeekday,
   formatDobInputWhileTyping,
   formatReadableDob,
   formatReadableTob,
@@ -261,6 +263,10 @@ const CalendarSheet: React.FC<CalendarSheetProps> = ({
   const [selectedYear, setSelectedYear] = useState<number>(Number(initialParts.year) || CURRENT_YEAR);
   const [selectedMonth, setSelectedMonth] = useState<number>(Number(initialParts.month) || 1);
   const [selectedDay, setSelectedDay] = useState<number>(Number(initialParts.day) || 1);
+  const [yearGridOpen, setYearGridOpen] = useState<boolean>(false);
+  const [activeDecade, setActiveDecade] = useState<number>(
+    Math.floor((Number(initialParts.year) || CURRENT_YEAR) / 10) * 10
+  );
 
   const minParts = splitIsoDate(effectiveMinIso);
   const maxParts = splitIsoDate(effectiveMaxIso);
@@ -324,11 +330,23 @@ const CalendarSheet: React.FC<CalendarSheetProps> = ({
   };
 
   const currentSelectionIso = toIsoDate(selectedYear, selectedMonth, Math.min(selectedDay, totalDays));
+  const selectionWeekday = formatBirthWeekday(currentSelectionIso);
+  const decades = useMemo(() => {
+    const out: number[] = [];
+    const topDecade = Math.floor(maxYear / 10) * 10;
+    const bottomDecade = Math.floor(minYear / 10) * 10;
+    for (let d = topDecade; d >= bottomDecade; d -= 10) out.push(d);
+    return out;
+  }, [minYear, maxYear]);
+  const decadeYears = useMemo(
+    () => years.filter(y => y >= activeDecade && y <= activeDecade + 9),
+    [years, activeDecade]
+  );
 
   return (
     <SheetShell
       title={title}
-      subtitle={formatReadableDob(currentSelectionIso)}
+      subtitle={`${formatReadableDob(currentSelectionIso)}${selectionWeekday ? ` • ${selectionWeekday}` : ''}`}
       theme={theme}
       onClose={onClose}
       footer={
@@ -436,38 +454,98 @@ const CalendarSheet: React.FC<CalendarSheetProps> = ({
         </button>
       </div>
 
-      <div className="mb-2 grid grid-cols-7 gap-1 text-center">
-        {WEEKDAY_LABELS.map((day, idx) => (
-          <span key={idx} className="text-[11px] font-bold text-slate-400">
-            {day}
-          </span>
-        ))}
+      {/* Fast Decade & Year Jump Toggle for Mobile */}
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className={`text-[11px] font-semibold ${tokens.sheetSubtle}`}>
+          {selectionWeekday ? `Born on ${selectionWeekday}` : 'Select year, month & day'}
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveDecade(Math.floor(selectedYear / 10) * 10);
+            setYearGridOpen(open => !open);
+          }}
+          className={tokens.link}
+        >
+          <span>{yearGridOpen ? 'Back to calendar ▴' : `Fast year jump (${selectedYear}) ▾`}</span>
+        </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {Array.from({ length: firstWeekday }).map((_, index) => (
-          <span key={`pad-${index}`} className="h-9 w-full" />
-        ))}
-        {Array.from({ length: totalDays }).map((_, index) => {
-          const dayNumber = index + 1;
-          const isSelected = dayNumber === selectedDay;
-          const isAllowed = isDateInRange(selectedYear, selectedMonth, dayNumber);
-          return (
-            <button
-              key={dayNumber}
-              type="button"
-              onClick={() => setSelectedDay(dayNumber)}
-              disabled={!isAllowed}
-              aria-pressed={isSelected}
-              className={`flex h-9 w-full items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${
-                isSelected ? tokens.sheetCellActive : tokens.sheetCell
-              }`}
-            >
-              {dayNumber}
-            </button>
-          );
-        })}
-      </div>
+      {yearGridOpen ? (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-1.5">
+            {decades.map(decade => (
+              <button
+                key={decade}
+                type="button"
+                onClick={() => setActiveDecade(decade)}
+                className={`px-2.5 py-1 text-[11px] ${
+                  activeDecade === decade ? tokens.chipActive : tokens.chip
+                }`}
+              >
+                {decade}s
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-5 gap-1.5">
+            {decadeYears.map(yr => (
+              <button
+                key={yr}
+                type="button"
+                onClick={() => {
+                  let nextMonth = selectedMonth;
+                  if (yr === minYear && nextMonth < minMonth) nextMonth = minMonth;
+                  if (yr === maxYear && nextMonth > maxMonth) nextMonth = maxMonth;
+                  setSelectedYear(yr);
+                  setSelectedMonth(nextMonth);
+                  setSelectedDay(day => clampDayToRange(yr, nextMonth, day));
+                  setYearGridOpen(false);
+                }}
+                className={`py-2.5 text-xs ${
+                  yr === selectedYear ? tokens.sheetCellActive : tokens.sheetCell
+                }`}
+              >
+                {yr}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="mb-2 grid grid-cols-7 gap-1 text-center">
+            {WEEKDAY_LABELS.map((day, idx) => (
+              <span key={idx} className="text-[11px] font-bold text-slate-400">
+                {day}
+              </span>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: firstWeekday }).map((_, index) => (
+              <span key={`pad-${index}`} className="h-9 w-full" />
+            ))}
+            {Array.from({ length: totalDays }).map((_, index) => {
+              const dayNumber = index + 1;
+              const isSelected = dayNumber === selectedDay;
+              const isAllowed = isDateInRange(selectedYear, selectedMonth, dayNumber);
+              return (
+                <button
+                  key={dayNumber}
+                  type="button"
+                  onClick={() => setSelectedDay(dayNumber)}
+                  disabled={!isAllowed}
+                  aria-pressed={isSelected}
+                  className={`flex h-9 w-full items-center justify-center rounded-xl text-xs font-bold transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${
+                    isSelected ? tokens.sheetCellActive : tokens.sheetCell
+                  }`}
+                >
+                  {dayNumber}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </SheetShell>
   );
 };
@@ -505,7 +583,19 @@ const ClockSheet: React.FC<ClockSheetProps> = ({
     onClose();
   };
 
-  const preview12 = `${hour12}:${minute} ${period}`;
+  const computed24 = useMemo(() => {
+    let h = Number(hour12) % 12;
+    if (period === 'PM') h += 12;
+    return `${String(h).padStart(2, '0')}:${String(Number(minute) || 0).padStart(2, '0')}`;
+  }, [hour12, minute, period]);
+  const previewPeriodText = describeBirthTimePeriod(computed24);
+  const preview12 = `${hour12}:${minute} ${period} • ${computed24}${previewPeriodText ? ` • ${previewPeriodText}` : ''}`;
+
+  const stepMinuteBy = (delta: number) => {
+    const cur = Number(minute) || 0;
+    const next = (cur + delta + 60) % 60;
+    setMinute(String(next).padStart(2, '0'));
+  };
 
   return (
     <SheetShell
@@ -545,6 +635,34 @@ const ClockSheet: React.FC<ClockSheetProps> = ({
         </div>
       }
     >
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {(
+          [
+            ['06', '00', 'AM', '06:00 AM Sunrise'],
+            ['09', '00', 'AM', '09:00 AM Morning'],
+            ['12', '00', 'PM', '12:00 PM Noon'],
+            ['06', '00', 'PM', '06:00 PM Evening'],
+            ['09', '00', 'PM', '09:00 PM Night'],
+            ['12', '00', 'AM', '12:00 AM Midnight']
+          ] as Array<[string, string, TobPeriod, string]>
+        ).map(([pH, pM, pPer, pLabel]) => (
+          <button
+            key={pLabel}
+            type="button"
+            onClick={() => {
+              setHour12(pH);
+              setMinute(pM);
+              setPeriod(pPer);
+            }}
+            className={`px-2.5 py-1 text-[10.5px] ${
+              hour12 === pH && minute === pM && period === pPer ? tokens.chipActive : tokens.chip
+            }`}
+          >
+            {pLabel}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-4 grid grid-cols-2 gap-2">
         {(['AM', 'PM'] as TobPeriod[]).map(option => (
           <button
@@ -593,10 +711,18 @@ const ClockSheet: React.FC<ClockSheetProps> = ({
         ))}
       </div>
 
-      <div className="mt-4 flex items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <label className={`text-[11px] font-bold uppercase ${tokens.sheetSubtle}`} htmlFor={minuteInputId}>
           Exact minute
         </label>
+        <button
+          type="button"
+          onClick={() => stepMinuteBy(-1)}
+          aria-label="Decrease minute by 1"
+          className={`px-2.5 py-2 text-xs font-black ${tokens.sheetGhost}`}
+        >
+          −1
+        </button>
         <input
           id={minuteInputId}
           type="text"
@@ -612,6 +738,14 @@ const ClockSheet: React.FC<ClockSheetProps> = ({
           }}
           className={`w-20 px-3 py-2.5 text-center text-sm font-bold outline-none ${tokens.sheetInput}`}
         />
+        <button
+          type="button"
+          onClick={() => stepMinuteBy(1)}
+          aria-label="Increase minute by 1"
+          className={`px-2.5 py-2 text-xs font-black ${tokens.sheetGhost}`}
+        >
+          +1
+        </button>
         <span className={`text-[11px] ${tokens.sheetSubtle}`}>00 – 59</span>
       </div>
     </SheetShell>
@@ -781,6 +915,22 @@ export const BirthDateField: React.FC<BirthDateFieldProps> = ({
             aria-describedby={`${fieldId}-hint`}
             aria-invalid={Boolean(text && !validValue)}
           />
+          {text && (
+            <button
+              type="button"
+              onClick={() => {
+                setDay('');
+                setMonth('');
+                setYear('');
+                emit('', '');
+              }}
+              aria-label={`Clear ${label}`}
+              title="Clear date"
+              className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-slate-400 hover:bg-slate-200/70 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </label>
 
         <button
@@ -799,8 +949,8 @@ export const BirthDateField: React.FC<BirthDateFieldProps> = ({
       <div className="mt-1.5 min-h-[20px]">
         {validValue ? (
           <span id={`${fieldId}-hint`} className={tokens.ok} aria-live="polite">
-            <span className="sm:hidden">✓ {formatReadableDob(value)}</span>
-            <span className="hidden sm:inline">✓ {formatReadableDob(value)} ({value})</span>
+            <span className="sm:hidden">✓ {formatReadableDob(value)} · {formatBirthWeekday(value)}</span>
+            <span className="hidden sm:inline">✓ {formatReadableDob(value)} ({value}) · {formatBirthWeekday(value)}</span>
           </span>
         ) : problem ? (
           <span id={`${fieldId}-hint`} className={tokens.warn}>
@@ -1061,6 +1211,22 @@ export const BirthTimeField: React.FC<BirthTimeFieldProps> = ({
             aria-describedby={`${fieldId}-hint`}
             aria-invalid={Boolean(text && !validValue)}
           />
+          {text && (
+            <button
+              type="button"
+              onClick={() => {
+                lastEmitted.current = '';
+                setText('');
+                onChange('');
+                if (onTextChange) onTextChange('');
+              }}
+              aria-label={`Clear ${label}`}
+              title="Clear time"
+              className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-slate-400 hover:bg-slate-200/70 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </label>
 
         {/* Compact AM / PM switch (outside the label so it never steals focus) */}
@@ -1099,8 +1265,8 @@ export const BirthTimeField: React.FC<BirthTimeFieldProps> = ({
       <div className="mt-1.5 min-h-[20px]">
         {validValue ? (
           <span id={`${fieldId}-hint`} className={tokens.ok} aria-live="polite">
-            <span className="sm:hidden">✓ {formatReadableTob(value)}</span>
-            <span className="hidden sm:inline">✓ {formatReadableTob(value)} (24-hr: {value})</span>
+            <span className="sm:hidden">✓ {formatReadableTob(value)} · {describeBirthTimePeriod(value)}</span>
+            <span className="hidden sm:inline">✓ {formatReadableTob(value)} (24-hr: {value}) · {describeBirthTimePeriod(value)}</span>
           </span>
         ) : problem ? (
           <span id={`${fieldId}-hint`} className={tokens.warn}>

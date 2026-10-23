@@ -275,7 +275,9 @@ const testFiles = [
   'tests/a11y-skip-link-contract.test.ts',
   // RFC 9116: /.well-known/security.txt with a contact and a future Expires,
   // served as text/plain and shipped inside the deploy zip.
-  'tests/security-txt.test.ts'
+  'tests/security-txt.test.ts',
+  // Full-system Birth Details, Worldwide Location Picker & Post-Order Recalculation suite.
+  'tests/birth-details-and-location-upgrade.test.tsx'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 
