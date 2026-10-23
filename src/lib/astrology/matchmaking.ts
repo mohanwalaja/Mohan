@@ -134,7 +134,7 @@ export function evaluateTenPoruthams(
       ? 'தம்பதியரின் நீண்ட ஆயுளையும், உடல் நலனையும், நோய் நொடியற்ற வளமான வாழ்க்கையையும் அருளும்.'
       : dinaStatus === PoruthamStatus.MADHYAMAM
       ? 'மிதமான நட்சத்திர தூரம்; முழு ஆரோக்கிய ஆதரவு இல்லை.'
-      : 'பொருந்தாது! நட்சத்திர இடைவெளி ஆரோக்கியத்தையும் நீண்ட ஆயுளையும் தாங்கவில்லை; மற்ற முதன்மைப் பொருத்தங்களின் பலம் தேவை.',
+      : 'பொருத்தம் இல்லை — நட்சத்திர இடைவெளி ஆரோக்கியத்தையும் நீண்ட ஆயுளையும் தாங்கவில்லை; மற்ற முதன்மைப் பொருத்தங்களின் பலம் தேவை.',
     explanationEn: dinaStatus === PoruthamStatus.UTTHAMAM
       ? 'Auspicious! Bestows vitality, health resilience, long life, and prosperity to the couple.'
       : dinaStatus === PoruthamStatus.MADHYAMAM
@@ -201,7 +201,7 @@ export function evaluateTenPoruthams(
     maxPoints: 1.0,
     explanationTa: mahendraStatus === PoruthamStatus.UTTHAMAM
       ? 'புத்திர பாக்கியம், வம்ச விருத்தி மற்றும் சந்ததி மேன்மையை நல்கும்.'
-      : 'பொருந்தாது! மகேந்திர ஆதரவு இல்லை; புத்திர பாக்கியம் இருவரின் தனிப்பட்ட ஜாதகத்தில் 5-ம் பாவகம் கொண்டு அறியப்படும்.',
+      : 'பொருத்தம் இல்லை — மகேந்திர ஆதரவு இல்லை; புத்திர பாக்கியம் இருவரின் தனிப்பட்ட ஜாதகத்தில் 5-ம் பாவகம் கொண்டு அறியப்படும்.',
     explanationEn: mahendraStatus === PoruthamStatus.UTTHAMAM
       ? 'Auspicious! Bestows blessed offspring, family lineage expansion, and prosperity.'
       : 'Not supportive - the star distance gives no Mahendra strength for progeny and lineage growth (each chart is judged separately from its 5th house).',
@@ -231,7 +231,7 @@ export function evaluateTenPoruthams(
       ? 'பெண்ணிற்கு வாழ்நாள் முழுதும் மங்கலமும், ஐஸ்வர்யமும், நல்வாழ்வும் நிலைக்கும்.'
       : sthreeStatus === PoruthamStatus.MADHYAMAM
       ? 'மிதமான நட்சத்திர தூரம்; மணமகளுக்கு வலுவான வளர்ச்சி ஆதரவு இல்லை.'
-      : 'பொருந்தாது! நட்சத்திர இடைவெளி குறைவு; மணமகளுக்கு நீண்ட ஆயுள் மற்றும் முழு வளர்ச்சி ஆதரவு இல்லை.',
+      : 'பொருத்தம் இல்லை — நட்சத்திர இடைவெளி குறைவு; மணமகளுக்கு நீண்ட ஆயுள் மற்றும் முழு வளர்ச்சி ஆதரவு இல்லை.',
     explanationEn: sthreeStatus === PoruthamStatus.UTTHAMAM
       ? 'Auspicious! Safeguards prosperity, health, happiness, and marital security for the bride.'
       : sthreeStatus === PoruthamStatus.MADHYAMAM
@@ -686,28 +686,28 @@ export function calculateWeddingCompatibility(
   const failedCriticalHi = [!rajjuOk && 'रज्जु', !vedhaOk && 'वेध'].filter(Boolean).join(' और ');
 
   const verdictTa = verdictStatus === PoruthamStatus.UTTHAMAM
-    ? `மிக உத்தமமான பொருத்தம்! 10-ல் ${matchedCount} பொருத்தங்களும், முக்கிய ரஜ்ஜு/வேதைப் பொருத்தமும் மற்றும் செவ்வாய் சாம்யமும் மிகச் சிறப்பாக அமைந்துள்ளன. திருமணம் செய்ய மிகவும் உத்தமம்.`
+    ? `மிக நன்று! 10-ல் ${matchedCount} பொருத்தங்களும், முக்கிய ரஜ்ஜு/வேதைப் பொருத்தமும் மற்றும் செவ்வாய் சாம்யமும் மிகச் சிறப்பாக அமைந்துள்ளன. திருமணத்திற்கு மிகவும் ஏற்ற நல்ல பொருத்தம்.`
     : verdictStatus === PoruthamStatus.MADHYAMAM
-    ? `மத்திமமான பொருத்தம்! 10-ல் ${matchedCount} பொருத்தங்கள் பொருந்துகின்றன. பரிகாரங்களுடன் ஏற்றுக்கொள்ளத்தக்கது.`
+    ? `நன்று! 10-ல் ${matchedCount} பொருத்தங்கள் பொருந்துகின்றன. பரிகாரங்களுடன் ஏற்றுக்கொள்ளத்தக்கது.`
     : !criticalPoruthamsOk
-    ? `${failedCriticalTa} பொருத்தமின்மை உள்ளது. விரிவான ஜாதக பரிசீலனை தேவைப்படுகிறது.`
-    : `குறைந்த பொருத்தங்கள் (10-ல் ${matchedCount}). திருமணத்திற்கு பரிந்துரைக்கப்படவில்லை.`;
+    ? `பொருத்தம் இல்லை — ${failedCriticalTa} பொருத்தமின்மை உள்ளது. விரிவான ஜாதக பரிசீலனை தேவைப்படுகிறது.`
+    : `பொருத்தம் இல்லை — குறைந்த பொருத்தங்கள் (10-ல் ${matchedCount}). திருமணத்திற்கு பரிந்துரைக்கப்படவில்லை.`;
 
   const verdictEn = verdictStatus === PoruthamStatus.UTTHAMAM
-    ? `Highly Auspicious Match! ${matchedCount}/10 Poruthams matched with clear Rajju and Vedha checks and balanced Kuja Dosha. Highly recommended for marriage.`
+    ? `Very Good! ${matchedCount}/10 Poruthams matched with clear Rajju and Vedha checks and balanced Kuja Dosha. Highly recommended for marriage.`
     : verdictStatus === PoruthamStatus.MADHYAMAM
-    ? `Moderate match: ${matchedCount}/10 Poruthams matched; acceptable with remedies.`
+    ? `Good: ${matchedCount}/10 Poruthams matched; acceptable with remedies.`
     : !criticalPoruthamsOk
-    ? `Critical ${failedCriticalEn} mismatch. Requires detailed astrological assessment.`
-    : `Low compatibility (${matchedCount}/10 Poruthams). Not recommended without mitigating factors.`;
+    ? `Not Compatible — Critical ${failedCriticalEn} mismatch. Requires detailed astrological assessment.`
+    : `Not Compatible — Low compatibility (${matchedCount}/10 Poruthams). Not recommended without mitigating factors.`;
 
   const verdictHi = verdictStatus === PoruthamStatus.UTTHAMAM
-    ? `अत्यंत शुभ मिलान! 10 में से ${matchedCount} गुण/पोरुथम मिले हैं तथा रज्जु, वेध और मंगल दोष संतुलित हैं। यह मिलान विवाह हेतु सर्वथा उपयुक्त है।`
+    ? `बहुत अच्छा! 10 में से ${matchedCount} गुण/पोरुथम मिले हैं तथा रज्जु, वेध और मंगल दोष संतुलित हैं। यह मिलान विवाह हेतु अत्यंत अनुकूल है।`
     : verdictStatus === PoruthamStatus.MADHYAMAM
-    ? `मध्यम मिलान: 10 में से ${matchedCount} पोरुथम मिले हैं; उपायों के साथ यह स्वीकार्य है।`
+    ? `अच्छा: 10 में से ${matchedCount} पोरुथम मिले हैं; उपायों के साथ यह उपयुक्त है।`
     : !criticalPoruthamsOk
-    ? `${failedCriticalHi} दोष है। विस्तृत ज्योतिषीय मूल्यांकन आवश्यक है।`
-    : `इस मिलान में अनुकूलता कम (${matchedCount}/10) है; विशेष ज्योतिषीय समाधान के बिना यह अनुशंसित नहीं है।`;
+    ? `मेल नहीं — ${failedCriticalHi} दोष है। विस्तृत ज्योतिषीय मूल्यांकन आवश्यक है।`
+    : `मेल नहीं — इस मिलान में अनुकूलता कम (${matchedCount}/10) है; विशेष ज्योतिषीय समाधान के बिना यह अनुशंसित नहीं है।`;
 
   const generatedAt = new Date();
   const generatedAtTimeZoneId = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';

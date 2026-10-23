@@ -13,6 +13,7 @@ import { normalizeReportLanguage } from '../../services/reportLanguage';
 import { withDerivedNavamsa } from '../../services/navamsa';
 import { classifyJathagamPlanetsForSummary } from '../../services/jathagamPlanetSummary';
 import { JATHAGAM_PLANET_PROFILES, NAVAGRAHA_DOSHA_DATA, SHORT_SUMMARY_TEXT } from '../../services/jathagamDoshaData';
+import { verdictTierFrom, verdictTierHint, verdictTierLabel } from '../../services/poruthamVerdict';
 
 const RASI_NAMES_ORDER_MODAL: Record<number, string> = {
   1: 'Mesham', 2: 'Rishabam', 3: 'Mithunam', 4: 'Kadagam',
@@ -157,22 +158,18 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
   const matchedCountDisplay = matchedCount !== null && Number.isInteger(matchedCount) && matchedCount >= 0 && matchedCount <= 10
     ? String(matchedCount)
     : 'N/A';
-  const verdictStatus = String(resultAny.verdictStatus || '').toUpperCase();
-  const verdictKnown = ['UTTHAMAM', 'MADHYAMAM', 'PORUNDHADHU'].includes(verdictStatus);
-  const verdictPillClass = verdictStatus === 'UTTHAMAM'
+  const verdictTier = verdictTierFrom(resultAny.verdictStatus);
+  const verdictKnown = verdictTier !== null;
+  const verdictPillClass = verdictTier === 'UTTHAMAM'
     ? 'bg-emerald-500 text-slate-950'
-    : verdictStatus === 'MADHYAMAM'
+    : verdictTier === 'MADHYAMAM'
     ? 'bg-amber-400 text-slate-950'
-    : verdictStatus === 'PORUNDHADHU'
+    : verdictTier === 'PORUNDHADHU'
     ? 'bg-rose-500 text-white'
     : 'bg-slate-500 text-white';
   const verdictSummaryEn = !verdictKnown
     ? 'N/A'
-    : verdictStatus === 'UTTHAMAM'
-    ? 'Utthamam — this is a good match.'
-    : verdictStatus === 'MADHYAMAM'
-    ? 'Madhyamam — acceptable with remedies.'
-    : 'Adhamam — not recommended; seek a detailed horoscope review before deciding.';
+    : verdictTierHint(verdictTier, selectedLang);
 
   const handleSendToUserEmail = async () => {
     setIsSendingEmail(true);
@@ -744,7 +741,7 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
                         </div>
                         <div className="text-right">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${verdictPillClass}`}>
-                            {verdictKnown ? verdictStatus : 'N/A'}
+                            {verdictKnown ? verdictTierLabel(verdictTier, selectedLang) : 'N/A'}
                           </span>
                         </div>
                       </div>
@@ -958,30 +955,32 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                         {(result.poruthams || []).map((p: any, idx: number) => {
                           const key = p.poruthamKey || p.nameEn || p.name || `porutham-${idx}`;
-                          const status = String(p.status || p.statusLabel || '').toUpperCase();
-                          const statusKnown = ['UTTHAMAM', 'MADHYAMAM', 'PORUNDHADHU'].includes(status);
+                          const rowTier = verdictTierFrom(p.status2 ?? p.status ?? p.statusLabel);
+                          const statusKnown = rowTier !== null;
                           const earnedPoints = numericValue(p.pointsEarned ?? p.points);
                           const maximumPoints = numericValue(p.maxPoints);
                           const pointsText = earnedPoints !== null && earnedPoints >= 0 && maximumPoints !== null && maximumPoints > 0
                             ? `${Number(earnedPoints.toFixed(1))} / ${Number(maximumPoints.toFixed(1))}`
                             : 'N/A / N/A';
+                          const rowName = (isTa ? p.nameTa : isHi ? p.nameHi : p.nameEn) || p.nameEn || p.name;
+                          const rowExplanation = (isTa ? p.explanationTa : isHi ? p.explanationHi : p.explanationEn) || p.explanationEn || p.description || 'N/A';
                           return (
                             <tr key={key} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                              <td className="px-3 py-2.5 font-bold text-slate-900 dark:text-white">{p.nameEn || p.name}</td>
+                              <td className="px-3 py-2.5 font-bold text-slate-900 dark:text-white">{rowName}</td>
                               <td className="px-3 py-2.5">
                                 <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
                                   !statusKnown
                                     ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                                    : status === 'UTTHAMAM'
+                                    : rowTier === 'UTTHAMAM'
                                     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                    : status === 'MADHYAMAM'
+                                    : rowTier === 'MADHYAMAM'
                                     ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
                                     : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
                                 }`}>
-                                  {statusKnown ? status : 'N/A'}
+                                  {statusKnown ? verdictTierLabel(rowTier, selectedLang) : 'N/A'}
                                 </span>
                               </td>
-                              <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{p.explanationEn || p.description || 'N/A'}</td>
+                              <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{rowExplanation}</td>
                               <td className="px-3 py-2.5 font-semibold text-center">{pointsText}</td>
                             </tr>
                           );
@@ -992,23 +991,23 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
 
                   {/* Clear Final Match Verdict Banner */}
                   {(() => {
-                    const isUtthamam = verdictStatus === 'UTTHAMAM';
-                    const isMadhyamam = verdictStatus === 'MADHYAMAM';
+                    const isVeryGood = verdictTier === 'UTTHAMAM';
+                    const isGoodMatch = verdictTier === 'MADHYAMAM';
                     const verdictText = !verdictKnown
                       ? 'N/A'
-                      : isUtthamam
-                      ? (isTa ? 'இந்தப் பொருத்தம் நல்லது' : isHi ? 'यह अच्छा मिलान है।' : 'This is a good match.')
-                      : isMadhyamam
-                      ? (isTa ? 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களுடன் பொருந்தும்' : isHi ? 'यह स्वीकार्य मिलान है; उपायों के साथ विचारणीय है।' : 'Acceptable match; suitable with remedies.')
+                      : isVeryGood
+                      ? (isTa ? 'மிக நன்று — இந்த மதிப்பீட்டின்படி மிக நல்ல பொருத்தம்.' : isHi ? 'बहुत अच्छा — इस आकलन के अनुसार बहुत अच्छा मेल है।' : 'Very Good — Very good match based on this assessment.')
+                      : isGoodMatch
+                      ? (isTa ? 'நன்று — ஒட்டுமொத்தமாக நல்ல பொருத்தம்; பரிகாரங்களுடன் பொருந்தும்.' : isHi ? 'अच्छा — कुल मिलाकर अच्छा मेल है; उपायों के साथ उपयुक्त है।' : 'Good — Good match overall; suitable with remedies.')
                       : (isTa
-                        ? 'இந்தப் பொருத்தம் சாதகமற்றது; இது ஜோதிட வழிகாட்டல் மட்டுமே. இறுதி முடிவிற்கு முன் விரிவான ஜாதக ஆய்வு மற்றும் நிபுணர் ஆலோசனை பெறவும்.'
+                        ? 'பொருத்தம் இல்லை — இது ஜோதிட வழிகாட்டல் மட்டுமே. இறுதி முடிவிற்கு முன் விரிவான ஜாதக ஆய்வு மற்றும் நிபுணர் ஆலோசனை பெறவும்.'
                         : isHi
-                        ? 'वर्तमान आकलन के अनुसार यह मिलान अनुकूल नहीं है; यह केवल ज्योतिषीय मार्गदर्शन है। निर्णय से पहले विस्तृत कुंडली समीक्षा और विशेषज्ञ सलाह लें।'
-                        : 'This match is not recommended on the current assessment; this is astrological guidance only. Seek a detailed horoscope review before deciding.');
+                        ? 'मेल नहीं — यह केवल ज्योतिषीय मार्गदर्शन है। निर्णय से पहले विस्तृत कुंडली समीक्षा और विशेषज्ञ सलाह लें।'
+                        : 'Not Compatible — This is astrological guidance only. Seek a detailed horoscope review before deciding.');
                     const verdictTitle = isTa ? 'இறுதி முடிவு' : isHi ? 'अंतिम निर्णय' : 'FINAL VERDICT';
                     const verdictTone = !verdictKnown
                       ? 'slate'
-                      : isUtthamam ? 'emerald' : isMadhyamam ? 'amber' : 'rose';
+                      : isVeryGood ? 'emerald' : isGoodMatch ? 'amber' : 'rose';
                     const verdictToneStyles = {
                       slate: 'bg-slate-50/90 dark:bg-slate-900/40 border-slate-300/60 text-slate-700 dark:text-slate-300',
                       emerald: 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-500/40 text-emerald-900 dark:text-emerald-200',

@@ -812,16 +812,16 @@ class AstroAiOffline
         ]);
     }
 
-    /** Uthamam / Mathimam / Porundhadhu, in the customer's language. */
+    /** Plain tier wording in the customer's language (Very Good / Good / Not Compatible). */
     private static function poruthamStatusLabel(string $status, string $lang): string
     {
         if ($status === 'UTTHAMAM') {
-            return self::t($lang, ['en' => 'Uthamam (full marks)', 'ta' => 'உத்தமம் (முழு மதிப்பெண்)', 'hi' => 'उत्तम (पूर्ण अंक)']);
+            return self::t($lang, ['en' => 'Very Good (full marks)', 'ta' => 'மிக நன்று (முழு மதிப்பெண்)', 'hi' => 'बहुत अच्छा (पूर्ण अंक)']);
         }
         if ($status === 'MADHYAMAM') {
-            return self::t($lang, ['en' => 'Mathimam (partial)', 'ta' => 'மத்திமம் (பகுதி மதிப்பெண்)', 'hi' => 'मध्यम (आंशिक अंक)']);
+            return self::t($lang, ['en' => 'Good (partial marks)', 'ta' => 'நன்று (பகுதி மதிப்பெண்)', 'hi' => 'अच्छा (आंशिक अंक)']);
         }
-        return self::t($lang, ['en' => 'Porundhadhu (no marks)', 'ta' => 'பொருந்தாது (மதிப்பெண் இல்லை)', 'hi' => 'पोरुंदधु (अंक नहीं)']);
+        return self::t($lang, ['en' => 'Not Compatible (no marks)', 'ta' => 'பொருத்தம் இல்லை (மதிப்பெண் இல்லை)', 'hi' => 'मेल नहीं (अंक नहीं)']);
     }
 
     /** Picks the language entry of a {en,ta,hi} map built by the endpoint. */
@@ -880,11 +880,21 @@ class AstroAiOffline
         ]);
 
         if ($topic === 'verdict') {
+            $verdictStatusUpper = strtoupper(trim((string) ($m['verdictStatus'] ?? '')));
+            if ($verdictStatusUpper === 'UTTHAMAM') {
+                $rawVerdictLine = self::t($lang, ['en' => 'Very Good — Highly favourable match for marriage.', 'ta' => 'மிக நன்று — திருமணத்திற்கு மிகவும் ஏற்ற நல்ல பொருத்தம்.', 'hi' => 'बहुत अच्छा — विवाह के लिए अत्यंत अनुकूल मिलान।']);
+            } elseif ($verdictStatusUpper === 'MADHYAMAM') {
+                $rawVerdictLine = self::t($lang, ['en' => 'Good — Acceptable match with remedies.', 'ta' => 'நன்று — பரிகாரங்களுடன் ஏற்றுக்கொள்ளத்தக்க பொருத்தம்.', 'hi' => 'अच्छा — उपायों के साथ उपयुक्त मिलान।']);
+            } elseif ($verdictStatusUpper === 'PORUNDHADHU') {
+                $rawVerdictLine = self::t($lang, ['en' => 'Not Compatible — Does not meet recommended compatibility.', 'ta' => 'பொருத்தம் இல்லை — இந்த மதிப்பீட்டின்படி திருமணத்திற்கு ஏற்றதல்ல.', 'hi' => 'मेल नहीं — इस आकलन के अनुसार विवाह हेतु अनुकूल नहीं है।']);
+            } else {
+                $rawVerdictLine = self::pick($m['verdict'] ?? '', $lang);
+            }
             $bubbles = [$who . self::t($lang, [
                 'en' => 'the overall verdict in your Wedding Matching report:',
                 'ta' => 'உங்கள் திருமணப் பொருத்த அறிக்கையின் ஒட்டுமொத்த முடிவு:',
                 'hi' => 'आपकी विवाह मिलान रिपोर्ट का समग्र निर्णय:',
-            ]) . "\n" . self::pick($m['verdict'] ?? '', $lang), $pairLine];
+            ]) . "\n" . $rawVerdictLine, $pairLine];
             if ((string) ($m['verdictStatus'] ?? '') !== 'UTTHAMAM') {
                 $bubbles[] = self::t($lang, [
                     'en' => 'A porutham reading is guidance for both families to weigh together, not a judgement on either person. Our astrologer can go through it with you - tap "Talk to our astrologer".',
@@ -946,9 +956,9 @@ class AstroAiOffline
                     'hi' => 'आपकी रिपोर्ट में ये पोरुतम मिले:',
                 ]) . "\n" . implode("\n", $lines),
                 self::t($lang, [
-                    'en' => 'Uthamam means the classical condition is met in full; Mathimam means it is met in part. Your report explains each porutham in its own words.',
-                    'ta' => 'உத்தமம் என்றால் அந்தச் சாஸ்திர நிபந்தனை முழுமையாக நிறைவேறியுள்ளது; மத்திமம் என்றால் பகுதியளவே. ஒவ்வொரு பொருத்தத்தையும் உங்கள் அறிக்கை அதன் சொந்த வார்த்தைகளில் விளக்குகிறது.',
-                    'hi' => 'उत्तम का अर्थ है शास्त्रीय शर्त पूरी तरह पूरी हुई; मध्यम का अर्थ है आंशिक रूप से। हर पोरुतम को आपकी रिपोर्ट अपने शब्दों में समझाती है।',
+                    'en' => '"Very Good" means the check is met in full; "Good" means it is met in part. Your report explains each porutham in clear, everyday words.',
+                    'ta' => '"மிக நன்று" என்றால் அந்தப் பொருத்தம் முழுமையாக உள்ளது; "நன்று" என்றால் பகுதியளவே உள்ளது. ஒவ்வொரு பொருத்தத்தையும் உங்கள் அறிக்கை எளிய தமிழில் விளக்குகிறது.',
+                    'hi' => '"बहुत अच्छा" का अर्थ है शर्त पूरी तरह पूरी हुई; "अच्छा" का अर्थ है आंशिक मेल। हर पोरुतम को आपकी रिपोर्ट सरल शब्दों में समझाती है।',
                 ]),
             ];
         }
@@ -965,9 +975,9 @@ class AstroAiOffline
             }
             if ($lines === []) {
                 return [self::t($lang, [
-                    'en' => 'Every porutham in your report earned full marks (Uthamam) for this match.',
-                    'ta' => 'உங்கள் அறிக்கையில் இந்தப் பொருத்தத்திற்கு எல்லாப் பொருத்தங்களும் முழு மதிப்பெண் (உத்தமம்) பெற்றுள்ளன.',
-                    'hi' => 'आपकी रिपोर्ट में इस मिलान के लिए हर पोरुतम को पूर्ण अंक (उत्तम) मिले हैं।',
+                    'en' => 'Every porutham in your report earned full marks (Very Good) for this match.',
+                    'ta' => 'உங்கள் அறிக்கையில் இந்தப் பொருத்தத்திற்கு எல்லாப் பொருத்தங்களும் முழு மதிப்பெண் (மிக நன்று) பெற்றுள்ளன.',
+                    'hi' => 'आपकी रिपोर्ट में इस मिलान के लिए हर पोरुतम को पूर्ण अंक (बहुत अच्छा) मिले हैं।',
                 ])];
             }
             return [

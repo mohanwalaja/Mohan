@@ -180,7 +180,7 @@ export function buildWeddingMatchHtml(
     : isGood ? 'final-verdict-good' : isModerate ? 'final-verdict-moderate' : 'final-verdict-not-good';
 
   // One grading ladder, one set of words (see poruthamVerdict.ts):
-  // Very Good / Good / Incompatible, in the order's language.
+  // Very Good / Good / Not Compatible, in the order's language.
   const verdictTier = verdictKnown ? verdictTierFrom(result.verdictStatus) : null;
   const verdictBadgeText = verdictTier ? verdictTierHint(verdictTier, lang) : 'N/A';
 

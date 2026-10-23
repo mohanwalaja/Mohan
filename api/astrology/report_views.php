@@ -288,9 +288,9 @@ function astro_report_glossary_quick_html(string $reportKind, string $lang): str
  * badge and the recommendation, so one row can never look like it came from a
  * different table:
  *
- *   UTTHAMAM    -> Very Good / மிக நன்று / बहुत अच्छा
- *   MADHYAMAM   -> Good      / நன்று     / अच्छा
- *   PORUNDHADHU -> Incompatible / பொருந்தாது / मेल नहीं
+ *   UTTHAMAM    -> Very Good      / மிக நன்று        / बहुत अच्छा
+ *   MADHYAMAM   -> Good           / நன்று            / अच्छा
+ *   PORUNDHADHU -> Not Compatible / பொருத்தம் இல்லை / मेल नहीं
  *
  * $withHint adds the one-glance hint used where the verdict stands alone.
  */
@@ -299,12 +299,12 @@ function astro_porutham_verdict_label(?string $tier, string $lang, bool $withHin
     $label = [
         'UTTHAMAM' => ['en' => 'Very Good', 'ta' => 'மிக நன்று', 'hi' => 'बहुत अच्छा'],
         'MADHYAMAM' => ['en' => 'Good', 'ta' => 'நன்று', 'hi' => 'अच्छा'],
-        'PORUNDHADHU' => ['en' => 'Incompatible', 'ta' => 'பொருந்தாது', 'hi' => 'मेल नहीं'],
+        'PORUNDHADHU' => ['en' => 'Not Compatible', 'ta' => 'பொருத்தம் இல்லை', 'hi' => 'मेल नहीं'],
     ];
     $hint = [
         'UTTHAMAM' => ['en' => 'Very Good (highly favourable)', 'ta' => 'மிக நன்று (மிகச் சாதகம்)', 'hi' => 'बहुत अच्छा (अत्यंत अनुकूल)'],
         'MADHYAMAM' => ['en' => 'Good (remedies may help)', 'ta' => 'நன்று (பரிகாரங்கள் உதவும்)', 'hi' => 'अच्छा (उपाय सहायक)'],
-        'PORUNDHADHU' => ['en' => 'Incompatible', 'ta' => 'பொருந்தாது', 'hi' => 'मेल नहीं'],
+        'PORUNDHADHU' => ['en' => 'Not Compatible', 'ta' => 'பொருத்தம் இல்லை', 'hi' => 'मेल नहीं'],
     ];
     $key = strtoupper(trim((string) $tier));
     $map = $withHint ? $hint : $label;
@@ -330,13 +330,13 @@ function astro_porutham_verdict_tier($value): ?string
         return $upper;
     }
     $lower = strtolower($raw);
-    if (preg_match('/very good|utthama|uthama|uttama|excellent|highly/', $lower)) {
+    if (preg_match('/very good|utthama|uthama|uttama|excellent|highly|மிக நன்று|बहुत अच्छा/u', $lower)) {
         return 'UTTHAMAM';
     }
-    if (preg_match('/^good\b|madhyam|mathimam|moderate|acceptable|partial/', $lower)) {
+    if (preg_match('/^good\b|madhyam|mathimam|moderate|acceptable|partial|^நன்று\b|^अच्छा\b/u', $lower)) {
         return 'MADHYAMAM';
     }
-    if (preg_match('/incompatible|porundh|not compatible|not recommended|adhamam/', $lower)) {
+    if (preg_match('/incompatible|porundh|not compatible|not recommended|adhamam|பொருத்தம் இல்லை|பொருந்தாது|मेल नहीं/u', $lower)) {
         return 'PORUNDHADHU';
     }
     return null;

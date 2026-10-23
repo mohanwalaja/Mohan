@@ -3313,15 +3313,15 @@ CSS;
         $finalVerdictBackground = $ratingTier === null ? '#f1f5f9' : ($ratingTier === 'UTTHAMAM' ? '#ecfdf5' : ($ratingTier === 'MADHYAMAM' ? '#fffbeb' : '#fef2f2'));
         $finalVerdictBorder = $ratingTier === null ? '#cbd5e1' : ($ratingTier === 'UTTHAMAM' ? '#86efac' : ($ratingTier === 'MADHYAMAM' ? '#fcd34d' : '#fca5a5'));
         if ($ratingTier === 'UTTHAMAM') {
-            $meterBadgeText = $isTa ? 'உத்தமம்' : ($isHi ? 'उत्तम' : 'Utthamam');
+            $meterBadgeText = $isTa ? 'மிக நன்று (மிகச் சாதகம்)' : ($isHi ? 'बहुत अच्छा (अत्यंत अनुकूल)' : 'Very Good (highly favourable)');
             $meterBadgeStyle = 'background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7;';
             $meterFillColor = '#059669';
         } elseif ($ratingTier === 'MADHYAMAM') {
-            $meterBadgeText = $isTa ? 'மத்திமம்' : ($isHi ? 'मध्यम' : 'Madhyamam');
+            $meterBadgeText = $isTa ? 'நன்று (பரிகாரங்கள் உதவும்)' : ($isHi ? 'अच्छा (उपाय सहायक)' : 'Good (remedies may help)');
             $meterBadgeStyle = 'background:#fef3c7;color:#92400e;border:1px solid #fcd34d;';
             $meterFillColor = '#d97706';
         } elseif ($ratingTier === 'PORUNDHADHU') {
-            $meterBadgeText = $isTa ? 'பொருந்தாது' : ($isHi ? 'अनुशंसित नहीं' : 'Not Recommended');
+            $meterBadgeText = $isTa ? 'பொருத்தம் இல்லை' : ($isHi ? 'मेल नहीं' : 'Not Compatible');
             $meterBadgeStyle = 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;';
             $meterFillColor = '#be123c';
         } else {
@@ -3398,7 +3398,16 @@ CSS;
             $hasEarned = $earnedRaw !== null && $earnedRaw !== '' && is_numeric($earnedRaw) && (float) $earnedRaw >= 0;
             $hasMaximum = $maxRaw !== null && $maxRaw !== '' && is_numeric($maxRaw) && (float) $maxRaw > 0;
             $pts = ($hasEarned ? (string) $earnedRaw : 'N/A') . ' / ' . ($hasMaximum ? (string) $maxRaw : 'N/A');
-            $status = $isTa ? ($p['statusTa'] ?? $p['status'] ?? 'N/A') : ($isHi ? ($p['statusHi'] ?? $p['status'] ?? 'N/A') : ($p['status'] ?? 'N/A'));
+            $statusRaw = strtoupper(trim((string) ($p['status2'] ?? $p['status'] ?? '')));
+            if ($statusRaw === 'UTTHAMAM' || preg_match('/VERY GOOD|UTTHAMA|UTHAMA|EXCELLENT/i', $statusRaw)) {
+                $status = $isTa ? 'மிக நன்று' : ($isHi ? 'बहुत अच्छा' : 'Very Good');
+            } elseif ($statusRaw === 'MADHYAMAM' || preg_match('/^GOOD\b|MADHYAM|MATHIMAM|MODERATE|ACCEPTABLE/i', $statusRaw)) {
+                $status = $isTa ? 'நன்று' : ($isHi ? 'अच्छा' : 'Good');
+            } elseif ($statusRaw === 'PORUNDHADHU' || preg_match('/INCOMPATIBLE|PORUNDH|NOT COMPATIBLE|NOT RECOMMENDED|ADHAMAM/i', $statusRaw)) {
+                $status = $isTa ? 'பொருத்தம் இல்லை' : ($isHi ? 'मेल नहीं' : 'Not Compatible');
+            } else {
+                $status = 'N/A';
+            }
             $expl = $isTa ? ($p['explanationTa'] ?? $p['explanationEn'] ?? '') : ($isHi ? ($p['explanationHi'] ?? $p['explanationEn'] ?? '') : ($p['explanationEn'] ?? ''));
 
             $rows .= '<tr><td>' . $idx . '</td><td><b>' . self::e($pName) . '</b></td><td>' . self::e($pts) . '</td><td>' . self::e($status) . '</td><td>' . self::e($expl) . '</td></tr>';

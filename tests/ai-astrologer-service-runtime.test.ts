@@ -95,8 +95,9 @@ check('wedding answers quote the report, never re-judge it', () => {
   const score = `${out.facts.wedding.score}`;
   assert.match(reply('match-score').content as string, new RegExp(`${score}\\s*/\\s*${out.facts.wedding.maxScore}`));
   assert.match(reply('match-score').content as string, new RegExp(`${out.facts.wedding.total} poruthams`));
-  assert.match(reply('match-verdict').content as string, /Chennai|Karthik|Priya|Recommended|Not Recommended/);
-  assert.match(reply('match-poruthams').content as string, /பொருந்த|உத்தமம்|மத்திமம்/);
+  assert.match(reply('match-verdict').content as string, /Chennai|Karthik|Priya|Very Good|Good|Not Compatible/);
+  assert.match(reply('match-poruthams').content as string, /மிக நன்று|நன்று/);
+  assert.doesNotMatch(reply('match-poruthams').content as string, /உத்தமம்|மத்திமம்|பொருந்தாது/);
   assert.match(reply('match-sevvai').content as string, /संतुलित|असंतुलन|दोष/);
   assert.match(reply('match-remedy').content as string, /பரிகார|செவ்வாய்/);
 });

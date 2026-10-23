@@ -55,14 +55,14 @@ const weddingResult: any = await calculateSampleResult('MARRIAGE_COMPATIBILITY',
 
 /** The three words a reader may see in the Status column, per language. */
 const LADDER: Record<AppLanguage, string[]> = {
-  en: ['Very Good', 'Good', 'Incompatible'],
-  ta: ['மிக நன்று', 'நன்று', 'பொருந்தாது'],
+  en: ['Very Good', 'Good', 'Not Compatible'],
+  ta: ['மிக நன்று', 'நன்று', 'பொருத்தம் இல்லை'],
   hi: ['बहुत अच्छा', 'अच्छा', 'मेल नहीं']
 };
 
 /** Words the table must never print again. */
 const RETIRED = ['Utthamam', 'Uttamam', 'Uthamam', 'Madhyamam', 'Mathimam', 'Porundhadhu', 'Adhamam',
-  'உத்தமம்', 'மத்திமம்', 'उत्तम', 'मध्यम', 'अशुभ'];
+  'Incompatible', 'உத்தமம்', 'மத்திமம்', 'பொருந்தாது', 'उत्तम', 'मध्यम', 'पोरुंदधु', 'अशुभ'];
 
 console.log('--- ONE VERDICT LADDER ---');
 
@@ -161,6 +161,7 @@ check('an older saved order still resolves to a rank', () => {
   assert.equal(verdictTierFrom('Porundhadhu (Not Compatible)'), 'PORUNDHADHU');
   assert.equal(verdictTierFrom('Very Good'), 'UTTHAMAM');
   assert.equal(verdictTierFrom('Good'), 'MADHYAMAM');
+  assert.equal(verdictTierFrom('Not Compatible'), 'PORUNDHADHU');
   assert.equal(verdictTierFrom('Incompatible'), 'PORUNDHADHU');
   assert.equal(verdictTierFrom(''), null);
   assert.equal(verdictTierFrom('something else'), null);
@@ -188,6 +189,21 @@ check('the PHP renderer prints the same three words, never the raw engine status
   assert.match(rendererPhp, /\$meterBadgeText = astro_porutham_verdict_label\('UTTHAMAM', \$lang, true\);/);
   assert.match(rendererPhp, /\$meterBadgeText = astro_porutham_verdict_label\('MADHYAMAM', \$lang, true\);/);
   assert.match(rendererPhp, /\$meterBadgeText = astro_porutham_verdict_label\('PORUNDHADHU', \$lang, true\);/);
+});
+
+check('OrderReportModal, mPDF Wedding report, and AI Astrologer chat also use only plain tier words', () => {
+  const modalTsx = read('src/components/common/OrderReportModal.tsx');
+  const mpdfPhp = read('api/astrology/pdf_mpdf_reports.php');
+  const chatPhp = read('api/astrology/ai_astrologer_offline.php');
+
+  assert.match(modalTsx, /verdictTierLabel\(rowTier,\s*selectedLang\)/);
+  assert.doesNotMatch(modalTsx, /Utthamam —|Madhyamam —|Adhamam —/);
+  assert.doesNotMatch(chatPhp, /Uthamam \(full marks\)|Mathimam \(partial\)|Porundhadhu \(no marks\)|உத்தமம் \(முழு|மத்திமம் \(பகுதி|பொருந்தாது \(மதிப்பெண்|पोरुंदधु/);
+  for (const lang of LANGS) {
+    for (const word of LADDER[lang]) {
+      assert.ok(mpdfPhp.includes(`'${word}'`), `pdf_mpdf_reports.php is missing the ${lang} label '${word}'`);
+    }
+  }
 });
 
 check('the appended guide sheet cannot leave a page header saying "of 2"', () => {
