@@ -256,7 +256,7 @@ export const NAVAGRAHA_GUIDANCE: Record<DoshaLanguage, {
       { h: 'पारंपरिक भक्ति', p: 'मन को शांत करने वाली आराधना कष्ट सहने की शक्ति देती है।' },
       { h: 'सदाचार', p: 'ईमानदार जीवन ग्रहों के प्रतिकूल प्रभाव से रक्षा करता है।' }
     ],
-    closing: 'जीवन में आने वाले सभी कष्ट अस्थायी हैं। वे हमें तपाये हुए सोने की भाँति बदलने के लिए आते हैं, नष्ट करने के लिए नहीं।'
+    closing: 'जीवन में आने वाले सभी कष्ट अस्थायी हैं। वे हमें नष्ट करने के लिए नहीं, बल्कि तपाये हुए सोने की भाँति निखारने के लिए आते हैं।'
   }
 };
 
@@ -317,15 +317,275 @@ export const SHORT_SUMMARY_LAMP_OIL: Record<string, Record<DoshaLanguage, string
  * request; the remaining six follow the common Navagraha beeja/namah mantras.
  */
 export const SHORT_SUMMARY_MANTRA: Record<string, Record<DoshaLanguage, string>> = {
-  sun: { en: 'Om Suryaya Namah', ta: 'ஓம் சூரியாய நம:', hi: 'ॐ सूर्याय नमः' },
-  moon: { en: 'Om Chandraya Namah', ta: 'ஓம் சந்திராய நம:', hi: 'ॐ चन्द्राय नमः' },
-  mars: { en: 'Om Angarakaya Namah', ta: 'ஓம் அங்காரகாய நம:', hi: 'ॐ अंगारकाय नमः' },
-  mercury: { en: 'Om Budhaya Namah', ta: 'ஓம் புதாய நம:', hi: 'ॐ बुधाय नमः' },
-  jupiter: { en: 'Om Gurave Namah', ta: 'ஓம் குரவே நம:', hi: 'ॐ गुरवे नमः' },
-  venus: { en: 'Om Shukraya Namah', ta: 'ஓம் சுக்கிராய நம:', hi: 'ॐ शुक्राय नमः' },
-  saturn: { en: 'Om Shanaye Namah', ta: 'ஓம் சனைச்சராய நம:', hi: 'ॐ शनैश्चराय नमः' },
-  rahu: { en: 'Om Rahave Namah', ta: 'ஓம் ராஹவே நம:', hi: 'ॐ राहवे नमः' },
-  ketu: { en: 'Om Ketave Namah', ta: 'ஓம் கேதவே நம:', hi: 'ॐ केतवे नमः' }
+  sun: { en: 'Om Suryaya Namah', ta: 'ஓம் சூர்யாய நமஹ', hi: 'ॐ सूर्याय नमः' },
+  moon: { en: 'Om Chandraya Namah', ta: 'ஓம் சந்திராய நமஹ', hi: 'ॐ चन्द्राय नमः' },
+  mars: { en: 'Om Angarakaya Namah', ta: 'ஓம் அங்காரகாய நமஹ', hi: 'ॐ अंगारकाय नमः' },
+  mercury: { en: 'Om Budhaya Namah', ta: 'ஓம் புதாய நமஹ', hi: 'ॐ बुधाय नमः' },
+  jupiter: { en: 'Om Gurave Namah', ta: 'ஓம் குரவே நமஹ', hi: 'ॐ गुरवे नमः' },
+  venus: { en: 'Om Shukraya Namah', ta: 'ஓம் சுக்கிராய நமஹ', hi: 'ॐ शुक्राय नमः' },
+  saturn: { en: 'Om Shanaye Namah', ta: 'ஓம் சனைச்சராய நமஹ', hi: 'ॐ शनैश्चराय नमः' },
+  rahu: { en: 'Om Rahave Namah', ta: 'ஓம் ராஹவே நமஹ', hi: 'ॐ राहवे नमः' },
+  ketu: { en: 'Om Ketave Namah', ta: 'ஓம் கேதவே நமஹ', hi: 'ॐ केतवे नमः' }
+};
+
+export interface ShortSummaryFullRemedy {
+  worship: Record<DoshaLanguage, string>;
+  lamp: Record<DoshaLanguage, string>;
+  donation: Record<DoshaLanguage, string>;
+  mantra: Record<DoshaLanguage, string>;
+  compactLine: Record<DoshaLanguage, string>;
+}
+
+/**
+ * Complete, natural sentence-form remedies for Birth Jathagam Page 3 (both the
+ * four-line normal table and the single-sentence compact table across all nine
+ * Navagrahas in English, Tamil, and Hindi). Kept strictly on Page 3 so Pages 1
+ * and 2 continue to satisfy the non-ritual screening contract.
+ */
+export const SHORT_SUMMARY_FULL_REMEDIES: Record<string, ShortSummaryFullRemedy> = {
+  sun: {
+    worship: {
+      en: 'Lord Surya, the Sun God should be worshipped on Sunday.',
+      ta: 'சூரிய பகவான் வழிபாடு ஞாயிறு அன்று செய்யவும்.',
+      hi: 'भगवान सूर्य की आराधना रविवार को करें।'
+    },
+    lamp: {
+      en: 'Light a sesame oil lamp during prayer.',
+      ta: 'நல்லெண்ணெய் தீபம் ஏற்றி வணங்கவும்.',
+      hi: 'पूजा में तिल के तेल का दीपक जलाएँ।'
+    },
+    donation: {
+      en: 'Donate wheat or jaggery to those in need.',
+      ta: 'கோதுமை தானம் அளிக்கவும்.',
+      hi: 'गेहूँ या गुड़ का दान करें।'
+    },
+    mantra: {
+      en: "Chant 'Om Suryaya Namah' with devotion.",
+      ta: "'ஓம் சூர்யாய நமஹ' என ஜெபிக்கவும்.",
+      hi: "'ॐ सूर्याय नमः' मंत्र का जप करें।"
+    },
+    compactLine: {
+      en: "On Sunday, pray to Lord Surya with a sesame oil lamp, donate wheat or jaggery, and chant 'Om Suryaya Namah'.",
+      ta: "சூரிய பகவானுக்கு ஞாயிற்றுக்கிழமை கோதுமை தானம் அளித்து 'ஓம் சூர்யாய நமஹ' என்று ஜெபம் செய்ய வேண்டும்.",
+      hi: "रविवार को भगवान सूर्य को तिल के तेल का दीपक जलाकर गेहूँ दान करें और 'ॐ सूर्याय नमः' का जप करें।"
+    }
+  },
+  moon: {
+    worship: {
+      en: 'Lord Shiva should be worshipped on Monday.',
+      ta: 'சிவபெருமான் வழிபாடு திங்கள் அன்று செய்யவும்.',
+      hi: 'भगवान शिव की आराधना सोमवार को करें।'
+    },
+    lamp: {
+      en: 'Light a ghee lamp during prayer.',
+      ta: 'நெய் தீபம் ஏற்றி வணங்கவும்.',
+      hi: 'पूजा में घी का दीपक जलाएँ।'
+    },
+    donation: {
+      en: 'Donate rice or milk to those in need.',
+      ta: 'அரிசி அல்லது பால் தானம் அளிக்கவும்.',
+      hi: 'चावल या दूध का दान करें।'
+    },
+    mantra: {
+      en: "Chant 'Om Chandraya Namah' with devotion.",
+      ta: "'ஓம் சந்திராய நமஹ' என ஜெபிக்கவும்.",
+      hi: "'ॐ चन्द्राय नमः' मंत्र का जप करें।"
+    },
+    compactLine: {
+      en: "On Monday, pray to Lord Shiva with a ghee lamp, donate rice or milk, and chant 'Om Chandraya Namah'.",
+      ta: "சிவபெருமானுக்கு திங்கட்கிழமை அரிசி தானம் அளித்து 'ஓம் சந்திராய நமஹ' என்று ஜெபம் செய்ய வேண்டும்.",
+      hi: "सोमवार को भगवान शिव को घी का दीपक जलाकर चावल या दूध दान करें और 'ॐ चन्द्राय नमः' का जप करें।"
+    }
+  },
+  mars: {
+    worship: {
+      en: 'Lord Murugan (Karthikeya) or Lord Hanuman should be worshipped on Tuesday.',
+      ta: 'முருகன் (கார்த்திகேயன்) அல்லது அனுமன் வழிபாடு செவ்வாய் அன்று செய்யவும்.',
+      hi: 'भगवान कार्तिकेय या हनुमान जी की आराधना मंगलवार को करें।'
+    },
+    lamp: {
+      en: 'Light a sesame oil lamp during prayer.',
+      ta: 'நல்லெண்ணெய் தீபம் ஏற்றி வணங்கவும்.',
+      hi: 'पूजा में तिल के तेल का दीपक जलाएँ।'
+    },
+    donation: {
+      en: 'Donate red lentils or jaggery to those in need.',
+      ta: 'வெல்லம் தானம் அளிக்கவும்.',
+      hi: 'अरहर दाल या गुड़ का दान करें।'
+    },
+    mantra: {
+      en: "Chant 'Om Angarakaya Namah' with devotion.",
+      ta: "'ஓம் அங்காரகாய நமஹ' என ஜெபிக்கவும்.",
+      hi: "'ॐ अंगारकाय नमः' मंत्र का जप करें।"
+    },
+    compactLine: {
+      en: "On Tuesday, pray to Lord Murugan or Lord Hanuman with a sesame oil lamp, donate red lentils or jaggery, and chant 'Om Angarakaya Namah'.",
+      ta: "முருகப் பெருமானுக்கு செவ்வாய்க்கிழமை வெல்லம் தானம் அளித்து 'ஓம் அங்காரகாய நமஹ' என்று ஜெபம் செய்ய வேண்டும்.",
+      hi: "मंगलवार को भगवान कार्तिकेय या हनुमान जी को तिल के तेल का दीपक जलाकर अरहर दाल दान करें और 'ॐ अंगारकाय नमः' का जप करें।"
+    }
+  },
+  mercury: {
+    worship: {
+      en: 'Lord Vishnu or Lord Ganesha should be worshipped on Wednesday.',
+      ta: 'மகா விஷ்ணு அல்லது விநாயகர் வழிபாடு புதன் அன்று செய்யவும்.',
+      hi: 'भगवान विष्णु या भगवान गणेश की आराधना बुधवार को करें।'
+    },
+    lamp: {
+      en: 'Light a ghee lamp during prayer.',
+      ta: 'நெய் தீபம் ஏற்றி வணங்கவும்.',
+      hi: 'पूजा में घी का दीपक जलाएँ।'
+    },
+    donation: {
+      en: 'Donate green gram to those in need.',
+      ta: 'பச்சைப் பயறு தானம் அளிக்கவும்.',
+      hi: 'हरी मूँग का दान करें।'
+    },
+    mantra: {
+      en: "Chant 'Om Budhaya Namah' with devotion.",
+      ta: "'ஓம் புதாய நமஹ' என ஜெபிக்கவும்.",
+      hi: "'ॐ बुधाय नमः' मंत्र का जप करें।"
+    },
+    compactLine: {
+      en: "On Wednesday, pray to Lord Vishnu or Lord Ganesha with a ghee lamp, donate green gram, and chant 'Om Budhaya Namah'.",
+      ta: "மகா விஷ்ணுவுக்கு புதன்கிழமை பச்சைப் பயறு தானம் அளித்து 'ஓம் புதாய நமஹ' என்று ஜெபம் செய்ய வேண்டும்.",
+      hi: "बुधवार को भगवान विष्णु या गणेश जी को घी का दीपक जलाकर हरी मूँग दान करें और 'ॐ बुधाय नमः' का जप करें।"
+    }
+  },
+  jupiter: {
+    worship: {
+      en: 'Lord Brihaspati or Lord Dakshinamurthy should be worshipped on Thursday.',
+      ta: 'குரு பகவான் அல்லது தட்சிணாமூர்த்தி வழிபாடு வியாழன் அன்று செய்யவும்.',
+      hi: 'भगवान बृहस्पति या दक्षिणामूर्ति की आराधना गुरुवार को करें।'
+    },
+    lamp: {
+      en: 'Light a ghee lamp during prayer.',
+      ta: 'நெய் தீபம் ஏற்றி வணங்கவும்.',
+      hi: 'पूजा में घी का दीपक जलाएँ।'
+    },
+    donation: {
+      en: 'Donate chickpeas or turmeric to those in need.',
+      ta: 'மஞ்சள் தானம் அளிக்கவும்.',
+      hi: 'चना या हल्दी का दान करें।'
+    },
+    mantra: {
+      en: "Chant 'Om Gurave Namah' with devotion.",
+      ta: "'ஓம் குரவே நமஹ' என ஜெபிக்கவும்.",
+      hi: "'ॐ गुरवे नमः' मंत्र का जप करें।"
+    },
+    compactLine: {
+      en: "On Thursday, pray to Lord Brihaspati or Lord Dakshinamurthy with a ghee lamp, donate chickpeas or turmeric, and chant 'Om Gurave Namah'.",
+      ta: "குரு பகவானுக்கு வியாழக்கிழமை கொண்டைக்கடலை தானம் அளித்து 'ஓம் குரவே நமஹ' என்று ஜெபம் செய்ய வேண்டும்.",
+      hi: "गुरुवार को भगवान बृहस्पति या दक्षिणामूर्ति को घी का दीपक जलाकर चना या हल्दी दान करें और 'ॐ गुरवे नमः' का जप करें।"
+    }
+  },
+  venus: {
+    worship: {
+      en: 'Goddess Maha Lakshmi should be worshipped on Friday.',
+      ta: 'மகா லட்சுமி வழிபாடு வெள்ளி அன்று செய்யவும்.',
+      hi: 'माँ महालक्ष्मी की आराधना शुक्रवार को करें।'
+    },
+    lamp: {
+      en: 'Light a ghee lamp during prayer.',
+      ta: 'நெய் தீபம் ஏற்றி வணங்கவும்.',
+      hi: 'पूजा में घी का दीपक जलाएँ।'
+    },
+    donation: {
+      en: 'Donate rice or white sweets to those in need.',
+      ta: 'அரிசி தானம் அளிக்கவும்.',
+      hi: 'चावल या सफेद मिठाई का दान करें।'
+    },
+    mantra: {
+      en: "Chant 'Om Shukraya Namah' with devotion.",
+      ta: "'ஓம் சுக்கிராய நமஹ' என ஜெபிக்கவும்.",
+      hi: "'ॐ शुक्राय नमः' मंत्र का जप करें।"
+    },
+    compactLine: {
+      en: "On Friday, pray to Goddess Maha Lakshmi with a ghee lamp, donate rice or white sweets, and chant 'Om Shukraya Namah'.",
+      ta: "மகா லட்சுமிக்கு வெள்ளிக்கிழமை அரிசி தானம் அளித்து 'ஓம் சுக்கிராய நமஹ' என்று ஜெபம் செய்ய வேண்டும்.",
+      hi: "शुक्रवार को माँ महालक्ष्मी को घी का दीपक जलाकर चावल या सफेद मिठाई दान करें और 'ॐ शुक्राय नमः' का जप करें।"
+    }
+  },
+  saturn: {
+    worship: {
+      en: 'Lord Shani or Lord Hanuman should be worshipped on Saturday.',
+      ta: 'சனி பகவான் அல்லது அனுமன் வழிபாடு சனி அன்று செய்யவும்.',
+      hi: 'भगवान शनि या हनुमान जी की आराधना शनिवार को करें।'
+    },
+    lamp: {
+      en: 'Light a sesame oil lamp during prayer.',
+      ta: 'நல்லெண்ணெய் தீபம் ஏற்றி வணங்கவும்.',
+      hi: 'पूजा में तिल के तेल का दीपक जलाएँ।'
+    },
+    donation: {
+      en: 'Donate black sesame or iron to those in need.',
+      ta: 'கருப்பு எள்ளு தானம் அளிக்கவும்.',
+      hi: 'काले तिल या लोहा का दान करें।'
+    },
+    mantra: {
+      en: "Chant 'Om Shanaye Namah' with devotion.",
+      ta: "'ஓம் சனைச்சராய நமஹ' என ஜெபிக்கவும்.",
+      hi: "'ॐ शनैश्चराय नमः' मंत्र का जप करें।"
+    },
+    compactLine: {
+      en: "On Saturday, pray to Lord Shani or Lord Hanuman with a sesame oil lamp, donate black sesame or iron, and chant 'Om Shanaye Namah'.",
+      ta: "சனி பகவானுக்கு சனிக்கிழமை கருப்பு எள்ளு தானம் அளித்து 'ஓம் சனைச்சராய நமஹ' என்று ஜெபம் செய்ய வேண்டும்.",
+      hi: "शनिवार को भगवान शनि या हनुमान जी को तिल के तेल का दीपक जलाकर काले तिल दान करें और 'ॐ शनैश्चराय नमः' का जप करें।"
+    }
+  },
+  rahu: {
+    worship: {
+      en: 'Goddess Durga or Lord Bhairava should be worshipped on Saturday.',
+      ta: 'துர்க்கை அல்லது பைரவர் வழிபாடு சனி அன்று செய்யவும்.',
+      hi: 'माँ दुर्गा या भगवान भैरव की आराधना शनिवार को करें।'
+    },
+    lamp: {
+      en: 'Light a sesame oil lamp during prayer.',
+      ta: 'நல்லெண்ணெய் தீபம் ஏற்றி வணங்கவும்.',
+      hi: 'पूजा में तिल के तेल का दीपक जलाएँ।'
+    },
+    donation: {
+      en: 'Donate black gram or coconut to those in need.',
+      ta: 'கருப்பு உளுந்து தானம் அளிக்கவும்.',
+      hi: 'काला उड़द या नारियल का दान करें।'
+    },
+    mantra: {
+      en: "Chant 'Om Rahave Namah' with devotion.",
+      ta: "'ஓம் ராஹவே நமஹ' என ஜெபிக்கவும்.",
+      hi: "'ॐ राहवे नमः' मंत्र का जप करें।"
+    },
+    compactLine: {
+      en: "On Saturday, pray to Goddess Durga or Lord Bhairava with a sesame oil lamp, donate black gram or coconut, and chant 'Om Rahave Namah'.",
+      ta: "துர்க்கை அம்மனுக்கு சனிக்கிழமை கருப்பு உளுந்து தானம் அளித்து 'ஓம் ராஹவே நமஹ' என்று ஜெபம் செய்ய வேண்டும்.",
+      hi: "शनिवार को माँ दुर्गा या भगवान भैरव को तिल के तेल का दीपक जलाकर काला उड़द दान करें और 'ॐ राहवे नमः' का जप करें।"
+    }
+  },
+  ketu: {
+    worship: {
+      en: 'Lord Ganesha should be worshipped on Tuesday or Saturday.',
+      ta: 'விநாயகர் வழிபாடு செவ்வாய் அல்லது சனி அன்று செய்யவும்.',
+      hi: 'भगवान गणेश की आराधना मंगलवार या शनिवार को करें।'
+    },
+    lamp: {
+      en: 'Light a ghee lamp during prayer.',
+      ta: 'நெய் தீபம் ஏற்றி வணங்கவும்.',
+      hi: 'पूजा में घी का दीपक जलाएँ।'
+    },
+    donation: {
+      en: 'Donate horse gram or sesame to those in need.',
+      ta: 'கொள்ளு தானம் அளிக்கவும்.',
+      hi: 'कुल्थी या तिल का दान करें।'
+    },
+    mantra: {
+      en: "Chant 'Om Ketave Namah' with devotion.",
+      ta: "'ஓம் கேதவே நமஹ' என ஜெபிக்கவும்.",
+      hi: "'ॐ केतवे नमः' मंत्र का जप करें।"
+    },
+    compactLine: {
+      en: "On Tuesday or Saturday, pray to Lord Ganesha with a ghee lamp, donate horse gram or sesame, and chant 'Om Ketave Namah'.",
+      ta: "விநாயகப் பெருமானுக்கு செவ்வாய்க்கிழமை கொள்ளு தானம் அளித்து 'ஓம் கேதவே நமஹ' என்று ஜெபம் செய்ய வேண்டும்.",
+      hi: "मंगलवार या शनिवार को भगवान गणेश को घी का दीपक जलाकर कुल्थी या तिल दान करें और 'ॐ केतवे नमः' का जप करें।"
+    }
+  }
 };
 
 /**
@@ -490,16 +750,16 @@ export const SHORT_SUMMARY_TEXT: Record<DoshaLanguage, {
     tablePlanet: 'ग्रह',
     tableDifficulties: 'संभावित कठिनाइयाँ',
     tableRemedies: 'उपाय',
-    noCarePlanet: 'आपकी कुंडली में किसी ग्रह पर विशेष ध्यान का संकेत नहीं है',
-    noSupportPlanet: 'इस कुंडली में कोई एक ग्रह विशेष रूप से सहायक के रूप में सामने नहीं आता',
-    assessmentIncomplete: 'आवश्यक ग्रह स्थिति उपलब्ध न होने से दोष-मूल्यांकन अधूरा है (N/A); उपाय या दोष-रहित होने का निष्कर्ष नहीं निकाला गया।',
-    reassurance: 'कोई भी ग्रह "बुरा" नहीं होता। यह डरने के लिए नहीं, मार्गदर्शन के लिए है। स्वास्थ्य, धन या कानून से जुड़े निर्णयों के लिए योग्य विशेषज्ञ से भी परामर्श करें।',
-    summaryLead: 'आपकी कुंडली में {supportive} सहायक हैं, {care} को विशेष ध्यान चाहिए।',
-    summaryLeadNoSupport: 'आपकी कुंडली में कोई एक ग्रह विशेष रूप से सहायक सामने नहीं आता, जबकि {care} को विशेष ध्यान चाहिए।',
+    noCarePlanet: 'आपकी कुंडली में किसी ग्रह पर विशेष ध्यान का संकेत नहीं है।',
+    noSupportPlanet: 'इस कुंडली में कोई एक ग्रह विशेष रूप से सहायक के रूप में सामने नहीं आता है।',
+    assessmentIncomplete: 'आवश्यक ग्रह स्थिति उपलब्ध न होने से दोष-मूल्यांकन अधूरा है (N/A); उपाय या दोष-रहित होने का निष्कर्ष नहीं निकाला गया है।',
+    reassurance: "कोई भी ग्रह 'बुरा' नहीं होता है। यह डरने के लिए नहीं, मार्गदर्शन के लिए है। स्वास्थ्य, धन या कानून से जुड़े निर्णयों के लिए योग्य विशेषज्ञ से भी परामर्श करें।",
+    summaryLead: 'आपकी कुंडली में {supportive} सहायक हैं और {care} पर विशेष ध्यान देना आवश्यक है।',
+    summaryLeadNoSupport: 'आपकी कुंडली में कोई एक ग्रह विशेष रूप से सहायक सामने नहीं आता है, जबकि {care} पर विशेष ध्यान देना आवश्यक है।',
     summaryLeadNoCare: 'आपकी कुंडली में {supportive} सहायक हैं, और किसी ग्रह को विशेष ध्यान की आवश्यकता नहीं है।',
     summaryRemedy: 'उपाय सरल हैं; मंत्र को 11 बार श्रद्धा से जपें।',
     summaryFaith: '',
-    dailyHabit: 'प्रतिदिन: सुबह पाँच मिनट प्रार्थना, बड़ों का सम्मान, और ज़रूरतमंदों की सहायता.',
+    dailyHabit: 'प्रतिदिन सुबह पाँच मिनट प्रार्थना करें, बड़ों का सम्मान करें और ज़रूरतमंदों की सहायता करें।',
     compactModeNote: 'प्रतिदिन एक दीपक जलाएँ और ग्रह का नाम लेकर प्रार्थना करें।'
   }
 };
@@ -514,7 +774,7 @@ export const DOSHA_DATA = {
     symptoms: {
       ta: 'திருமணத் தாமதம், குடும்ப கருத்து வேறுபாடு, கோபம், அவசர முடிவுகள்.',
       en: 'Delay in marriage, disagreements within the family, anger, hasty decisions.',
-      hi: 'विवाह में देरी, पारिवारिक मतभेद, क्रोध, जल्दबाज़ी में लिए गए निर्णय।'
+      hi: 'विवाह में देरी, पारिवारिक मतभेद, क्रोध और जल्दबाज़ी में निर्णय लेने की प्रवृत्ति दिख सकती है।'
     },
     remedies: {
       ta: [NAVAGRAHA_DOSHA_DATA.mars.remedies.ta],
@@ -548,7 +808,7 @@ export const DOSHA_DATA = {
     symptoms: {
       ta: 'முன்னோர் தொடர்பான கவலைகள் அல்லது தடைகள்.',
       en: 'Concerns or obstacles linked to ancestral matters.',
-      hi: 'पितरों से संबंधित चिंताएं या बाधाएं।'
+      hi: 'पितरों से संबंधित चिंताएँ या बाधाएँ दिख सकती हैं।'
     },
     remedies: {
       ta: ['மகா விஷ்ணு பெயரைச் சொல்லி பிரார்த்தனை செய்யுங்கள்.'],
@@ -565,7 +825,7 @@ export const DOSHA_DATA = {
     symptoms: {
       ta: 'குரு பகவானும் ராகு அல்லது கேதுவும் ஒரே ராசியில் இணைவு அல்லது பார்த்துக் கொள்ளுதல்.',
       en: 'Conjunction or aspect of benefic Jupiter with shadow planet Rahu or Ketu.',
-      hi: 'देवगुरु बृहस्पति की राहु या केतु के साथ युति अथवा दृष्टि संबंध।'
+      hi: 'देवगुरु बृहस्पति का राहु या केतु के साथ राशि अथवा दृष्टि संबंध बनता है।'
     },
     remedies: {
       ta: ['தட்சிணாமூர்த்தி அல்லது சிவன் பெயரைச் சொல்லி பிரார்த்தனை செய்யுங்கள்.'],

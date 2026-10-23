@@ -19,7 +19,7 @@
     { "index": 4, "key": "aadi", "nameEn": "Aadi", "nameTa": "ஆடி", "nameHi": "आडि (कर्क)" },
     { "index": 5, "key": "aavani", "nameEn": "Aavani", "nameTa": "ஆவணி", "nameHi": "आवनि (सिंह)" },
     { "index": 6, "key": "purattasi", "nameEn": "Purattasi", "nameTa": "புரட்டாசி", "nameHi": "पुरट्टासि (कन्या)" },
-    { "index": 7, "key": "aippasi", "nameEn": "Aippasi", "nameTa": "ஐப்பசி", "nameHi": "ஐப்பசி (तुला)" },
+    { "index": 7, "key": "aippasi", "nameEn": "Aippasi", "nameTa": "ஐப்பசி", "nameHi": "ऐप्पसि (तुला)" },
     { "index": 8, "key": "karthigai", "nameEn": "Karthigai", "nameTa": "கார்த்திகை", "nameHi": "कार्तिकै (वृश्चिक)" },
     { "index": 9, "key": "margazhi", "nameEn": "Margazhi", "nameTa": "மார்கழி", "nameHi": "मार्गाषि (धनु)" },
     { "index": 10, "key": "thai", "nameEn": "Thai", "nameTa": "தை", "nameHi": "थाई (मकर)" },
@@ -65,7 +65,7 @@
       "titleHi": "विवाह शुभ मुहूर्त",
       "descriptionEn": "Auspicious wedding dates conforming to Vedic Vivaha Shastras, avoiding inauspicious solar months and planetary afflictions.",
       "descriptionTa": "ஆடி, புரட்டாசி, மார்கழி தவிர்த்து குரு-சுக்கிர அஸ்தமனம் இல்லாத உன்னத திருமண சுப முகூர்த்த தினங்கள்.",
-      "descriptionHi": "शास्त्रसम्मत विवाह मुहूर्त, जिसमें शुभ मास, नक्षत्र और गुरु-शुक्र बल का पूर्ण ध्यान रखा जाता है।",
+      "descriptionHi": "ये शास्त्रसम्मत विवाह मुहूर्त हैं, जिनमें शुभ मास, नक्षत्र और गुरु-शुक्र बल का पूर्ण ध्यान रखा जाता है।",
       "avoidMonths": ["aadi", "purattasi", "margazhi"],
       "preferredMonths": ["thai", "panguni", "chithirai", "vaikasi", "aavani", "karthigai"],
       "goodNakshatras": [
@@ -91,7 +91,7 @@
       "titleHi": "गृह प्रवेश मुहूर्त",
       "descriptionEn": "Sanctified housewarming dates ensuring positive Vaastu vibrations, prosperity, and peace.",
       "descriptionTa": "வாஸ்து சாந்தி மற்றும் குடும்ப சுபிட்சம் தரும் மங்களகரமான புதுமனை புகுவிழா சுப முகூர்த்தம்.",
-      "descriptionHi": "नवीन गृह प्रवेश हेतु सुख-समृद्धि एवं वास्तु शांति प्रदान करने वाले शुभ दिवस।",
+      "descriptionHi": "ये नवीन गृह प्रवेश हेतु सुख-समृद्धि एवं वास्तु शांति प्रदान करने वाले शुभ दिवस हैं।",
       "avoidMonths": ["aani", "aadi", "purattasi", "margazhi", "maasi", "panguni"],
       "preferredMonths": ["chithirai", "vaikasi", "aavani", "aippasi", "karthigai", "thai"],
       "goodTithiIndexes": [1,2,4,6,9,10,12,16,17,19,21,24,25,27],
@@ -116,7 +116,7 @@
       "titleHi": "व्यापार / दुकान प्रारंभ मुहूर्त",
       "descriptionEn": "Prosperous timings for commercial ventures, shops, partnerships, and financial launches.",
       "descriptionTa": "லட்சுமி கடாட்சமும் லாப வளர்ச்சியும் அருளும் புதிய தொழில் & வியாபார தொடக்க சுப முகூர்த்தம்.",
-      "descriptionHi": "नया व्यापार, दुकान या प्रतिष्ठान शुरू करने के लिए लक्ष्मी प्रदायक शुभ मुहूर्त।",
+      "descriptionHi": "ये नया व्यापार, दुकान या प्रतिष्ठान शुरू करने के लिए लक्ष्मी प्रदायक शुभ मुहूर्त हैं।",
       "bestNakshatra": "Pushya",
       "goodNakshatras": [
         "Pushya", "Rohini", "Mrigashira", "Punarvasu", "Hasta",
@@ -142,7 +142,7 @@
       "titleHi": "विद्यारंभ मुहूर्त",
       "descriptionEn": "Saraswati-blessed dates for school admissions, initiation into arts, Vedic learning, and music.",
       "descriptionTa": "ஞானமும் கல்வி ஞானமும் சிறக்க சரஸ்வதி தேவியின் அருள் நிறைந்த வித்யாரம்ப சுப தினங்கள்.",
-      "descriptionHi": "बच्चों के विद्यारंभ, अक्षरारंभ तथा उच्च शिक्षा प्रारंभ हेतु सरस्वती कृपा युक्त मुहूर्त।",
+      "descriptionHi": "ये बच्चों के विद्यारंभ, अक्षरारंभ तथा उच्च शिक्षा प्रारंभ हेतु सरस्वती कृपा युक्त शुभ मुहूर्त हैं।",
       "bestWeekdays": [3, 4],
       "goodWeekdays": [1, 3, 4, 5],
       "avoidWeekdays": [2, 6],
@@ -167,7 +167,7 @@
       "titleHi": "नवीन वाहन क्रय मुहूर्त",
       "descriptionEn": "Auspicious timings for car, bike, or commercial vehicle delivery ensuring safety and longevity.",
       "descriptionTa": "விபத்து இன்றி சுகமான பயணமும் தீர்க்காயுளும் நல்கும் புதிய வாகன பதிவு & டெலிவரி சுப முகூர்த்தம்.",
-      "descriptionHi": "कार, बाइक या व्यावसायिक वाहन खरीदने व डिलीवरी लेने के लिए शुभ एवं सुरक्षित मुहूर्त।",
+      "descriptionHi": "ये कार, बाइक या व्यावसायिक वाहन खरीदने व डिलीवरी लेने के लिए शुभ एवं सुरक्षित मुहूर्त हैं।",
       "bestNakshatras": ["Punarvasu", "Swati", "Shravana", "Dhanishta", "Shatabhisha"],
       "goodNakshatras": [
         "Punarvasu", "Swati", "Shravana", "Dhanishta", "Shatabhisha",
@@ -188,7 +188,7 @@
       "titleHi": "भूमि / प्लॉट क्रय एवं रजिस्ट्री",
       "descriptionEn": "Dates for real estate acquisition, plot token, and deed registry avoiding Panchaka doshas.",
       "descriptionTa": "பஞ்சக தோஷம் தவிர்த்து பூமிதேவி ஆசியுடன் சொத்து வாங்கும் உன்னத சுப முகூர்த்த தினங்கள்.",
-      "descriptionHi": "भूमि, भूखंड या संपत्ति की खरीद व रजिस्ट्री हेतु शुभ दिवस (पंचक रहित)।",
+      "descriptionHi": "ये भूमि, भूखंड या संपत्ति की खरीद व रजिस्ट्री हेतु पंचक रहित शुभ दिवस हैं।",
       "isLowerConfidence": true,
       "confidenceNoteEn": "Note: Classical Shastras prioritize personal horoscope Bhumi Karaka (Mars) transit along with this general muhurtham.",
       "confidenceNoteTa": "குறிப்பு: நிலம் வாங்குவதற்கு பொது முகூர்த்தத்துடன் ஜாதகரின் செவ்வாய் (பூமி காரகன்) பலமும் முக்கியம்.",
@@ -212,7 +212,7 @@
       "titleHi": "भूमि पूजन (गृह निर्माण प्रारंभ)",
       "descriptionEn": "Sacred foundation stone laying and Bhoomi Pooja timings to ensure unobstructed construction.",
       "descriptionTa": "தடைகள் இன்றி வீடு இனிதே பூர்த்தியாக வாஸ்து புருஷன் விழிக்கும் சுப பூமி பூஜை தினங்கள்.",
-      "descriptionHi": "भवन निर्माण निर्विघ्न संपन्न होने हेतु शुभ भूमि पूजन एवं शिलान्यास मुहूर्त।",
+      "descriptionHi": "ये भवन निर्माण निर्विघ्न संपन्न होने हेतु शुभ भूमि पूजन एवं शिलान्यास मुहूर्त हैं।",
       "goodNakshatras": [
         "Uttara Phalguni", "Uttarashada", "Uttara Bhadrapada", "Rohini", "Mrigashira",
         "Revati", "Chitra", "Anuradha", "Shatabhisha", "Dhanishta", "Hasta", "Pushya"
@@ -233,7 +233,7 @@
       "titleHi": "नामकरण संस्कार मुहूर्त",
       "descriptionEn": "Vedic naming muhurthams, starting letter vibration by Nakshatra Pada, and traditional 11th/12th day guidance.",
       "descriptionTa": "ஜன்ம நட்சத்திர பாத சுப நாமாவளி ஒலிகளுடன் குழந்தைக்கு மங்கள பெயர் சூட்டும் சுப முகூர்த்தம்.",
-      "descriptionHi": "शिशु के जन्म नक्षत्र पाद के नामाक्षर अनुसार वैदिक नामकरण संस्कार मुहूर्त।",
+      "descriptionHi": "ये शिशु के जन्म नक्षत्र पाद के नामाक्षर अनुसार वैदिक नामकरण संस्कार के शुभ मुहूर्त हैं।",
       "traditionalDaysNoteEn": "Traditional Rule: The 11th, 12th, or 16th day from birth is naturally auspicious for Namakaranam without requiring a separate Muhurtham.",
       "traditionalDaysNoteTa": "பாரம்பரிய விதி: குழந்தை பிறந்த 11-வது அல்லது 12-வது நாள் எந்த ஒரு தனி முகூர்த்தமும் இன்றி தானாகவே சுப நாளாகும்.",
       "traditionalDaysNoteHi": "परंपरागत नियम: जन्म से 11वां या 12वां दिन स्वाभाविक रूप से नामकरण हेतु शुभ माना जाता है।",
@@ -256,7 +256,7 @@
       "titleHi": "मकान / फ्लैट खरीद",
       "descriptionEn": "Dates for booking, token payment and registration of a new home or apartment, clear of Panchaka dosha and with Sthira (fixed) stars for lasting ownership.",
       "descriptionTa": "வீடு புத்தகி செய்தல், அட்வான்ஸ் கொடுத்தல் மற்றும் பதிவு நடத்த உகந்த சுப முகூர்த்த நாட்கள் (பஞ்சக தோஷம் இன்றி).",
-      "descriptionHi": "नया मकान बुक करना, टोकन राशि देना एवं रजिस्ट्री कराने हेतु पंचक रहित शुभ मुहूर्त।",
+      "descriptionHi": "ये नया मकान बुक करने, टोकन राशि देने एवं रजिस्ट्री कराने हेतु पंचक रहित शुभ मुहूर्त हैं।",
       "strictNakshatra": true,
       "avoidPanchaka": true,
       "isLowerConfidence": true,
@@ -305,7 +305,7 @@
       "titleHi": "निश्चयार्थ (सगाई)",
       "descriptionEn": "Betrothal and ring-exchange dates with clean Guru & Sukra, gentle stars and an ascending Moon.",
       "descriptionTa": "மண நிச்சயம், மோதிரம் அணிவிப்பு மற்றும் குடும்ப உறவுகளை வலுப்படுத்தும் சுப முகூர்த்த நாட்கள்.",
-      "descriptionHi": "सगाई, मंगलसूत्र व वर-वधू निश्चय हेतु गुरु-शुक्र शुद्ध एवं शुभ नक्षत्र मुहूर्त।",
+      "descriptionHi": "ये सगाई, मंगलसूत्र व वर-वधू निश्चय हेतु गुरु-शुक्र शुद्ध एवं शुभ नक्षत्र मुहूर्त हैं।",
       "strictNakshatra": true,
       "requireGuruSukraClean": true,
       "avoidMonths": ["aadi", "purattasi", "margazhi"],
@@ -339,7 +339,7 @@
       "tipsHi": [
         "सगाई हेतु विवाह के ही नक्षत्र नियम लागू होते हैं।",
         "गुरु एवं शुक्र अस्त न हों, ऐसा दिन चुनें।",
-        "शुक्ल पक्ष एवं वर्धमान चंद्रमा सगाई हेतु श्रेष्ठ।",
+        "शुक्ल पक्ष एवं वर्धमान चंद्रमा सगाई हेतु श्रेष्ठ होते हैं।",
         "आषाढ़, भाद्रपद एवं मार्गशीर्ष मास त्याज्य हैं।"
       ]
     },
@@ -354,7 +354,7 @@
       "titleHi": "अन्नप्राशन (पहला अन्न)",
       "descriptionEn": "The sacred first taste of solid food — performed in the baby's 5th-7th month (girls) or 6th-8th month (boys) with gentle, nourishing stars.",
       "descriptionTa": "குழந்தைக்கு முதல் உணவு சூட்டும் மங்கள சமஸ்காரம் — பெண்கள் 5/7-ஆம் மாதம், ஆண்கள் 6/8-ஆம் மாதத்தில் செய்யவும்.",
-      "descriptionHi": "शिशु को पहला अन्न चखाने का पवित्र संस्कार — बालिका 5/7 व बालक 6/8 माह में।",
+      "descriptionHi": "शिशु को पहला अन्न चखाने का यह पवित्र संस्कार बालिका के 5/7 व बालक के 6/8 माह में किया जाता है।",
       "goodWeekdays": [1, 3, 4, 5],
       "avoidWeekdays": [2, 6],
       "softPenaltyWeekdays": [0],
@@ -382,8 +382,8 @@
       ],
       "tipsHi": [
         "बालक हेतु 6, 8, 10 व बालिका हेतु 5, 7, 9 माह उत्तम हैं।",
-        "रोहिणी, मृगशिरा, पुनर्वसु, पुष्य, हस्त, स्वाति, अनुराधा व श्रवण श्रेष्ठ।",
-        "रिक्ता तिथि, अमावस्या, चातुर्मास, पितृ पक्ष एवं अधिक मास त्याज्य।",
+        "रोहिणी, मृगशिरा, पुनर्वसु, पुष्य, हस्त, स्वाति, अनुराधा व श्रवण नक्षत्र श्रेष्ठ हैं।",
+        "रिक्ता तिथि, अमावस्या, चातुर्मास, पितृ पक्ष एवं अधिक मास त्याज्य हैं।",
         "संस्कार प्रातःकाल में करें तथा माता के जन्म नक्षत्र की तारा बल जाँचें।"
       ]
     },
@@ -397,7 +397,7 @@
       "titleHi": "सीमंतन / गोद भराई",
       "descriptionEn": "Prenatal blessing ceremony for the expectant mother, held in the 7th or 9th month with nourishing stars and a clean morning window.",
       "descriptionTa": "கர்ப்பிணியின் ஆரோக்கியம் மற்றும் குழந்தையின் நலம் அருளும் சீமந்தம் / வளைகாப்பு சுப முகூர்த்தம்.",
-      "descriptionHi": "गर्भवती माता एवं भावी शिशु की मंगल कामना हेतु सीमंतन / गोद भराई मुहूर्त।",
+      "descriptionHi": "यह गर्भवती माता एवं भावी शिशु की मंगल कामना हेतु सीमंतन / गोद भराई का शुभ मुहूर्त है।",
       "goodWeekdays": [1, 3, 4, 5],
       "avoidWeekdays": [2, 6],
       "softPenaltyWeekdays": [0],
@@ -424,9 +424,9 @@
         "தாயின் ஜென்ம நட்சத்திரத்தைப் பொறுத்து தாரா பலம் பரிசோதிக்கவும்."
       ],
       "tipsHi": [
-        "सामान्यतः 7वां माह उत्तम; 8वां मास त्याज्य माना जाता है।",
-        "रोहिणी, पुनर्वसु, पुष्य, हस्त व चित्रा नक्षत्र श्रेष्ठ।",
-        "तिथि 2, 3, 5, 7, 10, 13 सर्वश्रेष्ठ।",
+        "सामान्यतः 7वां माह उत्तम है; 8वां मास त्याज्य माना जाता है।",
+        "रोहिणी, पुनर्वसु, पुष्य, हस्त व चित्रा नक्षत्र श्रेष्ठ हैं।",
+        "तिथियाँ 2, 3, 5, 7, 10 और 13 सर्वश्रेष्ठ मानी जाती हैं।",
         "माता के जन्म नक्षत्र की तारा बल भी देखी जाती है।"
       ]
     },
@@ -469,10 +469,10 @@
         "ஸ்பூர்ஜிதம், ஸ்புரிதம், ருதிதம், ருந்திரம், உக்ரம் எனும் அசுப யோகங்களைத் தவிர்க்கவும்."
       ],
       "tipsHi": [
-        "ब्राह्मण हेतु 5 अथवा 8वें वर्ष उत्तम; अन्य समुदाय हेतु 16 वर्ष से पूर्व।",
-        "शुक्ल पक्ष तिथि 2, 3, 5, 7, 10, 11, 13 शुभ; 4, 8, 9, 14, पूर्णिमा, अमावस्या वर्जित।",
+        "ब्राह्मण हेतु 5 अथवा 8वाँ वर्ष उत्तम है; अन्य समुदायों हेतु 16 वर्ष से पूर्व करना उचित है।",
+        "शुक्ल पक्ष तिथि 2, 3, 5, 7, 10, 11, 13 शुभ हैं; 4, 8, 9, 14, पूर्णिमा, अमावस्या वर्जित हैं।",
         "संस्कार दोपहर से पूर्व पूर्ण करें।",
-        "स्पूर्जितम्, स्पुरितम्, रुदितम्, रुन्ध्रम्, उग्रम् — पाँच अशुभ योग त्याज्य।"
+        "स्पूर्जितम्, स्पुरितम्, रुदितम्, रुन्ध्रम् और उग्रम् — ये पाँच अशुभ योग त्याज्य हैं।"
       ]
     },
 
@@ -513,10 +513,10 @@
         "மிருகசீரிடம், ரேவதி, சித்திரை, அனுஷம், அஸ்தம், அஸ்வினி, பூசம் நட்சத்திரங்கள் உகந்தது."
       ],
       "tipsHi": [
-        "जन्म के 12वें अथवा 16वें दिन, अथवा बालक 6/8 व बालिका 5/7 माह में।",
-        "केवल प्रातः अथवा दोपहर में करें — रात्रि में नहीं।",
-        "कार्तिक, चैत्र, पौष एवं फाल्गुन मास अत्यंत शुभ।",
-        "मृगशिरा, रेवती, चित्रा, अनुराधा, हस्त, अश्विनी व पुष्य श्रेष्ठ नक्षत्र।"
+        "यह संस्कार जन्म के 12वें या 16वें दिन, अथवा बालक के 6/8 व बालिका के 5/7 माह में किया जाता है।",
+        "इसे केवल प्रातः या दोपहर में करें — रात्रि में नहीं करना चाहिए।",
+        "कार्तिक, चैत्र, पौष एवं फाल्गुन मास अत्यंत शुभ माने जाते हैं।",
+        "मृगशिरा, रेवती, चित्रा, अनुराधा, हस्त, अश्विनी व पुष्य श्रेष्ठ नक्षत्र हैं।"
       ]
     },
 
@@ -557,10 +557,10 @@
         "சுக்ல பக்ஷ 2, 3, 5, 7, 10 திதிகள் உகந்தது; இராகு காலம் தவிர்க்கவும்."
       ],
       "tipsHi": [
-        "विषम वर्ष — शिशु के 1, 3 अथवा 5वें वर्ष उत्तम।",
-        "पुष्य, रोहिणी, हस्त, मृगशिरा, स्वाति व रेवती श्रेष्ठ नक्षत्र।",
-        "शिशु का जन्म माह तथा पिता का जन्म नक्षत्र दिवस त्याज्य।",
-        "शुक्ल पक्ष तिथि 2, 3, 5, 7, 10 शुभ; राहु काल से बचें।"
+        "शिशु के 1, 3 अथवा 5वें विषम वर्ष इसके लिए उत्तम होते हैं।",
+        "पुष्य, रोहिणी, हस्त, मृगशिरा, स्वाति व रेवती श्रेष्ठ नक्षत्र हैं।",
+        "शिशु का जन्म माह तथा पिता का जन्म नक्षत्र दिवस त्याज्य हैं।",
+        "शुक्ल पक्ष तिथि 2, 3, 5, 7, 10 शुभ हैं; राहु काल से बचें।"
       ]
     },
 
@@ -573,7 +573,7 @@
       "titleHi": "स्वर्ण एवं कीमती वस्तु क्रय",
       "descriptionEn": "Timings for buying gold, silver, jewellery and other valuables — Friday and Pushya are the strongest combination.",
       "descriptionTa": "தங்கம், வெள்ளி, நகைகள் மற்றும் மதிப்புள்ள பொருள்கள் வாங்க உகந்த சுப நாட்கள்.",
-      "descriptionHi": "स्वर्ण, रजत, आभूषण एवं मूल्यवान वस्तुओं के क्रय हेतु शुभ मुहूर्त।",
+      "descriptionHi": "ये स्वर्ण, रजत, आभूषण एवं मूल्यवान वस्तुओं के क्रय हेतु शुभ मुहूर्त हैं।",
       "bestNakshatra": "Pushya",
       "goodWeekdays": [5, 1, 3, 4],
       "bestWeekdays": [5],
@@ -605,9 +605,9 @@
         "இராகு காலம் தவிர்த்து அபிஜித் நேரத்தில் நகை பெற்றுக்கொள்ளவும்."
       ],
       "tipsHi": [
-        "शुक्रवार + पुष्य नक्षत्र स्वर्ण क्रय हेतु सर्वोत्तम संयोग।",
+        "शुक्रवार और पुष्य नक्षत्र स्वर्ण क्रय हेतु सर्वोत्तम संयोग हैं।",
         "अक्षय तृतीया एवं धनतेरस स्वयं शुभ दिन हैं।",
-        "शुक्ल पक्ष श्रेष्ठ; रिक्ता तिथि एवं अमावस्या त्याज्य।",
+        "शुक्ल पक्ष श्रेष्ठ है; रिक्ता तिथि एवं अमावस्या त्याज्य हैं।",
         "राहु काल से मुक्त अभिजित मुहूर्त में आभूषण ग्रहण करें।"
       ]
     },
@@ -621,7 +621,7 @@
       "titleHi": "नई नौकरी / कार्यालय में सम्मिलन",
       "descriptionEn": "First day at a new workplace, office shift or professional start with Mercury and Jupiter strong.",
       "descriptionTa": "புதிய வேலை, அலுவலகம் மாற்றம் மற்றும் தொழில் தொடக்கம் சுப நாட்கள்.",
-      "descriptionHi": "नई नौकरी, कार्यालय परिवर्तन एवं पेशेवर शुरुआत हेतु शुभ मुहूर्त।",
+      "descriptionHi": "ये नई नौकरी, कार्यालय परिवर्तन एवं पेशेवर शुरुआत हेतु शुभ मुहूर्त हैं।",
       "goodWeekdays": [3, 4, 1, 5],
       "bestWeekdays": [3, 4],
       "avoidWeekdays": [2, 6],
@@ -649,8 +649,8 @@
         "அஸ்தம், சித்திரை, பூசம், அனுஷம் நட்சத்திரங்கள் தொழில் வளர்ச்சி தரும்."
       ],
       "tipsHi": [
-        "बुधवार (व्यापार) एवं गुरुवार (वृद्धि) नई नौकरी हेतु उत्तम।",
-        "अनुबंध, लेखन कार्य हेतु बुध वक्र काल त्याज्य।",
+        "बुधवार (व्यापार) एवं गुरुवार (वृद्धि) नई नौकरी हेतु उत्तम हैं।",
+        "अनुबंध, लेखन कार्य हेतु बुध वक्र काल त्याज्य है।",
         "प्रातःकाल अभिजित मुहूर्त में कार्यालय में प्रवेश करें।",
         "हस्त, चित्रा, पुष्य एवं अनुराधा करियर वृद्धि प्रदान करते हैं।"
       ]
@@ -665,7 +665,7 @@
       "titleHi": "गृह परिवर्तन / कूट-स्थानांतरण",
       "descriptionEn": "Packing, moving and entering a rented or renovated home — movable (Chara) stars are preferred for a smooth move.",
       "descriptionTa": "வீடு மாற்றம், சாமான் எடுத்து செல்வது மற்றும் புதிய வீட்டில் குடியேறுவது சுப நாட்கள்.",
-      "descriptionHi": "सामान लेकर जाना एवं नए मकान में कूट-स्थानांतरण हेतु शुभ मुहूर्त।",
+      "descriptionHi": "ये सामान ले जाने एवं नए मकान में कूट-स्थानांतरण हेतु शुभ मुहूर्त हैं।",
       "goodWeekdays": [1, 3, 4, 5],
       "avoidWeekdays": [2, 6],
       "softPenaltyWeekdays": [0],
@@ -692,10 +692,10 @@
         "சதுர்மாசம், பித்திரு பக்ஷம், அதிக மாசம், கிரகண காலத்தைத் தவிர்க்கவும்."
       ],
       "tipsHi": [
-        "गृह परिवर्तन हेतु अश्विनी, पुनर्वसु, हस्त, स्वाति व श्रवण चर नक्षत्र श्रेष्ठ।",
+        "गृह परिवर्तन हेतु अश्विनी, पुनर्वसु, हस्त, स्वाति व श्रवण चर नक्षत्र श्रेष्ठ हैं।",
         "पुराने घर से निकलना व नए घर में प्रवेश एक ही शुभ समय में करें।",
         "नए घर में सबसे पहले दूध उबालें और दीपक जलाएं।",
-        "चातुर्मास, पितृ पक्ष, अधिक मास एवं ग्रहण काल त्याज्य।"
+        "चातुर्मास, पितृ पक्ष, अधिक मास एवं ग्रहण काल त्याज्य हैं।"
       ]
     }
   },
@@ -704,7 +704,7 @@
     { "key": "home_property", "labelEn": "Home & Property", "labelTa": "வீடு & சொத்து", "labelHi": "गृह एवं संपत्ति" },
     { "key": "baby_child", "labelEn": "Baby & Child", "labelTa": "குழந்தை & சமஸ்காரம்", "labelHi": "शिशु एवं संस्कार" },
     { "key": "career_money", "labelEn": "Career & Money", "labelTa": "தொழில் & பணம்", "labelHi": "कार्य एवं धन" },
-    { "key": "ceremonies", "labelEn": "Ceremonies", "labelTa": "சடங்குகள்", "labelHi": "संस्कार" }
+    { "key": "ceremonies", "labelEn": "Ceremonies", "labelHi": "संस्कार", "labelTa": "சடங்குகள்" }
   ],
   "knowledgeBase": {
     "titleEn": "How a Subha Muhurtham Is Chosen",
@@ -720,7 +720,7 @@
         "nameHi": "तिथि (चंद्र दिवस)",
         "bodyEn": "The angular distance between the Sun and the Moon. There are 30 tithis; Shukla (waxing) is preferred for beginnings. The Rikta tithis — 4th, 9th and 14th of each fortnight — are always rejected, as are Amavasya and Purnima for most ceremonies.",
         "bodyTa": "சூரியன்-சந்திரனுக்கு இடையிலான கோண இடைவெளி. 30 திதிகள் உண்டு; புதிய தொடக்கங்களுக்கு சுக்ல பக்ஷம் உகந்தது. 4, 9, 14 ரிக்தா திதிகள், அமாவாசை, பௌர்ணமி விலக்கப்படும்.",
-        "bodyHi": "सूर्य-चंद्र के बीच कोणीय दूरी। 30 तिथियाँ; नई शुरुआत हेतु शुक्ल पक्ष श्रेष्ठ। रिक्ता तिथि 4, 9, 14 तथा अमावस्या वर्जित।"
+        "bodyHi": "यह सूर्य-चंद्र के बीच की कोणीय दूरी है। कुल 30 तिथियों में नई शुरुआत हेतु शुक्ल पक्ष श्रेष्ठ है, जबकि रिक्ता तिथि 4, 9, 14 तथा अमावस्या वर्जित हैं।"
       },
       {
         "nameEn": "Nakshatra (Moon Star)",
@@ -728,7 +728,7 @@
         "nameHi": "नक्षत्र (चंद्र नक्षत्र)",
         "bodyEn": "The 27 lunar mansions the Moon transits. Each ceremony has its own approved list: Sthira (fixed) stars for construction and property, Chara (movable) stars for vehicles and relocation, and Mridu (gentle) stars for baby ceremonies.",
         "bodyTa": "சந்திரன் கடக்கும் 27 நட்சத்திரங்கள். கட்டிடம்-சொத்துக்கு ஸ்திர, வாகனம்-வீடுமாற்றத்திற்கு அசர, குழந்தை சமஸ்காரங்களுக்கு மிருது நட்சத்திரங்கள் உகந்தது.",
-        "bodyHi": "27 नक्षत्र। निर्माण-संपत्ति हेतु स्थिर, वाहन-कूट हेतु चर, शिशु संस्कार हेतु मृदु नक्षत्र श्रेष्ठ।"
+        "bodyHi": "ये चंद्रमा द्वारा पार किए जाने वाले 27 नक्षत्र हैं। निर्माण-संपत्ति हेतु स्थिर, वाहन-गृह परिवर्तन हेतु चर और शिशु संस्कार हेतु मृदु नक्षत्र श्रेष्ठ हैं।"
       },
       {
         "nameEn": "Vara (Weekday)",
@@ -736,7 +736,7 @@
         "nameHi": "वार (सप्ताह का दिन)",
         "bodyEn": "Each day is ruled by a planet. Wednesday (Mercury) and Thursday (Jupiter) favour business and education, Friday (Venus) favours gold, vehicles and weddings, Monday (Moon) favours home and family events. Tuesday and Saturday are avoided for most auspicious work.",
         "bodyTa": "புதன்-வியாழன் கிழமைகள் தொழில்-கல்விக்கு, வெள்ளி தங்கம்-வாகனம்-திருமணத்திற்கு, திங்கள் வீடு-குடும்பத்திற்கு உகந்தது. செவ்வாய், சனி கிழமைகள் பெரும்பாலும் விலக்கு.",
-        "bodyHi": "बुध-गुरुवार व्यापार-शिक्षा, शुक्रवार स्वर्ण-वाहन-विवाह, सोमवार गृह-कुटुंब हेतु शुभ। मंगल व शनिवार प्रायः त्याज्य।"
+        "bodyHi": "बुध-गुरुवार व्यापार-शिक्षा, शुक्रवार स्वर्ण-वाहन-विवाह और सोमवार गृह-कुटुंब हेतु शुभ हैं; मंगल व शनिवार प्रायः त्याज्य हैं।"
       },
       {
         "nameEn": "Yoga & Karana",
@@ -744,7 +744,7 @@
         "nameHi": "योग एवं करण",
         "bodyEn": "Yoga (Sun + Moon) and Karana (half a tithi) are the two remaining limbs. Nine inauspicious yogas — Vishkambha, Vyatipata, Parigha, Vaidhriti, Atiganda, Shoola, Ganda, Vyaghata and Vajra — are rejected, and Vishti (Bhadra) Karana blocks every auspicious act.",
         "bodyTa": "சூரிய-சந்திர சேர்க்கையால் யோகம், அரை திதியால் கரணம் உருவாகும். 9 அசுப யோகங்களும் விஷ்டி (பத்திரை) கரணமும் சுப காரியங்களுக்கு விலக்கு.",
-        "bodyHi": "सूर्य-चंद्र से योग, अर्ध तिथि से करण। नौ अशुभ योग तथा विष्टि (भद्रा) करण शुभ कार्यों हेतु वर्जित।"
+        "bodyHi": "सूर्य-चंद्र से योग और अर्ध तिथि से करण बनता है। नौ अशुभ योग तथा विष्टि (भद्रा) करण शुभ कार्यों हेतु वर्जित हैं।"
       },
       {
         "nameEn": "Panchak & Rahu Kalam",
@@ -752,7 +752,7 @@
         "nameHi": "पंचक एवं राहु काल",
         "bodyEn": "Panchak (Moon in the Dhanishta–Revati group) is strictly avoided for land, house and construction work. Rahu Kalam, Yamagandam and Gulikai are the three inauspicious windows of every day; the remaining free windows become the Nalla Neram (best time) shown on each date card.",
         "bodyTa": "நிலம்-வீடு-கட்டிட பணிகளுக்கு பஞ்சகம் தவிர்க்கப்படும். இராகு காலம், எமகண்டம், குளிகை ஆகிய மூன்று அசுப நேரங்களை விட்ட மீதியே சிறந்த நேரம் (நல்ல நேரம்) ஆகும்.",
-        "bodyHi": "भूमि-गृह-निर्माण कार्य हेतु पंचक त्याज्य। राहु काल, यमगंड, गुलिक के अतिरिक्त शेष समय ही नल्ला नेरम (शुभ समय) है।"
+        "bodyHi": "भूमि-गृह-निर्माण कार्य हेतु पंचक त्याज्य है। राहु काल, यमगंड, गुलिक के अतिरिक्त शेष समय ही नल्ला नेरम (शुभ समय) होता है।"
       },
       {
         "nameEn": "Closed Seasons",

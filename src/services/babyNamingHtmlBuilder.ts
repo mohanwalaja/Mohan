@@ -211,9 +211,9 @@ export function buildBabyNamingHtml(result: BabyNamingResult, lang: AppLanguage 
   const firstSound = escapeHtml(firstNameSound(suppliedName));
   const birthSound = escapeHtml(primaryPada.letterEn);
   const matches = nameMatchesPada(suppliedName, primaryPada.letterTa);
-  const nameCheck = !suppliedName ? (isTa ? 'பெயர் வழங்கப்படவில்லை' : isHi ? 'नाम नहीं दिया गया' : 'No name supplied')
+  const nameCheck = !suppliedName ? (isTa ? 'பெயர் வழங்கப்படவில்லை' : isHi ? 'नाम नहीं दिया गया है।' : 'No name supplied')
     : isTa ? `பெயரின் முதல் ஒலி (${firstSound}) ஜன்ம பாத ஒலிக்கு (${birthSound}) ${matches ? 'பொருந்துகிறது' : 'பொருந்தவில்லை'}`
-    : isHi ? `नाम की पहली ध्वनि (${firstSound}) जन्म पाद (${birthSound}) से ${matches ? 'मेल खाती है' : 'मेल नहीं खाती'}`
+    : isHi ? `नाम की पहली ध्वनि (${firstSound}) जन्म पाद (${birthSound}) से ${matches ? 'मेल खाती है।' : 'मेल नहीं खाती है।'}`
     : `Name’s first sound (${firstSound}) ${matches ? 'matches' : 'does not match'} the birth-pada sound (${birthSound}).`;
   const signatory = isTa ? 'அங்கீகரிக்கப்பட்டவர்' : isHi ? 'अधिकृत हस्ताक्षरकर्ता' : 'Authorised Signatory';
   const signatoryDesk = isTa ? 'ASTRO SIVAM வேத ஆய்வு மையம்' : isHi ? 'ASTRO SIVAM वैदिक अनुसंधान केंद्र' : 'ASTRO SIVAM Vedic Research Desk';
@@ -298,7 +298,7 @@ export function buildBabyNamingHtml(result: BabyNamingResult, lang: AppLanguage 
   const whySoundText = isTa
     ? 'பெயர் ஒலியை மட்டும் வைத்துத் தேர்ந்தெடுப்பதல்ல — மரபு குழந்தையின் பிறந்த நட்சத்திரம் மற்றும் பாதத்திலிருந்து முதல் ஒலியை நிர்ணயிக்கிறது; அதனால் பெயர் குழந்தையின் நட்சத்திரம் தொடங்கும் இடத்திலிருந்தே தொடங்குகிறது. மேலே உள்ள நான்கு ஒலிகளில் ஒன்றில் தொடங்கும் எந்தப் பெயரையும் குடும்பம் தேர்ந்தெடுக்கலாம். இந்த அறிக்கையின் அனைத்துப் பெயர் பட்டியலும் அந்த ஒலிகளில் தொடங்குவதற்குக் காரணம் இதுவே: பொருள் உங்கள் தேர்வு, முதல் ஒலி ஆசி.'
     : isHi
-    ? 'नाम केवल सुनने में अच्छा लगने से नहीं चुना जाता — परंपरा पहली ध्वनि शिशु के जन्म नक्षत्र और पाद से तय करती है, इसलिए नाम वहीं से शुरू होता है जहाँ शिशु का नक्षत्र शुरू होता है। परिवार ऊपर दी गई चार ध्वनियों में से किसी एक से शुरू होने वाला कोई भी नाम चुन सकता है। इस रिपोर्ट की हर नाम-सूची इन्हीं ध्वनियों से शुरू होती है: अर्थ आपकी पसंद, पहली ध्वनि आशीर्वाद।'
+    ? 'नाम केवल सुनने में अच्छा लगने से नहीं चुना जाता — परंपरा पहली ध्वनि शिशु के जन्म नक्षत्र और पाद से तय करती है, इसलिए नाम वहीं से शुरू होता है जहाँ शिशु का नक्षत्र शुरू होता है। परिवार ऊपर दी गई चार ध्वनियों में से किसी एक से शुरू होने वाला कोई भी नाम चुन सकता है। इस रिपोर्ट की हर नाम-सूची इन्हीं ध्वनियों से शुरू होती है: अर्थ आपकी पसंद है, और पहली ध्वनि आशीर्वाद है।'
     : 'A name is not chosen by sound alone — tradition fixes the FIRST sound from the birth star and pada, so the name begins where the child\'s star begins. The family then picks any name that starts with one of the four syllables printed above. That is why every name list in this report starts with those sounds: the meaning is your choice, the first sound is the blessing.';
   const certificationTitle = isTa ? 'வேத ஆசீர்வாதம் & சான்றிதழ்' : isHi ? 'वैदिक आशीर्वाद एवं प्रमाणीकरण' : 'Vedic Certification &amp; Divine Blessing';
   const verifiedLabel = isTa ? 'கணிப்பு சரிபார்க்கப்பட்டது' : isHi ? 'गणना सत्यापित' : 'CALCULATION VERIFIED';
@@ -492,7 +492,7 @@ ${reportData.virtues.map((point, index) => `        <div class="virtue-card">
                 <span class="sug-name-meaning" style="font-family: ${isTa ? "'Noto Sans Tamil', sans-serif" : isHi ? "'Noto Sans Devanagari', sans-serif" : "'Noto Sans', sans-serif"};">${escapeHtml(isTa ? entry.meaningTa : isHi ? entry.meaningHi : entry.meaningEn || entry.meaning)}</span>
               </div>`;
           }).join('')
-        : `<div class="sug-empty">${isTa ? 'இந்த ஒலிக்கு பெயர்கள் இல்லை' : isHi ? 'इस ध्वनि हेतु नाम उपलब्ध नहीं' : 'No names available for this sound'}</div>`;
+        : `<div class="sug-empty">${isTa ? 'இந்த ஒலிக்கு பெயர்கள் இல்லை' : isHi ? 'इस ध्वनि हेतु नाम उपलब्ध नहीं हैं।' : 'No names available for this sound'}</div>`;
       return `
         <div class="sug-block${column.padaNumber === janmaPada ? ' birth-pada-section' : ''}" style="flex-grow: ${rowCount};">
           <div class="sug-block-head">

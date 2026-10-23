@@ -168,12 +168,17 @@ for (const language of ['en', 'ta', 'hi'] as const) {
       const classified = classifyJathagamPlanetsForSummary(testCase.chart as never, language);
       expect(measured.compact, `${language}/${testCase.name}: compact mode`).toBe(classified.compact);
 
-      // Every graha the shared rule flags must be on the page, with a remedy.
+      // Every graha the shared rule flags must be on the page, with its complete remedy text.
       expect(measured.careRows).toBe(classified.needsCare.length);
       for (const planet of classified.needsCare) {
-        await expect(frame.locator('#jathagam-page-3 table.care-table')).toContainText(
-          planet.compactLine.split(' · ')[0].slice(0, 12)
-        );
+        if (classified.compact) {
+          await expect(frame.locator('#jathagam-page-3 table.care-table')).toContainText(planet.compactLine);
+        } else {
+          await expect(frame.locator('#jathagam-page-3 table.care-table')).toContainText(planet.worship);
+          await expect(frame.locator('#jathagam-page-3 table.care-table')).toContainText(planet.lamp);
+          await expect(frame.locator('#jathagam-page-3 table.care-table')).toContainText(planet.donation);
+          await expect(frame.locator('#jathagam-page-3 table.care-table')).toContainText(planet.mantra);
+        }
       }
       if (testCase.name === 'all nine needing care') {
         expect(classified.needsCare).toHaveLength(9);

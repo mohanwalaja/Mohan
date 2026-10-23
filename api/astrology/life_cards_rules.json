@@ -274,7 +274,7 @@
       "benefit": {
         "en": "Good: 7th lord {pos} can support spouse/partner cooperation.",
         "ta": "நன்மை: 7-ஆம் அதிபதி {pos} இருப்பதால் துணை/கூட்டாண்மை ஆதரவு கிடைக்கலாம்.",
-        "hi": "शुभ: सप्तमेश {pos} जीवनसाथी/साझेदारी से सहयोग दे सकता है।"
+        "hi": "शुभ: सप्तमेश {pos} जीवनसाथी व साझेदारी में सहायक है।"
       },
       "caution": {
         "en": "Caution: {status}; misunderstanding, delay, or arguments may occur. Use patient communication.",
@@ -331,7 +331,7 @@
       "benefit": {
         "en": "Good: 4th lord {pos} can support home comfort, vehicle matters, and peace of mind.",
         "ta": "நன்மை: 4-ஆம் அதிபதி {pos} இருப்பதால் வீட்டு வசதி, வாகனம், மன அமைதி மேம்படலாம்.",
-        "hi": "शुभ: चतुर्थेश {pos} घर-सुख, वाहन और मानसिक शांति में मदद कर सकता है।"
+        "hi": "शुभ: चतुर्थेश {pos} घर-सुख, वाहन व मनःशांति में सहायक है।"
       },
       "caution": {
         "en": "Caution: {status}; property-document delays, repair expenses, or family stress may arise. Verify carefully.",
@@ -484,12 +484,12 @@
     "placement": {
       "en": "Required Ascendant or planet-house data is unavailable; no interpretation was generated.",
       "ta": "தேவையான லக்னம் அல்லது கிரக பாவத் தகவல் கிடைக்கவில்லை; விளக்கம் உருவாக்கப்படவில்லை.",
-      "hi": "आवश्यक लग्न या ग्रह-भाव जानकारी उपलब्ध नहीं है; व्याख्या नहीं बनाई गई।"
+      "hi": "आवश्यक लग्न या ग्रह-भाव जानकारी उपलब्ध नहीं है; व्याख्या नहीं बनाई गई है।"
     },
     "dasha": {
       "en": "Current Dasha or Moon-sign data is unavailable; no guidance was generated.",
       "ta": "நடப்பு தசை அல்லது சந்திர ராசித் தகவல் கிடைக்கவில்லை; வழிகாட்டல் உருவாக்கப்படவில்லை.",
-      "hi": "वर्तमान दशा या चंद्र राशि उपलब्ध नहीं है; मार्गदर्शन नहीं बनाया गया।"
+      "hi": "वर्तमान दशा या चंद्र राशि उपलब्ध नहीं है; मार्गदर्शन नहीं बनाया गया है।"
     }
   },
   "statusWords": {

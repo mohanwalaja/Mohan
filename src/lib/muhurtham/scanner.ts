@@ -437,15 +437,15 @@ const KARANA_NAMES = [
 ];
 
 const NAVATARA_TABLE = [
-  { num: 1, en: 'Janma Tara', ta: 'ஜன்ம தாரை', hi: 'जन्म तारा', isGood: false, badgeEn: 'Janma (Birth Star)', badgeTa: 'ஜன்ம தாரை', badgeHi: 'जन्म तारा', descEn: 'Birth star vibration (average/mixed)', descTa: 'ஜன்ம தாரை - மிதமான பலன்', descHi: 'जन्म तारा - सामान्य प्रभाव' },
-  { num: 2, en: 'Sampat Tara', ta: 'சம்பத் தாரை', hi: 'सम्पत तारा', isGood: true, badgeEn: 'Sampat (Wealth & Prosperity) ✓', badgeTa: 'சம்பத் தாரை (தன லாபம்) ✓', badgeHi: 'सम्पत तारा (धन लाभ) ✓', descEn: 'Brings immense wealth, prosperity and joy', descTa: 'சம்பத் தாரை - தன தான்ய சம்பத்தும் செல்வ விருத்தியும் அருளும்', descHi: 'सम्पत तारा - अपार धन-धान्य व समृद्धि प्रदायक' },
-  { num: 3, en: 'Vipat Tara', ta: 'விபத் தாரை', hi: 'विपत तारा', isGood: false, badgeEn: 'Vipat (Obstacles)', badgeTa: 'விபத் தாரை (எச்சரிக்கை)', badgeHi: 'विपत तारा', descEn: 'Prone to delays and minor friction', descTa: 'விபத் தாரை - கவனமுடன் செயல்பட வேண்டிய நாள்', descHi: 'विपत तारा - कार्यों में सावधानी बरतें' },
-  { num: 4, en: 'Kshema Tara', ta: 'க்ஷேம தாரை', hi: 'क्षेम तारा', isGood: true, badgeEn: 'Kshema (Well-being & Safety) ✓', badgeTa: 'க்ஷேம தாரை (சுகவாழ்வு) ✓', badgeHi: 'क्षेम तारा (कल्याण) ✓', descEn: 'Grants safety, health and peaceful happiness', descTa: 'க்ஷேம தாரை - குடும்ப சுகமும் ஆரோக்கியமும் நல்கும்', descHi: 'क्षेम तारा - स्वास्थ्य, शांति व सुरक्षा प्रदायक' },
-  { num: 5, en: 'Pratyak Tara', ta: 'பிரத்யக் தாரை', hi: 'प्रत्यक तारा', isGood: false, badgeEn: 'Pratyak (Opposition)', badgeTa: 'பிரத்யக் தாரை', badgeHi: 'प्रत्यक तारा', descEn: 'Possibility of differences or hurdles', descTa: 'பிரத்யக் தாரை - சுமாரான பலன்', descHi: 'प्रत्यक तारा - सामान्य विरोध संभव' },
-  { num: 6, en: 'Sadhaka Tara', ta: 'சாதக தாரை', hi: 'साधक तारा', isGood: true, badgeEn: 'Sadhaka (Success & Victory) ✓', badgeTa: 'சாதக தாரை (வெற்றி) ✓', badgeHi: 'साधक तारा (सफलता) ✓', descEn: 'Accomplishes all intended endeavors with success', descTa: 'சாதக தாரை - எண்ணிய காரியங்களை வெற்றிகரமாக முடிக்கும்', descHi: 'साधक तारा - कार्य सिद्धि एवं मनोकामना पूर्ति' },
-  { num: 7, en: 'Vadha Tara', ta: 'வத தாரை', hi: 'वध तारा', isGood: false, badgeEn: 'Vadha (Caution)', badgeTa: 'வத தாரை (அசுபம்)', badgeHi: 'वध तारा', descEn: 'Heavy planetary pressure on this day', descTa: 'வத தாரை - சாந்தி பரிகாரங்கள் தேவைப்படும் நாள்', descHi: 'वध तारा - सतर्कता आवश्यक' },
-  { num: 8, en: 'Mitra Tara', ta: 'மித்ர தாரை', hi: 'मित्र तारा', isGood: true, badgeEn: 'Mitra (Harmony & Friendship) ✓', badgeTa: 'மித்ர தாரை (ஆதரவு) ✓', badgeHi: 'मित्र तारा (मैत्री) ✓', descEn: 'Promotes deep friendship, support and mutual goodwill', descTa: 'மித்ர தாரை - நல்லுறவும் பரஸ்பர ஆதரவும் தரும்', descHi: 'मित्र तारा - सौहार्द, सहयोग व प्रेम प्रदायक' },
-  { num: 9, en: 'Parama Mitra Tara', ta: 'பரம மித்ர தாரை', hi: 'परम मित्र तारा', isGood: true, badgeEn: 'Parama Mitra (Supreme Fortune) ✓', badgeTa: 'பரம மித்ர தாரை (மகா சுபம்) ✓', badgeHi: 'परम मित्र तारा (परम शुभ) ✓', descEn: 'Supreme cosmic harmony and divine blessings', descTa: 'பரம மித்ர தாரை - தெய்வ கடாட்சமும் மகா சுபிட்சமும் அருளும்', descHi: 'परम मित्र तारा - ईश्वरीय कृपा व परम आनंद प्रदायक' }
+  { num: 1, en: 'Janma Tara', ta: 'ஜன்ம தாரை', hi: 'जन्म तारा', isGood: false, badgeEn: 'Janma (Birth Star)', badgeTa: 'ஜன்ம தாரை', badgeHi: 'जन्म तारा', descEn: 'Birth star vibration (average/mixed)', descTa: 'ஜன்ம தாரை - மிதமான பலன்', descHi: 'जन्म तारा — मध्यम एवं मिश्रित प्रभाव रहता है।' },
+  { num: 2, en: 'Sampat Tara', ta: 'சம்பத் தாரை', hi: 'सम्पत तारा', isGood: true, badgeEn: 'Sampat (Wealth & Prosperity) ✓', badgeTa: 'சம்பத் தாரை (தன லாபம்) ✓', badgeHi: 'सम्पत तारा (धन लाभ) ✓', descEn: 'Brings immense wealth, prosperity and joy', descTa: 'சம்பத் தாரை - தன தான்ய சம்பத்தும் செல்வ விருத்தியும் அருளும்', descHi: 'सम्पत तारा — अपार धन-धान्य व समृद्धि प्रदायक है।' },
+  { num: 3, en: 'Vipat Tara', ta: 'விபத் தாரை', hi: 'विपत तारा', isGood: false, badgeEn: 'Vipat (Obstacles)', badgeTa: 'விபத் தாரை (எச்சரிக்கை)', badgeHi: 'विपत तारा', descEn: 'Prone to delays and minor friction', descTa: 'விபத் தாரை - கவனமுடன் செயல்பட வேண்டிய நாள்', descHi: 'विपत तारा — कार्यों में विशेष सावधानी आवश्यक है।' },
+  { num: 4, en: 'Kshema Tara', ta: 'க்ஷேம தாரை', hi: 'क्षेम तारा', isGood: true, badgeEn: 'Kshema (Well-being & Safety) ✓', badgeTa: 'க்ஷேம தாரை (சுகவாழ்வு) ✓', badgeHi: 'क्षेम तारा (कल्याण) ✓', descEn: 'Grants safety, health and peaceful happiness', descTa: 'க்ஷேம தாரை - குடும்ப சுகமும் ஆரோக்கியமும் நல்கும்', descHi: 'क्षेम तारा — स्वास्थ्य, शांति व सुरक्षा प्रदायक है।' },
+  { num: 5, en: 'Pratyak Tara', ta: 'பிரத்யக் தாரை', hi: 'प्रत्यक तारा', isGood: false, badgeEn: 'Pratyak (Opposition)', badgeTa: 'பிரத்யக் தாரை', badgeHi: 'प्रत्यक तारा', descEn: 'Possibility of differences or hurdles', descTa: 'பிரத்யக் தாரை - சுமாரான பலன்', descHi: 'प्रत्यक तारा — हल्की बाधा या मतभेद की संभावना रहती है।' },
+  { num: 6, en: 'Sadhaka Tara', ta: 'சாதக தாரை', hi: 'साधक तारा', isGood: true, badgeEn: 'Sadhaka (Success & Victory) ✓', badgeTa: 'சாதக தாரை (வெற்றி) ✓', badgeHi: 'साधक तारा (सफलता) ✓', descEn: 'Accomplishes all intended endeavors with success', descTa: 'சாதக தாரை - எண்ணிய காரியங்களை வெற்றிகரமாக முடிக்கும்', descHi: 'साधक तारा — कार्य सिद्धि एवं मनोकामना पूर्ति कराती है।' },
+  { num: 7, en: 'Vadha Tara', ta: 'வத தாரை', hi: 'वध तारा', isGood: false, badgeEn: 'Vadha (Caution)', badgeTa: 'வத தாரை (அசுபம்)', badgeHi: 'वध तारा', descEn: 'Heavy planetary pressure on this day', descTa: 'வத தாரை - சாந்தி பரிகாரங்கள் தேவைப்படும் நாள்', descHi: 'वध तारा — इस दिन विशेष सतर्कता आवश्यक है।' },
+  { num: 8, en: 'Mitra Tara', ta: 'மித்ர தாரை', hi: 'मित्र तारा', isGood: true, badgeEn: 'Mitra (Harmony & Friendship) ✓', badgeTa: 'மித்ர தாரை (ஆதரவு) ✓', badgeHi: 'मित्र तारा (मैत्री) ✓', descEn: 'Promotes deep friendship, support and mutual goodwill', descTa: 'மித்ர தாரை - நல்லுறவும் பரஸ்பர ஆதரவும் தரும்', descHi: 'मित्र तारा — सौहार्द, सहयोग व प्रेम प्रदायक है।' },
+  { num: 9, en: 'Parama Mitra Tara', ta: 'பரம மித்ர தாரை', hi: 'परम मित्र तारा', isGood: true, badgeEn: 'Parama Mitra (Supreme Fortune) ✓', badgeTa: 'பரம மித்ர தாரை (மகா சுபம்) ✓', badgeHi: 'परम मित्र तारा (परम शुभ) ✓', descEn: 'Supreme cosmic harmony and divine blessings', descTa: 'பரம மித்ர தாரை - தெய்வ கடாட்சமும் மகா சுபிட்சமும் அருளும்', descHi: 'परम मित्र तारा — ईश्वरीय कृपा व परम शुभ फल प्रदायक है।' }
 ];
 
 // Plain language explanations for everyday users
@@ -1615,7 +1615,7 @@ export function computeDayMuhurtham(
     isVetoed = true;
     doshasEn.push(`Inauspicious Nakshatra (${nakObj.nameEn}) for this event.`);
     doshasTa.push(`இந்த சுப நிகழ்விற்கு விலக்கப்பட வேண்டிய நட்சத்திரம் (${nakObj.nameTa}).`);
-    doshasHi.push(`इस कार्य हेतु वर्जित नक्षत्र (${nakObj.nameHi})।`);
+    doshasHi.push(`इस कार्य हेतु यह नक्षत्र (${nakObj.nameHi}) वर्जित है।`);
   }
 
   // 8. Event-specific avoided tithis
@@ -1648,7 +1648,7 @@ export function computeDayMuhurtham(
     isVetoed = true;
     doshasEn.push('Pitru Paksha (ancestral fortnight) — no new beginnings or celebrations.');
     doshasTa.push('பித்திரு பக்ஷ காலம் — புதிய மங்கள காரியங்களுக்கு விலக்கு.');
-    doshasHi.push('पितृ पक्ष काल — नए मांगलिक कार्य हेतु वर्जित।');
+    doshasHi.push('पितृ पक्ष काल — नए मांगलिक कार्यों हेतु वर्जित है।');
   }
 
   // 12. Adhika Masa (intercalary extra lunar month)
@@ -1656,7 +1656,7 @@ export function computeDayMuhurtham(
     isVetoed = true;
     doshasEn.push('Adhika Masa (extra intercalary month) — avoided for auspicious work.');
     doshasTa.push('அதிக மாச காலம் — சுப காரியங்களுக்கு விலக்கப்படும்.');
-    doshasHi.push('अधिक मास काल — शुभ कार्यों हेतु वर्जित।');
+    doshasHi.push('अधिक मास काल — शुभ कार्यों हेतु वर्जित है।');
   }
 
   // 13. Panchaka — strictly avoided for land, house and construction work
@@ -1664,7 +1664,7 @@ export function computeDayMuhurtham(
     isVetoed = true;
     doshasEn.push('Panchaka nakshatra (Dhanishta–Revati group) is active — land and house work is prohibited.');
     doshasTa.push('பஞ்சக நட்சத்திர காலம் — நிலம், வீடு மற்றும் கட்டிட பணிகளுக்கு விலக்கு.');
-    doshasHi.push('पंचक नक्षत्र काल — भूमि, गृह एवं निर्माण कार्य हेतु वर्जित।');
+    doshasHi.push('पंचक नक्षत्र काल सक्रिय है — भूमि, गृह एवं निर्माण कार्य वर्जित हैं।');
   }
 
   // B. NAKSHATRA QUALITY CHECK:
@@ -1758,7 +1758,7 @@ export function computeDayMuhurtham(
     score -= 12;
     doshasEn.push('Falls in the Chaturmas / Kharmas period — traditionally weak for this work.');
     doshasTa.push('சதுர்மாச / கர்மாச காலம் — இந்த பணிக்கு பாரம்பரியமாக பலம் குறைந்தது.');
-    doshasHi.push('चातुर्मास / खरमास काल — इस कार्य हेतु पारंपरिक रूप से बल कम।');
+    doshasHi.push('चातुर्मास / खरमास काल है — इस कार्य हेतु पारंपरिक रूप से बल कम माना जाता है।');
   }
 
   // Intraday downgrade: if Nalla Neram windows were vetoed due to Tithi/
@@ -1773,11 +1773,11 @@ export function computeDayMuhurtham(
       score = Math.min(score, 55);
       doshasEn.push('No auspicious window remains after intraday Panchangam validation (Rikta/Amavasya/Vishti or inauspicious Yoga began inside the best-time interval).');
       doshasTa.push('பகல் பொழுதில் திதி/கரணம்/யோகம் அசுபமாக மாறியதால் சிறந்த நேரம் முழுவதும் விலக்கப்பட்டது.');
-      doshasHi.push('दिन में तिथि/करण/योग के अशुभ होने से शुभ समय पूर्णतः वर्जित हुआ।');
+      doshasHi.push('दिन में तिथि/करण/योग अशुभ हो जाने से शुभ समय पूर्णतः वर्जित हो गया है।');
     } else {
       doshasEn.push(`${vetoedWindows.length} daytime window(s) turned inauspicious (Rikta Tithi, Vishti Karana or inauspicious Yoga began inside the interval) and have been removed from auspicious times.`);
       doshasTa.push(`${vetoedWindows.length} பகல் நேரப் பகுதி திதி/யோகம் அசுபமாக மாறியதால் விலக்கப்பட்டது.`);
-      doshasHi.push(`${vetoedWindows.length} दिन के शुभ समय खंड अशुभ तिथि/योग के कारण वर्जित किए गए।`);
+      doshasHi.push(`${vetoedWindows.length} दिन के शुभ समय खंड अशुभ तिथि/योग के कारण वर्जित किए गए हैं।`);
     }
   }
 
@@ -1800,7 +1800,7 @@ export function computeDayMuhurtham(
         isTraditional11thOr12thDay = true;
         reasonsEn.push(`Traditional Vedic Day #${diffDays} from birth: Inherently auspicious for Namakaranam.`);
         reasonsTa.push(`குழந்தை பிறந்த ${diffDays}-வது பாரம்பரிய சுப நாள்: தனி முகூர்த்தம் இன்றியே பெயர் சூட்ட சிறந்த நாள்.`);
-        reasonsHi.push(`जन्म से ${diffDays}वां पारंपरिक दिवस: नामकरण संस्कार हेतु स्वाभाविक रूप से परम शुभ।`);
+        reasonsHi.push(`जन्म से ${diffDays}वाँ पारंपरिक दिवस है — नामकरण संस्कार हेतु स्वाभाविक रूप से परम शुभ है।`);
       }
     } catch (e) {
       // Ignore

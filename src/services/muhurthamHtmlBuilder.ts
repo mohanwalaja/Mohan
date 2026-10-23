@@ -361,7 +361,7 @@ export function buildMuhurthamHtml(result: MuhurthamScanResult, lang: AppLanguag
   const formatPlace = (name?: string, country?: string) => {
     const trimmedName = String(name || '').trim().replace(/[,\s]+$/, '');
     const trimmedCountry = String(country || '').trim().replace(/[,\s]+$/, '');
-    const missingLocation = isTa ? 'குறிப்பிடப்படவில்லை' : isHi ? 'उल्लेख नहीं किया गया' : 'Not provided';
+    const missingLocation = isTa ? 'குறிப்பிடப்படவில்லை' : isHi ? 'उल्लेख नहीं किया गया है' : 'Not provided';
     if (!trimmedName) return trimmedCountry || missingLocation;
     if (!trimmedCountry) return trimmedName;
     const tail = trimmedName.split(',').map(part => part.trim()).filter(Boolean).pop() || '';
@@ -472,7 +472,7 @@ export function buildMuhurthamHtml(result: MuhurthamScanResult, lang: AppLanguag
         colDate: 'दिनांक व वार', colStar: 'नक्षत्र (सूर्योदय)', colTime: 'शुभ समय', colGrade: 'श्रेणी',
         certifiedBy: 'प्रमाणित: ASTRO SIVAM',
         monthDatesLabel: (count: number) => `${count} उत्तम / शुभ तिथियाँ`,
-        monthEmpty: 'इस माह कोई BEST या GOOD तिथि नहीं मिली।',
+        monthEmpty: 'इस माह में कोई उत्तम या शुभ तिथि उपलब्ध नहीं है।',
         singlePersonNote: 'केवल एक व्यक्ति का विवरण उपयोग किया गया है — चंद्राष्टम और तारा बल केवल इसी जातक की कुंडली से जाँचे गए हैं।',
         brideLabel: 'वधू', groomLabel: 'वर',
         starLabel: 'जन्म नक्षत्र', rasiLabel: 'राशि', lagnaLabel: 'लग्न',

@@ -279,7 +279,7 @@ export function evaluateKujaDosha(chart: KujaDoshaInput): KujaDoshaAssessment {
     explanationTa:
       'செவ்வாய், லக்னம், சந்திரன், சுக்கிரன் அல்லது குருவின் ராசி நிலை கிடைக்கவில்லை; செவ்வாய் தோஷம் மதிப்பிடப்படவில்லை.',
     explanationHi:
-      'मंगल, लग्न, चंद्र, शुक्र अथवा गुरु की राशि स्थिति उपलब्ध नहीं है; मंगल दोष का आकलन नहीं हुआ।'
+      'मंगल, लग्न, चंद्र, शुक्र अथवा गुरु की राशि स्थिति उपलब्ध नहीं है; मंगल दोष का आकलन नहीं हुआ है।'
   };
 
   if (mars === null || lagna === null || moon === null || venus === null || jupiter === null) {
@@ -340,7 +340,7 @@ export function evaluateKujaDosha(chart: KujaDoshaInput): KujaDoshaAssessment {
       'OWN_SIGN',
       `Mars is in its own sign ${signName(mars, 'nameEn')} (Swakshetra); Sevvay Dosha does not apply.`,
       `செவ்வாய் தனது ஆட்சி வீடான ${signName(mars, 'nameTa')} ராசியில் உள்ளதால் செவ்வாய் தோஷம் இல்லை.`,
-      `मंगल अपनी स्वराशि ${signName(mars, 'nameHi')} में है; मंगल दोष लागू नहीं होता।`
+      `मंगल अपनी स्वराशि ${signName(mars, 'nameHi')} में है; मंगल दोष लागू नहीं होता है।`
     );
   }
   if (mars === Rasi.MAGARAM) {
@@ -348,7 +348,7 @@ export function evaluateKujaDosha(chart: KujaDoshaInput): KujaDoshaAssessment {
       'EXALTED',
       'Mars is exalted in Magaram (Capricorn); an exalted Mars does not give Sevvay Dosha.',
       'செவ்வாய் மகர ராசியில் உச்சம் பெற்றுள்ளதால் செவ்வாய் தோஷம் இல்லை.',
-      'मंगल मकर राशि में उच्च का है; उच्च मंगल से मंगल दोष नहीं होता।'
+      'मंगल मकर राशि में उच्च का है; उच्च मंगल से मंगल दोष नहीं होता है।'
     );
   }
   if (KUJA_UNIVERSAL_SIGN_EXCEPTIONS.includes(mars)) {
@@ -356,7 +356,7 @@ export function evaluateKujaDosha(chart: KujaDoshaInput): KujaDoshaAssessment {
       'LEO_AQUARIUS',
       `Mars in ${signName(mars, 'nameEn')} is exempt from Sevvay Dosha in every dosha house (Simha/Kumbha exception).`,
       `${signName(mars, 'nameTa')} ராசியில் உள்ள செவ்வாய்க்கு எந்த தோஷ ஸ்தானத்திலும் தோஷம் இல்லை (சிம்ம/கும்ப விலக்கு).`,
-      `${signName(mars, 'nameHi')} राशि का मंगल किसी भी दोष भाव में मंगल दोष नहीं देता (सिंह/कुंभ अपवाद)।`
+      `${signName(mars, 'nameHi')} राशि का मंगल किसी भी दोष भाव में मंगल दोष नहीं देता है (सिंह/कुंभ अपवाद)।`
     );
   }
 
@@ -384,7 +384,7 @@ export function evaluateKujaDosha(chart: KujaDoshaInput): KujaDoshaAssessment {
       'HOUSE_SIGN',
       `Mars in ${signName(mars, 'nameEn')} in ${en} is a classical house-sign exception (Sevvay Dosha Vilakku), so the dosha does not apply.`,
       `${signName(mars, 'nameTa')} ராசியில் உள்ள செவ்வாய்க்கு ${ta} ஆகிய இடங்களுக்கான சாஸ்திர விலக்கு உண்டு; எனவே தோஷம் இல்லை.`,
-      `${signName(mars, 'nameHi')} राशि का मंगल ${hi} के लिए शास्त्रीय भाव-राशि अपवाद में आता है; अतः दोष लागू नहीं होता।`
+      `${signName(mars, 'nameHi')} राशि का मंगल ${hi} के लिए शास्त्रीय भाव-राशि अपवाद में आता है; अतः दोष लागू नहीं होता है।`
     );
   }
 
@@ -393,7 +393,7 @@ export function evaluateKujaDosha(chart: KujaDoshaInput): KujaDoshaAssessment {
       'YOGAKARAKA_LAGNA',
       `For a ${signName(lagna, 'nameEn')} Lagna Mars is the Yogakaraka; its placement does not create Sevvay Dosha.`,
       `${signName(lagna, 'nameTa')} லக்னத்திற்கு செவ்வாய் யோககாரகர்; அவரது நிலை செவ்வாய் தோஷத்தை உண்டாக்காது.`,
-      `${signName(lagna, 'nameHi')} लग्न के लिए मंगल योगकारक है; उसकी स्थिति से मंगल दोष नहीं बनता।`
+      `${signName(lagna, 'nameHi')} लग्न के लिए मंगल योगकारक है; उसकी स्थिति से मंगल दोष नहीं बनता है।`
     );
   }
   if (jupiter === mars) {
@@ -516,7 +516,7 @@ export function evaluateKujaDosha(chart: KujaDoshaInput): KujaDoshaAssessment {
     result.explanationTa =
       `${placementTa} ${join(exceptions, 'ta')} திருமணப் பொருத்தத்தில் தோஷ நிவர்த்தி விதியால் இது தணிக்கப்படுகிறது; இது குறியீடு மட்டுமே, உறுதியான பலனை உறுதி செய்யாது.`;
     result.explanationHi =
-      `${placementHi} ${join(exceptions, 'hi')} विवाह मिलान में दोष निवृत्ति नियम से इसे शमित माना जाता है; यह केवल संकेत है, किसी निश्चित परिणाम की गारंटी नहीं।`;
+      `${placementHi} ${join(exceptions, 'hi')} विवाह मिलान में दोष निवृत्ति नियम से इसे शमित माना जाता है; यह केवल संकेत है, किसी निश्चित परिणाम की गारंटी नहीं है।`;
   } else if (mild) {
     result.status = 'DOSHA_MILD';
     result.verdict = 'present';

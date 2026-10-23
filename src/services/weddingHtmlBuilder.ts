@@ -169,11 +169,11 @@ export function buildWeddingMatchHtml(
     : isGood
     ? (isTa ? 'இந்த மதிப்பீட்டின்படி மிக நல்ல பொருத்தம்.' : isHi ? 'इस आकलन के अनुसार बहुत अच्छा मेल है।' : 'Very good match based on this assessment.')
     : isModerate
-    ? (isTa ? 'ஒட்டுமொத்தமாக நல்ல பொருத்தம் — சில பொருத்தங்கள் பகுதியளவே.' : isHi ? 'कुल मिलाकर अच्छा मेल — कुछ पोरुथम आंशिक हैं।' : 'Good match overall — a few poruthams are partial.')
+    ? (isTa ? 'ஒட்டுமொத்தமாக நல்ல பொருத்தம் — சில பொருத்தங்கள் பகுதியளவே.' : isHi ? 'कुल मिलाकर अच्छा मेल है — कुछ पोरुथम आंशिक हैं।' : 'Good match overall — a few poruthams are partial.')
     : (isTa
       ? 'இந்த மதிப்பீட்டின்படி பரிந்துரைக்கப்படவில்லை; நிபுணர் ஆலோசனை பெறவும்.'
       : isHi
-      ? 'इस आकलन के अनुसार अनुशंसित नहीं; विशेषज्ञ सलाह लें।'
+      ? 'इस आकलन के अनुसार यह मिलान अनुशंसित नहीं है; विशेषज्ञ सलाह लें।'
       : 'Not recommended on this assessment; seek expert review.');
   const finalVerdictClass = !verdictKnown
     ? 'final-verdict-unavailable'

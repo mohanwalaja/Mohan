@@ -879,7 +879,7 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
                       Astrological Doshas & Remedial Guidance
                     </h4>
                     <div className="space-y-3 text-xs">
-                      {(result.doshas || []).map((d: any, idx: number) => (
+                      {(result.doshas || []).filter((d: any) => d?.isPresent !== false).map((d: any, idx: number) => (
                         <div key={idx} className="border-b border-amber-200/50 dark:border-amber-800/50 pb-2 last:border-none last:pb-0">
                           <div className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
                             <span>{d.nameEn}</span>
@@ -951,7 +951,7 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
                       : isUtthamam
                       ? (isTa ? 'இந்தப் பொருத்தம் நல்லது' : isHi ? 'यह अच्छा मिलान है।' : 'This is a good match.')
                       : isMadhyamam
-                      ? (isTa ? 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களுடன் பொருந்தும்' : isHi ? 'स्वीकार्य मिलान; उपायों के साथ विचारणीय।' : 'Acceptable match; suitable with remedies.')
+                      ? (isTa ? 'ஏற்றுக்கொள்ளத்தக்க பொருத்தம்; பரிகாரங்களுடன் பொருந்தும்' : isHi ? 'यह स्वीकार्य मिलान है; उपायों के साथ विचारणीय है।' : 'Acceptable match; suitable with remedies.')
                       : (isTa
                         ? 'இந்தப் பொருத்தம் சாதகமற்றது; இது ஜோதிட வழிகாட்டல் மட்டுமே. இறுதி முடிவிற்கு முன் விரிவான ஜாதக ஆய்வு மற்றும் நிபுணர் ஆலோசனை பெறவும்.'
                         : isHi
