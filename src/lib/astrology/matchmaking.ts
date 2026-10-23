@@ -97,124 +97,30 @@ const VEDHA_PAIRS = new Set([
   '4,13', '13,4', '13,22', '22,13', '4,22', '22,4'
 ]);
 
-export function calculateWeddingCompatibility(
-  param1: any,
-  param2?: any
-): WeddingMatchResult {
-  let brideInput: any = null;
-  let groomInput: any = null;
-
-  if (param1 && param2) {
-    brideInput = param1;
-    groomInput = param2;
-  } else if (param1) {
-    const p = param1;
-    brideInput = p.bride || p.girl || p.brideDetails || p.girlDetails || (p.brideName || p.brideDob ? {
-      name: p.brideName || p.girlName || p.p1Name,
-      dob: p.brideDob || p.girlDob || p.p1Dob,
-      tob: p.brideTob || p.girlTob || p.p1Tob,
-      birthPlace: p.brideBirthPlace || p.bridePlace || p.birthPlace,
-      country: p.brideCountry || '',
-      latitude: p.brideLatitude ?? p.latitude,
-      longitude: p.brideLongitude ?? p.longitude,
-      timezoneOffsetHours: p.brideTimezoneOffsetHours ?? p.timezoneOffsetHours,
-      gender: 'F'
-    } : null);
-
-    groomInput = p.groom || p.boy || p.groomDetails || p.boyDetails || (p.groomName || p.groomDob ? {
-      name: p.groomName || p.boyName || p.p2Name,
-      dob: p.groomDob || p.boyDob || p.p2Dob,
-      tob: p.groomTob || p.boyTob || p.p2Tob,
-      birthPlace: p.groomBirthPlace || p.groomPlace || p.birthPlace,
-      country: p.groomCountry || '',
-      latitude: p.groomLatitude ?? p.latitude,
-      longitude: p.groomLongitude ?? p.longitude,
-      timezoneOffsetHours: p.groomTimezoneOffsetHours ?? p.timezoneOffsetHours,
-      gender: 'M'
-    } : null);
-
-    if (!brideInput && !groomInput && p.p1 && p.p2) {
-      if (p.p1Role === 'bride' || p.p1.gender === 'F') {
-        brideInput = p.p1;
-        groomInput = p.p2;
-      } else {
-        groomInput = p.p1;
-        brideInput = p.p2;
-      }
-    }
-  }
-
-  // Missing birth particulars must fail rather than silently creating a
-  // compatibility result from the former 1990/Nadi defaults.
-  const brideName = brideInput?.name || brideInput?.brideName || brideInput?.devoteeName || 'Bride';
-  const brideDob = brideInput?.dob || brideInput?.brideDob || '';
-  const brideTob = brideInput?.tob || brideInput?.brideTob || '';
-  const bridePlace = brideInput?.birthPlace || brideInput?.bridePlace || brideInput?.place || '';
-  const brideCountry = brideInput?.country || brideInput?.brideCountry || '';
-  const brideLat = Number(brideInput?.latitude);
-  const brideLng = Number(brideInput?.longitude);
-  const brideTz = Number(brideInput?.timezoneOffsetHours);
-
-  const groomName = groomInput?.name || groomInput?.groomName || groomInput?.devoteeName || 'Groom';
-  const groomDob = groomInput?.dob || groomInput?.groomDob || '';
-  const groomTob = groomInput?.tob || groomInput?.groomTob || '';
-  const groomPlace = groomInput?.birthPlace || groomInput?.groomPlace || groomInput?.place || '';
-  const groomCountry = groomInput?.country || groomInput?.groomCountry || '';
-  const groomLat = Number(groomInput?.latitude);
-  const groomLng = Number(groomInput?.longitude);
-  const groomTz = Number(groomInput?.timezoneOffsetHours);
-
-  const brideChart = calculatePrecisionHoroscope(
-    brideName,
-    brideDob,
-    brideTob,
-    bridePlace,
-    brideLat,
-    brideLng,
-    brideTz,
-    brideCountry,
-    'F'
-  );
-
-  const groomChart = calculatePrecisionHoroscope(
-    groomName,
-    groomDob,
-    groomTob,
-    groomPlace,
-    groomLat,
-    groomLng,
-    groomTz,
-    groomCountry,
-    'M'
-  );
-
-  const bStar = brideChart.janmaNakshatraIndex;
-  const gStar = groomChart.janmaNakshatraIndex;
-  const bPada = brideChart.janmaPada;
-  const gPada = groomChart.janmaPada;
-  const bRasi = brideChart.chandraRasi;
-  const gRasi = groomChart.chandraRasi;
-
-  const brideMars = brideChart.planetPositions.find(p => p.graha === 'mars');
-  const groomMars = groomChart.planetPositions.find(p => p.graha === 'mars');
-  if (!brideMars || !groomMars) {
-    throw new Error('Mars placement is unavailable; Kuja compatibility was not calculated.');
-  }
-
+export function evaluateTenPoruthams(
+  bStar: number,
+  bRasi: number,
+  gStar: number,
+  gRasi: number
+): SinglePoruthamResult[] {
   const poruthams: SinglePoruthamResult[] = [];
 
   // 1. Dina Porutham (Health & Long Life)
+  // Count from Bride's Nakshatra to Groom's Nakshatra (1..27).
+  // Classical Tamil exceptions:
+  //   - Same star (starDiff === 1): auspicious for Rohini, Arudra, Pushya,
+  //     Magha, Vishakha, Shravana, Uttara Bhadrapada, Revati.
+  //   - 22nd star (Vainashika): rejected even though 22 % 9 === 4.
   const starDiff = ((gStar - bStar + 27) % 27) + 1;
   const dinaRem = starDiff % 9;
-  let dinaStatus = PoruthamStatus.MADHYAMAM;
-
-  if ([2, 4, 6, 8, 0].includes(dinaRem) || starDiff === 27) {
-    dinaStatus = PoruthamStatus.UTTHAMAM;
-  } else if (bStar === gStar && [3, 5, 9, 15, 21, 25, 26].includes(bStar)) {
-    dinaStatus = PoruthamStatus.UTTHAMAM;
-  } else if ([1, 3, 5, 7].includes(dinaRem)) {
-    dinaStatus = PoruthamStatus.PORUNDHADHU;
-  }
+  const EKA_NAKSHATRA_ALLOWED = [3, 5, 7, 9, 15, 21, 25, 26];
+  const dinaStatus = (bStar === gStar
+    ? (EKA_NAKSHATRA_ALLOWED.includes(bStar) ? PoruthamStatus.UTTHAMAM : PoruthamStatus.PORUNDHADHU)
+    : starDiff === 22
+    ? PoruthamStatus.PORUNDHADHU
+    : ([2, 4, 6, 8, 0].includes(dinaRem) || starDiff === 27)
+    ? PoruthamStatus.UTTHAMAM
+    : PoruthamStatus.PORUNDHADHU) as PoruthamStatus;
 
   poruthams.push({
     id: 'dina',
@@ -457,16 +363,13 @@ export function calculateWeddingCompatibility(
     isCrucial: false
   });
 
-  // 8. Vasiya Porutham (Mutual Attraction & Magnetic Bond)
+  // 8. Vasiya Porutham (Penn-Rasi Vasiyam — Classical South Indian 12-Rasi Table)
   const vasiyaPairs: Record<number, number[]> = {
     1: [5, 8], 2: [4, 7], 3: [6], 4: [8, 9], 5: [7, 9], 6: [3, 12],
     7: [10, 12], 8: [4, 11], 9: [12], 10: [1, 11], 11: [1, 10], 12: [3, 10]
   };
-  const isVasiya =
-    vasiyaPairs[bRasi]?.includes(gRasi) ||
-    vasiyaPairs[gRasi]?.includes(bRasi) ||
-    false;
-  const vasiyaStatus = isVasiya ? PoruthamStatus.UTTHAMAM : PoruthamStatus.MADHYAMAM;
+  const isVasiya = Boolean(vasiyaPairs[bRasi]?.includes(gRasi));
+  const vasiyaStatus = isVasiya ? PoruthamStatus.UTTHAMAM : PoruthamStatus.PORUNDHADHU;
 
   poruthams.push({
     id: 'vasiya',
@@ -474,7 +377,7 @@ export function calculateWeddingCompatibility(
     nameEn: '8. Vasiya Porutham (Mutual Attraction & Adoration)',
     nameHi: '8. वश्य पोरुथम (परस्पर आकर्षण)',
     status: vasiyaStatus,
-    pointsEarned: isVasiya ? 1.0 : 0.5,
+    pointsEarned: isVasiya ? 1.0 : 0.0,
     maxPoints: 1.0,
     explanationTa: isVasiya
       ? 'தம்பதியரிடையே பிரியாத காதலும், ஒருவரை ஒருவர் கவரும் வசிய ஈர்ப்பும் உண்டாகும்.'
@@ -537,6 +440,116 @@ export function calculateWeddingCompatibility(
       : 'चुने गए नक्षत्रों के बीच वेध बाधा उपस्थित है।',
     isCrucial: true
   });
+
+  return poruthams;
+}
+
+export function calculateWeddingCompatibility(
+  param1: any,
+  param2?: any
+): WeddingMatchResult {
+  let brideInput: any = null;
+  let groomInput: any = null;
+
+  if (param1 && param2) {
+    brideInput = param1;
+    groomInput = param2;
+  } else if (param1) {
+    const p = param1;
+    brideInput = p.bride || p.girl || p.brideDetails || p.girlDetails || (p.brideName || p.brideDob ? {
+      name: p.brideName || p.girlName || p.p1Name,
+      dob: p.brideDob || p.girlDob || p.p1Dob,
+      tob: p.brideTob || p.girlTob || p.p1Tob,
+      birthPlace: p.brideBirthPlace || p.bridePlace || p.birthPlace,
+      country: p.brideCountry || '',
+      latitude: p.brideLatitude ?? p.latitude,
+      longitude: p.brideLongitude ?? p.longitude,
+      timezoneOffsetHours: p.brideTimezoneOffsetHours ?? p.timezoneOffsetHours,
+      gender: 'F'
+    } : null);
+
+    groomInput = p.groom || p.boy || p.groomDetails || p.boyDetails || (p.groomName || p.groomDob ? {
+      name: p.groomName || p.boyName || p.p2Name,
+      dob: p.groomDob || p.boyDob || p.p2Dob,
+      tob: p.groomTob || p.boyTob || p.p2Tob,
+      birthPlace: p.groomBirthPlace || p.groomPlace || p.birthPlace,
+      country: p.groomCountry || '',
+      latitude: p.groomLatitude ?? p.latitude,
+      longitude: p.groomLongitude ?? p.longitude,
+      timezoneOffsetHours: p.groomTimezoneOffsetHours ?? p.timezoneOffsetHours,
+      gender: 'M'
+    } : null);
+
+    if (!brideInput && !groomInput && p.p1 && p.p2) {
+      if (p.p1Role === 'bride' || p.p1.gender === 'F') {
+        brideInput = p.p1;
+        groomInput = p.p2;
+      } else {
+        groomInput = p.p1;
+        brideInput = p.p2;
+      }
+    }
+  }
+
+  // Missing birth particulars must fail rather than silently creating a
+  // compatibility result from the former 1990/Nadi defaults.
+  const brideName = brideInput?.name || brideInput?.brideName || brideInput?.devoteeName || 'Bride';
+  const brideDob = brideInput?.dob || brideInput?.brideDob || '';
+  const brideTob = brideInput?.tob || brideInput?.brideTob || '';
+  const bridePlace = brideInput?.birthPlace || brideInput?.bridePlace || brideInput?.place || '';
+  const brideCountry = brideInput?.country || brideInput?.brideCountry || '';
+  const brideLat = Number(brideInput?.latitude);
+  const brideLng = Number(brideInput?.longitude);
+  const brideTz = Number(brideInput?.timezoneOffsetHours);
+
+  const groomName = groomInput?.name || groomInput?.groomName || groomInput?.devoteeName || 'Groom';
+  const groomDob = groomInput?.dob || groomInput?.groomDob || '';
+  const groomTob = groomInput?.tob || groomInput?.groomTob || '';
+  const groomPlace = groomInput?.birthPlace || groomInput?.groomPlace || groomInput?.place || '';
+  const groomCountry = groomInput?.country || groomInput?.groomCountry || '';
+  const groomLat = Number(groomInput?.latitude);
+  const groomLng = Number(groomInput?.longitude);
+  const groomTz = Number(groomInput?.timezoneOffsetHours);
+
+  const brideChart = calculatePrecisionHoroscope(
+    brideName,
+    brideDob,
+    brideTob,
+    bridePlace,
+    brideLat,
+    brideLng,
+    brideTz,
+    brideCountry,
+    'F'
+  );
+
+  const groomChart = calculatePrecisionHoroscope(
+    groomName,
+    groomDob,
+    groomTob,
+    groomPlace,
+    groomLat,
+    groomLng,
+    groomTz,
+    groomCountry,
+    'M'
+  );
+
+  const bStar = brideChart.janmaNakshatraIndex;
+  const gStar = groomChart.janmaNakshatraIndex;
+  const bPada = brideChart.janmaPada;
+  const gPada = groomChart.janmaPada;
+  const bRasi = brideChart.chandraRasi;
+  const gRasi = groomChart.chandraRasi;
+
+  const brideMars = brideChart.planetPositions.find(p => p.graha === 'mars');
+  const groomMars = groomChart.planetPositions.find(p => p.graha === 'mars');
+  if (!brideMars || !groomMars) {
+    throw new Error('Mars placement is unavailable; Kuja compatibility was not calculated.');
+  }
+
+  const poruthams = evaluateTenPoruthams(bStar, bRasi, gStar, gRasi);
+
 
   // Sevvay Dosham (Kuja Dosha) Analysis & Dosha Samyam
   // Both charts are judged by the shared classical rule set in ./kujaDosha.ts —
@@ -646,8 +659,8 @@ export function calculateWeddingCompatibility(
   // relabeling one engine's score as the other's.
   const totalPoints = poruthams.reduce((sum, p) => sum + p.pointsEarned, 0);
   const matchedCount = poruthams.filter(p => p.status === PoruthamStatus.UTTHAMAM || p.status === PoruthamStatus.MADHYAMAM).length;
-  const rajjuOk = !isSameRajju;
-  const vedhaOk = !isVedhaAfflicted;
+  const rajjuOk = poruthams.find(p => p.id === 'rajju')?.status === PoruthamStatus.UTTHAMAM;
+  const vedhaOk = poruthams.find(p => p.id === 'vedhai')?.status === PoruthamStatus.UTTHAMAM;
   // Rajju and Vedha are the two hard-stop rules used by the PHP report path;
   // keep the live Node verdict from promoting a high numeric score over either.
   //

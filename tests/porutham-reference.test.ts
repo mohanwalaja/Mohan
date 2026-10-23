@@ -276,7 +276,7 @@ assert.ok(DEVA_LORDS.has('Mars') && ASURA_LORDS.has('Saturn'), 'Mars is Deva and
 
 check('Vasiya: Mesham attracts Simham', { rasi: 1 }, { rasi: 5 }, { vasiya: PoruthamStatus.UTTHAMAM });
 assert.ok(VASIYA[1].includes(5), 'Mesham holds Simham by Vasiya');
-check('Vasiya: Mesham and Mithunam', { rasi: 1 }, { rasi: 3 }, { vasiya: PoruthamStatus.MADHYAMAM });
+check('Vasiya: Mesham and Mithunam', { rasi: 1 }, { rasi: 3 }, { vasiya: PoruthamStatus.PORUNDHADHU });
 console.log('  [PASS] Rasi, Rasiyadhipathi and Vasiya Moon-sign rules');
 
 // ---------------------------------------------------------------------------

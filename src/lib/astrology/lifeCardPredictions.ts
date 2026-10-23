@@ -59,6 +59,13 @@ export interface LordFacts {
   conjunctMalefics: string[];
 }
 
+export interface DashaLordFacts {
+  bhava: number;
+  isDebilitated: boolean;
+  isCombust: boolean;
+  isRetrograde: boolean;
+}
+
 export interface ChartFacts {
   lagnaRasi: number | null;
   chandraRasi: number | null;
@@ -66,6 +73,8 @@ export interface ChartFacts {
   lords: Record<number, LordFacts>;
   /** Current Mahadasha lord, e.g. "SANI". Drives card 8. */
   currentDashaLord: string | null;
+  /** Actual natal placement/dignity of the running Mahadasha lord when available. */
+  currentDashaLordFacts?: DashaLordFacts | null;
   currentDashaLabel: Record<PredLang, string> | null;
   moonSignLabel: Record<PredLang, string> | null;
 }
@@ -200,9 +209,12 @@ export function computeLifeCardPredictions(chart: ChartFacts): LifeCardPredictio
           sources: card.sources,
         };
       }
-      const challenging = RULES.verdictByDasha.challengingLords.includes(
-        chart.currentDashaLord.toUpperCase()
-      );
+      const df = chart.currentDashaLordFacts;
+      const challenging = df
+        ? (DUSTHANA.has(df.bhava) || df.isDebilitated || df.isCombust || df.isRetrograde)
+        : RULES.verdictByDasha.challengingLords.includes(
+            chart.currentDashaLord.toUpperCase()
+          );
       const badge = challenging
         ? RULES.verdictByDasha.badgeChallenging
         : RULES.verdictByDasha.badgeSupportive;

@@ -363,6 +363,12 @@ class AstroEngine {
         'moon' => 12.0, 'mars' => 17.0, 'mercury' => 14.0, 'jupiter' => 11.0, 'venus' => 10.0, 'saturn' => 15.0,
     ];
 
+    private static function getCombustionLimit(string $graha, bool $isRetrograde = false): float {
+        if ($graha === 'mercury') return $isRetrograde ? 12.0 : 14.0;
+        if ($graha === 'venus') return $isRetrograde ? 8.0 : 10.0;
+        return self::COMBUSTION_LIMITS[$graha] ?? 0.0;
+    }
+
     /** Rahu/Ketu conventions (see nodeType()). */
     public const NODE_TYPE_TRUE = 'TRUE';
     public const NODE_TYPE_MEAN = 'MEAN';
@@ -380,7 +386,7 @@ class AstroEngine {
      *   1. AstroEngine::setNodeType() runtime override,
      *   2. the ASTRO_RAHU_NODE_TYPE constant defined in api/config.php,
      *   3. the ASTRO_RAHU_NODE_TYPE environment variable,
-     *   4. 'TRUE'.
+     *   4. 'MEAN' (classical default, matching TypeScript).
      * engine.php never loads config.php itself (that file emits HTTP headers
      * and starts sessions), so the constant is consulted only when defined.
      * The default is MEAN (the classical, always-retrograde convention) and
@@ -1349,6 +1355,7 @@ class AstroEngine {
 
         $signName = static fn(int $r): string => self::$RASIS[$r - 1]['en'];
         $signNameTa = static fn(int $r): string => self::$RASIS[$r - 1]['ta'];
+        $signNameHi = static fn(int $r): string => (string) preg_replace('/\s*\([^)]*\)\s*$/u', '', self::$RASIS[$r - 1]['hi']);
         $referenceEn = ['lagna' => 'Lagna', 'moon' => 'Moon', 'venus' => 'Venus'];
         $referenceFromEn = ['lagna' => 'the Lagna', 'moon' => 'the Moon (Chandra Lagna)', 'venus' => 'Venus (Sukra)'];
         $referenceTa = ['lagna' => 'லக்னம்', 'moon' => 'சந்திரன்', 'venus' => 'சுக்கிரன்'];
@@ -1365,7 +1372,7 @@ class AstroEngine {
             $result['explanationTa'] = sprintf('%s ராசியில் உள்ள செவ்வாய் லக்னத்திலிருந்து %d-ஆம், சந்திரனிலிருந்து %d-ஆம், சுக்கிரனிலிருந்து %d-ஆம் இடத்தில் உள்ளார்; இவை தோஷ ஸ்தானங்கள் (%s) அல்ல.',
                 $signNameTa($mars), $houses['lagna'], $houses['moon'], $houses['venus'], implode(', ', self::kujaDoshaHouses()));
             $result['explanationHi'] = sprintf('%s राशि में स्थित मंगल लग्न से %dवें, चंद्र से %dवें तथा शुक्र से %dवें भाव में है; ये मंगल दोष के भाव (%s) नहीं हैं।',
-                $signName($mars), $houses['lagna'], $houses['moon'], $houses['venus'], implode(', ', self::kujaDoshaHouses()));
+                $signNameHi($mars), $houses['lagna'], $houses['moon'], $houses['venus'], implode(', ', self::kujaDoshaHouses()));
             return $result;
         }
 
@@ -1378,7 +1385,7 @@ class AstroEngine {
             $add($exceptions, 'OWN_SIGN',
                 "Mars is in its own sign {$signName($mars)} (Swakshetra); Sevvay Dosha does not apply.",
                 "செவ்வாய் தனது ஆட்சி வீடான {$signNameTa($mars)} ராசியில் உள்ளதால் செவ்வாய் தோஷம் இல்லை.",
-                "मंगल अपनी स्वराशि {$signName($mars)} में है; मंगल दोष लागू नहीं होता है।");
+                "मंगल अपनी स्वराशि {$signNameHi($mars)} में है; मंगल दोष लागू नहीं होता है।");
         }
         if ($mars === 10) {
             $add($exceptions, 'EXALTED',
@@ -1390,7 +1397,7 @@ class AstroEngine {
             $add($exceptions, 'LEO_AQUARIUS',
                 "Mars in {$signName($mars)} is exempt from Sevvay Dosha in every dosha house (Simha/Kumbha exception).",
                 "{$signNameTa($mars)} ராசியில் உள்ள செவ்வாய்க்கு எந்த தோஷ ஸ்தானத்திலும் தோஷம் இல்லை (சிம்ம/கும்ப விலக்கு).",
-                "{$signName($mars)} राशि का मंगल किसी भी दोष भाव में मंगल दोष नहीं देता है (सिंह/कुंभ अपवाद)।");
+                "{$signNameHi($mars)} राशि का मंगल किसी भी दोष भाव में मंगल दोष नहीं देता है (सिंह/कुंभ अपवाद)।");
         }
         // House-sign exceptions neutralise only the reference point whose
         // count they match; the dosha is cancelled on this ground only when
@@ -1415,13 +1422,13 @@ class AstroEngine {
             $add($exceptions, 'HOUSE_SIGN',
                 sprintf('Mars in %s in %s is a classical house-sign exception (Sevvay Dosha Vilakku), so the dosha does not apply.', $signName($mars), implode(' and ', $en)),
                 sprintf('%s ராசியில் உள்ள செவ்வாய்க்கு %s ஆகிய இடங்களுக்கான சாஸ்திர விலக்கு உண்டு; எனவே தோஷம் இல்லை.', $signNameTa($mars), implode(', ', $ta)),
-                sprintf('%s राशि का मंगल %s के लिए शास्त्रीय भाव-राशि अपवाद में आता है; अतः दोष लागू नहीं होता है।', $signName($mars), implode(' एवं ', $hi)));
+                sprintf('%s राशि का मंगल %s के लिए शास्त्रीय भाव-राशि अपवाद में आता है; अतः दोष लागू नहीं होता है।', $signNameHi($mars), implode(' एवं ', $hi)));
         }
         if (in_array($lagna, [4, 5], true) && in_array($houses['lagna'], self::kujaDoshaHouses(), true)) {
             $add($exceptions, 'YOGAKARAKA_LAGNA',
                 "For a {$signName($lagna)} Lagna Mars is the Yogakaraka; its placement does not create Sevvay Dosha.",
                 "{$signNameTa($lagna)} லக்னத்திற்கு செவ்வாய் யோககாரகர்; அவரது நிலை செவ்வாய் தோஷத்தை உண்டாக்காது.",
-                "{$signName($lagna)} लग्न के लिए मंगल योगकारक है; उसकी स्थिति से मंगल दोष नहीं बनता है।");
+                "{$signNameHi($lagna)} लग्न के लिए मंगल योगकारक है; उसकी स्थिति से मंगल दोष नहीं बनता है।");
         }
         if ($jupiter === $mars) {
             $add($exceptions, 'GURU_MANGALA',
@@ -1450,7 +1457,7 @@ class AstroEngine {
             $add($mitigations, 'HOUSE_SIGN_PARTIAL',
                 sprintf('Mars in %s in %s is a classical house-sign exception, so that count does not add to the dosha.', $signName($mars), $covered),
                 sprintf('%s ராசியில் உள்ள செவ்வாய்க்கு %s-இலிருந்து ஆன எண்ணிக்கைக்கு சாஸ்திர விலக்கு உண்டு.', $signNameTa($mars), implode(', ', array_map(static fn($i) => $referenceTa[$i['reference']], $houseSignExceptions))),
-                sprintf('%s राशि का मंगल %s से गिनती में शास्त्रीय अपवाद में आता है।', $signName($mars), implode(' एवं ', array_map(static fn($i) => $referenceHi[$i['reference']], $houseSignExceptions))));
+                sprintf('%s राशि का मंगल %s से गिनती में शास्त्रीय अपवाद में आता है।', $signNameHi($mars), implode(' एवं ', array_map(static fn($i) => $referenceHi[$i['reference']], $houseSignExceptions))));
         }
         if ($remaining && !in_array('lagna', $remaining, true)) {
             $only = implode(' and ', array_map(static fn($r) => $referenceFromEn[$r], $remaining));
@@ -1490,7 +1497,7 @@ class AstroEngine {
             $signNameTa($mars), $houses['lagna'], $houses['moon'], $houses['venus'],
             implode(', ', array_map(static fn($r) => $referenceTa[$r], $afflictedFrom)));
         $placementHi = sprintf('%s राशि का मंगल लग्न से %dवें, चंद्र से %dवें तथा शुक्र से %dवें भाव में है (दोष: %s से)।',
-            $signName($mars), $houses['lagna'], $houses['moon'], $houses['venus'],
+            $signNameHi($mars), $houses['lagna'], $houses['moon'], $houses['venus'],
             implode(', ', array_map(static fn($r) => $referenceHi[$r], $afflictedFrom)));
         $join = static fn(array $items, string $key): string => implode(' ', array_column($items, $key));
 
@@ -1533,44 +1540,66 @@ class AstroEngine {
     private static function calculatePoruthams($boyNakIdx, $boyRasiIdx, $girlNakIdx, $girlRasiIdx, $boyLord, $girlLord) {
         $results = [];
 
-        $dinaCount = (($boyNakIdx - $girlNakIdx + 27) % 27) + 1;
-        $dinaRem = $dinaCount % 9;
-        $dinaGood = in_array($dinaRem, [2, 4, 6, 8, 0], true) || ($boyNakIdx === $girlNakIdx && in_array($girlNakIdx, [3, 5, 9, 15, 21, 25, 26], true));
+        // 1. Dina Porutham: count from Bride's star to Groom's star (1..27).
+        //    - Same star: allowed for Rohini(3), Arudra(5), Pushya(7), Magha(9),
+        //      Vishakha(15), Shravana(21), Uttara Bhadrapada(25), Revati(26).
+        //    - 22nd star (Vainashika): rejected even though 22 % 9 === 4.
+        $starDiff = (($boyNakIdx - $girlNakIdx + 27) % 27) + 1;
+        $dinaRem = $starDiff % 9;
+        $ekaAllowed = [3, 5, 7, 9, 15, 21, 25, 26];
+        if ($boyNakIdx === $girlNakIdx) {
+            $dinaGood = in_array($girlNakIdx, $ekaAllowed, true);
+        } elseif ($starDiff === 22) {
+            $dinaGood = false;
+        } else {
+            $dinaGood = in_array($dinaRem, [2, 4, 6, 8, 0], true) || $starDiff === 27;
+        }
         $results['dina'] = ['pts' => $dinaGood ? 3 : 0, 'max' => 3, 'pass' => $dinaGood];
 
-        $bg = self::$NAK_GANA[$boyNakIdx]; $gg = self::$NAK_GANA[$girlNakIdx];
-        $ganaPts = ($bg === $gg) ? 6 : (($bg === 0 && $gg === 2) || ($bg === 2 && $gg === 0) ? 0 : 5);
-        $results['gana'] = ['pts' => round($ganaPts * 4 / 6, 1), 'max' => 4, 'pass' => $ganaPts >= 5];
+        // 2. Gana Porutham (mirrors src/lib/astrology/matchmaking.ts)
+        $bg = self::$NAK_GANA[$boyNakIdx]; // groom Gana
+        $gg = self::$NAK_GANA[$girlNakIdx]; // bride Gana
+        if ($gg === $bg || ($bg === 0 && $gg === 1)) {
+            $ganaUnit = 1.0; // UTTHAMAM
+        } elseif (($bg === 1 && $gg === 0) || ($bg === 2 && $gg === 0 && $starDiff > 14)) {
+            $ganaUnit = 0.5; // MADHYAMAM
+        } else {
+            $ganaUnit = 0.0; // PORUNDHADHU
+        }
+        $results['gana'] = ['pts' => $ganaUnit * 4, 'max' => 4, 'pass' => $ganaUnit > 0];
 
-        $mahendraCount = (($boyNakIdx - $girlNakIdx + 27) % 27) + 1;
-        // Traditional favorable counts are 4, 7, 10, 13, 16, 19, 22, and 25
-        // from the bride's Nakshatra to the groom's. Count 1 (same star) is
-        // not Mahendra Porutham; a broad modulo check incorrectly included it.
-        $mahendraGood = in_array($mahendraCount, [4, 7, 10, 13, 16, 19, 22, 25], true);
+        // 3. Mahendra Porutham: counts 4, 7, 10, 13, 16, 19, 22, 25 from Bride to Groom
+        $mahendraGood = in_array($starDiff, [4, 7, 10, 13, 16, 19, 22, 25], true);
         $results['mahendra'] = ['pts' => $mahendraGood ? 3 : 0, 'max' => 3, 'pass' => $mahendraGood];
 
-        $sdGood = $dinaCount >= 7;
-        $results['stree_deergha'] = ['pts' => $sdGood ? 2 : 0, 'max' => 2, 'pass' => $sdGood];
+        // 4. Stree Deergha Porutham: > 13 Utthamam, >= 7 Madhyamam, < 7 Porundhadhu
+        $sdUnit = $starDiff > 13 ? 1.0 : ($starDiff >= 7 ? 0.5 : 0.0);
+        $results['stree_deergha'] = ['pts' => $sdUnit * 2, 'max' => 2, 'pass' => $sdUnit > 0];
 
-        // Nakshatra indexes are passed as groom first, bride second. Keep the
-        // report labels tied to those same computed indexes instead of using a
-        // generic "neutral or inimical" explanation for every partial result.
-        [$groomAnimal, $groomGender] = self::$NAK_YONI[$boyNakIdx];
-        [$brideAnimal, $brideGender] = self::$NAK_YONI[$girlNakIdx];
-        $isYoniFriend = in_array($brideAnimal, self::$YONI_FRIEND[$groomAnimal] ?? [], true);
-        $isYoniEnemy = in_array($brideAnimal, self::$YONI_ENEMY[$groomAnimal] ?? [], true);
+        // 5. Yoni Porutham: same animal = Utthamam (4/4), 7 Maha-Vaira inimical
+        //    animal pairs = Porundhadhu (0/4), all other pairs = Madhyamam (2/4).
+        [$groomAnimal] = self::$NAK_YONI[$boyNakIdx];
+        [$brideAnimal] = self::$NAK_YONI[$girlNakIdx];
+        $mahaVairaPairs = [
+            'horse:buffalo', 'buffalo:horse',
+            'elephant:lion', 'lion:elephant',
+            'goat:monkey', 'monkey:goat',
+            'serpent:mongoose', 'mongoose:serpent',
+            'dog:deer', 'deer:dog',
+            'cat:rat', 'rat:cat',
+            'cow:tiger', 'tiger:cow',
+        ];
+        $isYoniEnemy = in_array($brideAnimal . ':' . $groomAnimal, $mahaVairaPairs, true);
         if ($groomAnimal === $brideAnimal) {
-            $yoniPts = ($groomGender !== $brideGender) ? 4 : 3;
-        } elseif ($isYoniFriend) {
-            $yoniPts = 3;
+            $yoniPts = 4;
+            $yoniRelationship = 'same';
         } elseif ($isYoniEnemy) {
             $yoniPts = 0;
+            $yoniRelationship = 'enemy';
         } else {
             $yoniPts = 2;
+            $yoniRelationship = 'neutral';
         }
-        $yoniRelationship = $groomAnimal === $brideAnimal
-            ? 'same'
-            : ($isYoniEnemy ? 'enemy' : ($isYoniFriend ? 'friend' : 'neutral'));
         $yoniAnimalNames = [
             'horse' => ['en' => 'Horse', 'ta' => 'குதிரை', 'hi' => 'घोड़ा'],
             'elephant' => ['en' => 'Elephant', 'ta' => 'யானை', 'hi' => 'हाथी'],
@@ -1598,7 +1627,7 @@ class AstroEngine {
         $results['yoni'] = [
             'pts' => $yoniPts,
             'max' => 4,
-            'pass' => $yoniPts >= 2,
+            'pass' => $yoniPts > 0,
             'yoniRelationship' => $yoniRelationship,
             'yoniRelationshipEn' => $yoniRelationshipText['en'],
             'yoniRelationshipTa' => $yoniRelationshipText['ta'],
@@ -1614,24 +1643,56 @@ class AstroEngine {
             'explanationHi' => 'वधू: ' . $brideYoniNames['hi'] . '; वर: ' . $groomYoniNames['hi'] . ' — योनि संबंध ' . $yoniRelationshipText['hi'] . ' है।',
         ];
 
-        $rasiDiff = (($girlRasiIdx - $boyRasiIdx + 12) % 12) + 1;
-        $rasiBad = in_array($rasiDiff, [2, 5, 6, 8, 9, 12], true);
-        $lordsFriendly = self::planetFriendship($boyLord, $girlLord) === 'friend' && self::planetFriendship($girlLord, $boyLord) === 'friend';
-        $rasiGood = (!$rasiBad) || $lordsFriendly;
-        $results['rasi'] = ['pts' => $rasiGood ? 5 : 0, 'max' => 5, 'pass' => $rasiGood];
+        // 6. Rasi Porutham: count from Bride's Rasi to Groom's Rasi (1..12)
+        $bRasi = $girlRasiIdx + 1;
+        $gRasi = $boyRasiIdx + 1;
+        $rasiDiff = (($gRasi - $bRasi + 12) % 12) + 1;
+        if (in_array($rasiDiff, [3, 4, 7, 10, 11, 12], true)) {
+            $rasiUnit = 1.0;
+        } elseif (in_array($rasiDiff, [6, 8], true)) {
+            $rasiUnit = ($boyLord === $girlLord) ? 0.5 : 0.0;
+        } else {
+            $rasiUnit = 0.5;
+        }
+        $results['rasi'] = ['pts' => $rasiUnit * 5, 'max' => 5, 'pass' => $rasiUnit > 0];
 
-        $gmScore = self::grahaMaitriScore($boyLord, $girlLord);
-        $results['rasiyadhipathi'] = ['pts' => round($gmScore * 4 / 5, 1), 'max' => 4, 'pass' => $gmScore >= 3];
+        // 7. Rasiyadhipathi Porutham: Deva/Asura planetary lord affinity (mirrors TS)
+        $devaLords = ['sun', 'moon', 'mars', 'jupiter'];
+        $asuraLords = ['mercury', 'venus', 'saturn'];
+        if ($girlLord === $boyLord
+            || (in_array($girlLord, $devaLords, true) && in_array($boyLord, $devaLords, true))
+            || (in_array($girlLord, $asuraLords, true) && in_array($boyLord, $asuraLords, true))) {
+            $lordUnit = 1.0;
+        } elseif (($girlLord === 'mercury' && in_array($boyLord, $devaLords, true))
+            || ($boyLord === 'mercury' && in_array($girlLord, $devaLords, true))) {
+            $lordUnit = 0.5;
+        } else {
+            $lordUnit = 0.0;
+        }
+        $results['rasiyadhipathi'] = ['pts' => $lordUnit * 4, 'max' => 4, 'pass' => $lordUnit > 0];
 
-        $vasyaGood = self::$VASYA_GROUP[$boyRasiIdx] === self::$VASYA_GROUP[$girlRasiIdx];
+        // 8. Vasiya Porutham: classical South Indian 12-Rasi Penn-Rasi Vasiyam table
+        $vasiyaMap = [
+            1 => [5, 8], 2 => [4, 7], 3 => [6], 4 => [8, 9], 5 => [7, 9], 6 => [3, 12],
+            7 => [10, 12], 8 => [4, 11], 9 => [12], 10 => [1, 11], 11 => [1, 10], 12 => [3, 10],
+        ];
+        $vasyaGood = in_array($gRasi, $vasiyaMap[$bRasi] ?? [], true);
         $results['vasiya'] = ['pts' => $vasyaGood ? 2 : 0, 'max' => 2, 'pass' => $vasyaGood];
 
+        // 9. Rajju Porutham: critical 5-group body mapping
         $boyGroup = self::rajjuTable()['groups'][$boyNakIdx];
         $girlGroup = self::rajjuTable()['groups'][$girlNakIdx];
         $rajjuGood = ($boyGroup !== $girlGroup);
         $results['rajju'] = ['pts' => $rajjuGood ? 5 : 0, 'max' => 5, 'pass' => $rajjuGood, 'crucial' => true];
 
-        $vedhaHit = (self::$VEDHA_PAIR[$boyNakIdx] === $girlNakIdx);
+        // 10. Vedha Porutham: all classical Vedha pairs INCLUDING Pancha-Vedha (4, 13, 22)
+        $vedhaPairs = [
+            '0:17', '17:0', '1:16', '16:1', '2:15', '15:2', '3:14', '14:3',
+            '5:21', '21:5', '6:20', '20:6', '7:19', '19:7', '8:18', '18:8',
+            '9:26', '26:9', '10:25', '25:10', '11:24', '24:11', '12:23', '23:12',
+            '4:13', '13:4', '13:22', '22:13', '4:22', '22:4',
+        ];
+        $vedhaHit = in_array($girlNakIdx . ':' . $boyNakIdx, $vedhaPairs, true);
         $results['vedha'] = ['pts' => $vedhaHit ? 0 : 3, 'max' => 3, 'pass' => !$vedhaHit, 'crucial' => true];
 
         return $results;
@@ -2189,30 +2250,33 @@ class AstroEngine {
         ];
         $rawPlanets = [];
         foreach ([
-            ['sun', 'Surya (Sun)', 'சூரியன்', $sunRasiIndex],
-            ['moon', 'Chandra (Moon)', 'சந்திரன்', $moonRasiIndex],
-            ['mars', 'Chevvai (Mars)', 'செவ்வாய்', $marsRasiIndex],
-            ['mercury', 'Budha (Mercury)', 'புதன்', $mercuryRasiIndex],
-            ['jupiter', 'Guru (Jupiter)', 'குரு', $jupiterRasiIndex],
-            ['venus', 'Sukra (Venus)', 'சுக்கிரன்', $venusRasiIndex],
-            ['saturn', 'Sani (Saturn)', 'சனி', $saturnRasiIndex],
-            ['rahu', 'Rahu', 'ராகு', $rahuRasiIndex],
-            ['ketu', 'Ketu', 'கேது', $ketuRasiIndex],
-        ] as [$graha, $nameEn, $nameTa, $rasiIdx]) {
+            ['sun', 'Surya (Sun)', 'சூரியன்', 'सूर्य', $sunRasiIndex],
+            ['moon', 'Chandra (Moon)', 'சந்திரன்', 'चंद्र', $moonRasiIndex],
+            ['mars', 'Chevvai (Mars)', 'செவ்வாய்', 'मंगल', $marsRasiIndex],
+            ['mercury', 'Budha (Mercury)', 'புதன்', 'बुध', $mercuryRasiIndex],
+            ['jupiter', 'Guru (Jupiter)', 'குரு', 'गुरु', $jupiterRasiIndex],
+            ['venus', 'Sukra (Venus)', 'சுக்கிரன்', 'शुक्र', $venusRasiIndex],
+            ['saturn', 'Sani (Saturn)', 'சனி', 'शनि', $saturnRasiIndex],
+            ['rahu', 'Rahu', 'ராகு', 'राहु', $rahuRasiIndex],
+            ['ketu', 'Ketu', 'கேது', 'केतु', $ketuRasiIndex],
+        ] as [$graha, $nameEn, $nameTa, $nameHi, $rasiIdx]) {
             $longitude = $siderealByGraha[$graha];
             $isNode = $graha === 'rahu' || $graha === 'ketu';
+            $isRetro = $isNode ? true : (($graha !== 'sun' && $graha !== 'moon') && ($dailyMotion[$graha] ?? 0.0) < 0);
+            $combustLimit = self::getCombustionLimit($graha, $isRetro);
             $rawPlanets[] = [
                 'graha' => $graha,
                 'nameEn' => $nameEn,
                 'nameTa' => $nameTa,
+                'nameHi' => $nameHi,
                 'rasiIdx' => $rasiIdx,
                 'longitude' => $longitude,
                 'degrees' => round(fmod($longitude, 30), 2),
                 'house' => (($rasiIdx - $lagnaRasiIndex + 12) % 12) + 1,
                 // Nodes always move backwards; luminaries never do.
-                'isRetrograde' => $isNode ? true : (($graha !== 'sun' && $graha !== 'moon') && ($dailyMotion[$graha] ?? 0.0) < 0),
-                'isCombust' => isset(self::COMBUSTION_LIMITS[$graha])
-                    && abs(self::angleDelta($longitude, $sunSidereal)) < self::COMBUSTION_LIMITS[$graha],
+                'isRetrograde' => $isRetro,
+                'isCombust' => $combustLimit > 0.0
+                    && abs(self::angleDelta($longitude, $sunSidereal)) < $combustLimit,
             ];
         }
 
@@ -2235,19 +2299,25 @@ class AstroEngine {
                 'graha' => $rp['graha'],
                 'nameEn' => $rp['nameEn'],
                 'nameTa' => $rp['nameTa'],
+                'nameHi' => $rp['nameHi'],
                 'rasi' => $rp['rasiIdx'] + 1,
                 'rasiNameEn' => self::$RASIS[$rp['rasiIdx']]['en'],
                 'rasiNameTa' => self::$RASIS[$rp['rasiIdx']]['ta'],
+                'rasiNameHi' => self::$RASIS[$rp['rasiIdx']]['hi'],
                 'degrees' => $rp['degrees'],
                 // Sidereal longitude (2dp) and D9 placement, so the report and the
                 // browser preview draw the Navamsa chart from the engine's own values.
                 'totalDegrees' => round($totalDeg, 2),
                 'navamsaRasi' => $navRasiForPlanet,
+                'navamsaRasiNameEn' => self::$RASIS[$navRasiForPlanet - 1]['en'],
+                'navamsaRasiNameTa' => self::$RASIS[$navRasiForPlanet - 1]['ta'],
+                'navamsaRasiNameHi' => self::$RASIS[$navRasiForPlanet - 1]['hi'],
                 'isVargottama' => $navRasiForPlanet === ($rp['rasiIdx'] + 1),
                 'house' => $rp['house'],
                 'bhavaNumber' => $rp['house'],
                 'nakshatramEn' => self::$NAKSHATRAS_EN[$pNakIndex],
                 'nakshatramTa' => self::$NAKSHATRAS_TA[$pNakIndex],
+                'nakshatramHi' => self::$NAKSHATRAS_HI[$pNakIndex],
                 'pada' => $pPada,
                 'isRetrograde' => $rp['isRetrograde'],
                 'isCombust' => $rp['isCombust'],
@@ -2590,9 +2660,10 @@ class AstroEngine {
             $isAfflicted = $isDebilitated || $isDusthana || ($conjunctMalefic !== null);
             if (!$isAfflicted || ($g === 'mars' && $isKujaDosha)) continue;
 
-            $reasonEn = $isDebilitated ? 'is in its traditional debilitation sign' : ($conjunctMalefic !== null ? 'shares a house with ' . ucfirst($conjunctMalefic) . ', classified as a natural malefic by this rule' : 'is placed in House ' . $house . ', treated as a challenging house by this rule');
-            $reasonTa = $isDebilitated ? 'பாரம்பரிய நீச ராசியில் உள்ளது' : ($conjunctMalefic !== null ? 'ஒரு எளிய விதிப்படி பாபக் கிரகமாகக் கருதப்படும் ' . $conjunctMalefic . ' உடன் ஒரே பாவத்தில் உள்ளது' : $house . '-ஆம் பாவத்தில் இந்த எளிய விதிப்படி கணிக்கப்பட்டுள்ளது');
-            $reasonHi = $isDebilitated ? 'पारंपरिक नीच राशि में स्थित है' : ($conjunctMalefic !== null ? 'इस सरल नियम में पाप ग्रह माने गए ' . $conjunctMalefic . ' के साथ एक भाव में स्थित है' : 'इस सरल नियम के अनुसार भाव ' . $house . ' में स्थित है');
+            $maleficMeta = $conjunctMalefic !== null ? ($navagrahaMeta[$conjunctMalefic] ?? null) : null;
+            $reasonEn = $isDebilitated ? 'is in its traditional debilitation sign' : ($conjunctMalefic !== null ? 'shares a house with ' . ($maleficMeta['planetEn'] ?? ucfirst($conjunctMalefic)) . ', classified as a natural malefic by this rule' : 'is placed in House ' . $house . ', treated as a challenging house by this rule');
+            $reasonTa = $isDebilitated ? 'பாரம்பரிய நீச ராசியில் உள்ளது' : ($conjunctMalefic !== null ? 'ஒரு எளிய விதிப்படி பாபக் கிரகமாகக் கருதப்படும் ' . ($maleficMeta['planetTa'] ?? $conjunctMalefic) . ' உடன் ஒரே பாவத்தில் உள்ளது' : $house . '-ஆம் பாவத்தில் இந்த எளிய விதிப்படி கணிக்கப்பட்டுள்ளது');
+            $reasonHi = $isDebilitated ? 'पारंपरिक नीच राशि में स्थित है' : ($conjunctMalefic !== null ? 'इस सरल नियम में पाप ग्रह माने गए ' . ($maleficMeta['planetHi'] ?? $conjunctMalefic) . ' के साथ एक भाव में स्थित है' : 'इस सरल नियम के अनुसार भाव ' . $house . ' में स्थित है');
 
             $doshas[] = [
                 'nameEn' => $meta['nameEn'], 'nameTa' => $meta['nameTa'], 'nameHi' => $meta['nameHi'],
@@ -2653,9 +2724,9 @@ class AstroEngine {
                     $doshaRef['descriptionTa'] = 'சூரியனும் ' . $nodeNameTa . ' உம் ஒரே ராசியில் ' . $sunNodeSeparationText . '° இடைவெளியில் உள்ளனர் — 12° எல்லைக்குள் இல்லாததால் தோஷம் கொடுக்கவில்லை; பலவீனமான (ஒரே ராசி மட்டும்) அறிகுறி.';
                     $doshaRef['descriptionHi'] = 'सूर्य और ' . $nodeNameHi . ' एक ही राशि में हैं पर ' . $sunNodeSeparationText . '° दूर हैं — 12° सीमा से बाहर होने के कारण यह दुर्बल (केवल समान राशि) संकेत है।';
                 } elseif ($pitruStrength === 'present') {
-                    $doshaRef['descriptionEn'] = 'The Sun is within 12° of ' . $nodeNameEn . ' (' . $sunNodeSeparationText . '° apart)' . ($isSaturnIn9th ? ' and Saturn occupies the 9th house by sign' : '') . '. These are simplified indicators only, not a complete Pitru assessment.';
-                    $doshaRef['descriptionTa'] = 'சூரியன் ' . $nodeNameTa . ' உடன் 12° எல்லைக்குள் (' . $sunNodeSeparationText . '°) உள்ளார்' . ($isSaturnIn9th ? '; சனி 9-ஆம் பாவத்திலும் உள்ளார்' : '') . '. இவை தேர்ந்தெடுத்த எளிய குறியீடுகள் மட்டுமே.';
-                    $doshaRef['descriptionHi'] = 'सूर्य ' . $nodeNameHi . ' से 12° के भीतर (' . $sunNodeSeparationText . '° अंतर) है' . ($isSaturnIn9th ? ' तथा शनि नवम भाव में है' : '') . '। ये केवल सरल संकेत हैं।';
+                    $doshaRef['descriptionEn'] = ($sunNodeWithinOrb ? 'The Sun is within 12° of ' . $nodeNameEn . ' (' . $sunNodeSeparationText . '° apart). ' : '') . ($isSaturnIn9th ? 'Saturn occupies the 9th house by sign. ' : '') . 'These are simplified indicators only, not a complete Pitru assessment.';
+                    $doshaRef['descriptionTa'] = ($sunNodeWithinOrb ? 'சூரியன் ' . $nodeNameTa . ' உடன் 12° எல்லைக்குள் (' . $sunNodeSeparationText . '°) உள்ளார். ' : '') . ($isSaturnIn9th ? 'சனி 9-ஆம் பாவத்தில் உள்ளார். ' : '') . 'இவை தேர்ந்தெடுத்த எளிய குறியீடுகள் மட்டுமே.';
+                    $doshaRef['descriptionHi'] = ($sunNodeWithinOrb ? 'सूर्य ' . $nodeNameHi . ' से 12° के भीतर (' . $sunNodeSeparationText . '° अंतर) है। ' : '') . ($isSaturnIn9th ? 'शनि नवम भाव में है। ' : '') . 'ये केवल सरल संकेत हैं।';
                 }
             }
         }
@@ -3253,13 +3324,24 @@ class AstroEngine {
                         : "{$fullSideHi} पक्ष में सक्रिय मंगल दोष है और दूसरे पक्ष में नहीं है। आगे बढ़ने से पूर्व मंगल दोष के पारंपरिक उपाय (अंगारक/सुब्रह्मण्य पूजा, कुज शांति) करने की सलाह दी जाती है।"))
         ];
 
-        $verdictStatus = $anyCrucialFailed ? 'PORUNDHADHU' : ($scorePercent >= 70 ? 'UTTHAMAM' : ($scorePercent >= 50 ? 'MADHYAMAM' : 'PORUNDHADHU'));
+        // Canonical verdict rule shared 1:1 with src/lib/astrology/matchmaking.ts:
+        // unitPoints counts 1.0 for UTTHAMAM, 0.5 for MADHYAMAM, 0.0 for PORUNDHADHU;
+        // UTTHAMAM requires unitPoints >= 7.0, clear Rajju + Vedha, AND balanced Kuja Dosha.
+        $unitPoints = 0.0;
+        foreach ($poruthamDefs as $pdUnit) {
+            $unitPoints += $pdUnit['enum'] === 'UTTHAMAM' ? 1.0 : ($pdUnit['enum'] === 'MADHYAMAM' ? 0.5 : 0.0);
+        }
         $rajjuOk = (bool) ($realResults['rajju']['pass'] ?? false);
         $vedhaOk = (bool) ($realResults['vedha']['pass'] ?? false);
+        $criticalPoruthamsOk = $rajjuOk && $vedhaOk;
+        $kujaBalanced = ($doshaSamyam === true);
+        $verdictStatus = ($unitPoints >= 7.0 && $criticalPoruthamsOk && $kujaBalanced)
+            ? 'UTTHAMAM'
+            : (($unitPoints >= 5.0 && $criticalPoruthamsOk) ? 'MADHYAMAM' : 'PORUNDHADHU');
         $failedEn = implode(' and ', array_filter([$rajjuOk ? null : 'Rajju', $vedhaOk ? null : 'Vedha']));
         $failedTa = implode(' மற்றும் ', array_filter([$rajjuOk ? null : 'ரஜ்ஜு', $vedhaOk ? null : 'வேதை']));
         $failedHi = implode(' और ', array_filter([$rajjuOk ? null : 'रज्जु', $vedhaOk ? null : 'वेध']));
-        $verdictLabel = $anyCrucialFailed ? "Not Recommended - {$failedEn} mismatch" : ($scorePercent >= 70 ? 'Highly Recommended (உத்தம பொருத்தம்)' : ($scorePercent >= 50 ? 'Acceptable with Remedies (மத்திம பொருத்தம்)' : 'Not Recommended (பொருந்தாது)'));
+        $verdictLabel = !$criticalPoruthamsOk ? "Not Recommended - {$failedEn} mismatch" : ($verdictStatus === 'UTTHAMAM' ? 'Highly Recommended (உத்தம பொருத்தம்)' : ($verdictStatus === 'MADHYAMAM' ? 'Acceptable with Remedies (மத்திம பொருத்தம்)' : 'Not Recommended (பொருந்தாது)'));
 
         // Kuja remedies concern Kuja alone; they do not remove a failed
         // Rajju/Vedha check or amount to approval of the overall marriage.
@@ -3468,10 +3550,12 @@ class AstroEngine {
                 continue;
             }
             $fingerprint = $tamilName;
-            if (isset($used[$fingerprint])) {
+            $romanKey = 'roman|' . strtolower(trim($name));
+            if (isset($used[$fingerprint]) || isset($used[$romanKey])) {
                 continue;
             }
             $used[$fingerprint] = true;
+            $used[$romanKey] = true;
             $meaning = (string) ($entry[3] ?? '');
             $names[] = [
                 'name' => $name,
@@ -3695,11 +3779,11 @@ class AstroEngine {
             'chandraRasi' => $horoscope['chandraRasi'],
             'chandraRasiNameEn' => $horoscope['rasi']['name'],
             'chandraRasiNameTa' => $horoscope['rasi']['nameTa'],
-            'chandraRasiNameHi' => $horoscope['rasi']['name'],
+            'chandraRasiNameHi' => $horoscope['rasi']['nameHi'] ?? $horoscope['rasi']['name'],
             'lagnaRasi' => $horoscope['lagnaRasi'],
             'lagnaRasiNameEn' => $horoscope['lagna']['rasi'],
             'lagnaRasiNameTa' => $horoscope['lagna']['rasiTa'],
-            'lagnaRasiNameHi' => $horoscope['lagna']['rasi'],
+            'lagnaRasiNameHi' => $horoscope['lagna']['rasiHi'] ?? $horoscope['lagna']['rasi'],
             'suggestedNames' => $suggestedNames,
             'nameSuggestions' => $nameSuggestions,
 
@@ -4158,7 +4242,67 @@ class AstroEngine {
             return self::calculateBabyNaming($input);
         }
         if ($serviceType === 'MUHURTHAM') {
-            return self::calculateMuhurtham($input);
+            try {
+                return self::calculateMuhurtham($input);
+            } catch (\RuntimeException $ex) {
+                $legacyScan = is_array($input['muhurthamScan'] ?? null) ? $input['muhurthamScan'] : null;
+                $legacyVersion = intval($legacyScan['muhurthamAlgorithmVersion'] ?? $input['muhurthamAlgorithmVersion'] ?? 0);
+                if ($legacyScan !== null
+                    && $legacyVersion > 0
+                    && $legacyVersion < self::MUHURTHAM_ALGORITHM_VERSION
+                    && !empty($legacyScan['months'])
+                    && is_array($legacyScan['months'])) {
+                    $upgraded = $input;
+                    $upgraded['muhurthamScan']['muhurthamAlgorithmVersion'] = self::MUHURTHAM_ALGORITHM_VERSION;
+                    $upgraded['muhurthamAlgorithmVersion'] = self::MUHURTHAM_ALGORITHM_VERSION;
+                    if (!is_array($upgraded['muhurthamScan']['inputContext'] ?? null)) {
+                        $upgraded['muhurthamScan']['inputContext'] = [];
+                    }
+                    $secondPerson = null;
+                    foreach (['bride', 'groom'] as $secondRole) {
+                        if (is_array($upgraded[$secondRole] ?? null)) { $secondPerson = $upgraded[$secondRole]; break; }
+                    }
+                    foreach (['dob', 'tob', 'birthPlace', 'country', 'timeZoneId', 'muhurthamPlace', 'muhurthamCountry', 'muhurthamTimeZoneId', 'eventKey', 'selectedMonth', 'latitude', 'longitude', 'timezoneOffsetHours', 'muhurthamLatitude', 'muhurthamLongitude', 'muhurthamTimezoneOffsetHours'] as $ctxKey) {
+                        if (array_key_exists($ctxKey, $upgraded)) {
+                            $upgraded['muhurthamScan']['inputContext'][$ctxKey] = $upgraded[$ctxKey];
+                        }
+                    }
+                    if (is_array($secondPerson)) {
+                        foreach (['brideName' => 'name', 'brideDob' => 'dob', 'brideTob' => 'tob', 'brideBirthPlace' => 'birthPlace', 'brideCountry' => 'country', 'brideTimeZoneId' => 'timeZoneId', 'brideLatitude' => 'latitude', 'brideLongitude' => 'longitude', 'brideTimezoneOffsetHours' => 'timezoneOffsetHours'] as $flatKey => $personKey) {
+                            if (array_key_exists($personKey, $secondPerson)) {
+                                $upgraded['muhurthamScan']['inputContext'][$flatKey] = $secondPerson[$personKey];
+                            }
+                        }
+                    }
+                    $tzOffset = (float) ($upgraded['muhurthamTimezoneOffsetHours'] ?? 5.5);
+                    foreach ($upgraded['muhurthamScan']['months'] as &$legacyMonth) {
+                        if (!is_array($legacyMonth['days'] ?? null)) { continue; }
+                        foreach ($legacyMonth['days'] as &$legacyDay) {
+                            if (!is_array($legacyDay)) { continue; }
+                            $pRaw = $legacyDay['pada'] ?? null;
+                            if (!is_numeric($pRaw) || (int) $pRaw < 1 || (int) $pRaw > 4) {
+                                $dStr = substr((string) ($legacyDay['date'] ?? ''), 0, 10);
+                                if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $dStr, $dm)) {
+                                    $utcTs = gmmktime(6, 0, 0, (int) $dm[2], (int) $dm[3], (int) $dm[1]) - (int) round($tzOffset * 3600);
+                                    $jd = 2440587.5 + ($utcTs / 86400.0);
+                                    $ephem = self::computeGeocentricPositions($jd, 'MEAN');
+                                    $moonSid = (float) $ephem['sidereal']['moon'];
+                                    $nakSpan = 360.0 / 27.0;
+                                    $legacyDay['pada'] = (intval(floor(fmod($moonSid, $nakSpan) / ($nakSpan / 4.0))) % 4) + 1;
+                                } else {
+                                    $legacyDay['pada'] = 1;
+                                }
+                            }
+                        }
+                        unset($legacyDay);
+                    }
+                    unset($legacyMonth);
+                    $result = self::calculateMuhurtham($upgraded);
+                    $result['rebuiltFromLegacyScanVersion'] = $legacyVersion;
+                    return $result;
+                }
+                throw $ex;
+            }
         }
         throw new \RuntimeException('Unsupported report service type; no report was generated.');
     }

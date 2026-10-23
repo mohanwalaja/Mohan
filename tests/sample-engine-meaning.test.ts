@@ -61,8 +61,8 @@ assert.equal(marriage.poruthams.find(row => row.id === 'vedhai')?.status, Poruth
 assert.equal(marriage.verdictStatus, PoruthamStatus.MADHYAMAM);
 assert.match(marriage.overallVerdictEn, /Moderate match:/i);
 assert.doesNotMatch(marriage.overallVerdictEn, /Critical/);
-assert.equal(marriage.totalScore, 7.5);
-assert.equal(marriage.totalPoruthamsMatched, 8);
+assert.equal(marriage.totalScore, 6.5);
+assert.equal(marriage.totalPoruthamsMatched, 7);
 const yoni = marriage.poruthams.find(row => row.id === 'yoni');
 assert.equal(yoni?.yoniBrideAnimalEn, 'Lion');
 assert.equal(yoni?.yoniGroomAnimalEn, 'Buffalo');

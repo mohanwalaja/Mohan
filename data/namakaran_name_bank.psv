@@ -209,9 +209,9 @@
 எ|F|N|Eesha|எஷா|एषा|The divine one
 ## ஒ  (O)
 ஒ|M|S|Oviyan|ஒவியன்|ओवियन|An artist
-ஒ|M|S|Ojas|ஒஜஸ்|ओजस|Vitality and light
+ஒ|M|N|Ojas|ஒஜஸ்|ओजस|Vitality and light
 ஒ|F|S|Oviya|ஒவியா|ओविया|An artist
-ஒ|F|S|Ojasi|ஒஜஸி|ओजसी|Radiant and vital
+ஒ|F|N|Ojasi|ஒஜஸி|ओजसी|Radiant and vital
 ## வா  (Vaa)
 வா|M|S|Vaasan|வாசன்|वासन|Fragrant and pleasing
 வா|M|S|Vaasudevan|வாசுதேவன்|वासुदेवन|Lord Krishna
@@ -353,7 +353,6 @@
 கே|M|N|Ketan|கேதன்|केतन|A bright star
 கே|M|N|Kedar|கேதர்|केदार|Lord Shiva
 கே|F|S|Keshavi|கேசவி|केशवी|A devoted lady
-கே|F|S|Keya|கேயா|केया|A gentle song
 கே|F|N|Ketaki|கேதகி|केतकी|A fragrant flower
 கே|F|N|Kesar|கேசர்|केसर|Saffron
 ## கோ  (Ko / Koh)
@@ -376,14 +375,12 @@
 ஹா|F|S|Haasini|ஹாசினி|हासिनी|A smiling lady
 ஹா|F|N|Haaniya|ஹானியா|हानिया|A pleasant song
 ## ஹீ  (Hee / Hi)
-ஹீ|M|S|Heer|ஹீர்|हीर|A diamond
 ஹீ|M|S|Heeran|ஹீரன்|हीरन|A diamond
-ஹீ|F|S|Heera|ஹீரா|हीरा|A diamond
 ஹீ|F|S|Heertha|ஹீர்தா|हीर्था|A joyful heart
 ## ஹு  (Hu / Hoo)
 ஹு|M|S|Hussain|ஹுசைன்|हुसैन|A noble soul
-ஹு|M|S|Hukam|ஹுகம்|हुकम|An order, a command
-ஹு|F|S|Huma|ஹுமா|हुमा|A sacred bird
+ஹு|M|N|Hukam|ஹுகம்|हुकम|An order, a command
+ஹு|F|N|Huma|ஹுமா|हुमा|A sacred bird
 ஹு|F|S|Husna|ஹுஸ்னா|हुस्ना|Beauty
 ## ஹே  (He / Hay)
 ஹே|M|S|Hemanth|ஹேமந்த்|हेमंत|The winter season
@@ -583,7 +580,7 @@
 தீ|M|S|Theerthagiri|தீர்த்தகிரி|तीर्थगिरि|A sacred mountain
 தீ|F|S|Theena|தீனா|तीना|A humble and kind soul
 தீ|F|S|Theerthana|தீர்த்தனா|तीर्थना|A sacred song
-தீ|F|N|Teerth|தீர்த்த்|तीर्थ|A sacred place
+தீ|M|N|Teerth|தீர்த்த்|तीर्थ|A sacred place
 ## தூ  (Thoo / Doo)
 தூ|M|S|Thooran|தூரன்|दूरन|A far-sighted soul
 தூ|M|S|Thooyavan|தூயவன்|दूयवन|A pure soul
@@ -785,7 +782,7 @@
 க|F|N|Kashish|கஷிஷ்|कशिश|Attraction and grace
 கா|F|N|Kaamya|காம்யா|काम्या|Desirable and lovely
 கீ|M|N|Keertan|கீர்த்தன்|कीर्तन|A song of praise
-கீ|F|N|Keerthana|கீர்த்தனா|कीर्तना|A song of praise
+கீ|F|N|Geethika|கீதிகா|गीतिका|A song of praise
 கு|F|N|Kunika|குனிகா|कुनिका|A flower
 கூ|M|S|Koovilan|கூவிலன்|कूविलन|A sweet singer
 கே|M|S|Kesavanathan|கேசவநாதன்|केशवनाथन|Lord Vishnu
@@ -819,7 +816,7 @@
 தே|F|N|Tejasvi|தேஜஸ்வி|तेजस्वी|Radiant
 நா|M|S|Naagan|நாகன்|नागन|The serpent lord
 நா|M|N|Naagraj|நாக்ராஜ்|नागराज|King of serpents
-நா|F|N|Naavya|நாவ்யா|नाव्या|Praise and eloquence
+நா|F|N|Naamya|நாம்யா|नाम्या|A gentle soul
 நீ|M|S|Neelavan|நீலவன்|नीलवन|The blue-hued Lord
 நீ|F|N|Neelima|நீலிமா|नीलिमा|A blue glow
 பா|M|S|Baalaji|பாலஜி|बालाजी|Lord Venkateswara
@@ -884,3 +881,37 @@
 ஞ|F|S|Nyamalini|ஞமலினி|ञमलिनी|A shining lady
 ஞ|F|N|Jnapaki|ஞபகி|ज्ञापकी|A goddess of wisdom
 ஞ|F|N|Nyaya|ஞயா|ञया|A wise lady
+பே|M|S|Perarasu|பேரரசு|पेररसु|A great leader
+பே|M|S|Perinban|பேரின்பன்|पेरिनबन|Joy and contentment
+பே|M|N|Bherav|பேரவ்|भैरव|A brave and able soul
+பே|F|S|Peroli|பேரொளி|पेरोलि|Vitality and light
+பே|F|S|Perazhagi|பேரழகி|पेरझगी|Beauty
+பே|F|N|Bela|பேலா|बेला|Beauty
+போ|M|S|Bodhan|போதன்|बोधन|Wisdom
+போ|M|S|Bhojarajan|போஜராஜன்|भोजराजन|A great leader
+போ|M|N|Bodhi|போதி|बोधि|Wisdom
+போ|M|N|Bholenath|போலேநாத்|भोलेनाथ|A sacred soul
+போ|F|S|Bodhini|போதினி|बोधिनी|Wisdom
+போ|F|S|Poshini|போஷிணி|पोषिणी|A gentle soul
+போ|F|N|Bodhana|போதனா|बोधना|Wisdom
+போ|F|N|Poshita|போஷிதா|पोषिता|A gentle soul
+நூ|M|S|Nootan|நூதன்|नूतन|A pure soul
+நூ|M|N|Nootankumar|நூதன்குமார்|नूतनकुमार|A noble soul
+நூ|F|S|Nupura|நூபுரா|नूपुरा|Beauty
+நூ|F|N|Nupur|நூபுர்|नूपुर|Beauty
+கா|M|N|Kashyap|காஷ்யப்|काश्यप|A wise and learned soul
+கா|M|N|Kanan|கானன்|कानन|Beauty
+தீ|M|N|Deepak|தீபக்|दीपक|Vitality and light
+தீ|M|N|Dheeraj|தீரஜ்|धीरज|A brave and able soul
+தீ|F|N|Deepika|தீபிகா|दीपिका|Vitality and light
+தூ|M|N|Dhoorjati|தூர்ஜடி|धूर्जटि|A sacred soul
+தூ|F|N|Doorva|தூர்வா|दूर्वा|A pure soul
+தோ|F|N|Toshani|தோஷணி|तोषणी|Joy and contentment
+தோ|F|N|Toshita|தோஷிதா|तोषिता|Joy and contentment
+நே|M|N|Neminath|நேமிநாத்|नेमिनाथ|A noble soul
+நே|F|N|Neha|நேஹா|नेहा|A loving friend
+நே|F|N|Nehal|நேஹல்|नेहल|Beauty
+சீ|M|N|Seetaram|சீதாராம்|सीताराम|Lord Rama with Sita
+சீ|M|N|Sheetanshu|சீதான்ஷு|शीतांशु|Vitality and light
+ஹோ|M|N|Homesh|ஹோமேஷ்|होमेश|A sacred soul
+ஹோ|F|N|Homa|ஹோமா|होमा|A pure soul

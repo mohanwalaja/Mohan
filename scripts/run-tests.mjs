@@ -153,6 +153,7 @@ const testFiles = [
   'tests/ai-astrologer-php-runtime.test.ts',
   'tests/jathagam-page2-wiring.test.ts',
   'tests/jathagam-page2-php-parity.test.ts',
+  'tests/all-four-services-parity.test.ts',
   // Deployment-shape contract for the code-split build: the six heavy route
   // chunks must exist inside dist/assets, and the cPanel root folder list must
   // never grow. Runs its built-output checks whenever dist/ is present.
