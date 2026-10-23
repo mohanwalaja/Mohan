@@ -322,6 +322,20 @@ try {
     $updAllStmt = $pdo->prepare($updateAllSql);
     $updAllStmt->execute($params);
 
+    if ($mailResult['success']) {
+        try {
+            $snapStmt = $pdo->prepare("UPDATE orders SET report_snapshot = ?, report_snapshot_at = COALESCE(report_snapshot_at, NOW()) WHERE id = ?");
+            foreach ($matchedOrders as $approvedOrder) {
+                $oid = (string)($approvedOrder['id'] ?? '');
+                if ($oid !== '' && array_key_exists($oid, $calculatedResults)) {
+                    $snapStmt->execute([json_encode($calculatedResults[$oid], JSON_UNESCAPED_UNICODE), $oid]);
+                }
+            }
+        } catch (\Throwable $ignore) {
+            // Pre-migration schemas proceed normally.
+        }
+    }
+
     $pdo->commit();
 } catch (\Throwable $e) {
     if ($pdo->inTransaction()) {

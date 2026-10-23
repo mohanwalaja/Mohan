@@ -365,7 +365,7 @@ function astro_order_items_email_html(array $order, array $items, array $attachm
  * @param array $body  Admin request body: optional preview-exact PDFs.
  * @return array{success:bool,message:string,emailStatus?:string,orderStatus?:string,items?:array,emailPartCount?:int,renderQuality?:string}
  */
-function astro_send_order_items_email($pdo, array $admin, array $order, array $items, string $mode = 'approve', array $body = []): array
+function astro_send_order_items_email($pdo, array $admin, array $order, array $items, string $mode = 'approve', array $body = [], ?string $customStageScope = null): array
 {
     $orderId = (string)($order['id'] ?? '');
     $orderNumber = (string)($order['order_number'] ?? '');
@@ -375,6 +375,24 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
 
     if (empty($order['user_email'])) {
         return ['success' => false, 'message' => 'The order has no customer email address.'];
+    }
+
+    $stagedScope = $customStageScope !== null && $customStageScope !== ''
+        ? $customStageScope
+        : ('order_' . $orderId);
+    $stagedDocs = astroLoadStagedFamilyDocs($stagedScope);
+    $stagedByOrderId = [];
+    $stagedByOrderNumber = [];
+    foreach (($stagedDocs['reports'] ?? []) as $stagedEntry) {
+        if (!is_array($stagedEntry)) continue;
+        $bin = $stagedEntry['content'] ?? null;
+        if (!is_string($bin) || !astroFamilyDocsIsPreviewQualityPdf($bin)) continue;
+        if (!empty($stagedEntry['orderId'])) {
+            $stagedByOrderId[(string)$stagedEntry['orderId']] = $bin;
+        }
+        if (!empty($stagedEntry['orderNumber'])) {
+            $stagedByOrderNumber[(string)$stagedEntry['orderNumber']] = $bin;
+        }
     }
 
     $clientPdfs = astro_order_items_index_client_pdfs($body);
@@ -390,22 +408,35 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
         $serviceCode = strtoupper((string)($item['service_code'] ?? 'BIRTH_JATHAGAM'));
 
         try {
-            $calculated = astro_get_or_calculate_result($pdo, $order, $item);
+            if ($mode === 'resend' && (!empty($item['report_snapshot']) || !empty($item['calculated_result']))) {
+                // Frozen snapshot contract: re-sending an already approved report
+                // never recalculates or overwrites stored astrological data.
+            } else {
+                $calculated = astro_get_or_calculate_result($pdo, $order, $item);
+                $item = $calculated['item'];
+            }
         } catch (Throwable $e) {
             return [
                 'success' => false,
                 'message' => 'Report calculation failed for "' . astro_order_item_label($item) . '": ' . $e->getMessage() . ' Nothing was emailed.'
             ];
         }
-        $item = $calculated['item'];
 
-        $clientPdf = $clientPdfs[(string)$itemId] ?? ($singleItemSend ? ($clientPdfs['@single'] ?? null) : null);
+        $stagedItemPdf = $stagedByOrderId[astroFamilyDocsSanitizeKey('item_' . $itemId)] ?? null;
+        $stagedSinglePdf = $singleItemSend
+            ? ($stagedByOrderId[astroFamilyDocsSanitizeKey($orderId)]
+                ?? ($stagedByOrderNumber[astroFamilyDocsSanitizeKey($orderNumber)] ?? null))
+            : null;
+
+        $clientPdf = $clientPdfs[(string)$itemId]
+            ?? $stagedItemPdf
+            ?? ($singleItemSend ? ($clientPdfs['@single'] ?? $stagedSinglePdf) : null);
         // Fail closed, exactly like approve_order.php: the browser-rendered
         // preview PDF is the ONLY deliverable. There is no server-side renderer
         // to fall back to any more (mPDF was retired in Oct 2026), so a missing
         // document means the admin must render it again - never that the
         // customer receives a visibly lower-quality substitute.
-        if ($clientPdf === null) {
+        if ($clientPdf === null || !astroFamilyDocsIsPreviewQualityPdf($clientPdf)) {
             return [
                 'success' => false,
                 'httpStatus' => 422,
@@ -425,7 +456,11 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
     if (!empty($body['invoicePdfBase64'])) {
         $invoicePdf = astroFamilyDocsDecodePdf((string)$body['invoicePdfBase64']);
     }
-    if ($invoicePdf === null) {
+    $stagedInvoiceBin = $stagedDocs['invoice']['content'] ?? null;
+    if ($invoicePdf === null && is_string($stagedInvoiceBin) && astroFamilyDocsIsPreviewQualityPdf($stagedInvoiceBin)) {
+        $invoicePdf = $stagedInvoiceBin;
+    }
+    if ($invoicePdf === null || !astroFamilyDocsIsPreviewQualityPdf($invoicePdf)) {
         // Same rule as the reports: the browser-rendered invoice is required.
         return [
             'success' => false,
@@ -495,8 +530,17 @@ function astro_send_order_items_email($pdo, array $admin, array $order, array $i
     $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
 
     if ($emailStatus === 'SENT') {
+        astroClearStagedFamilyDocs($stagedScope);
         $updItems = $pdo->prepare("UPDATE order_items SET report_status = 'SENT', sent_at = NOW(), updated_at = NOW() WHERE id IN ($placeholders)");
         $updItems->execute($itemIds);
+        if ($mode === 'approve') {
+            try {
+                $pdo->prepare("UPDATE order_items SET report_snapshot = calculated_result, report_snapshot_at = COALESCE(report_snapshot_at, NOW()) WHERE id IN ($placeholders)")
+                    ->execute($itemIds);
+            } catch (Throwable $ignore) {
+                // Pre-migration databases proceed normally.
+            }
+        }
     } else {
         $updItems = $pdo->prepare("UPDATE order_items SET report_status = 'FAILED', updated_at = NOW() WHERE id IN ($placeholders)");
         $updItems->execute($itemIds);

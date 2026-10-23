@@ -191,3 +191,105 @@ export async function prepareOrderItemsSendPayload(
 
   return { reportPdfs, invoicePdfBase64, invoiceFileName };
 }
+
+export interface PreparedOrderItemsPayload {
+  reportPdfs: Array<{ itemId: number; fileName: string; pdfBase64: string }>;
+  invoicePdfBase64: string;
+  invoiceFileName: string;
+}
+
+/**
+ * Stage multi-person high-resolution PDFs one document at a time whenever the
+ * combined base64 payload exceeds typical reverse-proxy body limits (~5 MiB),
+ * ensuring 5–10 person high-DPI orders deliver cleanly on every cPanel host.
+ */
+export async function deliverOrderItemsPdfPayload(
+  header: Order,
+  rendered: PreparedOrderItemsPayload,
+  audience: 'admin' | 'customer' = 'admin'
+): Promise<{
+  staged?: boolean;
+  reportPdfs: Array<{ itemId: number; fileName: string; pdfBase64: string }>;
+  invoicePdfBase64: string;
+}> {
+  const totalBase64Bytes =
+    rendered.invoicePdfBase64.length +
+    rendered.reportPdfs.reduce((sum, entry) => sum + entry.pdfBase64.length, 0);
+
+  if (totalBase64Bytes <= 7_000_000) {
+    return {
+      staged: false,
+      reportPdfs: rendered.reportPdfs,
+      invoicePdfBase64: rendered.invoicePdfBase64
+    };
+  }
+
+  const stageFn = audience === 'customer' ? api.stageCustomerOrderDoc : api.stageOrderDoc;
+  const clearFn = audience === 'customer' ? api.clearCustomerOrderStagedDocs : api.clearOrderStagedDocs;
+
+  await clearFn(header.id);
+  for (const entry of rendered.reportPdfs) {
+    const saved = await stageFn(header.id, {
+      kind: 'report',
+      orderId: `item_${entry.itemId}`,
+      orderNumber: header.orderNumber,
+      fileName: entry.fileName,
+      pdfBase64: entry.pdfBase64
+    });
+    if (!saved || !saved.success) {
+      throw new Error(saved?.message || `Could not stage high-quality PDF for ${entry.fileName}.`);
+    }
+  }
+  const savedInvoice = await stageFn(header.id, {
+    kind: 'invoice',
+    orderId: header.id,
+    orderNumber: header.orderNumber,
+    fileName: rendered.invoiceFileName,
+    pdfBase64: rendered.invoicePdfBase64
+  });
+  if (!savedInvoice || !savedInvoice.success) {
+    throw new Error(savedInvoice?.message || 'Could not stage high-quality tax invoice PDF.');
+  }
+  return { staged: true, reportPdfs: [], invoicePdfBase64: '' };
+}
+
+/**
+ * Same staging protection when an admin emails a single person's report from a
+ * multi-person order whose high-DPI report + multi-line invoice exceeds 7 MB base64.
+ */
+export async function deliverSingleOrderItemPdfPayload(
+  header: Order,
+  itemId: number,
+  pdfs: { reportPdfBase64: string; invoicePdfBase64: string; reportFileName: string; invoiceFileName: string }
+): Promise<{ reportPdfBase64?: string; invoicePdfBase64?: string; itemId: number }> {
+  if (pdfs.reportPdfBase64.length + pdfs.invoicePdfBase64.length <= 7_000_000) {
+    return {
+      reportPdfBase64: pdfs.reportPdfBase64,
+      invoicePdfBase64: pdfs.invoicePdfBase64,
+      itemId
+    };
+  }
+  await api.clearOrderStagedDocs(header.id);
+  const savedReport = await api.stageOrderDoc(header.id, {
+    kind: 'report',
+    orderId: `item_${itemId}`,
+    orderNumber: header.orderNumber,
+    fileName: pdfs.reportFileName,
+    pdfBase64: pdfs.reportPdfBase64
+  });
+  if (!savedReport || !savedReport.success) {
+    throw new Error(savedReport?.message || 'Could not stage live-preview report PDF.');
+  }
+  const savedInvoice = await api.stageOrderDoc(header.id, {
+    kind: 'invoice',
+    orderId: header.id,
+    orderNumber: header.orderNumber,
+    fileName: pdfs.invoiceFileName,
+    pdfBase64: pdfs.invoicePdfBase64
+  });
+  if (!savedInvoice || !savedInvoice.success) {
+    throw new Error(savedInvoice?.message || 'Could not stage live-preview invoice PDF.');
+  }
+  return { itemId };
+}
+

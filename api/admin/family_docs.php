@@ -347,37 +347,64 @@ if (!function_exists('astroFamilyDocsResolveTarget')) {
      * @return array{scope:string,orders:array<int,array{id:string,order_number:string}>}|null
      *         null when the order / family group does not exist.
      */
-    function astroFamilyDocsResolveTarget(PDO $pdo, $id, bool $isGroup): ?array
+    function astroFamilyDocsResolveTarget(PDO $pdo, $id, bool $isGroup, string $ownerUserId = ''): ?array
     {
         $id = trim((string) $id);
+        $ownerUserId = trim($ownerUserId);
+        $scopePrefix = $ownerUserId !== '' ? ('cust_' . astroFamilyDocsSanitizeKey($ownerUserId) . '__') : '';
         if ($id === '') {
             return null;
         }
 
         if ($isGroup) {
-            $stmt = $pdo->prepare('SELECT id, order_number FROM orders WHERE group_id = ? ORDER BY group_order_index ASC, created_at ASC');
-            $stmt->execute([$id]);
+            if ($ownerUserId !== '') {
+                $stmt = $pdo->prepare('SELECT id, order_number FROM orders WHERE group_id = ? AND user_id = ? ORDER BY group_order_index ASC, created_at ASC');
+                $stmt->execute([$id, $ownerUserId]);
+            } else {
+                $stmt = $pdo->prepare('SELECT id, order_number FROM orders WHERE group_id = ? ORDER BY group_order_index ASC, created_at ASC');
+                $stmt->execute([$id]);
+            }
             $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
             if (empty($members)) {
                 return null;
             }
-            return ['scope' => $id, 'orders' => array_map(static function ($row) {
+            return ['scope' => $scopePrefix . $id, 'orders' => array_map(static function ($row) {
                 return ['id' => (string) $row['id'], 'order_number' => (string) $row['order_number']];
             }, $members)];
         }
 
-        $stmt = $pdo->prepare('SELECT id, order_number, group_id FROM orders WHERE id = ? LIMIT 1');
-        $stmt->execute([$id]);
+        if ($ownerUserId !== '') {
+            $stmt = $pdo->prepare('SELECT id, order_number, group_id FROM orders WHERE id = ? AND user_id = ? LIMIT 1');
+            $stmt->execute([$id, $ownerUserId]);
+        } else {
+            $stmt = $pdo->prepare('SELECT id, order_number, group_id FROM orders WHERE id = ? LIMIT 1');
+            $stmt->execute([$id]);
+        }
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
             return null;
         }
         if (!empty($row['group_id'])) {
-            return astroFamilyDocsResolveTarget($pdo, (string) $row['group_id'], true);
+            return astroFamilyDocsResolveTarget($pdo, (string) $row['group_id'], true, $ownerUserId);
         }
+
+        $allowedOrders = [['id' => (string) $row['id'], 'order_number' => (string) $row['order_number']]];
+        try {
+            $itemStmt = $pdo->prepare('SELECT id FROM order_items WHERE order_id = ? ORDER BY id ASC');
+            $itemStmt->execute([(string) $row['id']]);
+            foreach ($itemStmt->fetchAll(PDO::FETCH_ASSOC) as $itemRow) {
+                $allowedOrders[] = [
+                    'id' => 'item_' . (int) $itemRow['id'],
+                    'order_number' => (string) $row['order_number'],
+                ];
+            }
+        } catch (\Throwable $ignore) {
+            // Single-person installations without order_items proceed normally.
+        }
+
         return [
-            'scope' => 'order_' . $row['id'],
-            'orders' => [['id' => (string) $row['id'], 'order_number' => (string) $row['order_number']]]
+            'scope' => $scopePrefix . 'order_' . $row['id'],
+            'orders' => $allowedOrders,
         ];
     }
 }

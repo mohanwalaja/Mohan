@@ -214,38 +214,10 @@ echo json_encode([
     ).toString('utf8')
   );
 
-  const phpMpdfOut = JSON.parse(
-    execFileSync(
-      'php',
-      [
-        '-r',
-        `
-require_once "api/astrology/pdf_mpdf_reports.php";
-$d = json_decode(file_get_contents(${JSON.stringify(sharedJsonPath)}), true);
-$ordHi = ["order_number"=>"ORD-PHP-HI","language"=>"hi"];
-$ordTa = ["order_number"=>"ORD-PHP-TA","language"=>"ta"];
-echo json_encode([
-  "taJathagamMpdf" => AstroReportViews::generateBirthJathagamHtml($ordTa, $d["jSun"]),
-  "taJathagamNoSunMpdf" => AstroReportViews::generateBirthJathagamHtml($ordTa, $d["jNoSun"]),
-  "docs" => [
-    ["phpMpdf:jathagam#1", AstroReportViews::generateBirthJathagamHtml($ordHi, $d["j1"])],
-    ["phpMpdf:jathagam#2", AstroReportViews::generateBirthJathagamHtml($ordHi, $d["j2"])],
-    ["phpMpdf:wedding#1", AstroReportViews::generateWeddingMatchingHtml($ordHi, $d["w1"])],
-    ["phpMpdf:baby#1", AstroReportViews::generateBabyNamingHtml($ordHi, $d["b1"])],
-    ["phpMpdf:muhurtham#1", AstroReportViews::generateMuhurthamHtml($ordHi, $d["m1"])],
-  ]
-], JSON_UNESCAPED_UNICODE);
-`
-      ],
-      { env: phpEnv, maxBuffer: 64 * 1024 * 1024 }
-    ).toString('utf8')
-  );
-
-  // Verify Tamil Surya full sentence in BOTH PHP renderers when Surya is afflicted,
+  // Verify Tamil Surya full sentence in report_views.php when Surya is afflicted,
   // AND verify Surya is NOT shown in the care table when Surya has NO dosha!
   for (const [phpLabel, taHtml, taNoSunHtml] of [
     ['report_views.php', phpViewOut.taJathagamView as string, phpViewOut.taJathagamNoSunView as string],
-    ['pdf_mpdf_reports.php', phpMpdfOut.taJathagamMpdf as string, phpMpdfOut.taJathagamNoSunMpdf as string]
   ]) {
     const plainTa = stripHtml(taHtml);
     assert.ok(
@@ -261,11 +233,11 @@ echo json_encode([
       `${phpLabel}: omits Surya from remedies table when user has NO Surya dosha`
     );
     const supportCount = (noSunSupportTable.match(/class="summary-planet"/g) || []).length;
-    assert.equal(supportCount, 3, `${phpLabel}: renders strictly first 3 supportive planets`);
+    assert.equal(supportCount, 3, `${phpLabel}: renders strictly first 3 supportive and first 3 afflicted planets`);
     const rowCount = (taNoSunHtml.match(/class="summary-care-planet"/g) || []).length;
     assert.equal(rowCount, 3, `${phpLabel}: renders strictly first 3 afflicted planets`);
   }
-  console.log('[PASS] Both PHP renderers (report_views.php & pdf_mpdf_reports.php) strictly show only first 3 supportive and first 3 afflicted planets');
+  console.log('[PASS] PHP HTML renderer (report_views.php) strictly shows only first 3 supportive and first 3 afflicted planets');
 
   const docs: Array<[string, string]> = [
     ...charts.map((c, i) => [`ts:jathagam#${i}`, buildJathagamHtml(c, 'hi')] as [string, string]),
@@ -273,9 +245,8 @@ echo json_encode([
     ['ts:baby#1', buildBabyNamingHtml(phpViewOut.b1, 'hi', 'ORD-BABY-1')],
     ['ts:muhurtham#1', buildMuhurthamHtml(mResult as any, 'hi')],
     ...phpViewOut.docs,
-    ...phpMpdfOut.docs
   ];
-  assert.equal(docs.length, 18, 'audited all 18 full Hindi documents');
+  assert.equal(docs.length, 13, 'audited all 13 full Hindi documents');
 
   const finiteEnding =
     /(?:है|हैं|था|थे|थी|थीं|होगा|होगी|होंगे|जाएगा|जाएगी|जाएँगे|रहेगा|रहेगी|रहेंगे|मिलेगा|मिलेगी|मिलेंगे|सकेगा|सकेगी|सकें|चाहिए|करें|रखें|लें|दें|बचें|मिलें|चुनें|संभालें|जाँचें|निभाएँ|अपनाएँ|जलाएँ|जपें|पढ़ें|देखें|पूछें|सकती|सकता|सकते|गया|गई|गए|हुआ|हुई|हुए|किया|दी|दिया|मिला|मिली|मिले|रहा|रही|रहे|बना|बनी|बने|पाया|पाई|हो)\s*(?:\([^)]*\))?\s*।\s*$/u;

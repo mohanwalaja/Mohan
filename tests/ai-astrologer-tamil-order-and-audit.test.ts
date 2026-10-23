@@ -84,12 +84,12 @@ check('AiAstrologerPanel re-localizes menu, report labels, greetings, customer b
   assert.match(launcher, /\$\{isOpen \? 'hidden sm:flex' : 'flex'\}/);
 });
 
-check('server PDF and HTML view builders contain zero Devanagari inside Tamil invocations', () => {
-  for (const rel of ['api/astrology/pdf_mpdf_reports.php', 'api/astrology/report_views.php']) {
-    const content = fs.readFileSync(path.join(root, rel), 'utf8');
-    assert.match(content, /\|\| ஓம் விநாயகாய நமஃ \|\|/, `${rel} must use pure Tamil Om invocation`);
-    assert.doesNotMatch(content, /\|\| ॐ விநாயகாய/, `${rel} must not embed Devanagari ॐ in Tamil text`);
-  }
+check('server HTML view builder contains zero Devanagari inside Tamil invocations and low-quality server mPDF is gone', () => {
+  assert.ok(!fs.existsSync(path.join(root, 'api/astrology/pdf_mpdf_reports.php')),
+    'api/astrology/pdf_mpdf_reports.php must remain deleted');
+  const content = fs.readFileSync(path.join(root, 'api/astrology/report_views.php'), 'utf8');
+  assert.match(content, /\|\| ஓம் விநாயகாய நமஃ \|\|/, 'api/astrology/report_views.php must use pure Tamil Om invocation');
+  assert.doesNotMatch(content, /\|\| ॐ விநாயகாய/, 'api/astrology/report_views.php must not embed Devanagari ॐ in Tamil text');
 });
 
 check('every php://input reader across api/ enforces an explicit byte ceiling', () => {

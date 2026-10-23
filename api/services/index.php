@@ -28,7 +28,12 @@ require_once __DIR__ . '/../request_body.php';
 $pdo = getDbConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
+if (preg_match('#/services/(?:orders|family-orders)/[^/]+/(?:stage-doc|request-resend-email)/?$#', $path)
+    || in_array($_GET['action'] ?? '', ['stage-customer-doc', 'request-resend-email'], true)) {
+$jsonBody = astro_document_json_body('document upload');
+} else {
 $jsonBody = astro_order_json_body('order');
+}
 $action = $_GET['action'] ?? $jsonBody['action'] ?? $_POST['action'] ?? '';
 
 /**
@@ -2496,6 +2501,418 @@ if ((preg_match('#/services/orders/([^/]+)/report-snapshot/?$#', $path, $reportS
 //     the customer saves is the file they were sent. Do not re-add a route
 //     that streams a server-rendered report: it would be a lower-quality
 //     second renderer and a way to obtain a freshly calculated report.
+
+// 6d. Customer High-Quality Document Staging (POST / DELETE)
+// Self-service email re-delivery uses the EXACT SAME high-resolution browser PDF
+// quality gate (astroFamilyDocsIsPreviewQualityPdf >= 1654 x 2339 px A4 raster)
+// as admin approvals — zero server-side PDF rendering ever runs.
+$isCustomerStageDocRoute = in_array($method, ['POST', 'DELETE'], true)
+    && (
+        preg_match('#/services/(orders|family-orders)/([^/]+)/stage-doc/?$#', $path, $custStageMatch)
+        || ($action === 'stage-customer-doc' && !empty($_GET['orderId'] ?? $_GET['groupId'] ?? ''))
+    );
+
+if ($isCustomerStageDocRoute) {
+    require_once __DIR__ . '/../admin/family_docs.php';
+    $user = requireAuth($pdo);
+    checkRateLimit($pdo, 'cust_stage_doc_' . $user['id'], 80, 10);
+
+    $targetId = isset($custStageMatch)
+        ? urldecode($custStageMatch[2])
+        : (string)($_GET['groupId'] ?? ($_GET['orderId'] ?? ''));
+    $isGroup = isset($custStageMatch)
+        ? ($custStageMatch[1] === 'family-orders')
+        : (!empty($_GET['groupId']) || !empty($_GET['isGroup']));
+
+    $target = astroFamilyDocsResolveTarget($pdo, $targetId, $isGroup, (string)$user['id']);
+    if ($target === null) {
+        jsonResponse(['success' => false, 'message' => 'Order not found.'], 404);
+    }
+
+    if ($method === 'DELETE') {
+        astroClearStagedFamilyDocs($target['scope']);
+        jsonResponse(['success' => true, 'scope' => $target['scope']]);
+    }
+
+    $body = is_array($jsonBody) ? $jsonBody : [];
+    $saved = astroStageFamilyDoc(
+        $pdo,
+        ['id' => (string)$user['id'], 'name' => (string)($user['name'] ?? 'Customer')],
+        $target['scope'],
+        $body,
+        $target['orders']
+    );
+    if (empty($saved['success'])) {
+        jsonResponse($saved, 422);
+    }
+    jsonResponse($saved);
+}
+
+// 6e. Customer Self-Service Email Update & High-Quality Report Re-Delivery
+// POST /api/services/orders/:id/request-resend-email (or ?action=request-resend-email&orderId=:id)
+if ($method === 'POST' && (
+    preg_match('#/services/orders/([^/]+)/request-resend-email/?$#', $path, $custResendMatch)
+    || ($action === 'request-resend-email' && !empty($_GET['orderId'] ?? ($jsonBody['orderId'] ?? '')))
+)) {
+    require_once __DIR__ . '/../admin/family_docs.php';
+    require_once __DIR__ . '/../admin/order_items.php';
+    require_once __DIR__ . '/../reviews.php';
+
+    $user = requireAuth($pdo);
+    checkRateLimit($pdo, 'cust_resend_email_' . $user['id'], 10, 60);
+
+    $orderId = isset($custResendMatch)
+        ? trim(urldecode($custResendMatch[1]))
+        : trim((string)($_GET['orderId'] ?? ($jsonBody['orderId'] ?? '')));
+
+    $stmt = $pdo->prepare('SELECT * FROM orders WHERE id = ? AND user_id = ? LIMIT 1');
+    $stmt->execute([$orderId, $user['id']]);
+    $order = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$order) {
+        jsonResponse(['success' => false, 'message' => 'Order not found.'], 404);
+    }
+
+    $body = is_array($jsonBody) ? $jsonBody : [];
+    $requestedEmail = strtolower(trim((string)($body['targetEmail'] ?? ($body['email'] ?? ($order['user_email'] ?? '')))));
+    if ($requestedEmail === '' || strlen($requestedEmail) > 254 || !filter_var($requestedEmail, FILTER_VALIDATE_EMAIL)) {
+        jsonResponse(['success' => false, 'message' => 'Please enter a valid email address.'], 400);
+    }
+
+    // Update email address across this order (and all siblings in a family bundle).
+    if (!empty($order['group_id'])) {
+        $pdo->prepare('UPDATE orders SET user_email = ?, updated_at = NOW() WHERE group_id = ? AND user_id = ?')
+            ->execute([$requestedEmail, $order['group_id'], $user['id']]);
+    } else {
+        $pdo->prepare('UPDATE orders SET user_email = ?, updated_at = NOW() WHERE id = ? AND user_id = ?')
+            ->execute([$requestedEmail, $order['id'], $user['id']]);
+    }
+    $order['user_email'] = $requestedEmail;
+
+    // Pending / processing order: update target email so when approved, crisp high-res PDFs arrive there.
+    if (strtoupper((string)($order['status'] ?? '')) !== 'COMPLETED') {
+        logAudit(
+            $pdo,
+            (string)$user['id'],
+            (string)($user['name'] ?? ($order['user_name'] ?? 'Customer')),
+            'user',
+            'CUSTOMER_EMAIL_UPDATED',
+            "Updated delivery email for order {$order['order_number']} to {$requestedEmail}"
+        );
+        jsonResponse([
+            'success' => true,
+            'emailStatus' => 'UPDATED',
+            'email' => $requestedEmail,
+            'message' => "Delivery email updated to {$requestedEmail}. Your high-quality PDF reports will be sent there as soon as your order is approved."
+        ]);
+    }
+
+    $scopePrefix = 'cust_' . astroFamilyDocsSanitizeKey((string)$user['id']) . '__';
+
+    // Case A: Multi-person order backed by order_items
+    $orderItems = astro_order_items_all($pdo, (string)$order['id']);
+    if (!empty($orderItems)) {
+        $custStageScope = $scopePrefix . 'order_' . $order['id'];
+        $delivery = astro_send_order_items_email(
+            $pdo,
+            ['id' => (string)$user['id'], 'name' => (string)($user['name'] ?? 'Customer')],
+            $order,
+            $orderItems,
+            'resend',
+            $body,
+            $custStageScope
+        );
+        if (empty($delivery['success'])) {
+            jsonResponse(
+                ['success' => false, 'message' => $delivery['message'] ?? 'High-quality PDF verification failed. Nothing was emailed.'],
+                (int)($delivery['httpStatus'] ?? 422)
+            );
+        }
+        logAudit(
+            $pdo,
+            (string)$user['id'],
+            (string)($user['name'] ?? ($order['user_name'] ?? 'Customer')),
+            'user',
+            'CUSTOMER_EMAIL_RESENT',
+            "Customer re-sent high-quality PDF report(s) & invoice for multi-person order {$order['order_number']} to {$requestedEmail}"
+        );
+        jsonResponse([
+            'success' => true,
+            'emailStatus' => 'SENT',
+            'renderQuality' => 'PREVIEW_EXACT',
+            'email' => $requestedEmail,
+            'emailPartCount' => $delivery['emailPartCount'] ?? 1,
+            'message' => "Your high-quality PDF report(s) and official tax invoice have been emailed to {$requestedEmail}."
+        ]);
+    }
+
+    // Case B: Family bundle backed by orders.group_id
+    if (!empty($order['group_id'])) {
+        $groupId = (string)$order['group_id'];
+        $gStmt = $pdo->prepare('SELECT * FROM orders WHERE group_id = ? AND user_id = ? ORDER BY group_order_index ASC, created_at ASC');
+        $gStmt->execute([$groupId, $user['id']]);
+        $groupOrders = $gStmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($groupOrders)) {
+            jsonResponse(['success' => false, 'message' => 'Family bundle not found.'], 404);
+        }
+
+        $custStageScope = $scopePrefix . $groupId;
+        $stagedDocs = astroLoadStagedFamilyDocs($custStageScope);
+        $clientReports = [];
+        foreach (($stagedDocs['reports'] ?? []) as $stagedEntry) {
+            if (!is_array($stagedEntry)) continue;
+            $rBin = $stagedEntry['content'] ?? null;
+            if (!is_string($rBin) || !astroFamilyDocsIsPreviewQualityPdf($rBin)) continue;
+            if (!empty($stagedEntry['orderId'])) {
+                $clientReports[(string)$stagedEntry['orderId']] = $rBin;
+            }
+            if (!empty($stagedEntry['orderNumber'])) {
+                $clientReports['num_' . (string)$stagedEntry['orderNumber']] = $rBin;
+            }
+        }
+        if (!empty($body['reportPdfs']) && is_array($body['reportPdfs'])) {
+            foreach ($body['reportPdfs'] as $entry) {
+                if (!is_array($entry)) continue;
+                $bin = astroFamilyDocsDecodePdf($entry['pdfBase64'] ?? '');
+                if ($bin === null) continue;
+                $eId = astroFamilyDocsSanitizeKey($entry['orderId'] ?? '');
+                $eNum = astroFamilyDocsSanitizeKey($entry['orderNumber'] ?? '');
+                if ($eId !== '') $clientReports[$eId] = $bin;
+                if ($eNum !== '') $clientReports['num_' . $eNum] = $bin;
+            }
+        }
+
+        $invoicePdf = !empty($body['invoicePdfBase64']) ? astroFamilyDocsDecodePdf($body['invoicePdfBase64']) : null;
+        $stagedFamilyInvoice = $stagedDocs['invoice']['content'] ?? null;
+        if ($invoicePdf === null && is_string($stagedFamilyInvoice) && astroFamilyDocsIsPreviewQualityPdf($stagedFamilyInvoice)) {
+            $invoicePdf = $stagedFamilyInvoice;
+        }
+        if ($invoicePdf === null || !astroFamilyDocsIsPreviewQualityPdf($invoicePdf)) {
+            jsonResponse([
+                'success' => false,
+                'message' => 'High-resolution tax invoice PDF did not reach the server. Please retry so crisp print-quality documents are emailed.'
+            ], 422);
+        }
+
+        $attachments = [];
+        foreach ($groupOrders as $subOrder) {
+            $subId = astroFamilyDocsSanitizeKey((string)$subOrder['id']);
+            $subNum = astroFamilyDocsSanitizeKey((string)$subOrder['order_number']);
+            $subPdf = $clientReports[$subId] ?? ($clientReports['num_' . $subNum] ?? null);
+            if ($subPdf === null || !astroFamilyDocsIsPreviewQualityPdf($subPdf)) {
+                jsonResponse([
+                    'success' => false,
+                    'message' => "High-resolution PDF report for #{$subNum} did not reach the server. Nothing was emailed; please retry."
+                ], 422);
+            }
+            $attachments[] = [
+                'name' => 'ASTRO_SIVAM_Report_' . preg_replace('/[^A-Za-z0-9_-]+/', '_', $subNum) . '.pdf',
+                'content' => $subPdf
+            ];
+        }
+        $invoiceNumber = 'ASTRO_SIVAM_Family_Invoice_' . preg_replace('/[^A-Za-z0-9_-]+/', '_', $groupOrders[0]['order_number']) . '.pdf';
+        $attachments[] = ['name' => $invoiceNumber, 'content' => $invoicePdf];
+
+        $sStmt = $pdo->query('SELECT * FROM system_settings ORDER BY id ASC LIMIT 1');
+        $sRow = $sStmt ? $sStmt->fetch() : null;
+        $emailSettings = ($sRow && !empty($sRow['email_settings'])) ? json_decode($sRow['email_settings'], true) : [];
+
+        $plan = astro_plan_attachment_parts($attachments);
+        $parts = $plan['parts'];
+        $reviewInviteHtml = astro_review_invite_email_html($groupOrders[0], count($groupOrders) > 1);
+        $applicantName = htmlspecialchars((string)($groupOrders[0]['user_name'] ?? 'User'));
+        $leadOrderNum = htmlspecialchars((string)$groupOrders[0]['order_number']);
+
+        foreach ($parts as $partIdx => $partAttachments) {
+            $partSubject = "ASTRO SIVAM: Your Official Family PDF Reports & Tax Invoice (#{$leadOrderNum}) — Resent"
+                . (count($parts) > 1 ? ' (Part ' . ($partIdx + 1) . ' of ' . count($parts) . ')' : '');
+            $docRows = '';
+            foreach ($partAttachments as $att) {
+                $docRows .= '<div>&#10003;&nbsp; <strong>' . htmlspecialchars((string)$att['name']) . '</strong></div>';
+            }
+            $partInvite = $partIdx === 0 ? $reviewInviteHtml : '';
+            $htmlBody = "
+            <div style='background:#f4ede1; padding:24px 12px; font-family: Georgia, \"Times New Roman\", serif;'>
+              <div style='max-width:600px; margin:0 auto; background:#fffdf9; border:1px solid #e8d9b8; border-radius:10px; overflow:hidden;'>
+                <div style='background:#7a1f1f; padding:22px 24px; text-align:center;'>
+                  " . astro_email_logo_tag(56) . "
+                  <div style='color:#ffffff; font-size:22px; font-weight:700;'>ASTRO SIVAM</div>
+                  <div style='color:#e9c98a; font-size:12px; margin-top:2px;'>AUTHENTIC VEDIC ASTROLOGY & MATCHMAKING SERVICES</div>
+                </div>
+                <div style='height:4px; background: repeating-linear-gradient(90deg, #c9962c 0 10px, #7a1f1f 10px 20px);'></div>
+                <div style='padding:26px 26px 12px;'>
+                  <p style='color:#1e1508; font-size:15px; margin:0 0 12px;'>Namaste <strong>{$applicantName}</strong>,</p>
+                  <p style='color:#4b3d28; font-size:13.5px; line-height:1.7; margin:0 0 18px;'>
+                    As requested from your ASTRO SIVAM dashboard, your high-resolution family Vedic astrology PDF reports and consolidated tax invoice are attached below.
+                  </p>
+                  <div style='border:1px solid #e8d9b8; border-radius:6px; padding:14px 16px; margin-bottom:18px; background:#ffffff;'>
+                    <div style='color:#7a1f1f; font-weight:700; font-size:12.5px; text-transform:uppercase; margin-bottom:8px;'>Attached Print-Quality Documents</div>
+                    <div style='font-size:13px; color:#3d3222; line-height:1.8;'>{$docRows}</div>
+                  </div>
+                  {$partInvite}
+                </div>
+                <div style='background:#fbf6ea; border-top:1px solid #e8d9b8; padding:16px 24px; text-align:center;'>
+                  <div style='color:#7a1f1f; font-weight:700; font-size:13px;'>Blessings & Warm Regards, ASTRO SIVAM Team</div>
+                  <div style='color:#a67c1f; font-size:11.5px; margin-top:4px;'>astrosivam.com &bull; admin@astrosivam.com</div>
+                </div>
+              </div>
+            </div>";
+
+            $mailResult = AstroMailer::sendEmailWithAttachments(
+                $requestedEmail,
+                (string)($groupOrders[0]['user_name'] ?? 'User'),
+                $partSubject,
+                $htmlBody,
+                $partAttachments,
+                $emailSettings,
+                astro_inline_logo_attachment()
+            );
+            if (empty($mailResult['success'])) {
+                jsonResponse([
+                    'success' => false,
+                    'emailStatus' => 'FAILED',
+                    'message' => 'Email delivery failed: ' . ($mailResult['message'] ?? 'SMTP error')
+                ], 502);
+            }
+        }
+
+        astroClearStagedFamilyDocs($custStageScope);
+        $pdo->prepare("UPDATE orders SET email_status = 'SENT', email_sent_at = NOW(), email_last_status_message = ?, updated_at = NOW() WHERE group_id = ? AND user_id = ?")
+            ->execute(["Sent to {$requestedEmail}", $groupId, $user['id']]);
+        logAudit(
+            $pdo,
+            (string)$user['id'],
+            (string)($user['name'] ?? ($order['user_name'] ?? 'Customer')),
+            'user',
+            'CUSTOMER_EMAIL_RESENT',
+            "Customer re-sent family bundle {$groupId} high-quality PDFs to {$requestedEmail}"
+        );
+        jsonResponse([
+            'success' => true,
+            'emailStatus' => 'SENT',
+            'renderQuality' => 'PREVIEW_EXACT',
+            'email' => $requestedEmail,
+            'emailPartCount' => count($parts),
+            'message' => "Your high-quality family PDF reports and consolidated invoice have been emailed to {$requestedEmail}."
+        ]);
+    }
+
+    // Case C: Single order
+    $custStageScope = $scopePrefix . 'order_' . $order['id'];
+    $stagedDocs = astroLoadStagedFamilyDocs($custStageScope);
+    $clientDocs = astroSingleOrderClientDocs($body, $stagedDocs, (string)$order['id'], (string)$order['order_number']);
+    $reportPdf = $clientDocs['report'];
+    $invoicePdf = $clientDocs['invoice'];
+
+    if ($reportPdf === null || !astroFamilyDocsIsPreviewQualityPdf($reportPdf)
+        || $invoicePdf === null || !astroFamilyDocsIsPreviewQualityPdf($invoicePdf)) {
+        $missing = [];
+        if ($reportPdf === null || !astroFamilyDocsIsPreviewQualityPdf($reportPdf)) $missing[] = 'report';
+        if ($invoicePdf === null || !astroFamilyDocsIsPreviewQualityPdf($invoicePdf)) $missing[] = 'tax invoice';
+        jsonResponse([
+            'success' => false,
+            'message' => 'High-resolution ' . implode(' and ', $missing) . ' PDF did not reach the server. No low-quality fallback email was sent; please retry.'
+        ], 422);
+    }
+
+    $sStmt = $pdo->query('SELECT * FROM system_settings ORDER BY id ASC LIMIT 1');
+    $sRow = $sStmt ? $sStmt->fetch() : null;
+    $emailSettings = ($sRow && !empty($sRow['email_settings'])) ? json_decode($sRow['email_settings'], true) : [];
+
+    $serviceDisplayNames = [
+        'BIRTH_JATHAGAM' => 'Vedic Birth Jathagam (Horoscope)',
+        'MARRIAGE_COMPATIBILITY' => 'Vedic Marriage Compatibility (10 Poruthams)',
+        'BABY_NAMING' => 'Vedic Namakaran (Baby Naming)',
+        'MUHURTHAM' => 'Subha Muhurtham (6-Month Auspicious Dates)'
+    ];
+    $serviceDisplayName = $serviceDisplayNames[$order['service_type']] ?? $order['service_type'];
+    $orderDateDisplay = date('d M Y', strtotime($order['created_at'] ?? 'now'));
+    $orderAmountDisplay = htmlspecialchars($order['currency'] ?? DEFAULT_CURRENCY) . ' $' . number_format((float)($order['amount'] ?? 0), 2);
+    $reviewInviteHtml = astro_review_invite_email_html($order);
+
+    $html = "
+    <div style='background:#f4ede1; padding:24px 12px; font-family: Georgia, \"Times New Roman\", serif;'>
+    <div style='max-width: 600px; margin: 0 auto; background: #fffdf9; border: 1px solid #e8d9b8; border-radius: 10px; overflow: hidden;'>
+      <div style='background: #7a1f1f; padding: 22px 24px; text-align: center;'>
+        " . astro_email_logo_tag(56) . "
+        <div style='color:#ffffff; font-size:22px; font-weight:700; letter-spacing:0.5px;'>ASTRO SIVAM</div>
+        <div style='color:#e9c98a; font-size:12px; margin-top:2px; letter-spacing:0.5px;'>AUTHENTIC VEDIC ASTROLOGY & MATCHMAKING SERVICES</div>
+      </div>
+      <div style='height:4px; background: repeating-linear-gradient(90deg, #c9962c 0 10px, #7a1f1f 10px 20px);'></div>
+      <div style='padding: 26px 26px 8px;'>
+        <p style='color:#1e1508; font-size:15px; margin:0 0 12px;'>Namaste <strong>" . htmlspecialchars((string)$order['user_name']) . "</strong>,</p>
+        <p style='color:#4b3d28; font-size:13.5px; line-height:1.7; margin:0 0 18px;'>
+          As requested from your ASTRO SIVAM dashboard, your official high-resolution PDF report and tax invoice are attached to this email.
+        </p>
+        <div style='border:1px solid #e8d9b8; border-left:4px solid #7a1f1f; border-radius:6px; padding:14px 16px; margin-bottom:18px; background:#fbf6ea;'>
+          <div style='color:#7a1f1f; font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;'>Order Summary</div>
+          <table style='width:100%; border-collapse:collapse; font-size:13px; color:#3d3222;'>
+            <tr><td style='padding:3px 0; color:#8a7a55;'>Order Number</td><td style='padding:3px 0; text-align:right; font-weight:700;'>" . htmlspecialchars((string)$order['order_number']) . "</td></tr>
+            <tr><td style='padding:3px 0; color:#8a7a55;'>Service</td><td style='padding:3px 0; text-align:right; font-weight:700;'>" . htmlspecialchars((string)$serviceDisplayName) . "</td></tr>
+            <tr><td style='padding:3px 0; color:#8a7a55;'>Order Date</td><td style='padding:3px 0; text-align:right; font-weight:700;'>{$orderDateDisplay}</td></tr>
+            <tr><td style='padding:3px 0; color:#8a7a55;'>Amount Paid</td><td style='padding:3px 0; text-align:right; font-weight:700; color:#166534;'>{$orderAmountDisplay}</td></tr>
+          </table>
+        </div>
+        <div style='border:1px solid #e8d9b8; border-radius:6px; padding:14px 16px; margin-bottom:18px; background:#ffffff;'>
+          <div style='color:#7a1f1f; font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;'>Attached Documents</div>
+          <div style='font-size:13px; color:#3d3222; line-height:1.8;'>
+            <div>&#10003;&nbsp; <strong>ASTRO_SIVAM_Report_" . htmlspecialchars((string)$order['order_number']) . ".pdf</strong> &mdash; Official High-Resolution Vedic Report</div>
+            <div>&#10003;&nbsp; <strong>ASTRO_SIVAM_Invoice_" . htmlspecialchars((string)$order['order_number']) . ".pdf</strong> &mdash; Official Tax Invoice / Receipt</div>
+          </div>
+        </div>
+        {$reviewInviteHtml}
+      </div>
+      <div style='background:#fbf6ea; border-top:1px solid #e8d9b8; padding:16px 24px; text-align:center;'>
+        <div style='color:#7a1f1f; font-weight:700; font-size:13px;'>Blessings & Warm Regards, ASTRO SIVAM Team</div>
+        <div style='color:#a67c1f; font-size:11.5px; margin-top:4px;'>astrosivam.com &bull; admin@astrosivam.com</div>
+      </div>
+    </div>
+    </div>";
+
+    $attachments = [
+        ['name' => "ASTRO_SIVAM_Report_{$order['order_number']}.pdf", 'content' => $reportPdf],
+        ['name' => "ASTRO_SIVAM_Invoice_{$order['order_number']}.pdf", 'content' => $invoicePdf],
+    ];
+
+    $mailResult = AstroMailer::sendEmailWithAttachments(
+        $requestedEmail,
+        (string)$order['user_name'],
+        "ASTRO SIVAM: Your Official PDF Report & Tax Invoice (#{$order['order_number']}) — Resent",
+        $html,
+        $attachments,
+        $emailSettings,
+        astro_inline_logo_attachment()
+    );
+
+    if (empty($mailResult['success'])) {
+        $errMsg = (string)($mailResult['message'] ?? 'SMTP transport failed.');
+        $pdo->prepare("UPDATE orders SET email_status = 'FAILED', email_last_status_message = ?, updated_at = NOW() WHERE id = ? AND user_id = ?")
+            ->execute([$errMsg, $order['id'], $user['id']]);
+        jsonResponse([
+            'success' => false,
+            'emailStatus' => 'FAILED',
+            'message' => 'Email delivery failed: ' . $errMsg
+        ], 502);
+    }
+
+    astroClearStagedFamilyDocs($custStageScope);
+    $pdo->prepare("UPDATE orders SET email_status = 'SENT', email_sent_at = NOW(), email_last_status_message = ?, updated_at = NOW() WHERE id = ? AND user_id = ?")
+        ->execute(["Sent to {$requestedEmail}", $order['id'], $user['id']]);
+    logAudit(
+        $pdo,
+        (string)$user['id'],
+        (string)($user['name'] ?? ($order['user_name'] ?? 'Customer')),
+        'user',
+        'CUSTOMER_EMAIL_RESENT',
+        "Customer re-sent high-quality PDF report & invoice for order {$order['order_number']} to {$requestedEmail}"
+    );
+    jsonResponse([
+        'success' => true,
+        'emailStatus' => 'SENT',
+        'renderQuality' => 'PREVIEW_EXACT',
+        'email' => $requestedEmail,
+        'message' => "Your official high-quality PDF report and tax invoice have been emailed to {$requestedEmail}."
+    ]);
+}
 
 // 8. POST /api/services/contact
 if ((preg_match('#/services/contact/?$#', $path) || $action === 'contact') && $method === 'POST') {

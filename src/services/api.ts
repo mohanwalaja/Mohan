@@ -1276,12 +1276,24 @@ export const api = {
     }
   ): Promise<{ success: boolean; message?: string; emailPartCount?: number }> {
     const apiBase = getApiBase();
-    const res = await apiFetch(`${apiBase}/services/orders/${encodeURIComponent(id)}/request-resend-email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetEmail, ...(payload || {}) })
-    });
-    return safeJson(res);
+    const body = JSON.stringify({ targetEmail, email: targetEmail, ...(payload || {}) });
+    const endpoints = [
+      `${apiBase}/services/orders/${encodeURIComponent(id)}/request-resend-email`,
+      `${apiBase}/services/index.php?action=request-resend-email&orderId=${encodeURIComponent(id)}`
+    ];
+    let lastRes: Response | null = null;
+    for (const url of endpoints) {
+      const res = await apiFetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      lastRes = res;
+      if (res.status !== 404 && res.status !== 405) {
+        return safeJson(res);
+      }
+    }
+    return safeJson(lastRes!);
   },
 
 
@@ -1555,7 +1567,10 @@ export const api = {
   /** Owner-authenticated staging for a customer's completed family resend. */
   async stageCustomerFamilyDoc(groupId: string, doc: StageDocPayload): Promise<StageDocResponse> {
     return postStagedDoc(
-      [`${API_BASE}/services/family-orders/${encodeURIComponent(groupId)}/stage-doc`],
+      [
+        `${API_BASE}/services/family-orders/${encodeURIComponent(groupId)}/stage-doc`,
+        `${API_BASE}/services/index.php?action=stage-customer-doc&groupId=${encodeURIComponent(groupId)}&isGroup=1`
+      ],
       groupId,
       doc
     );
@@ -1564,7 +1579,10 @@ export const api = {
   /** Owner-authenticated staging for a customer's completed single-order resend. */
   async stageCustomerOrderDoc(orderId: string, doc: StageDocPayload): Promise<StageDocResponse> {
     return postStagedDoc(
-      [`${API_BASE}/services/orders/${encodeURIComponent(orderId)}/stage-doc`],
+      [
+        `${API_BASE}/services/orders/${encodeURIComponent(orderId)}/stage-doc`,
+        `${API_BASE}/services/index.php?action=stage-customer-doc&orderId=${encodeURIComponent(orderId)}`
+      ],
       orderId,
       doc
     );
@@ -1572,18 +1590,32 @@ export const api = {
 
   /** Best-effort cleanup for customer resend staging (the files also expire by TTL). */
   async clearCustomerFamilyStagedDocs(groupId: string): Promise<void> {
-    try {
-      await apiFetch(`${API_BASE}/services/family-orders/${encodeURIComponent(groupId)}/stage-doc`, { method: 'DELETE' });
-    } catch {
-      /* staging is private and expires automatically */
+    const endpoints = [
+      `${API_BASE}/services/family-orders/${encodeURIComponent(groupId)}/stage-doc`,
+      `${API_BASE}/services/index.php?action=stage-customer-doc&groupId=${encodeURIComponent(groupId)}&isGroup=1`
+    ];
+    for (const url of endpoints) {
+      try {
+        const res = await apiFetch(url, { method: 'DELETE' });
+        if (res.ok) return;
+      } catch {
+        /* try fallback endpoint next */
+      }
     }
   },
 
   async clearCustomerOrderStagedDocs(orderId: string): Promise<void> {
-    try {
-      await apiFetch(`${API_BASE}/services/orders/${encodeURIComponent(orderId)}/stage-doc`, { method: 'DELETE' });
-    } catch {
-      /* staging is private and expires automatically */
+    const endpoints = [
+      `${API_BASE}/services/orders/${encodeURIComponent(orderId)}/stage-doc`,
+      `${API_BASE}/services/index.php?action=stage-customer-doc&orderId=${encodeURIComponent(orderId)}`
+    ];
+    for (const url of endpoints) {
+      try {
+        const res = await apiFetch(url, { method: 'DELETE' });
+        if (res.ok) return;
+      } catch {
+        /* try fallback endpoint next */
+      }
     }
   },
 

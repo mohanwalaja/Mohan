@@ -533,6 +533,10 @@ if (!function_exists('astroApproveFamilyGroup')) {
         try {
             $upd = $pdo->prepare("UPDATE orders SET status = ?, payment_confirmed = 1, email_status = ?, email_sent_at = ?, email_last_status_message = ?, has_pdf = 1, has_invoice = 1, updated_at = NOW() WHERE group_id = ?");
             $upd->execute([$finalStatus, $emailStatus, $emailSentAt, $emailMsg, $groupId]);
+            if ($deliverySucceeded && !$isResend) {
+                $pdo->prepare("UPDATE orders SET report_snapshot = calculated_result, report_snapshot_at = COALESCE(report_snapshot_at, NOW()) WHERE group_id = ?")
+                    ->execute([$groupId]);
+            }
         } catch (\Throwable $e) {
             error_log('ASTRO SIVAM: family group status update failed - ' . $e->getMessage());
         }

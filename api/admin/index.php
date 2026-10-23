@@ -514,6 +514,12 @@ if (preg_match('/admin\/orders\/([^\/]+)\/approve/', $path, $matches) && $method
     }
     $reportPdf = $clientDocs['report'];
     $invoicePdf = $clientDocs['invoice'];
+    if (!astroFamilyDocsIsPreviewQualityPdf($reportPdf)) {
+        jsonResponse(['success' => false, 'message' => 'Preview-quality report PDF is missing or invalid. No email was sent.'], 422);
+    }
+    if (!astroFamilyDocsIsPreviewQualityPdf($invoicePdf)) {
+        jsonResponse(['success' => false, 'message' => 'Preview-quality invoice PDF is missing or invalid. No email was sent.'], 422);
+    }
 
     // Fetch SMTP settings
     $sStmt = $pdo->query("SELECT * FROM system_settings ORDER BY id ASC LIMIT 1");
@@ -636,8 +642,17 @@ if (preg_match('/admin\/orders\/([^\/]+)\/approve/', $path, $matches) && $method
         astroClearStagedFamilyDocs($stagedScope);
     }
 
+    $resultJson = json_encode($result, JSON_UNESCAPED_UNICODE);
     $upd = $pdo->prepare("UPDATE orders SET status = ?, payment_confirmed = 1, email_status = ?, email_sent_at = CASE WHEN ? = 'SENT' THEN NOW() ELSE email_sent_at END, email_last_status_message = ?, calculated_result = ?, has_pdf = 1, has_invoice = 1, updated_at = NOW() WHERE id = ?");
-    $upd->execute([$finalStatus, $emailStatus, $emailStatus, $emailMsg, json_encode($result, JSON_UNESCAPED_UNICODE), $orderId]);
+    $upd->execute([$finalStatus, $emailStatus, $emailStatus, $emailMsg, $resultJson, $orderId]);
+    if ($mailResult['success']) {
+        try {
+            $pdo->prepare("UPDATE orders SET report_snapshot = ?, report_snapshot_at = COALESCE(report_snapshot_at, NOW()) WHERE id = ?")
+                ->execute([$resultJson, $orderId]);
+        } catch (\Throwable $ignore) {
+            // Pre-migration databases without report_snapshot read calculated_result directly.
+        }
+    }
 
     logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'ORDER_APPROVED', "Approved order #{$order['order_number']} | document quality: {$clientDocs['quality']}" . ($mailResult['success'] ? " and emailed dual PDFs (order marked COMPLETED)" : " but email delivery FAILED - order kept in PROCESSING for retry"));
 
@@ -714,6 +729,12 @@ if (preg_match('/admin\/orders\/([^\/]+)\/resend-email/', $path, $matches) && $m
     }
     $reportPdf = $clientDocs['report'];
     $invoicePdf = $clientDocs['invoice'];
+    if (!astroFamilyDocsIsPreviewQualityPdf($reportPdf)) {
+        jsonResponse(['success' => false, 'message' => 'Preview-quality report PDF is missing or invalid. No email was sent.'], 422);
+    }
+    if (!astroFamilyDocsIsPreviewQualityPdf($invoicePdf)) {
+        jsonResponse(['success' => false, 'message' => 'Preview-quality invoice PDF is missing or invalid. No email was sent.'], 422);
+    }
 
     $sStmt = $pdo->query("SELECT * FROM system_settings ORDER BY id ASC LIMIT 1");
     $sRow = $sStmt->fetch();

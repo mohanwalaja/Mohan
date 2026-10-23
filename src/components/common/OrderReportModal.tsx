@@ -9,7 +9,7 @@ import { LivePdfPreviewModal } from './LivePdfPreviewModal';
 import { getGunam } from '../../services/gunamData';
 import { api } from '../../services/api';
 import { loadPdfEngine } from '../../services/pdfEngine';
-import { buildOrderInvoiceHtmlForItems, orderItemAsOrder, prepareOrderItemPdfs } from '../../services/orderItems';
+import { buildOrderInvoiceHtmlForItems, deliverSingleOrderItemPdfPayload, orderItemAsOrder, prepareOrderItemPdfs } from '../../services/orderItems';
 import { describeFamilyRenderQuality } from '../../services/formatUtils';
 import { normalizeReportLanguage } from '../../services/reportLanguage';
 import { withDerivedNavamsa } from '../../services/navamsa';
@@ -272,12 +272,11 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order: initi
           result,
           selectedLang
         );
+        const itemPayload = await deliverSingleOrderItemPdfPayload(orderItemSend.header, orderItemSend.itemId, pdfs);
         const res: any = await api.sendOrderItemEmail(orderItemSend.orderId, orderItemSend.itemId, {
-          reportPdfBase64: pdfs.reportPdfBase64,
-          invoicePdfBase64: pdfs.invoicePdfBase64,
-          itemId: orderItemSend.itemId,
+          ...itemPayload,
           language: selectedLang
-        });
+        } as any);
         if (res && res.success) {
           setEmailStatusMsg({
             type: 'success',

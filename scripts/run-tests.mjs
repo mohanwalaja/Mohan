@@ -279,7 +279,11 @@ const testFiles = [
   // served as text/plain and shipped inside the deploy zip.
   'tests/security-txt.test.ts',
   // Full-system Birth Details, Worldwide Location Picker & Post-Order Recalculation suite.
-  'tests/birth-details-and-location-upgrade.test.tsx'
+  'tests/birth-details-and-location-upgrade.test.tsx',
+  // AI Astrologer order-language sync & full security/UX audit contracts.
+  'tests/ai-astrologer-tamil-order-and-audit.test.ts',
+  // 100% Live-Preview High-Quality Email PDF System (zero server PDF system).
+  'tests/high-quality-email-pdf-system.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 

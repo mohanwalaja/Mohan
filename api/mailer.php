@@ -168,6 +168,9 @@ function astro_wrap_branded_email_html($subtitle, $innerBodyHtml, $footerLine = 
 
 class AstroMailer
 {
+    /** Optional callable seam used strictly by automated PHP tests. */
+    public static $testTransport = null;
+
     /** Strip header CR/LF characters so display names and subjects are injection-safe. */
     private static function cleanHeaderText($value)
     {
@@ -243,6 +246,10 @@ class AstroMailer
         // mail(), preventing CR/LF header injection from profile/admin values.
         if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL) || !filter_var($fromEmail, FILTER_VALIDATE_EMAIL) || !filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
             return ['success' => false, 'message' => 'Invalid recipient or sender email address.'];
+        }
+
+        if (is_callable(self::$testTransport)) {
+            return (self::$testTransport)($toEmail, $toName, $subject, $htmlContent, (array)$attachments, $smtpConfig, (array)$inlineImages);
         }
 
         // HARD CAP: refuse to hand the mail transport a message that is almost
