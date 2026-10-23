@@ -191,17 +191,18 @@ check('the PHP renderer prints the same three words, never the raw engine status
   assert.match(rendererPhp, /\$meterBadgeText = astro_porutham_verdict_label\('PORUNDHADHU', \$lang, true\);/);
 });
 
-check('OrderReportModal, mPDF Wedding report, and AI Astrologer chat also use only plain tier words', () => {
+check('OrderReportModal and AI Astrologer chat also use only plain tier words, and server mPDF is gone', () => {
   const modalTsx = read('src/components/common/OrderReportModal.tsx');
-  const mpdfPhp = read('api/astrology/pdf_mpdf_reports.php');
   const chatPhp = read('api/astrology/ai_astrologer_offline.php');
 
+  assert.ok(!fs.existsSync(path.join(root, 'api/astrology/pdf_mpdf_reports.php')),
+    'api/astrology/pdf_mpdf_reports.php must stay deleted');
   assert.match(modalTsx, /verdictTierLabel\(rowTier,\s*selectedLang\)/);
   assert.doesNotMatch(modalTsx, /Utthamam —|Madhyamam —|Adhamam —/);
   assert.doesNotMatch(chatPhp, /Uthamam \(full marks\)|Mathimam \(partial\)|Porundhadhu \(no marks\)|உத்தமம் \(முழு|மத்திமம் \(பகுதி|பொருந்தாது \(மதிப்பெண்|पोरुंदधु/);
   for (const lang of LANGS) {
     for (const word of LADDER[lang]) {
-      assert.ok(mpdfPhp.includes(`'${word}'`), `pdf_mpdf_reports.php is missing the ${lang} label '${word}'`);
+      assert.ok(rendererPhp.includes(`'${word}'`), `report_views.php is missing the ${lang} label '${word}'`);
     }
   }
 });

@@ -1,5 +1,5 @@
-# ASTRO SIVAM - mPDF temporary scratch and runtime key directory.
-# Internal PHP/mPDF storage only. Never accessible over HTTP.
+# ASTRO SIVAM - Private runtime secret key and staging directory.
+# Internal PHP storage only. Never accessible over HTTP.
 
 <IfModule mod_authz_core.c>
     Require all denied

@@ -111,6 +111,8 @@ check('dashboard renders the frozen snapshot at email quality; no server fallbac
 });
 
 check('the browser is the only PDF renderer left in the tree', () => {
+  assert.ok(!fs.existsSync(path.join(root, 'api/astrology/pdf_mpdf_reports.php')),
+    'api/astrology/pdf_mpdf_reports.php must stay deleted: server mPDF rendering is removed');
   assert.ok(!fs.existsSync(path.join(root, 'api/astrology/pdf_mpdf_invoice.php')));
   assert.ok(!fs.existsSync(path.join(root, 'api/astrology/mpdf_fontconfig.php')));
   assert.ok(!fs.existsSync(path.join(root, 'api/check_mpdf.php')));

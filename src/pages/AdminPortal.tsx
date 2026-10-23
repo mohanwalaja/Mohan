@@ -74,6 +74,8 @@ import type { FamilyRenderProgress, FamilyStagingResult } from '../services/jath
 import { loadPdfEngine } from '../services/pdfEngine';
 import {
   buildOrderInvoiceHtmlForItems,
+  deliverOrderItemsPdfPayload,
+  deliverSingleOrderItemPdfPayload,
   getOrCalculateResult,
   orderItemAsOrder,
   prepareOrderItemPdfs,
@@ -529,11 +531,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     try {
       const calculated = await getOrCalculateResult(header.id, item);
       const pdfs = await prepareOrderItemPdfs(header, calculated.item, calculated.result);
-      const res: any = await api.sendOrderItemEmail(header.id, item.id, {
-        reportPdfBase64: pdfs.reportPdfBase64,
-        invoicePdfBase64: pdfs.invoicePdfBase64,
-        itemId: item.id
-      });
+      const sendPayload = await deliverSingleOrderItemPdfPayload(header, item.id, pdfs);
+      const res: any = await api.sendOrderItemEmail(header.id, item.id, sendPayload as any);
       if (res && res.success) {
         setSuccessMessage(`✅ ${res.message || `Report emailed to ${header.userEmail}.`}`);
         setOrders(prev => prev.map(o => o.id === header.id ? {
@@ -564,8 +563,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     setItemSendProgress('Preparing reports…');
     startProcessing(`email-${order.id}`);
     try {
-      const payload = await prepareOrderItemsSendPayload(order, items, message => setItemSendProgress(message));
-      const res: any = await api.sendAllOrderItems(order.id, payload);
+      const rendered = await prepareOrderItemsSendPayload(order, items, message => setItemSendProgress(message));
+      const payload = await deliverOrderItemsPdfPayload(order, rendered, 'admin');
+      const res: any = await api.sendAllOrderItems(order.id, payload as any);
       if (res && res.success) {
         setSuccessMessage(`✅ ${res.message || `All ${items.length} reports plus the order invoice were emailed to ${order.userEmail}.`}`);
         setOrders(prev => prev.map(o => o.id === order.id ? {

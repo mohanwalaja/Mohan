@@ -853,6 +853,24 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
       let payload: any;
       const isCompleted = (resendOrder.status || '').toUpperCase() === 'COMPLETED';
       if (isCompleted) {
+        // Hydrate frozen report snapshots from the backend before rendering so
+        // self-service email resends are 100% pixel-identical to the approved live preview.
+        const hydrateFrozenOrder = async (targetOrder: Order): Promise<Order> => {
+          if (targetOrder.calculatedResult) return targetOrder;
+          try {
+            const snap = await api.getMyOrderReportSnapshot(targetOrder.id);
+            if (snap?.success && snap.result) {
+              return {
+                ...targetOrder,
+                calculatedResult: snap.result
+              };
+            }
+          } catch {
+            /* fall back to attached order payload if snapshot fetch fails */
+          }
+          return targetOrder;
+        };
+
         // Sending produces PDFs: the engine is fetched at this click, never
         // when the dashboard was opened.
         const {
@@ -860,11 +878,34 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           generateOrderPdfsBase64,
           deliverOrderPdfPayload
         } = await loadPdfEngine();
-        if (resendOrder.groupId) {
-          const familyOrders = orders.filter(order => order.groupId === resendOrder.groupId);
-          if (familyOrders.length === 0) {
+        if (resendOrder.items && resendOrder.items.length > 0) {
+          const hydratedItems = await Promise.all(
+            resendOrder.items.map(async (item) => {
+              if (item.calculatedResult) return item;
+              try {
+                const snap = await api.getMyOrderReportSnapshot(resendOrder.id, item.id);
+                if (snap?.success && snap.result) {
+                  return { ...item, calculatedResult: snap.result };
+                }
+              } catch {
+                /* keep item as-is if already cached */
+              }
+              return item;
+            })
+          );
+          const { prepareOrderItemsSendPayload, deliverOrderItemsPdfPayload } = await import('../services/orderItems');
+          const rendered = await prepareOrderItemsSendPayload(
+            resendOrder,
+            hydratedItems,
+            message => setResendFeedback({ type: 'success', message })
+          );
+          payload = await deliverOrderItemsPdfPayload(resendOrder, rendered, 'customer');
+        } else if (resendOrder.groupId) {
+          const rawFamilyOrders = orders.filter(order => order.groupId === resendOrder.groupId);
+          if (rawFamilyOrders.length === 0) {
             throw new Error('The full family order is not available. Refresh your orders and retry.');
           }
+          const familyOrders = await Promise.all(rawFamilyOrders.map(hydrateFrozenOrder));
           const prepared = await prepareFamilyFulfilPayload(
             familyOrders,
             resendOrder.groupId,
@@ -873,10 +914,11 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
           );
           payload = prepared.payload;
         } else {
-          const language = resendOrder.language || 'ta';
-          const pdfs = await generateOrderPdfsBase64(resendOrder, language);
+          const hydratedOrder = await hydrateFrozenOrder(resendOrder);
+          const language = hydratedOrder.language || 'ta';
+          const pdfs = await generateOrderPdfsBase64(hydratedOrder, language);
           payload = await deliverOrderPdfPayload(
-            resendOrder,
+            hydratedOrder,
             { ...pdfs, language },
             { stagingAudience: 'customer' }
           );
