@@ -59,6 +59,7 @@ tests/fixtures/php-ai-probes/out-coverage.json
 tests/fixtures/php-ai-probes/out-kb.json
 tests/fixtures/php-ai-probes/out-guided.json
 tests/fixtures/php-ai-probes/out-guided-focus.json
+tests/fixtures/php-ai-probes/out-order-journey.json
 tests/fixtures/php-ai-probes/out-lint.json
 tests/fixtures/php-ai-probes/out-service-reports.json
 tests/fixtures/php-ai-probes/out-birth-chart-sample.json
