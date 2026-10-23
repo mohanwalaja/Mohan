@@ -1613,10 +1613,10 @@ ${REPORT_FONT_LINK_TAG}
     color: #7a1230;
     font-size: calc(13.5px * var(--summary-scale));
     font-weight: 800;
-    line-height: 1.28;
-    margin-bottom: calc(3.5px * var(--summary-scale));
+    line-height: 1.24;
+    margin-bottom: calc(2px * var(--summary-scale));
     border-bottom: 1px solid #e5e7eb;
-    padding-bottom: calc(1.5px * var(--summary-scale));
+    padding-bottom: calc(1px * var(--summary-scale));
     min-width: 0;
     overflow-wrap: anywhere;
   }
@@ -1651,7 +1651,7 @@ ${REPORT_FONT_LINK_TAG}
     color: #1f2937;
     font-size: calc(11.5px * var(--summary-scale));
     font-weight: 700;
-    line-height: 1.32;
+    line-height: 1.24;
     overflow-wrap: anywhere;
     word-break: break-word;
   }
@@ -1692,12 +1692,22 @@ ${REPORT_FONT_LINK_TAG}
   .summary-page.is-compact .lucky-row-sub { display: none; }
   .summary-page.is-compact .lucky-note { margin-top: 2px; line-height: 1.28; }
 
-  /* Supportive planets: green tint, at most three boxes in a row. */
+  /* Supportive planets: green tint, three per row (or four on one row when count === 4). */
   .summary-good { background: #f2fbf6; border-color: #bfe6d3; }
   .summary-good-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: calc(4px * var(--summary-scale));
+  }
+  .summary-good-grid.cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: calc(3px * var(--summary-scale));
+  }
+  .summary-good-grid.cols-4 .summary-planet {
+    padding: calc(2.5px * var(--summary-scale)) calc(4.5px * var(--summary-scale));
+  }
+  .summary-good-grid.cols-4 .summary-planet-note {
+    line-height: 1.25;
   }
   .summary-planet {
     background: #ffffff;
@@ -1743,7 +1753,7 @@ ${REPORT_FONT_LINK_TAG}
     /* 10.5px is the report's floor — scale never goes below 1, so a four-line
        remedy cell never prints smaller type to make it fit. */
     font-size: calc(10.5px * var(--summary-scale));
-    line-height: 1.28;
+    line-height: 1.24;
     color: #1f2937;
     overflow-wrap: anywhere;
     word-break: break-word;
@@ -2163,10 +2173,10 @@ ${REPORT_GLOSSARY_CSS}
       <p class="lucky-note">${escapeHtml(summaryCompact ? luckyText.noteShort : luckyText.note)}</p>
     </div>
 
-    <!-- 2. Supportive planets (green tint), at most three boxes in a row. -->
+    <!-- 2. Supportive planets (green tint), showing all supportive grahas in the chart. -->
     <div class="card summary-good" id="summary-supportive">
       <div class="card-title card-title-green">${escapeHtml(summaryText.supportiveTitle)}</div>
-      <div class="summary-good-grid">${supportiveHtml}</div>
+      <div class="summary-good-grid${summaryPlanets.supportive.length === 4 ? ' cols-4' : ''}">${supportiveHtml}</div>
     </div>
 
     <!-- 3. Planets needing care (amber tint): planet / difficulties / remedies. -->
