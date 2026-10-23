@@ -12,7 +12,7 @@ export interface FaqItem {
 export const HOME_FAQ_ITEMS: readonly FaqItem[] = [
   {
     question: 'When and how will I receive my report?',
-    answer: 'Every day between 9:00 AM and 11:00 AM IST (India Standard Time), our India-based priest team prepares and reviews the astrological charts. Following administrator review and approval, your official PDF report and Tax Invoice are emailed directly to your registered address.'
+    answer: 'Our India-based priest team checks all reports every 6 hours. Once every report is reviewed and the administrator approves it, your official PDF report and Tax Invoice are emailed directly to your registered address.'
   },
   {
     question: 'What birth details do I need?',

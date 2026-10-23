@@ -15,8 +15,8 @@
  *
  * Shared delivery/payment/calculation facts (kept in sync with the homepage
  * FAQ in src/data/homeFaq.ts):
- *   - reports are prepared daily 9:00–11:00 AM IST by the India-based priest
- *     team, approved by the administrator, then emailed (PDF + Tax Invoice);
+ *   - reports are checked every 6 hours by the India-based priest team,
+ *     approved by the administrator, then emailed (PDF + Tax Invoice);
  *   - sidereal zodiac with Chitra Paksha Lahiri Ayanamsa;
  *   - English, Tamil or Hindi;
  *   - PayPal / cards / Google Pay + UPI (India).
@@ -38,7 +38,7 @@ export const MARRIAGE_COMPATIBILITY_FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     question: 'When and how will I receive my Porutham report?',
-    answer: 'Our India-based priest team prepares and reviews the charts every day between 9:00 AM and 11:00 AM IST. Following administrator approval, your official PDF report and Tax Invoice are emailed to your registered address — please check your Spam / Junk folder as well.'
+    answer: 'Our India-based priest team checks all reports every 6 hours. Following administrator approval, your official PDF report and Tax Invoice are emailed to your registered address — please check your Spam / Junk folder as well.'
   },
   {
     question: 'Can couples outside India use the Porutham matching?',
@@ -61,7 +61,7 @@ export const BABY_NAMING_FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     question: 'When and how will I receive the baby naming report?',
-    answer: 'Our India-based priest team prepares and verifies the certificates every day between 9:00 AM and 11:00 AM IST. Following administrator approval, your PDF certificate and Tax Invoice are emailed to your registered address — please check your Spam / Junk folder as well.'
+    answer: 'Our India-based priest team checks all reports every 6 hours. Following administrator approval, your PDF certificate and Tax Invoice are emailed to your registered address — please check your Spam / Junk folder as well.'
   },
   {
     question: 'Can I see the certificate format before ordering?',
@@ -84,7 +84,7 @@ export const BIRTH_JATHAGAM_FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     question: 'When and how will I receive my Jathagam report?',
-    answer: 'Our India-based priest team prepares and reviews the charts every day between 9:00 AM and 11:00 AM IST. Following administrator approval, your official PDF report and Tax Invoice are emailed to your registered address — please check your Spam / Junk folder as well.'
+    answer: 'Our India-based priest team checks all reports every 6 hours. Following administrator approval, your official PDF report and Tax Invoice are emailed to your registered address — please check your Spam / Junk folder as well.'
   },
   {
     question: 'Can I see a sample Jathagam report before ordering?',
@@ -111,6 +111,6 @@ export const MUHURTHAM_FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     question: 'When and how will I receive my Muhurtham report?',
-    answer: 'Our India-based priest team prepares and reviews the date matrices every day between 9:00 AM and 11:00 AM IST. Following administrator approval, your official PDF report and Tax Invoice are emailed to your registered address — please check your Spam / Junk folder as well.'
+    answer: 'Our India-based priest team checks all reports every 6 hours. Following administrator approval, your official PDF report and Tax Invoice are emailed to your registered address — please check your Spam / Junk folder as well.'
   }
 ];
