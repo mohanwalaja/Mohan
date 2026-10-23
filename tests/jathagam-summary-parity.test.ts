@@ -99,13 +99,25 @@ for (const chart of new Set(fixture.cases.map(testCase => testCase.chart))) {
 console.log('[PASS] Page-3 planet lists are language-independent in every fixture chart');
 
 // ---------------------------------------------------------------------------
-// 3. The worst case is complete: all nine grahas, compact, nothing hidden.
+// 3. Both supportive and care sections strictly show at most the first 3
+//    planets (sorted by highest score), keeping full 4-line remedies cleanly
+//    readable on a single A4 page.
 // ---------------------------------------------------------------------------
+for (const testCase of fixture.cases) {
+  assert.ok(
+    testCase.expected.supportive.length <= 3,
+    `${testCase.id}: at most 3 supportive planets shown (${testCase.expected.supportive.length})`
+  );
+  assert.ok(
+    testCase.expected.needsCare.length <= 3,
+    `${testCase.id}: at most 3 dosha/care planets shown (${testCase.expected.needsCare.length})`
+  );
+}
 for (const lang of LANGUAGES) {
   const allNine = fixture.cases.find(testCase => testCase.id === `all-nine-needing-care|${lang}`);
   assert.ok(allNine, `all-nine case exists for ${lang}`);
-  assert.equal(allNine.expected.compact, true, `${lang}: nine flagged grahas switch to the compact table`);
-  assert.equal(allNine.expected.needsCare.length, NAVAGRAHA_ORDER.length, `${lang}: every graha is shown`);
+  assert.equal(allNine.expected.compact, false, `${lang}: top-3 cap keeps full 4-line remedies`);
+  assert.equal(allNine.expected.needsCare.length, 3, `${lang}: only top 3 care grahas are shown`);
   assert.equal(allNine.expected.supportive.length, 0, `${lang}: a graha needing care is never also counted supportive`);
   for (const planet of allNine.expected.needsCare) {
     assert.ok(planet.compactLine.trim(), `${lang}: ${planet.key} keeps its one-line remedy`);
@@ -113,8 +125,10 @@ for (const lang of LANGUAGES) {
   }
 }
 const normalCase = fixture.cases.find(testCase => testCase.id === 'normal-priya|en');
-assert.ok(normalCase && normalCase.expected.compact === false, 'four flagged grahas stay in the full table');
-console.log('[PASS] Compact mode keeps all nine grahas and the normal case stays full-height');
+assert.ok(normalCase && normalCase.expected.compact === false, 'normal case stays in the full table');
+assert.equal(normalCase?.expected.supportive.length, 3, 'normal case shows top 3 supportive planets');
+assert.equal(normalCase?.expected.needsCare.length, 3, 'normal case shows top 3 care planets');
+console.log('[PASS] Both supportive and care sections strictly show at most the first 3 planets');
 
 // ---------------------------------------------------------------------------
 // 4. Every remedy line still comes from the Navagraha reference data, in all

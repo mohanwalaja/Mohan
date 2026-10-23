@@ -201,7 +201,8 @@ push('        $lordSupportiveHouses = [1, 2, 4, 5, 7, 9, 10, 11];');
 push('        $malefics = [\'mars\', \'saturn\', \'rahu\', \'ketu\'];');
 push('        $nodeDebilitation = [\'rahu\' => 8, \'ketu\' => 2];');
 push('        $conjunctionOrb = 10;');
-push('        $supportiveLimit = 9;');
+push('        $supportiveLimit = 3;');
+push('        $careLimit = 3;');
 push('        $compactThreshold = 5;');
 push('');
 push('        $validRasi = static function ($value): bool {');
@@ -342,7 +343,7 @@ push('                \'support\' => (string) ($data[$entry[\'key\']][\'support\
 push('            ];');
 push('        }');
 push('        $needsCareOut = [];');
-push('        foreach ($needsCare as $entry) {');
+push('        foreach (array_slice($needsCare, 0, $careLimit) as $entry) {');
 push('            $needsCareOut[] = [');
 push('                \'key\' => $entry[\'key\'],');
 push('                \'house\' => $entry[\'house\'],');

@@ -880,7 +880,6 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
                     const summaryLang = (selectedLang === 'ta' || selectedLang === 'hi') ? selectedLang : 'en';
                     const planetSummary = classifyJathagamPlanetsForSummary(resultAny, summaryLang);
                     const summaryCopy = SHORT_SUMMARY_TEXT[summaryLang];
-                    const activeDoshas = (result.doshas || []).filter((d: any) => d?.isPresent !== false);
 
                     return (
                       <div className="space-y-4">
@@ -915,37 +914,27 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
                           <h4 className="text-xs font-bold uppercase text-amber-900 dark:text-amber-300 mb-2">
                             {summaryCopy.careTitle}
                           </h4>
-                          <div className="space-y-3 text-xs">
-                            {planetSummary.needsCare.map(planet => {
-                              const name = NAVAGRAHA_DOSHA_DATA[planet.key]?.name?.[summaryLang] || planet.key;
-                              return (
-                                <div
-                                  key={planet.key}
-                                  className="border-b border-amber-200/50 dark:border-amber-800/50 pb-2 last:border-none last:pb-0"
-                                >
-                                  <div className="font-bold text-slate-900 dark:text-white">{name}</div>
-                                  <p className="text-slate-600 dark:text-slate-400 mt-0.5">{planet.difficulties}</p>
-                                  <p className="text-slate-800 dark:text-slate-200 font-medium mt-1">★ {planet.compactLine}</p>
-                                </div>
-                              );
-                            })}
-                            {activeDoshas.map((d: any, idx: number) => (
-                              <div key={`dosha-${idx}`} className="border-b border-amber-200/50 dark:border-amber-800/50 pb-2 last:border-none last:pb-0">
-                                <div className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
-                                  <span>{summaryLang === 'ta' ? (d.nameTa || d.nameEn) : summaryLang === 'hi' ? (d.nameHi || d.nameEn) : d.nameEn}</span>
-                                  <span className="font-normal text-amber-700 dark:text-amber-400">
-                                    {summaryLang === 'ta' ? (d.severityTa || d.severityEn) : summaryLang === 'hi' ? (d.severityHi || d.severityEn) : d.severityEn}
-                                  </span>
-                                </div>
-                                <p className="text-slate-600 dark:text-slate-400 mt-0.5">
-                                  {summaryLang === 'ta' ? (d.descriptionTa || d.descriptionEn) : summaryLang === 'hi' ? (d.descriptionHi || d.descriptionEn) : d.descriptionEn}
-                                </p>
-                                <p className="text-slate-800 dark:text-slate-200 font-medium mt-1">
-                                  ★ {summaryLang === 'ta' ? (d.traditionalRemedyTa || d.traditionalRemedyEn) : summaryLang === 'hi' ? (d.traditionalRemedyHi || d.traditionalRemedyEn) : d.traditionalRemedyEn}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
+                          {planetSummary.needsCare.length === 0 ? (
+                            <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                              {summaryCopy.noCarePlanet}
+                            </p>
+                          ) : (
+                            <div className="space-y-3 text-xs">
+                              {planetSummary.needsCare.map(planet => {
+                                const name = NAVAGRAHA_DOSHA_DATA[planet.key]?.name?.[summaryLang] || planet.key;
+                                return (
+                                  <div
+                                    key={planet.key}
+                                    className="border-b border-amber-200/50 dark:border-amber-800/50 pb-2 last:border-none last:pb-0"
+                                  >
+                                    <div className="font-bold text-slate-900 dark:text-white">{name}</div>
+                                    <p className="text-slate-600 dark:text-slate-400 mt-0.5">{planet.difficulties}</p>
+                                    <p className="text-slate-800 dark:text-slate-200 font-medium mt-1">★ {planet.compactLine}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

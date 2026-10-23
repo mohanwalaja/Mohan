@@ -78,8 +78,11 @@ export const SUMMARY_NODE_DEBILITATION_SIGN: Record<string, Rasi> = {
   [Graha.KETU]: Rasi.RISHABAM
 };
 
-/** Show all supportive grahas present in the user's chart on Page 3. */
-export const SUMMARY_SUPPORTIVE_LIMIT = 9;
+/** Show only the top 3 supportive grahas on Page 3. */
+export const SUMMARY_SUPPORTIVE_LIMIT = 3;
+
+/** Show only the top 3 afflicted/dosha grahas on Page 3. */
+export const SUMMARY_CARE_LIMIT = 3;
 
 /** From this many flagged grahas the page switches to the compact table. */
 export const SUMMARY_COMPACT_THRESHOLD = 5;
@@ -256,12 +259,17 @@ export function classifyJathagamPlanetsForSummary(
   needsCare.sort((a, b) => b.score - a.score || orderIndex(a.key) - orderIndex(b.key));
   supportive.sort((a, b) => b.score - a.score || orderIndex(a.key) - orderIndex(b.key));
 
-  return {
-    supportive: supportive.slice(0, SUMMARY_SUPPORTIVE_LIMIT).map(({ key, house }) => ({ key, house })),
-    needsCare: needsCare.map(({ key, house, difficulties, worship, lamp, donation, mantra, compactLine }) => ({
+  const topSupportive = supportive.slice(0, SUMMARY_SUPPORTIVE_LIMIT).map(({ key, house }) => ({ key, house }));
+  const topCare = needsCare.slice(0, SUMMARY_CARE_LIMIT).map(
+    ({ key, house, difficulties, worship, lamp, donation, mantra, compactLine }) => ({
       key, house, difficulties, worship, lamp, donation, mantra, compactLine
-    })),
-    compact: needsCare.length >= SUMMARY_COMPACT_THRESHOLD,
+    })
+  );
+
+  return {
+    supportive: topSupportive,
+    needsCare: topCare,
+    compact: topCare.length >= SUMMARY_COMPACT_THRESHOLD,
     assessedCount,
     assessmentComplete,
     incompleteNote
