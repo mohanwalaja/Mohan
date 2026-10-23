@@ -116,7 +116,7 @@ function astro_ai_require_paid_order(PDO $pdo, array $user): array
             'message' => $copy['en'],
             'message_ta' => $copy['ta'],
             'message_hi' => $copy['hi'],
-            'dashboardUrl' => '/customer/dashboard',
+            'dashboardUrl' => '/dashboard',
             // Days left, so the UI can say "4 days left on this report's chat".
             // Zero once expired.
             'daysRemaining' => $entitlement['daysRemaining'],
@@ -300,12 +300,26 @@ function astro_ai_migration_statements(string $sql): array
     return $statements;
 }
 
-/** Create the chat tables if the migration has not been run yet. */
+/** Verify chat tables exist (zero-DDL fast path for hardened DB users & SQLite). */
 function astro_ai_ensure_tables(PDO $pdo): void
 {
     static $ready = false;
     if ($ready) {
         return;
+    }
+
+    // Fast path: when schema.sql + migrations have already run (and CREATE/ALTER
+    // privileges have been revoked per BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md),
+    // verify the required tables and person_id column using pure SELECT queries
+    // so zero DDL privilege is ever needed at runtime.
+    try {
+        $pdo->query('SELECT person_id FROM ai_chat_sessions LIMIT 0');
+        $pdo->query('SELECT id FROM ai_chat_messages LIMIT 0');
+        $pdo->query('SELECT id FROM ai_chat_handoffs LIMIT 0');
+        $ready = true;
+        return;
+    } catch (Throwable $_probeError) {
+        // Fall through to bootstrap DDL on fresh databases that still hold CREATE.
     }
 
     $path = __DIR__ . '/migrations/007_ai_astrologer_chat.sql';
@@ -315,9 +329,6 @@ function astro_ai_ensure_tables(PDO $pdo): void
     }
 
     foreach (astro_ai_migration_statements($sql) as $statement) {
-        // The migration uses CREATE TABLE IF NOT EXISTS, so a deployed schema is
-        // already a successful no-op. Let real DDL/permission errors surface
-        // instead of swallowing them and failing later on an INSERT.
         $pdo->exec($statement);
     }
 
@@ -326,8 +337,8 @@ function astro_ai_ensure_tables(PDO $pdo): void
     // api/migrations/014_ai_chat_person_id.sql. Web requests never ALTER
     // TABLE (the web DB user is granted no ALTER privilege), so verify the
     // column exists and fail loudly when the migration was skipped.
-    $personColumn = $pdo->query("SHOW COLUMNS FROM `ai_chat_sessions` LIKE 'person_id'")->fetch();
-    if (!$personColumn) {
+    $cols = $pdo->query("SHOW COLUMNS FROM `ai_chat_sessions` LIKE 'person_id'");
+    if (!$cols || !$cols->fetch()) {
         error_log('ASTRO SIVAM: ai_chat_sessions.person_id is missing; run api/migrations/014_ai_chat_person_id.sql on this database.');
         jsonResponse(['success' => false, 'message' => 'Service temporarily unavailable. Please try again shortly.'], 503);
     }
@@ -387,7 +398,7 @@ function astro_ai_save_message(
 
     $touch = $pdo->prepare(
         "UPDATE ai_chat_sessions
-            SET message_count = message_count + 1, last_message_at = NOW()
+            SET message_count = message_count + 1, last_message_at = CURRENT_TIMESTAMP
           WHERE id = ?"
     );
     $touch->execute([$sessionId]);
@@ -852,7 +863,7 @@ function astro_ai_action_upload(PDO $pdo, array $user, array $body): void
     // Extract, then gate. The PDF is an ownership token, not the explanation -
     // see knowledge/ai-astrologer/rules/report-sections.json.
     $extracted = AstroAiReportExtract::extractPdfText((string) $file['tmp_name']);
-    $orders = AstroAiReportExtract::customerOrders($pdo, (int) $user['id']);
+    $orders = AstroAiReportExtract::customerOrders($pdo, (string) $user['id']);
 
     $decision = AstroAiReportExtract::decideAcceptance(
         (string) $extracted['text'],
@@ -867,12 +878,16 @@ function astro_ai_action_upload(PDO $pdo, array $user, array $body): void
         $accept((string) $decision['rejection'], $decision['orderNumber']);
     }
 
-    // Accepted. Bind the session to this order so later questions use its chart,
-    // and record the accepted attachment. The PDF itself is NOT stored.
+    // Accepted. Bind the session to this order; re-verify exact ownership row
+    // by string user_id before binding so an unowned order can never be attached.
     $orderNumber = (string) $decision['orderNumber'];
     $stmt = $pdo->prepare("SELECT id, service_type FROM orders WHERE order_number = ? AND user_id = ? LIMIT 1");
-    $stmt->execute([$orderNumber, $user['id']]);
+    $stmt->execute([$orderNumber, (string) $user['id']]);
     $order = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    if (empty($order['id'])) {
+        error_log('AI Astrologer upload refused: verified order lookup came back empty for ' . $orderNumber);
+        $accept('notYours', $orderNumber);
+    }
     // A family report starts on its first member, same as session creation.
     $uploadPersons = !empty($order['id']) ? astro_ai_order_persons($pdo, (string) $order['id']) : [];
 
@@ -2490,66 +2505,81 @@ function astro_ai_chart_facts(array $order): ?array
 /* Dispatch                                                           */
 /* ================================================================== */
 
-header('Content-Type: application/json; charset=utf-8');
-header('X-Content-Type-Options: nosniff');
-header('Cache-Control: no-store');
+if (!defined('ASTRO_AI_ENDPOINT_NO_AUTO_DISPATCH')) {
+    require_once __DIR__ . '/request_body.php';
 
-try {
-    $pdo = getDbConnection();
+    header('Content-Type: application/json; charset=utf-8');
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: no-store');
+    header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
 
-    // BOTH GATES, on every action, before anything else.
-    $user = astro_ai_gate($pdo);
+    try {
+        $pdo = getDbConnection();
 
-    $action = strtolower((string) ($_GET['action'] ?? ($_POST['action'] ?? '')));
-    $rawBody = file_get_contents('php://input');
-    $body = [];
-    if (is_string($rawBody) && $rawBody !== '') {
-        $decoded = json_decode($rawBody, true);
-        if (is_array($decoded)) {
-            $body = $decoded;
+        // BOTH GATES, on every action, before anything else.
+        $user = astro_ai_gate($pdo);
+
+        $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        $action = strtolower((string) ($_GET['action'] ?? ($_POST['action'] ?? '')));
+
+        // Enforce POST on all state-mutating actions so GET requests can never
+        // bypass config.php CSRF Origin/Referer checks.
+        $mutatingActions = ['session', 'ask', 'upload', 'handoff', 'bind', 'person'];
+        if (in_array($action, $mutatingActions, true) && $method !== 'POST') {
+            jsonResponse([
+                'success' => false,
+                'code' => 'METHOD_NOT_ALLOWED',
+                'message' => 'POST is required for this action.',
+            ], 405);
         }
-    }
-    foreach ($_POST as $k => $v) {
-        if (!isset($body[$k])) {
-            $body[$k] = $v;
-        }
-    }
 
-    switch ($action) {
-        case 'session':
-            astro_ai_action_session($pdo, $user, $body);
-            break;
-        case 'history':
-            astro_ai_action_history($pdo, $user, $body);
-            break;
-        case 'ask':
-            astro_ai_action_ask($pdo, $user, $body);
-            break;
-        case 'upload':
-            astro_ai_action_upload($pdo, $user, $body);
-            break;
-        case 'handoff':
-            astro_ai_action_handoff($pdo, $user, $body);
-            break;
-        case 'usage':
-            astro_ai_action_usage($pdo, $user);
-            break;
-        case 'diagnose':
-            astro_ai_action_diagnose($pdo, $user, $body);
-            break;
-        case 'options':
-            astro_ai_action_options($pdo, $user, $body);
-            break;
-        case 'bind':
-            astro_ai_action_bind($pdo, $user, $body);
-            break;
-        case 'person':
-            astro_ai_action_person($pdo, $user, $body);
-            break;
-        default:
-            jsonResponse(['success' => false, 'message' => 'Unknown action.'], 400);
+        $body = [];
+        $contentType = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ''));
+        if ($method === 'POST' && strpos($contentType, 'multipart/form-data') === false) {
+            $body = getJsonBody(1048576);
+        }
+        foreach ($_POST as $k => $v) {
+            if (!isset($body[$k])) {
+                $body[$k] = $v;
+            }
+        }
+
+        switch ($action) {
+            case 'session':
+                astro_ai_action_session($pdo, $user, $body);
+                break;
+            case 'history':
+                astro_ai_action_history($pdo, $user, $body);
+                break;
+            case 'ask':
+                astro_ai_action_ask($pdo, $user, $body);
+                break;
+            case 'upload':
+                astro_ai_action_upload($pdo, $user, $body);
+                break;
+            case 'handoff':
+                astro_ai_action_handoff($pdo, $user, $body);
+                break;
+            case 'usage':
+                astro_ai_action_usage($pdo, $user);
+                break;
+            case 'diagnose':
+                astro_ai_action_diagnose($pdo, $user, $body);
+                break;
+            case 'options':
+                astro_ai_action_options($pdo, $user, $body);
+                break;
+            case 'bind':
+                astro_ai_action_bind($pdo, $user, $body);
+                break;
+            case 'person':
+                astro_ai_action_person($pdo, $user, $body);
+                break;
+            default:
+                jsonResponse(['success' => false, 'message' => 'Unknown action.'], 400);
+        }
+    } catch (Throwable $e) {
+        error_log('AI Astrologer endpoint error: ' . $e->getMessage());
+        jsonResponse(['success' => false, 'message' => 'Something went wrong. Please try again.'], 500);
     }
-} catch (Throwable $e) {
-    error_log('AI Astrologer endpoint error: ' . $e->getMessage());
-    jsonResponse(['success' => false, 'message' => 'Something went wrong. Please try again.'], 500);
 }

@@ -19,7 +19,6 @@ require_once __DIR__ . '/../config.php';
 
 class AstroAiProvider
 {
-    const PROMPT_PATH = '/knowledge/ai-astrologer/prompt/system-prompt.md';
     const GUARDRAILS_PATH = '/knowledge/ai-astrologer/rules/guardrails.json';
     const LIFE_AREAS_PATH = '/knowledge/ai-astrologer/rules/life-areas.json';
     const REMEDIES_PATH = '/knowledge/ai-astrologer/rules/remedies.json';
@@ -27,7 +26,6 @@ class AstroAiProvider
     const GUIDED_PATH = '/knowledge/ai-astrologer/rules/guided-questions.json';
     const ENCYCLOPEDIA_PATH = '/knowledge/ai-astrologer/rules/astrology-encyclopedia.json';
 
-    private static $promptCache = null;
     private static $kbCache = [];
     private static $tamilSourcesCache = null;
 
@@ -74,23 +72,28 @@ class AstroAiProvider
     }
 
     /**
-     * Counts the local source catalogue by verification level. The registry is
-     * bibliographic metadata, not a bundle of all the books' full text.
+     * Counts the verified local source registry by language and verification
+     * level. Every active entry is cited by the rules or calculation layer;
+     * zero Hindi book sources or unverified scraper records exist.
      */
     public static function sourceRegistryStats(): array
     {
         $registry = self::kb(self::SOURCES_PATH);
         $sources = is_array($registry['sources'] ?? null) ? $registry['sources'] : [];
         $byVerification = [];
+        $byLanguage = [];
         foreach ($sources as $source) {
             $level = (string) ($source['verification'] ?? 'unknown');
             $byVerification[$level] = ($byVerification[$level] ?? 0) + 1;
+            $lang = (string) ($source['language'] ?? 'unknown');
+            $byLanguage[$lang] = ($byLanguage[$lang] ?? 0) + 1;
         }
         ksort($byVerification);
+        ksort($byLanguage);
         return [
             'total' => count($sources),
-            'excluded' => count(is_array($registry['excludedSources'] ?? null) ? $registry['excludedSources'] : []),
             'citableTamil' => count(self::citableTamilSources()),
+            'byLanguage' => $byLanguage,
             'byVerification' => $byVerification,
         ];
     }
@@ -192,47 +195,9 @@ class AstroAiProvider
     {
         $lines = [];
         foreach (self::citableTamilSources() as $id => $s) {
-            $lines[] = '- ' . $id . ' — ' . (string) ($s['title'] ?? '');
+            $lines[] = '- ' . $id . ' — ' . (string) ($s['titleNative'] ?? ($s['titleEn'] ?? ($s['title'] ?? '')));
         }
         return implode("\n", $lines);
-    }
-
-    // ------------------------------------------------------------------
-    // The system prompt
-    // ------------------------------------------------------------------
-
-    /**
-     * Legacy prompt-file reader retained for compatibility only. The current
-     * customer reply path does not call it and never submits a prompt to a model.
-     */
-    public static function systemPrompt(): string
-    {
-        if (self::$promptCache !== null) {
-            return self::$promptCache;
-        }
-        $md = (string) file_get_contents(self::kbPath(self::PROMPT_PATH));
-        if ($md === '') {
-            throw new RuntimeException('The AI Astrologer system prompt could not be read.');
-        }
-        // The prompt is the first ```text ... ``` block in the document.
-        if (preg_match('/```text\s*\n(.*?)\n```/s', $md, $m)) {
-            self::$promptCache = trim($m[1]);
-            return self::$promptCache;
-        }
-        throw new RuntimeException('The system prompt file has no ```text block to extract.');
-    }
-
-    /**
-     * Fills the {{PLACEHOLDERS}}. Anything left unfilled is replaced with an
-     * empty string rather than leave a visible unresolved template token.
-     */
-    public static function fillPrompt(string $prompt, array $values): string
-    {
-        $out = $prompt;
-        foreach ($values as $key => $value) {
-            $out = str_replace('{{' . strtoupper($key) . '}}', (string) $value, $out);
-        }
-        return (string) preg_replace('/\{\{[A-Z0-9_]+\}\}/', '', $out);
     }
 
     // ------------------------------------------------------------------
@@ -332,100 +297,6 @@ class AstroAiProvider
             'rules' => $rules,
             'sourceLine' => $sourceLine,
             'refusal' => null,
-        ];
-    }
-
-    /**
-     * Legacy retrieval-context helper retained for compatibility. It reads
-     * local rule/remedy JSON only; it is not full-text search and is not called
-     * by the active customer reply path, which handles unmatched questions with
-     * an explicit local no-match response and human handoff.
-     *
-     * @return array{rulesBlock:string, sourceLine:string}
-     */
-    public static function consultMoreSources(string $question, string $language, ?array $chart): array
-    {
-        $q = mb_strtolower(trim($question), 'UTF-8');
-        $lines = [];
-        $sources = [];
-
-        // Source 1: loose phrase match across ALL life-area cards.
-        $kb = self::kb(self::LIFE_AREAS_PATH);
-        foreach (($kb['areas'] ?? []) as $area) {
-            $phrases = array_merge(
-                $area['customerPhrases'][$language] ?? [],
-                $area['customerPhrases']['en'] ?? []
-            );
-            $hit = false;
-            foreach ($phrases as $p) {
-                $needle = mb_strtolower(trim((string) $p), 'UTF-8');
-                if ($needle !== '' && mb_strpos($q, $needle, 0, 'UTF-8') !== false) {
-                    $hit = true;
-                    break;
-                }
-            }
-            if (!$hit) {
-                continue;
-            }
-            $title = (string) ($area['cardTitle'][$language] ?? ($area['cardTitle']['en'] ?? ($area['id'] ?? 'card')));
-            $added = 0;
-            foreach (($area['rules'] ?? []) as $rule) {
-                if ($added >= 2) {
-                    break;
-                }
-                if (!self::evaluateCondition($rule['condition'] ?? [], $chart, $question)) {
-                    continue;
-                }
-                $meaning = (string) ($rule['meaning'][$language] ?? ($rule['meaning']['en'] ?? ''));
-                if ($meaning === '') {
-                    continue;
-                }
-                $lines[] = '- [' . $title . '] ' . $meaning;
-                $added++;
-            }
-            if ($added > 0) {
-                $sources[] = $title;
-            }
-        }
-
-        // Source 2: the remedies registry, matched on planet names in the question.
-        $remedies = self::kb(self::REMEDIES_PATH);
-        foreach (($remedies['grahas'] ?? []) as $g) {
-            $names = [
-                (string) ($g['graha'] ?? ''),
-                (string) ($g['tamil'] ?? ''),
-                (string) ($g['hindi'] ?? ''),
-            ];
-            $hit = false;
-            foreach ($names as $name) {
-                $needle = mb_strtolower(trim($name), 'UTF-8');
-                if ($needle !== '' && mb_strpos($q, $needle, 0, 'UTF-8') !== false) {
-                    $hit = true;
-                    break;
-                }
-            }
-            if (!$hit) {
-                continue;
-            }
-            $lines[] = '- [Remedies registry: ' . ($g['graha'] ?? 'planet') . '] '
-                . ($g['mantra']['simple'] ?? '') . ' | charity: ' . ($g['charity'] ?? '')
-                . ' | temple: ' . ($g['temple']['name'] ?? '');
-            $sources[] = 'Remedies registry (' . ($g['graha'] ?? 'planet') . ')';
-            if (count($lines) >= 6) {
-                break;
-            }
-        }
-
-        if (empty($lines)) {
-            return [
-                'rulesBlock' => "(No curated rule matches this question. Answer it from general Tamil astrology (Jyotisha) knowledge, in the customer's language. Say plainly that this is general guidance, not a reading of their chart. Be honest about anything uncertain. Name only sources from the TAMIL SOURCES list, at book level, or name none. Never quote a verse. Keep every health, legal, financial and prediction rule. If the question is not about astrology, say so politely and offer to help with an astrology question.)",
-                'sourceLine' => '',
-            ];
-        }
-
-        return [
-            'rulesBlock' => implode("\n", $lines),
-            'sourceLine' => 'Consulted: ' . implode(' · ', array_slice(array_values(array_unique($sources)), 0, 4)),
         ];
     }
 
@@ -652,18 +523,6 @@ class AstroAiProvider
         throw new RuntimeException("External AI providers are disabled. Replies use ASTRO SIVAM's local knowledge base.");
     }
 
-    /** A compatibility stub. It never makes an outbound network request. */
-    public static function ping(): array
-    {
-        return [
-            'attempted' => false,
-            'ok' => false,
-            'httpStatus' => 0,
-            'latencyMs' => 0,
-            'error' => 'External model calls are disabled in local-only mode.',
-        ];
-    }
-
     public static function diagnostics(bool $livePing = false): array
     {
         $checks = [];
@@ -718,14 +577,12 @@ class AstroAiProvider
         $stats = self::sourceRegistryStats();
         $levels = $stats['byVerification'];
         $sourceDetail = sprintf(
-            '%d catalogue records; %d text-read, %d metadata-verified, %d catalogue-verified, %d linked-not-opened, %d dead; %d Tamil references eligible at their recorded citation level. Catalogue records are not full-text books.',
+            '%d verified records (%d Tamil citable, 0 Hindi books, 0 dead links): %d text-read, %d metadata-verified, %d catalogue-verified. Catalogue records are not full-text books.',
             $stats['total'],
+            $stats['citableTamil'],
             (int) ($levels['content-read'] ?? 0),
             (int) ($levels['metadata-verified'] ?? 0),
-            (int) ($levels['catalogue-verified'] ?? 0),
-            (int) ($levels['linked-not-opened'] ?? 0),
-            (int) ($levels['dead'] ?? 0),
-            $stats['citableTamil']
+            (int) ($levels['catalogue-verified'] ?? 0)
         );
         $add('sourceLibrary', 'Local source catalogue', $stats['total'] > 0, $sourceDetail);
 
@@ -792,51 +649,5 @@ class AstroAiProvider
     public static function answer(string $question, string $language, array $history, ?array $chart, array $context = []): array
     {
         return self::answerFromKnowledgeBase($question, $language, $chart, $context);
-    }
-
-/** At most three affordable remedies, all from the curated local register. */
-    private static function remedyBlock(?array $chart): string
-    {
-        $kb = self::kb(self::REMEDIES_PATH);
-        if ($chart === null) {
-            return '(No chart attached yet, so no remedy can be targeted.)';
-        }
-        $wanted = [];
-        foreach (($chart['planetHouse'] ?? []) as $planet => $house) {
-            $wanted[$planet] = true;
-        }
-        foreach (['Sani', 'Rahu', 'Ketu'] as $p) {
-            if (($chart['dignity'][$p] ?? 'neutral') === 'weak') {
-                $wanted[$p] = true;
-            }
-        }
-
-        $out = [];
-        foreach (($kb['grahas'] ?? []) as $g) {
-            if (!isset($wanted[$g['graha']])) {
-                continue;
-            }
-            $out[] = '- ' . $g['graha'] . ' (' . $g['weekday'] . '): ' . $g['mantra']['simple']
-                . ' | charity: ' . $g['charity']
-                . ' | temple: ' . $g['temple']['name'];
-            if (count($out) >= 3) {
-                break;
-            }
-        }
-        return $out ? implode("\n", $out) : '(No remedy applies to this chart right now.)';
-    }
-
-    private static function shouldOfferHandoff(?string $areaId, string $question): bool
-    {
-        if ($areaId === 'health') {
-            return true;
-        }
-        $q = mb_strtolower($question, 'UTF-8');
-        foreach (['doctor', 'hospital', 'மருத்துவ', 'डॉक्टर', 'complaint', 'புகார்', 'शिकायत'] as $w) {
-            if (mb_strpos($q, mb_strtolower($w, 'UTF-8'), 0, 'UTF-8') !== false) {
-                return true;
-            }
-        }
-        return false;
     }
 }

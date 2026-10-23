@@ -527,7 +527,7 @@
         }
       },
       "temple": {
-        "id": "TP-11",
+        "id": "TP-12",
         "name": "Nagannathaswamy Temple, Keezhaperumpallam (Mayiladuthurai)",
         "nameI18n": {
           "en": "Naganathaswamy Temple (Ketu Sthalam), Keezhaperumpallam (near Poompuhar, Mayiladuthurai district)",
@@ -548,6 +548,11 @@
         {
           "id": "EN-09",
           "level": "book"
+        },
+        {
+          "id": "TP-12",
+          "level": "book",
+          "note": "Keezhperumpallam Sri Naganathaswamy Temple — Chola Nadu Ketu Sthalam tradition"
         }
       ],
       "weekdayI18n": {

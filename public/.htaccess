@@ -18,7 +18,7 @@
 
 # Block access to hidden, environment, backup and sensitive source files.
 # Never expose source maps or executable build artifacts from the static site.
-<FilesMatch "(\.(map|cjs|sql|env|log|lock|ini|conf|bak|sh|md|git|key|yml|yaml|htaccess|htpasswd)|composer\.(json|lock)|package\.json|tsconfig\.json)$">
+<FilesMatch "(\.(map|cjs|py|pyc|sql|env|log|lock|ini|conf|bak|sh|md|git|key|yml|yaml|htaccess|htpasswd)|composer\.(json|lock)|package\.json|tsconfig\.json)$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>
@@ -27,10 +27,9 @@
     Deny from all
   </IfModule>
 </FilesMatch>
-# SECURITY: Block direct web access to Composer's vendor/ tree installed at the
-# docroot (smalot/pdfparser). `public_html/vendor` is installed outside the
-# deploy zip and must never be reachable through the static site.
-RewriteRule ^vendor(/|$) - [F,L]
+# SECURITY: Block direct web access to server-side vendor/, knowledge/, src/,
+# scripts/, and docs/ trees deployed at public_html root.
+RewriteRule ^(vendor|knowledge|src|scripts|docs)(/|$) - [F,L]
 
 # ------------------------------------------------------------------------------
 # 2. HTTP Security Headers

@@ -151,6 +151,8 @@ const testFiles = [
   'tests/ai-astrologer-guided-runtime.test.ts',
   'tests/ai-astrologer-service-runtime.test.ts',
   'tests/ai-astrologer-php-runtime.test.ts',
+  'tests/ai-astrologer-all-questions-complete.test.ts',
+  'tests/ai-astrologer-full-check-and-hindi-purge.test.ts',
   'tests/jathagam-page2-wiring.test.ts',
   'tests/jathagam-page2-php-parity.test.ts',
   'tests/all-four-services-parity.test.ts',

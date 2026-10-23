@@ -53,7 +53,7 @@ await check('api/.htaccess blocks direct HTTP access to all internal PHP librari
   ]) {
     assert.ok(htaccess.includes(lib), `api/.htaccess must guard ${lib}.php`);
   }
-  assert.match(htaccess, /RewriteRule \^\(vendor\|knowledge\|storage\|migrations\)/);
+  assert.match(htaccess, /RewriteRule \^\(vendor\|knowledge\|storage\|migrations\|astrology\)/);
   assert.doesNotMatch(htaccess, /RewriteRule \^[^#\n]*cron/, 'cron endpoint remains reachable for token-authenticated schedulers');
 });
 

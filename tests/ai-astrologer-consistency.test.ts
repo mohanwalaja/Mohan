@@ -327,11 +327,11 @@ check('a favourable health card has no doctor line, so the chat guard must add o
 const REG = JSON.parse(
   fs.readFileSync(path.join(root, 'knowledge/ai-astrologer/sources.json'), 'utf8')
 ) as {
-  sources: { id: string; title: string; verification: string; verifiedPassages?: unknown[] }[];
-  excludedSources: { id: string }[];
+  sources: { id: string; title?: string; titleEn?: string; verification: string; verifiedPassages?: unknown[] }[];
+  excludedSources?: { id: string }[];
 };
 const byId = new Map(REG.sources.map((s) => [s.id, s]));
-const EXCLUDED = new Set(REG.excludedSources.map((s) => s.id));
+const EXCLUDED = new Set((REG.excludedSources ?? []).map((s) => s.id));
 const CITABLE = new Set(['content-read', 'metadata-verified', 'catalogue-verified']);
 // A passage-level citation is honest only where passages were actually read.
 const PASSAGE_CAPABLE = new Set(
@@ -550,7 +550,7 @@ lines.push(
   'as the source of truth and route the question to a human astrologer.',
   ''
 );
-fs.writeFileSync(tablePath, lines.join('\n'), 'utf8');
-console.log(`  comparison table written to knowledge/ai-astrologer/tests/consistency-table.md`);
+assert.ok(lines.length >= 40, 'comparison markdown summary must cover all sample charts');
+assert.equal(fs.existsSync(path.join(root, 'knowledge/ai-astrologer/tests')), false, 'test artifacts must not be written inside production knowledge/');
 
 console.log(`\n[OK] ai-astrologer consistency: ${passed} checks passed`);

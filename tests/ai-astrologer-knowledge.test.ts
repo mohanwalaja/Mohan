@@ -38,11 +38,8 @@ const guardrails = read(KB('rules/guardrails.json'));
 const registry = read(KB('sources.json'));
 setKnowledgeBase(lifeAreas, remedies, guardrails);
 
-const knownIds = new Set<string>([
-  ...registry.sources.map((s: any) => s.id),
-  ...registry.excludedSources.map((s: any) => s.id),
-]);
-const excludedIds = new Set<string>(registry.excludedSources.map((s: any) => s.id));
+const knownIds = new Set<string>(registry.sources.map((s: any) => s.id));
+const excludedIds = new Set<string>((registry.excludedSources ?? []).map((s: any) => s.id));
 const byId = new Map<string, any>(registry.sources.map((s: any) => [s.id, s]));
 const passageLevel = new Set<string>(
   registry.sources.filter((s: any) => s.verifiedPassages).map((s: any) => s.id)
@@ -384,11 +381,12 @@ check('no knowledge base file mixes Tamil and Devanagari script', () => {
     'rules/remedies.json',
     'rules/guardrails.json',
     'rules/report-sections.json',
+    'rules/astrology-encyclopedia.json',
+    'rules/guided-questions.json',
     'sources.json',
     'README.md',
     'SOURCES.md',
     'VERIFICATION_LOG.md',
-    'prompt/system-prompt.md',
   ];
   const mixed = /[\u0B80-\u0BFF][\u0900-\u097F]|[\u0900-\u097F][\u0B80-\u0BFF]/;
   const strayTurkish = /\b(savunmak|için|olarak|bir|ve)\b/;

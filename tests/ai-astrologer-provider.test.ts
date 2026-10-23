@@ -37,8 +37,9 @@ function check(name: string, fn: () => void) {
 }
 
 check('the customer reply path delegates to the local answer builder', () => {
-  const answer = sliceText(provider, 'public static function answer(', '/** At most three affordable remedies', 'compatibility answer');
+  const answer = sliceToEnd(provider, 'public static function answer(', 'compatibility answer');
   assert.match(answer, /return self::answerFromKnowledgeBase\(\$question, \$language, \$chart, \$context\)/);
+  assert.doesNotMatch(provider, /function systemPrompt|function fillPrompt|function consultMoreSources|function remedyBlock|function shouldOfferHandoff|function ping\(/);
   const local = sliceText(provider, 'public static function answerFromKnowledgeBase(', '/**\n     * Resolve a knowledge-base file', 'local answer adapter');
   assert.match(local, /require_once __DIR__ \. '\/ai_astrologer_offline\.php'/);
   assert.match(local, /AstroAiOffline::answer\(\$question, \$language, \$chart, \$context\)/);
@@ -48,14 +49,12 @@ check('the customer reply path delegates to the local answer builder', () => {
 check('the provider cannot read a key or make an external request', () => {
   assert.doesNotMatch(provider, /AI_ASTROLOGER_API_KEY|\bgetenv\s*\(|\$_SERVER\s*\[|\$_ENV\s*\[/);
   assert.doesNotMatch(provider, /curl_init|CURLOPT_|Authorization:\s*Bearer|file_get_contents\s*\(\s*['"]https?:/i);
-  const complete = sliceText(provider, 'public static function complete(', '/** A compatibility stub', 'disabled completion method');
+  const complete = sliceText(provider, 'public static function complete(', 'public static function diagnostics(', 'disabled completion method');
   assert.match(complete, /throw new RuntimeException/);
   assert.match(complete, /disabled/i);
 });
 
-check('legacy ping and diagnostics are permanently local-only', () => {
-  const ping = sliceText(provider, 'public static function ping(', 'public static function diagnostics(', 'ping stub');
-  assert.match(ping, /'attempted'\s*=>\s*false/);
+check('diagnostics are permanently local-only with zero outbound ping', () => {
   const diagnostics = sliceToEnd(provider, 'public static function diagnostics(', 'diagnostics method');
   assert.match(diagnostics, /'attempted'\s*=>\s*false/);
   assert.match(diagnostics, /'sourceRegistry'\s*=>\s*\$stats/);
@@ -64,21 +63,21 @@ check('legacy ping and diagnostics are permanently local-only', () => {
   assert.match(endpoint, /Ignore legacy ping requests/);
 });
 
-check('source statistics match the current registry without claiming full-text coverage', () => {
+check('source statistics match the cleaned 39-source registry with zero Hindi books or unverified links', () => {
   const counts = new Map<string, number>();
   for (const source of sourceRegistry.sources) {
     const level = source.verification || 'unknown';
     counts.set(level, (counts.get(level) || 0) + 1);
   }
-  assert.equal(sourceRegistry.sources.length, 224);
-  assert.equal(sourceRegistry.excludedSources.length, 13);
+  assert.equal('excludedSources' in sourceRegistry, false);
+  assert.equal(sourceRegistry.sources.length, 39);
   assert.equal(counts.get('content-read'), 11);
-  assert.equal(counts.get('metadata-verified'), 144);
-  assert.equal(counts.get('linked-not-opened'), 67);
+  assert.equal(counts.get('metadata-verified'), 27);
   assert.equal(counts.get('catalogue-verified'), 1);
-  assert.equal(counts.get('dead'), 1);
-  assert.match(panel, /catalogue, not 224 complete books/i);
-  assert.match(panel, /Only 11 records are marked content-read/i);
+  assert.equal(counts.get('linked-not-opened') ?? 0, 0);
+  assert.equal(counts.get('dead') ?? 0, 0);
+  assert.match(panel, /Verified 39-source library/i);
+  assert.match(panel, /0 Hindi books/i);
 });
 
 check('legacy API-key settings are not returned or persisted by admin settings', () => {
