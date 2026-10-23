@@ -445,13 +445,13 @@ export function calculateAllGrahaPositions(
   return { siderealLongitudes, tropicalLongitudes, tropicalLatitudes, retrogrades };
 }
 
-export function getCombustionLimit(graha: Graha): number {
+export function getCombustionLimit(graha: Graha, isRetrograde: boolean = false): number {
   switch (graha) {
     case Graha.CHANDRA: return 12.0;
     case Graha.CHEVVAI: return 17.0;
-    case Graha.BUDHA: return 14.0;
+    case Graha.BUDHA: return isRetrograde ? 12.0 : 14.0;
     case Graha.GURU: return 11.0;
-    case Graha.SUKRA: return 10.0;
+    case Graha.SUKRA: return isRetrograde ? 8.0 : 10.0;
     case Graha.SANI: return 15.0;
     default: return 0.0;
   }
@@ -929,11 +929,12 @@ export function calculatePrecisionHoroscope(
     const navInfo = RASI_INFO[navRasi];
     const isVargottama = rasi === navRasi;
 
+    const isRetrograde = retrogrades[graha] || false;
     const isCombust =
       graha !== Graha.SURYA &&
       graha !== Graha.RAHU &&
       graha !== Graha.KETU &&
-      Math.abs(normalizeDelta(lon - sunLon)) < getCombustionLimit(graha);
+      Math.abs(normalizeDelta(lon - sunLon)) < getCombustionLimit(graha, isRetrograde);
 
     const rInfo = RASI_INFO[rasi];
     const gInfo = GRAHA_INFO[graha];

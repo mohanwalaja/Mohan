@@ -826,16 +826,6 @@
       "compactLine": "On Saturday, pray to Lord Shani or Lord Hanuman with a sesame oil lamp, donate black sesame or iron, and chant 'Om Shanaye Namah'."
      },
      {
-      "key": "mercury",
-      "house": 12,
-      "difficulties": "Confusion in decisions, speech issues, delay in studies",
-      "worship": "Lord Vishnu or Lord Ganesha should be worshipped on Wednesday.",
-      "lamp": "Light a ghee lamp during prayer.",
-      "donation": "Donate green gram to those in need.",
-      "mantra": "Chant 'Om Budhaya Namah' with devotion.",
-      "compactLine": "On Wednesday, pray to Lord Vishnu or Lord Ganesha with a ghee lamp, donate green gram, and chant 'Om Budhaya Namah'."
-     },
-     {
       "key": "sun",
       "house": 12,
       "difficulties": "Work pressure, ego clashes, distance from father or elders",
@@ -844,6 +834,16 @@
       "donation": "Donate wheat or jaggery to those in need.",
       "mantra": "Chant 'Om Suryaya Namah' with devotion.",
       "compactLine": "On Sunday, pray to Lord Surya with a sesame oil lamp, donate wheat or jaggery, and chant 'Om Suryaya Namah'."
+     },
+     {
+      "key": "mars",
+      "house": 12,
+      "difficulties": "Anger, hasty decisions, delays in marriage",
+      "worship": "Lord Murugan (Karthikeya) or Lord Hanuman should be worshipped on Tuesday.",
+      "lamp": "Light a sesame oil lamp during prayer.",
+      "donation": "Donate red lentils or jaggery to those in need.",
+      "mantra": "Chant 'Om Angarakaya Namah' with devotion.",
+      "compactLine": "On Tuesday, pray to Lord Murugan or Lord Hanuman with a sesame oil lamp, donate red lentils or jaggery, and chant 'Om Angarakaya Namah'."
      }
     ],
     "compact": false,
@@ -938,16 +938,6 @@
       "compactLine": "சனி பகவானுக்கு சனிக்கிழமை கருப்பு எள்ளு தானம் அளித்து 'ஓம் சனைச்சராய நமஹ' என்று ஜெபம் செய்ய வேண்டும்."
      },
      {
-      "key": "mercury",
-      "house": 12,
-      "difficulties": "முடிவில் குழப்பம், பேச்சுப் பிரச்சினை, கல்வித் தாமதம்",
-      "worship": "மகா விஷ்ணு அல்லது விநாயகர் வழிபாடு புதன் அன்று செய்யவும்.",
-      "lamp": "நெய் தீபம் ஏற்றி வணங்கவும்.",
-      "donation": "பச்சைப் பயறு தானம் அளிக்கவும்.",
-      "mantra": "'ஓம் புதாய நமஹ' என ஜெபிக்கவும்.",
-      "compactLine": "மகா விஷ்ணுவுக்கு புதன்கிழமை பச்சைப் பயறு தானம் அளித்து 'ஓம் புதாய நமஹ' என்று ஜெபம் செய்ய வேண்டும்."
-     },
-     {
       "key": "sun",
       "house": 12,
       "difficulties": "வேலை அழுத்தம், தந்தை அல்லது முதியோரிடமிருந்து விலகல்",
@@ -956,6 +946,16 @@
       "donation": "கோதுமை தானம் அளிக்கவும்.",
       "mantra": "'ஓம் சூர்யாய நமஹ' என ஜெபிக்கவும்.",
       "compactLine": "சூரிய பகவானுக்கு ஞாயிற்றுக்கிழமை கோதுமை தானம் அளித்து 'ஓம் சூர்யாய நமஹ' என்று ஜெபம் செய்ய வேண்டும்."
+     },
+     {
+      "key": "mars",
+      "house": 12,
+      "difficulties": "கோபம், அவசர முடிவுகள், திருமணத் தாமதம்",
+      "worship": "முருகன் (கார்த்திகேயன்) அல்லது அனுமன் வழிபாடு செவ்வாய் அன்று செய்யவும்.",
+      "lamp": "நல்லெண்ணெய் தீபம் ஏற்றி வணங்கவும்.",
+      "donation": "வெல்லம் தானம் அளிக்கவும்.",
+      "mantra": "'ஓம் அங்காரகாய நமஹ' என ஜெபிக்கவும்.",
+      "compactLine": "முருகப் பெருமானுக்கு செவ்வாய்க்கிழமை வெல்லம் தானம் அளித்து 'ஓம் அங்காரகாய நமஹ' என்று ஜெபம் செய்ய வேண்டும்."
      }
     ],
     "compact": false,
@@ -1050,16 +1050,6 @@
       "compactLine": "शनिवार को भगवान शनि या हनुमान जी को तिल के तेल का दीपक जलाकर काले तिल दान करें और 'ॐ शनैश्चराय नमः' का जप करें।"
      },
      {
-      "key": "mercury",
-      "house": 12,
-      "difficulties": "निर्णय में उलझन, वाणी की समस्या, पढ़ाई में विलंब",
-      "worship": "भगवान विष्णु या भगवान गणेश की आराधना बुधवार को करें।",
-      "lamp": "पूजा में घी का दीपक जलाएँ।",
-      "donation": "हरी मूँग का दान करें।",
-      "mantra": "'ॐ बुधाय नमः' मंत्र का जप करें।",
-      "compactLine": "बुधवार को भगवान विष्णु या गणेश जी को घी का दीपक जलाकर हरी मूँग दान करें और 'ॐ बुधाय नमः' का जप करें।"
-     },
-     {
       "key": "sun",
       "house": 12,
       "difficulties": "कार्यभार, पिता या बड़ों से दूरी",
@@ -1068,6 +1058,16 @@
       "donation": "गेहूँ या गुड़ का दान करें।",
       "mantra": "'ॐ सूर्याय नमः' मंत्र का जप करें।",
       "compactLine": "रविवार को भगवान सूर्य को तिल के तेल का दीपक जलाकर गेहूँ दान करें और 'ॐ सूर्याय नमः' का जप करें।"
+     },
+     {
+      "key": "mars",
+      "house": 12,
+      "difficulties": "क्रोध, जल्दबाज़ी के निर्णय, विवाह में देरी",
+      "worship": "भगवान कार्तिकेय या हनुमान जी की आराधना मंगलवार को करें।",
+      "lamp": "पूजा में तिल के तेल का दीपक जलाएँ।",
+      "donation": "अरहर दाल या गुड़ का दान करें।",
+      "mantra": "'ॐ अंगारकाय नमः' मंत्र का जप करें।",
+      "compactLine": "मंगलवार को भगवान कार्तिकेय या हनुमान जी को तिल के तेल का दीपक जलाकर अरहर दाल दान करें और 'ॐ अंगारकाय नमः' का जप करें।"
      }
     ],
     "compact": false,

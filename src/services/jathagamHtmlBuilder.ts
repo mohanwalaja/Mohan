@@ -508,8 +508,18 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
 
   const dashaPos = currentDashaGraha ? (result.planetPositions || []).find(p => p.graha === currentDashaGraha) : undefined;
   const dashaAssessmentAvailable = Boolean(dashaPos && isValidBhavaValue(dashaPos.bhavaNumber));
+  const dashaDebilitated = Boolean(
+    dashaPos && currentDashaGraha && (
+      dashaPos.dignity?.isDebilitated ?? (debilitationSign(currentDashaGraha) === Number(dashaPos.rasi))
+    )
+  );
   const dashaIsChallenging = dashaAssessmentAvailable
-    ? Boolean([6, 8, 12].includes(Number(dashaPos!.bhavaNumber)) || dashaPos!.isCombust || dashaPos!.isRetrograde)
+    ? Boolean(
+        [6, 8, 12].includes(Number(dashaPos!.bhavaNumber)) ||
+        dashaDebilitated ||
+        dashaPos!.isCombust ||
+        dashaPos!.isRetrograde
+      )
     : null;
 
   /* ---------------------------------------------------------------
@@ -528,7 +538,15 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
     lagnaRasi,
     chandraRasi: chandraRasiValid ? Number(chandraRasi) : null,
     lords: {} as Record<number, LordFacts>,
-    currentDashaLord: currentDashaGraha ?? null,
+    currentDashaLord: dashaAssessmentAvailable ? (currentDashaGraha ?? null) : null,
+    currentDashaLordFacts: dashaAssessmentAvailable
+      ? {
+          bhava: Number(dashaPos!.bhavaNumber),
+          isDebilitated: dashaDebilitated,
+          isCombust: Boolean(dashaPos!.isCombust),
+          isRetrograde: Boolean(dashaPos!.isRetrograde),
+        }
+      : null,
     currentDashaLabel: null,
     moonSignLabel: null,
   };
@@ -643,9 +661,7 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
       icon: '🧭',
       badge: dashaIsChallenging === null
         ? 'N/A'
-        : dashaIsChallenging
-        ? (isTa ? 'நடப்பு ஆண்டு ⚠ கவனம்' : isHi ? 'आगामी वर्ष ⚠ सावधान' : 'Upcoming Year ⚠ Caution')
-        : (isTa ? 'நடப்பு ஆண்டு ✓ வாய்ப்பு' : isHi ? 'आगामी वर्ष ✓ अवसर' : 'Upcoming Year ✓ Opportunity'),
+        : badgeFor(8, isTa ? 'நடப்பு ஆண்டு' : isHi ? 'आगामी वर्ष' : 'Upcoming Year', null),
       title: isTa ? 'தற்போதைய வழிகாட்டல்' : isHi ? 'ज्योतिषीय मार्गदर्शन' : 'Current Guidance',
       desc: !chandraRasiValid || (!result.currentDasha && !activeDashaPeriod)
         ? unavailableDasha

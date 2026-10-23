@@ -114,11 +114,14 @@ function collectExact(
   for (const entry of candidates) {
     if (names.length >= limit) break;
     // The hand-written Tamil spelling is the authority: it must open with the
-    // exact pada letter printed on page 1.
+    // exact pada letter printed on page 1. Also deduplicate by lowercase Roman
+    // name so the English sheet never repeats a name across South/North columns.
     if (!matchesPadaCore(entry.t, akshara)) continue;
     const fingerprint = tamilPadaCore(entry.t) + '|' + entry.t.normalize('NFC').trim();
-    if (used.has(fingerprint)) continue;
+    const romanKey = 'roman|' + entry.n.trim().toLowerCase();
+    if (used.has(fingerprint) || used.has(romanKey)) continue;
     used.add(fingerprint);
+    used.add(romanKey);
     names.push(toOption(entry, akshara));
   }
   return names;

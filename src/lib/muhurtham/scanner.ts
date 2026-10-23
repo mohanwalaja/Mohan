@@ -604,7 +604,7 @@ const NAKSHATRA_PADA_SYLLABLES: Array<{
   { padas: [{ pada: 1, en: 'Hu', ta: 'ஹு', hi: 'हु' }, { pada: 2, en: 'Hey', ta: 'ஹே', hi: 'हे' }, { pada: 3, en: 'Ho', ta: 'ஹோ', hi: 'हो' }, { pada: 4, en: 'Daa', ta: 'டா', hi: 'डा' }], summaryEn: 'Hu, Hey, Ho, Daa', summaryTa: 'ஹு, ஹே, ஹோ, டா', summaryHi: 'हु, हे, हो, डा' }, // Pushya
   { padas: [{ pada: 1, en: 'Dee', ta: 'டீ', hi: 'डी' }, { pada: 2, en: 'Du', ta: 'டூ', hi: 'डू' }, { pada: 3, en: 'Dey', ta: 'டே', hi: 'डे' }, { pada: 4, en: 'Do', ta: 'டோ', hi: 'डो' }], summaryEn: 'Dee, Du, Dey, Do', summaryTa: 'டீ, டூ, டே, டோ', summaryHi: 'डी, डू, डे, डो' }, // Ashlesha
   { padas: [{ pada: 1, en: 'Maa', ta: 'மா', hi: 'मा' }, { pada: 2, en: 'Mee', ta: 'மீ', hi: 'मी' }, { pada: 3, en: 'Moo', ta: 'மூ', hi: 'मू' }, { pada: 4, en: 'Mey', ta: 'மே', hi: 'मे' }], summaryEn: 'Maa, Mee, Moo, Mey', summaryTa: 'மா, மீ, மூ, மே', summaryHi: 'मा, मी, मू, मे' }, // Magha
-  { padas: [{ pada: 1, en: 'Moo', ta: 'மோ', hi: 'मो' }, { pada: 2, en: 'Taa', ta: 'டா', hi: 'टा' }, { pada: 3, en: 'Tee', ta: 'டீ', hi: 'टी' }, { pada: 4, en: 'Too', ta: 'டூ', hi: 'टू' }], summaryEn: 'Mo, Taa, Tee, Too', summaryTa: 'மோ, டா, டீ, டூ', summaryHi: 'मो, टा, टी, टू' }, // Purva Phalguni
+  { padas: [{ pada: 1, en: 'Mo', ta: 'மோ', hi: 'मो' }, { pada: 2, en: 'Taa', ta: 'டா', hi: 'टा' }, { pada: 3, en: 'Tee', ta: 'டீ', hi: 'टी' }, { pada: 4, en: 'Too', ta: 'டூ', hi: 'टू' }], summaryEn: 'Mo, Taa, Tee, Too', summaryTa: 'மோ, டா, டீ, டூ', summaryHi: 'मो, टा, टी, टू' }, // Purva Phalguni
   { padas: [{ pada: 1, en: 'Tey', ta: 'டே', hi: 'टे' }, { pada: 2, en: 'To', ta: 'டோ', hi: 'टो' }, { pada: 3, en: 'Paa', ta: 'பா', hi: 'पा' }, { pada: 4, en: 'Pee', ta: 'பீ', hi: 'पी' }], summaryEn: 'Tey, To, Paa, Pee', summaryTa: 'டே, டோ, பா, பீ', summaryHi: 'टे, टो, पा, पी' }, // Uttara Phalguni
   { padas: [{ pada: 1, en: 'Poo', ta: 'பூ', hi: 'पू' }, { pada: 2, en: 'Sha', ta: 'ஷ', hi: 'ष' }, { pada: 3, en: 'Na', ta: 'ண', hi: 'ण' }, { pada: 4, en: 'Tha', ta: 'டா', hi: 'ठ' }], summaryEn: 'Poo, Sha, Na, Tha', summaryTa: 'பூ, ஷ, ண, டா', summaryHi: 'पू, ष, ण, ठ' }, // Hasta
   { padas: [{ pada: 1, en: 'Pey', ta: 'பே', hi: 'पे' }, { pada: 2, en: 'Po', ta: 'போ', hi: 'पो' }, { pada: 3, en: 'Raa', ta: 'ரா', hi: 'रा' }, { pada: 4, en: 'Ree', ta: 'ரீ', hi: 'री' }], summaryEn: 'Pey, Po, Raa, Ree', summaryTa: 'பே, போ, ரா, ரீ', summaryHi: 'पे, पो, रा, री' }, // Chitra
@@ -619,7 +619,7 @@ const NAKSHATRA_PADA_SYLLABLES: Array<{
   { padas: [{ pada: 1, en: 'Gaa', ta: 'கா', hi: 'गा' }, { pada: 2, en: 'Gee', ta: 'கீ', hi: 'गी' }, { pada: 3, en: 'Goo', ta: 'கூ', hi: 'गू' }, { pada: 4, en: 'Gey', ta: 'கே', hi: 'गे' }], summaryEn: 'Gaa, Gee, Goo, Gey', summaryTa: 'கா, கீ, கூ, கே', summaryHi: 'गा, गी, गू, गे' }, // Dhanishta
   { padas: [{ pada: 1, en: 'Go', ta: 'கோ', hi: 'गो' }, { pada: 2, en: 'Saa', ta: 'சா', hi: 'सा' }, { pada: 3, en: 'See', ta: 'சீ', hi: 'सी' }, { pada: 4, en: 'Soo', ta: 'சூ', hi: 'सू' }], summaryEn: 'Go, Saa, See, Soo', summaryTa: 'கோ, சா, சீ, சூ', summaryHi: 'गो, सा, सी, सू' }, // Shatabhisha
   { padas: [{ pada: 1, en: 'Sey', ta: 'சே', hi: 'से' }, { pada: 2, en: 'So', ta: 'சோ', hi: 'सो' }, { pada: 3, en: 'Daa', ta: 'தா', hi: 'दा' }, { pada: 4, en: 'Dee', ta: 'தீ', hi: 'दी' }], summaryEn: 'Sey, So, Daa, Dee', summaryTa: 'சே, சோ, தா, தீ', summaryHi: 'से, सो, दा, दी' }, // Purva Bhadrapada
-  { padas: [{ pada: 1, en: 'Doo', ta: 'தூ', hi: 'दू' }, { pada: 2, en: 'Thaa', ta: 'தா', hi: 'था' }, { pada: 3, en: 'Jha', ta: 'ஜா', hi: 'झ' }, { pada: 4, en: 'Dha', ta: 'ஞா', hi: 'ञ' }], summaryEn: 'Doo, Thaa, Jha, Dha', summaryTa: 'தூ, தா, ஜா, ஞா', summaryHi: 'दू, था, झ, ञ' }, // Uttara Bhadrapada
+  { padas: [{ pada: 1, en: 'Doo', ta: 'தூ', hi: 'दू' }, { pada: 2, en: 'Tha', ta: 'த', hi: 'थ' }, { pada: 3, en: 'Jha', ta: 'ஜ', hi: 'झ' }, { pada: 4, en: 'Nya', ta: 'ஞ', hi: 'ञ' }], summaryEn: 'Doo, Tha, Jha, Nya', summaryTa: 'தூ, த, ஜ, ஞ', summaryHi: 'दू, थ, झ, ञ' }, // Uttara Bhadrapada
   { padas: [{ pada: 1, en: 'Dey', ta: 'தே', hi: 'दे' }, { pada: 2, en: 'Do', ta: 'தோ', hi: 'दो' }, { pada: 3, en: 'Chaa', ta: 'சா', hi: 'चा' }, { pada: 4, en: 'Chee', ta: 'சீ', hi: 'ची' }], summaryEn: 'Dey, Do, Chaa, Chee', summaryTa: 'தே, தோ, சா, சீ', summaryHi: 'दे, दो, चा, ची' } // Revati
 ];
 
@@ -803,7 +803,16 @@ function formatMinutesToTime(totalMinutes: number): string {
   return `${h12.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')} ${ampm}`;
 }
 
-function calculatePanchangamStateAt(utcDate: Date): { tithiIndex: number; tithiNumberInPaksha: number; karanaIndex: number; yogaIndex: number; yogaNameEn: string } {
+function calculatePanchangamStateAt(utcDate: Date): {
+  tithiIndex: number;
+  tithiNumberInPaksha: number;
+  karanaIndex: number;
+  yogaIndex: number;
+  yogaNameEn: string;
+  moonNakshatraIndex: number;
+  moonNakshatraNameEn: string;
+  moonRasiNumber: number;
+} {
   const time = new Astronomy.AstroTime(utcDate);
   const jd = time.ut + 2451545.0;
   const ayanamsa = calculateLahiriAyanamsa(jd);
@@ -827,7 +836,19 @@ function calculatePanchangamStateAt(utcDate: Date): { tithiIndex: number; tithiN
   const yogaSum = (sunSid + moonSid) % 360;
   const yogaIndex = Math.floor(yogaSum / nakSpan) % 27;
   const yogaNameEn = (YOGA_NAMES[yogaIndex] || YOGA_NAMES[0]).en;
-  return { tithiIndex, tithiNumberInPaksha, karanaIndex, yogaIndex, yogaNameEn };
+  const moonNakshatraIndex = Math.floor(moonSid / nakSpan) % 27;
+  const moonNakshatraNameEn = (rulesData.nakshatras[moonNakshatraIndex] || rulesData.nakshatras[0]).nameEn;
+  const moonRasiNumber = Math.floor(moonSid / 30.0) + 1;
+  return {
+    tithiIndex,
+    tithiNumberInPaksha,
+    karanaIndex,
+    yogaIndex,
+    yogaNameEn,
+    moonNakshatraIndex,
+    moonNakshatraNameEn,
+    moonRasiNumber
+  };
 }
 
 function utcForLocalMinutes(dateStr: string, localMinutes: number, location: LocationInput, timeZoneId: string | null): Date {
@@ -840,7 +861,11 @@ function utcForLocalMinutes(dateStr: string, localMinutes: number, location: Loc
   return new Date(Date.UTC(y, m - 1, d, hours, mins, 0) - location.timezoneOffsetHours * 3600000);
 }
 
-function isPanchangamVetoAt(utcDate: Date, eventKey: MuhurthamEventKey): boolean {
+function isPanchangamVetoAt(
+  utcDate: Date,
+  eventKey: MuhurthamEventKey,
+  persons?: Array<{ nakshatraIndex: number; rasiNumber: number }>
+): boolean {
   const state = calculatePanchangamStateAt(utcDate);
   const eventConfig = (rulesData.events as any)[eventKey] || (rulesData.events as any).wedding;
   if (state.tithiIndex === 29) return true;
@@ -848,7 +873,19 @@ function isPanchangamVetoAt(utcDate: Date, eventKey: MuhurthamEventKey): boolean
   if (state.karanaIndex === 6) return true;
   const globalAvoidYogas = ['Vishkambha', 'Vyatipata', 'Parigha', 'Vaidhriti', 'Atiganda', 'Shoola', 'Ganda', 'Vyaghata', 'Vajra'];
   if (globalAvoidYogas.includes(state.yogaNameEn) || eventConfig.avoidYogas?.includes(state.yogaNameEn)) return true;
+  if (eventConfig.avoidNakshatras?.includes(state.moonNakshatraNameEn)
+      || eventConfig.hardVetoNakshatras?.includes(state.moonNakshatraNameEn)) {
+    return true;
+  }
+  if (isPanchakaNakshatra(state.moonNakshatraIndex) && Boolean(eventConfig.avoidPanchaka)) return true;
   if (isEventTithiAvoided(eventKey, state.tithiIndex)) return true;
+  if (persons && persons.length > 0) {
+    for (const p of persons) {
+      if (state.moonNakshatraIndex === p.nakshatraIndex) return true;
+      const rasiDiff = ((state.moonRasiNumber - p.rasiNumber + 12) % 12) + 1;
+      if (rasiDiff === 8) return true;
+    }
+  }
   return false;
 }
 
@@ -1387,6 +1424,28 @@ export function computeDayMuhurtham(
   // so a transition inside the window is caught and that window is removed.
   let vetoedWindows: TimeWindow[] = [];
   {
+    const intradayPersons: Array<{ nakshatraIndex: number; rasiNumber: number }> = [];
+    const seenPersonKeys = new Set<string>();
+    const pushIntradayPerson = (idx?: number, rasi?: number, role: string = 'self') => {
+      if (idx === undefined || idx < 0 || idx > 26) return;
+      const key = `${role}:${idx}`;
+      if (seenPersonKeys.has(key)) return;
+      seenPersonKeys.add(key);
+      intradayPersons.push({
+        nakshatraIndex: idx,
+        rasiNumber: rasi || (Math.floor((idx * 4) / 9) + 1)
+      });
+    };
+    const resolvedBrideIdx = options?.brideNakshatraIndex ?? (options?.brideNakshatra ? (findNakshatraIndexByName(options.brideNakshatra) ?? undefined) : undefined);
+    const resolvedGroomIdx = options?.groomNakshatraIndex ?? (options?.groomNakshatra ? (findNakshatraIndexByName(options.groomNakshatra) ?? undefined) : undefined);
+    pushIntradayPerson(resolvedBrideIdx, options?.brideRasiNumber, 'bride');
+    pushIntradayPerson(resolvedGroomIdx, options?.groomRasiNumber, 'groom');
+    if (options?.persons && options.persons.length > 0) {
+      for (const p of options.persons) {
+        pushIntradayPerson(p.nakshatraIndex, p.rasiNumber, p.role);
+      }
+    }
+
     const filtered: TimeWindow[] = [];
     for (const win of nallaNeram) {
       const sM = win.startMinutes ?? 0;
@@ -1401,7 +1460,7 @@ export function computeDayMuhurtham(
       let vetoed = false;
       for (const sampleM of samples) {
         const utc = utcForLocalMinutes(dateStr, sampleM, location, timeZoneId);
-        if (isPanchangamVetoAt(utc, eventKey)) {
+        if (isPanchangamVetoAt(utc, eventKey, intradayPersons)) {
           vetoed = true;
           break;
         }

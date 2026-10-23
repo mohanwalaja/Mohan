@@ -166,6 +166,10 @@ export function classifyJathagamPlanetsForSummary(
   );
   const lagnaRasi = isValidRasi(result.lagnaRasi) ? Number(result.lagnaRasi) : null;
   const lagnaLord = lagnaRasi === null ? null : SIGN_LORDS[lagnaRasi] ?? null;
+  const moonPosition = positions.find(p => p.graha === 'moon');
+  const moonRasi = isValidRasi((result as { chandraRasi?: unknown }).chandraRasi)
+    ? Number((result as { chandraRasi?: unknown }).chandraRasi)
+    : (moonPosition ? Number(moonPosition.rasi) : null);
 
   const supportive: Array<SummarySupportivePlanet & { score: number }> = [];
   const needsCare: Array<SummaryCarePlanet & { score: number }> = [];
@@ -183,16 +187,21 @@ export function classifyJathagamPlanetsForSummary(
     const isExalted = EXALTATION_SIGN[key] === rasi;
     const isOwnSign = (OWN_SIGNS[key] ?? []).includes(rasi);
     const isChallengingHouse = house !== null && SUMMARY_CHALLENGING_HOUSES.includes(house);
-    // Close conjunction with a natural malefic: same house AND inside the
-    // report's 10° orb (a same-sign pair 20° apart is not a yuti).
+    // Close conjunction with a natural malefic: full 360° sidereal longitude
+    // inside the report's 10° orb (a same-sign pair 20°–29° apart is NOT a yuti,
+    // while a cross-sign cuspal pair 2° apart IS a yuti). When degrees are not
+    // supplied in synthetic partial inputs, fall back to same whole-sign house.
     const conjunctMalefic = positions.some(p => {
       if (p.graha === key || !SUMMARY_NATURAL_MALEFICS.includes(p.graha)) return false;
-      if (house === null || !isValidHouse(p.bhavaNumber) || Number(p.bhavaNumber) !== house) return false;
-      const a = Number(position.degrees);
-      const b = Number(p.degrees);
-      if (!Number.isFinite(a) || !Number.isFinite(b)) return true; // same house, no degrees: keep the classical reading
-      const separation = Math.abs(a - b);
-      return Math.min(separation, 30 - separation) <= SUMMARY_MALEFIC_CONJUNCTION_ORB_DEG;
+      const a = Number(position.degrees ?? (position as { degree?: unknown }).degree);
+      const b = Number(p.degrees ?? (p as { degree?: unknown }).degree);
+      if (!Number.isFinite(a) || !Number.isFinite(b)) {
+        return house !== null && isValidHouse(p.bhavaNumber) && Number(p.bhavaNumber) === house;
+      }
+      const lonA = (rasi - 1) * 30 + a;
+      const lonB = (Number(p.rasi) - 1) * 30 + b;
+      const rawDiff = Math.abs(lonA - lonB) % 360;
+      return Math.min(rawDiff, 360 - rawDiff) <= SUMMARY_MALEFIC_CONJUNCTION_ORB_DEG;
     });
     // Dignity offsets a single combustion, exactly as the page-2 life cards do:
     // a graha in its own sign or exaltation is not reported as "needing care"
@@ -205,7 +214,7 @@ export function classifyJathagamPlanetsForSummary(
     // Neecha Bhanga follows the existing dignity rule: a relieved debilitation
     // is still reported, but it is not counted as an extra care signal.
     const neechaBhangaApplies = isDebilitated && classicalDebilitation !== null
-      ? neechaBhangaHolds(key, rasi, lagnaRasi, positions)
+      ? neechaBhangaHolds(key, rasi, lagnaRasi, moonRasi, positions)
       : false;
 
     let careScore = 0;
@@ -279,12 +288,13 @@ export function classifyJathagamPlanetsForSummary(
 /**
  * Neecha Bhanga as the report's dignity.ts defines it: the debilitation is
  * relieved when the graha exalted in the occupied sign, or the dispositor, is
- * conjunct the debilitated graha or sits in a kendra from the Lagna.
+ * conjunct the debilitated graha or sits in a kendra from the Lagna or Moon.
  */
 function neechaBhangaHolds(
   graha: string,
   rasi: number,
   lagnaRasi: number | null,
+  moonRasi: number | null,
   positions: SummaryPlanetPosition[]
 ): boolean {
   const rasiByGraha: Record<string, number> = {};
@@ -292,12 +302,14 @@ function neechaBhangaHolds(
   const exaltationGraha = SIGN_EXALTED_BY[rasi];
   const dispositor = SIGN_LORDS[rasi];
   const kendra = [1, 4, 7, 10];
-  if (lagnaRasi !== null && exaltationGraha && rasiByGraha[exaltationGraha] !== undefined) {
+  if (exaltationGraha && rasiByGraha[exaltationGraha] !== undefined) {
     if (exaltationGraha !== graha && rasiByGraha[exaltationGraha] === rasi) return true;
-    if (kendra.includes(houseFromSign(rasiByGraha[exaltationGraha], lagnaRasi))) return true;
+    if (lagnaRasi !== null && kendra.includes(houseFromSign(rasiByGraha[exaltationGraha], lagnaRasi))) return true;
+    if (moonRasi !== null && exaltationGraha !== 'moon' && kendra.includes(houseFromSign(rasiByGraha[exaltationGraha], moonRasi))) return true;
   }
-  if (lagnaRasi !== null && dispositor && dispositor !== graha && rasiByGraha[dispositor] !== undefined) {
-    if (kendra.includes(houseFromSign(rasiByGraha[dispositor], lagnaRasi))) return true;
+  if (dispositor && dispositor !== graha && rasiByGraha[dispositor] !== undefined) {
+    if (lagnaRasi !== null && kendra.includes(houseFromSign(rasiByGraha[dispositor], lagnaRasi))) return true;
+    if (moonRasi !== null && dispositor !== 'moon' && kendra.includes(houseFromSign(rasiByGraha[dispositor], moonRasi))) return true;
   }
   return false;
 }

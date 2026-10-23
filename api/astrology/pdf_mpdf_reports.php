@@ -1535,8 +1535,14 @@ HTML;
         $dashaPlacementAvailableForLife = $currentDashaLordKeyForLife !== null
             && isset($bhavaByGrahaForLife[$currentDashaLordKeyForLife])
             && is_int($bhavaByGrahaForLife[$currentDashaLordKeyForLife]);
+        $dashaDebilitatedSignsForLife = ['sun' => 7, 'moon' => 8, 'mars' => 4, 'mercury' => 12, 'jupiter' => 10, 'venus' => 6, 'saturn' => 1];
+        $dashaRasiForLife = $currentDashaLordKeyForLife !== null ? ($rasiByGrahaForLife[$currentDashaLordKeyForLife] ?? null) : null;
+        $dashaIsDebilitatedForLife = $currentDashaLordKeyForLife !== null
+            && isset($dashaDebilitatedSignsForLife[$currentDashaLordKeyForLife])
+            && $dashaRasiForLife === $dashaDebilitatedSignsForLife[$currentDashaLordKeyForLife];
         $dashaIsChallengingForLife = $dashaPlacementAvailableForLife
             ? (in_array($bhavaByGrahaForLife[$currentDashaLordKeyForLife], [6, 8, 12], true)
+                || $dashaIsDebilitatedForLife
                 || !empty($flagsByGrahaForLife[$currentDashaLordKeyForLife]['isCombust'])
                 || !empty($flagsByGrahaForLife[$currentDashaLordKeyForLife]['isRetrograde']))
             : null;
@@ -2891,11 +2897,16 @@ CSS;
         }
         $lagnaRasi = $validRasi($result['lagnaRasi'] ?? null) ? (int) $result['lagnaRasi'] : null;
         $lagnaLord = $lagnaRasi === null ? null : ($signLords[$lagnaRasi] ?? null);
+        $moonRasi = $validRasi($result['chandraRasi'] ?? null) ? (int) $result['chandraRasi'] : null;
+        if ($moonRasi === null) {
+            foreach ($positions as $mp) {
+                if ((string) $mp['graha'] === 'moon') { $moonRasi = (int) $mp['rasi']; break; }
+            }
+        }
 
         // Neecha Bhanga, as dignity.ts defines it: the graha exalted in the
-        // occupied sign, or the dispositor, conjunct the graha or in a kendra.
-        $neechaBhangaHolds = static function (string $graha, int $rasi) use ($lagnaRasi, $positions, $signExaltedBy, $signLords): bool {
-            if ($lagnaRasi === null) return false;
+        // occupied sign, or the dispositor, conjunct the graha or in a kendra from Lagna or Moon.
+        $neechaBhangaHolds = static function (string $graha, int $rasi) use ($lagnaRasi, $moonRasi, $positions, $signExaltedBy, $signLords): bool {
             $rasiByGraha = [];
             foreach ($positions as $p) { $rasiByGraha[(string) $p['graha']] = (int) $p['rasi']; }
             $kendra = [1, 4, 7, 10];
@@ -2905,11 +2916,13 @@ CSS;
             $exaltationGraha = $signExaltedBy[$rasi] ?? null;
             if ($exaltationGraha !== null && isset($rasiByGraha[$exaltationGraha])) {
                 if ($exaltationGraha !== $graha && $rasiByGraha[$exaltationGraha] === $rasi) return true;
-                if (in_array($houseFrom($rasiByGraha[$exaltationGraha], $lagnaRasi), $kendra, true)) return true;
+                if ($lagnaRasi !== null && in_array($houseFrom($rasiByGraha[$exaltationGraha], $lagnaRasi), $kendra, true)) return true;
+                if ($moonRasi !== null && $exaltationGraha !== 'moon' && in_array($houseFrom($rasiByGraha[$exaltationGraha], $moonRasi), $kendra, true)) return true;
             }
             $dispositor = $signLords[$rasi] ?? null;
             if ($dispositor !== null && $dispositor !== $graha && isset($rasiByGraha[$dispositor])) {
-                if (in_array($houseFrom($rasiByGraha[$dispositor], $lagnaRasi), $kendra, true)) return true;
+                if ($lagnaRasi !== null && in_array($houseFrom($rasiByGraha[$dispositor], $lagnaRasi), $kendra, true)) return true;
+                if ($moonRasi !== null && $dispositor !== 'moon' && in_array($houseFrom($rasiByGraha[$dispositor], $moonRasi), $kendra, true)) return true;
             }
             return false;
         };
@@ -2935,13 +2948,20 @@ CSS;
             foreach ($positions as $other) {
                 $otherKey = (string) $other['graha'];
                 if ($otherKey === $key || !in_array($otherKey, $malefics, true)) continue;
-                if ($house === null || !isset($other['bhavaNumber']) || !$validRasi($other['bhavaNumber'])) continue;
-                if ((int) $other['bhavaNumber'] !== $house) continue;
-                $a = isset($position['degrees']) && is_numeric($position['degrees']) ? (float) $position['degrees'] : null;
-                $b = isset($other['degrees']) && is_numeric($other['degrees']) ? (float) $other['degrees'] : null;
-                if ($a === null || $b === null) { $conjunctMalefic = true; break; } // same house, no degrees: classical reading
-                $separation = abs($a - $b);
-                if (min($separation, 30 - $separation) <= $conjunctionOrb) { $conjunctMalefic = true; break; }
+                $aRaw = $position['degrees'] ?? ($position['degree'] ?? null);
+                $bRaw = $other['degrees'] ?? ($other['degree'] ?? null);
+                $a = $aRaw !== null && is_numeric($aRaw) ? (float) $aRaw : null;
+                $b = $bRaw !== null && is_numeric($bRaw) ? (float) $bRaw : null;
+                if ($a === null || $b === null) {
+                    if ($house !== null && isset($other['bhavaNumber']) && $validRasi($other['bhavaNumber']) && (int) $other['bhavaNumber'] === $house) {
+                        $conjunctMalefic = true; break;
+                    }
+                    continue;
+                }
+                $lonA = ($rasi - 1) * 30.0 + $a;
+                $lonB = ((int) $other['rasi'] - 1) * 30.0 + $b;
+                $rawDiff = fmod(abs($lonA - $lonB), 360.0);
+                if (min($rawDiff, 360.0 - $rawDiff) <= $conjunctionOrb) { $conjunctMalefic = true; break; }
             }
             $isCombust = !empty($position['isCombust']) && !$isExalted && !$isOwnSign;
             $isSupportiveHouse = $house !== null && in_array($house, $supportiveHouses, true);
@@ -3036,91 +3056,6 @@ CSS;
             'assessmentComplete' => $assessmentComplete,
             'incompleteNote' => $summaryText['text']['assessmentIncomplete']
         ];
-    }
-
-    /**
-     * Guidance prose for the Navagraha panel, raw (unescaped) per language.
-     */
-    public static function navagrahaGuidanceData(string $lang): array
-    {
-        $isTa = ($lang === 'ta');
-        $isHi = ($lang === 'hi');
-        if ($isTa) {
-            $navGuidance = [
-                'title' => 'நவக்கிரகங்கள்',
-                'intro' => 'நவக்கிரகங்கள் என்பவர்கள் சூரியன், சந்திரன், செவ்வாய், புதன், குரு, சுக்கிரன், சனி, ராகு மற்றும் கேது ஆகிய ஒன்பது கிரகங்கள் ஆவர். இவர்கள் நமக்குக் கஷ்டங்களைத் தருவதில்லை; மாறாக, நாம் செய்த முன்வினைப் பயன்களை (கர்மா) அனுபவிக்க உதவும் நடுநிலையான நீதிபதிகளாக மட்டுமே செயல்படுகிறார்கள்.',
-                'reasonsTitle' => 'கஷ்டங்கள் தருவதன் காரணங்கள்',
-                'reasons' => [
-                    ['கர்ம வினைப் பயன்', 'முற்பிறவிகளிலும் இப்பிறவியிலும் செய்த பாவ, புண்ணிய கணக்குகளின்படியே கிரகங்கள் பலன்களைத் தருகின்றன.'],
-                    ['தண்டனை அல்ல, திருத்தம்', 'தவறுகளை உணர்ந்து திருத்திக் கொள்வதற்காகவே கஷ்டங்கள் வருகின்றன.'],
-                    ['அகந்தையை அழித்தல்', 'பேராசை, தலைக்கனம், அகந்தையை அடக்கி இறைவனிடம் சரணடைய வைக்கும்.'],
-                    ['ஆத்ம வளர்ச்சி', 'இக்கட்டான சூழ்நிலைகள் பொறுமையையும் மனப்பக்குவத்தையும் உண்டாக்குகின்றன.'],
-                ],
-                'waysTitle' => 'கிரக தோஷங்களை எதிர்கொள்ளும் வழிகள்',
-                'ways' => [
-                    ['இறை வழிபாடு', 'கிரகத்திற்குரிய அதிதேவதைகளை வழிபடுவது கஷ்டங்களைக் குறைக்கும்.'],
-                    ['தான தர்மங்கள்', 'ஏழைகள், விலங்குகளுக்கு உணவு அளிப்பது கர்ம வினையைக் குறைக்கும்.'],
-                    ['பாரம்பரிய பக்தி முறைகள்', 'மன அமைதிக்கான வழிபாடு கஷ்டங்களை எதிர்கொள்ளும் வலிமையைத் தரும்.'],
-                    ['நன்னடத்தை', 'நேர்மையான வாழ்க்கை கிரகங்களின் தீய தாக்கத்திலிருந்து காக்கும்.'],
-                ],
-                'closing' => 'வாழ்க்கையில் வரும் கஷ்டங்கள் அனைத்தும் தற்காலிகமானவையே. அவை நம்மைப் புடம் போட்ட தங்கமாக மாற்றுவதற்கே தவிர, அழிப்பதற்காக அல்ல.',
-            ];
-        } elseif ($isHi) {
-            $navGuidance = [
-                'title' => 'नवग्रह',
-                'intro' => 'नवग्रह नौ ग्रह हैं — सूर्य, चंद्र, मंगल, बुध, गुरु, शुक्र, शनि, राहु और केतु। वे हमें स्वयं कष्ट नहीं देते; बल्कि वे निष्पक्ष न्यायाधीशों की भाँति केवल इतना करते हैं कि हम अपने पूर्वकर्मों (कर्म) के फलों का अनुभव कर सकें।',
-                'reasonsTitle' => 'नवग्रह कष्ट क्यों देते हैं',
-                'reasons' => [
-                    ['कर्मफल', 'पूर्वजन्मों और इस जन्म में किए गए पाप-पुण्य के हिसाब के अनुसार ही ग्रह फल देते हैं।'],
-                    ['दंड नहीं, सुधार', 'कष्ट इसलिए आते हैं कि हम अपनी गलतियों को पहचानें और सुधार करें।'],
-                    ['अहंकार का नाश', 'लोभ, हठ और अहंकार को वश में करके वे हमें ईश्वर की शरण में ले जाते हैं।'],
-                    ['आत्मिक विकास', 'कठिन परिस्थितियाँ धैर्य और मन की परिपक्वता उत्पन्न करती हैं।'],
-                ],
-                'waysTitle' => 'ग्रह दोषों से निपटने के उपाय',
-                'ways' => [
-                    ['ईश्वर की आराधना', 'ग्रह के अधिदेवता की आराधना करने से कष्ट कम होते हैं।'],
-                    ['सेवा और परोपकार', 'निर्धनों को और पशुओं को भोजन देने से कर्म-भार कम होता है।'],
-                    ['पारंपरिक भक्ति', 'मन को शांत करने वाली आराधना कष्ट सहने की शक्ति देती है।'],
-                    ['सदाचार', 'ईमानदार जीवन ग्रहों के प्रतिकूल प्रभाव से रक्षा करता है।'],
-                ],
-                'closing' => 'जीवन में आने वाले सभी कष्ट अस्थायी हैं। वे हमें तपाये हुए सोने की भाँति बदलने के लिए आते हैं, नष्ट करने के लिए नहीं।',
-            ];
-        } else {
-            $navGuidance = [
-                'title' => 'The Navagrahas',
-                'intro' => 'The Navagrahas are the nine grahas: Surya (Sun), Chandra (Moon), Mangal (Mars), Budha (Mercury), Guru (Jupiter), Shukra (Venus), Shani (Saturn), Rahu and Ketu. They do not bring us hardship of their own accord; rather, they act only as impartial judges who help us experience the results of our own past actions (karma).',
-                'reasonsTitle' => 'Why the Navagrahas Bring Difficulties',
-                'reasons' => [
-                    ['Fruits of Karma', 'The grahas deliver results exactly according to the account of wrong and meritorious deeds accumulated in past lives and in this life.'],
-                    ['Correction, Not Punishment', 'Hardships come so that we recognise our mistakes and correct ourselves.'],
-                    ['Dissolving the Ego', 'They subdue greed, stubbornness and ego, and lead us to surrender to the Divine.'],
-                    ['Growth of the Soul', 'Difficult circumstances build patience and maturity of mind.'],
-                ],
-                'waysTitle' => 'Ways to Face Planetary Doshas',
-                'ways' => [
-                    ['Worship of God', 'Worshipping the presiding deity of the graha reduces hardship.'],
-                    ['Charity', 'Feeding the poor and feeding animals lightens the burden of karma.'],
-                    ['Traditional Devotion', 'Worship that calms the mind gives the strength to face hardship.'],
-                    ['Good Conduct', 'An honest life protects you from the adverse influence of the grahas.'],
-                ],
-                'closing' => 'All hardships in life are temporary. They exist to change us into gold tested in fire — not to destroy us.',
-            ];
-        }
-        return $navGuidance;
-    }
-
-    /**
-     * Renders the Navagraha guidance panel (mirrors buildNavagrahaGuidanceHtml()).
-     */
-    public static function navagrahaGuidanceHtml(string $lang): string
-    {
-        $navGuidance = self::navagrahaGuidanceData($lang);
-        return '<p class="navagraha-intro">' . self::e($navGuidance['intro']) . '</p>'
-            . '<div class="navagraha-section-title">' . self::e($navGuidance['reasonsTitle']) . '</div>'
-            . self::navagrahaBullets($navGuidance['reasons'])
-            . '<div class="navagraha-section-title">' . self::e($navGuidance['waysTitle']) . '</div>'
-            . self::navagrahaBullets($navGuidance['ways'])
-            . '<div class="navagraha-closing">' . self::e($navGuidance['closing']) . '</div>';
     }
 
     /**

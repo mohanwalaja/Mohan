@@ -75,8 +75,8 @@ const response = await php.run({
   scriptPath: `/repo/${script.replace(/^\.\//, '')}`,
   env: { APP_SECRET_KEY: 'php-wasm-runner-test-only-secret-0123456789abcdef' }
 });
-process.stdout.write(response.text);
-if (response.errors) process.stderr.write(response.errors);
+fs.writeSync(1, response.text);
+if (response.errors) fs.writeSync(2, response.errors);
 const exitCode = response.exitCode ?? 0;
 php.exit();
 process.exit(exitCode);
