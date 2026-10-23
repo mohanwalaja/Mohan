@@ -33,6 +33,7 @@ import {
   NAVAGRAHA_DOSHA_DATA,
   NAVAGRAHA_ORDER,
   JATHAGAM_PLANET_PROFILES,
+  SHORT_SUMMARY_FULL_REMEDIES,
   SHORT_SUMMARY_LAMP_OIL,
   SHORT_SUMMARY_MANTRA,
   SHORT_SUMMARY_DONATION,
@@ -219,13 +220,15 @@ export function classifyJathagamPlanetsForSummary(
 
     if (careScore > 0) {
       const profile = JATHAGAM_PLANET_PROFILES[key];
-      const lamp = SHORT_SUMMARY_LAMP_OIL[key]?.[lang] ?? '';
-      const donation = SHORT_SUMMARY_DONATION[key]?.[lang] ?? '';
-      const mantra = SHORT_SUMMARY_MANTRA[key]?.[lang] ?? '';
-      const worship = worshipLine(key, lang);
-      const compactLine = [worship.split(' · ')[0], NAVAGRAHA_DOSHA_DATA[key].day[lang], lamp, donation, mantra]
-        .filter(Boolean)
-        .join(' · ');
+      const fullRemedy = SHORT_SUMMARY_FULL_REMEDIES[key];
+      const worship = fullRemedy?.worship?.[lang] ?? worshipLine(key, lang);
+      const lamp = fullRemedy?.lamp?.[lang] ?? SHORT_SUMMARY_LAMP_OIL[key]?.[lang] ?? '';
+      const donation = fullRemedy?.donation?.[lang] ?? SHORT_SUMMARY_DONATION[key]?.[lang] ?? '';
+      const mantra = fullRemedy?.mantra?.[lang] ?? SHORT_SUMMARY_MANTRA[key]?.[lang] ?? '';
+      const compactLine = fullRemedy?.compactLine?.[lang]
+        ?? [worship.split(' · ')[0], NAVAGRAHA_DOSHA_DATA[key].day[lang], lamp, donation, mantra]
+          .filter(Boolean)
+          .join(' · ');
       needsCare.push({
         key,
         house,

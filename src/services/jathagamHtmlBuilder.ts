@@ -330,8 +330,8 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
       isCombust ? 'सूर्य के निकट अस्त (अस्तंगत)' : '',
       conjunctMalefics.length ? `${MALEFIC_CONJUNCTION_ORB_DEG}° के भीतर ${conjunctMalefics.join('/')} के साथ` : '',
       offsetMaleficNames.length ? `उच्च/स्वराशि का स्वामी एक पाप-युति की भरपाई करता है (${offsetMaleficNames.join('/')})` : '',
-      weakMaleficNames.length ? `${weakMaleficNames.join('/')} नीच होने से प्रबल पाप ग्रह नहीं माना गया` : '',
-      isRetrograde ? 'वक्री (वक्री) होने से धैर्य आवश्यक' : ''
+      weakMaleficNames.length ? `${weakMaleficNames.join('/')} नीच होने से प्रबल पाप ग्रह नहीं माना गया है` : '',
+      isRetrograde ? 'वक्री होने से धैर्य आवश्यक' : ''
     ].filter(Boolean);
     // Item 3: when the card's lord is debilitated (e.g. Mars as the Lagna lord
     // in the Health card, or the 10th lord in the Career card) the card names
@@ -367,16 +367,22 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
   const unavailablePlacement = isTa
     ? 'தேவையான லக்னம் அல்லது கிரக பாவத் தகவல் கிடைக்கவில்லை; விளக்கம் உருவாக்கப்படவில்லை.'
     : isHi
-    ? 'आवश्यक लग्न या ग्रह-भाव जानकारी उपलब्ध नहीं है; व्याख्या नहीं बनाई गई।'
+    ? 'आवश्यक लग्न या ग्रह-भाव जानकारी उपलब्ध नहीं है; व्याख्या नहीं बनाई गई है।'
     : 'Required Ascendant or planet-house data is unavailable; no interpretation was generated.';
   const unavailableDasha = isTa
     ? 'நடப்பு தசை அல்லது சந்திர ராசித் தகவல் கிடைக்கவில்லை; வழிகாட்டல் உருவாக்கப்படவில்லை.'
     : isHi
-    ? 'वर्तमान दशा या चंद्र राशि उपलब्ध नहीं है; मार्गदर्शन नहीं बनाया गया।'
+    ? 'वर्तमान दशा या चंद्र राशि उपलब्ध नहीं है; मार्गदर्शन नहीं बनाया गया है।'
     : 'Current Dasha or Moon-sign data is unavailable; no guidance was generated.';
+  const finalizeHiReason = (raw: string): string => {
+    const trimmed = raw.replace(/।\s*$/, '').trim();
+    return /(?:है|हैं)(?:\s*\([^)]*\))?$/.test(trimmed) ? trimmed : `${trimmed} है`;
+  };
   const status = (p: ReturnType<typeof getHousePlacement>) => !p
     ? unavailablePlacement
-    : p.reason || (isTa ? `${p.lordName} ஆதரவு நிலையில்` : isHi ? `${p.lordName} सहायक स्थिति में` : `${p.lordName} in a supportive placement`);
+    : p.reason
+      ? (isHi ? finalizeHiReason(p.reason) : p.reason)
+      : (isTa ? `${p.lordName} ஆதரவு நிலையில்` : isHi ? `${p.lordName} सहायक स्थिति में है` : `${p.lordName} in a supportive placement`);
   const posWord = (p: ReturnType<typeof getHousePlacement>) => !p
     ? 'N/A'
     : isTa
@@ -409,16 +415,23 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
       : isHi
       ? `${hiOrdinal(bhava)} भाव में`
       : `in the ${enOrdinal(bhava)} house`;
-    const dignityText = dignity && !/^(Neutral|சம நிலை|सामान्य स्थिति)/.test(dignity) ? ` (${dignity})` : '';
-    return ` ${role[lang]}: ${name} ${place}${dignityText}${rasiName ? ` — ${rasiName}` : ''}.`;
+    const hasInnerParens = dignity.includes('(');
+    const dignityText = dignity && !/^(Neutral|சம நிலை|सामान्य स्थिति)/.test(dignity)
+      ? (isHi && hasInnerParens ? `, ${dignity}` : ` (${dignity})`)
+      : '';
+    return isHi
+      ? ` ${role.hi}: ${name}${rasiName ? ` (${rasiName})` : ''} ${place}${dignityText} है।`
+      : ` ${role[lang]}: ${name} ${place}${dignityText}${rasiName ? ` — ${rasiName}` : ''}.`;
   };
   const lordLine = (houseNum: number, role: { en: string; ta: string; hi: string }): string => {
     const placement = getHousePlacement(houseNum);
     if (!placement) return '';
     const state = placement.isChallenging
-      ? (isTa ? 'கவனம் தேவை' : isHi ? 'ध्यान आवश्यक' : 'needs attention')
-      : (isTa ? 'ஆதரவு நிலை' : isHi ? 'सहायक स्थिति' : 'supportive');
-    return ` ${role[lang]}: ${posWord(placement)} — ${state}.`;
+      ? (isTa ? 'கவனம் தேவை' : isHi ? 'ध्यान आवश्यक है' : 'needs attention')
+      : (isTa ? 'ஆதரவு நிலை' : isHi ? 'सहायक है' : 'supportive');
+    return isHi
+      ? ` ${role.hi}: ${posWord(placement)} — ${state}।`
+      : ` ${role[lang]}: ${posWord(placement)} — ${state}.`;
   };
   const venusLine = () => karakaLine(Graha.SUKRA, {
     en: 'Venus, karaka of marriage',
@@ -474,7 +487,7 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
   const saralaYoga = (result.yogas || []).find(y => y.code === 'SARALA');
   const saturnOwnSignYoga = (result.yogas || []).find(y => y.code === 'SATURN_OWN_SIGN');
   const yogaSentence = (y: { nameTa: string; nameEn: string; nameHi: string } | undefined) => y
-    ? ` ${isTa ? y.nameTa : isHi ? y.nameHi : y.nameEn}.`
+    ? ` ${isTa ? `${y.nameTa}.` : isHi ? `${y.nameHi} है।` : `${y.nameEn}.`}`
     : '';
   const fortuneLead = ninthLordInEighth
     ? (isTa ? 'கவனம்' : isHi ? 'सावधानी' : 'Caution')
@@ -483,7 +496,7 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
     ? (isTa
         ? ' 9-ஆம் அதிபதி 8-ஆம் பாவத்தில் உள்ளதால் இது நன்மையாகக் கணக்கிடப்படவில்லை; பாக்கியம் முயற்சி, தாமதம் அல்லது ஆராய்ச்சி வழியே வரும்.'
         : isHi
-        ? ' नवमेश अष्टम भाव में होने से इसे शुभ नहीं माना गया; भाग्य परिश्रम, विलंब या शोध से मिलता है।'
+        ? ' नवमेश अष्टम भाव में होने से इसे शुभ नहीं माना गया है; भाग्य परिश्रम, विलंब या शोध से मिलता है।'
         : ' The 9th lord sits in the 8th house, so this is read as a caution rather than a benefit: fortune arrives through effort, delay or research.')
     : '';
   const yogaExtra = `${yogaSentence(saralaYoga)}${yogaSentence(saturnOwnSignYoga)}`;
@@ -603,7 +616,7 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
       desc: !h7 ? unavailablePlacement : isTa
         ? `நன்மை: 7-ஆம் அதிபதி ${posWord(h7)} இருப்பதால் துணை/கூட்டாண்மை ஆதரவு கிடைக்கலாம். கவனம்: ${status(h7)}; தவறான புரிதல், தாமதம், வாக்குவாதம் வரலாம். மெதுவாக பேசுவது நல்லது.${venusLine()}${kendraMarriageText}`
         : isHi
-        ? `शुभ: सप्तमेश ${posWord(h7)} जीवनसाथी/साझेदारी से सहयोग दे सकता है। सावधानी: ${status(h7)}; गलतफहमी, देरी या बहस हो सकती है। शांत संवाद रखें।${venusLine()}${kendraMarriageText}`
+        ? `शुभ: सप्तमेश ${posWord(h7)} जीवनसाथी व साझेदारी में सहायक है। सावधानी: ${status(h7)}; गलतफहमी, देरी या बहस हो सकती है। शांत संवाद रखें।${venusLine()}${kendraMarriageText}`
         : `Good: 7th lord ${posWord(h7)} can support spouse/partner cooperation. Caution: ${status(h7)}; misunderstanding, delay, or arguments may occur. Use patient communication.${venusLine()}${kendraMarriageText}`
     },
     {
@@ -613,7 +626,7 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
       desc: !h4 ? unavailablePlacement : isTa
         ? `நன்மை: 4-ஆம் அதிபதி ${posWord(h4)} இருப்பதால் வீட்டு வசதி, வாகனம், மன அமைதி மேம்படலாம். கவனம்: ${status(h4)}; வீடு/நில ஆவண தாமதம், பழுது செலவு, குடும்ப மனஅழுத்தம் வரலாம். சரிபார்ப்பு அவசியம்.`
         : isHi
-        ? `शुभ: चतुर्थेश ${posWord(h4)} घर-सुख, वाहन और मानसिक शांति में मदद दे सकता है। सावधानी: ${status(h4)}; संपत्ति कागज़, मरम्मत खर्च या घरेलू तनाव आ सकता है। जाँच ज़रूरी है।`
+        ? `शुभ: चतुर्थेश ${posWord(h4)} घर-सुख, वाहन व मनःशांति में सहायक है। सावधानी: ${status(h4)}; संपत्ति कागज़, मरम्मत खर्च या घरेलू तनाव आ सकता है। जाँच ज़रूरी है।`
         : `Good: 4th lord ${posWord(h4)} can support home comfort, vehicle matters, and peace of mind. Caution: ${status(h4)}; property-document delays, repair expenses, or family stress may arise. Verify carefully.`
     },
     {
@@ -639,7 +652,7 @@ export function buildJathagamLifeCards(result: HoroscopeResult, lang: AppLanguag
         : isTa
         ? `ஜென்ம ராசி ${rasiSignName}; ${currentDashaLabel}.${dashaChangeNotice ? ' ' + dashaChangeNotice : ''} நன்மை: பழைய முயற்சிகளை முடித்து ஆன்மீக தெளிவு பெறலாம். கவனம்: அடுத்த 12 மாதங்களில் அவசர முடிவு, ஆரோக்கிய அலட்சியம், தேவையற்ற செலவு தவிர்க்கவும்.`
         : isHi
-        ? `जन्म राशि ${rasiSignName}; ${currentDashaLabel}.${dashaChangeNotice ? ' ' + dashaChangeNotice : ''} शुभ: पुराने कार्य पूरे करके आध्यात्मिक स्पष्टता मिल सकती है। सावधानी: अगले 12 महीनों में जल्दबाज़ निर्णय, स्वास्थ्य-लापरवाही और अनावश्यक खर्च से बचें।`
+        ? `जन्म राशि ${rasiSignName} व ${currentDashaLabel} है।${dashaChangeNotice ? ' ' + dashaChangeNotice : ''} शुभ: रुके कार्य पूरे होकर आध्यात्मिक स्पष्टता मिलेगी। सावधानी: अगले 12 माह में जल्दबाज़ निर्णय, स्वास्थ्य-लापरवाही व अनावश्यक खर्च से बचें।`
         : `Janma Rasi ${rasiSignName}; ${currentDashaLabel}.${dashaChangeNotice ? ' ' + dashaChangeNotice : ''} Good: the next 12 months can help complete pending efforts and improve spiritual clarity. Caution: avoid rushed decisions, health neglect, and unnecessary spending.`
     }
   ];
@@ -2049,7 +2062,7 @@ ${REPORT_GLOSSARY_CSS}
         <h2>${isTa ? 'நவாம்ச கட்டம் (Navamsa D9)' : isHi ? 'नवांश चक्र (Navamsa D9)' : 'Navamsa Chart (D9)'}</h2>
         ${hasNavamsaData
           ? renderRasiGrid(navamsaBySign, 'navamsa-chart-grid')
-          : `<p class="mini-note">${isTa ? 'நவாம்ச நிலை தகவல் கிடைக்கவில்லை; N/A.' : isHi ? 'नवांश स्थिति उपलब्ध नहीं; N/A।' : 'Navamsa positions unavailable; N/A.'}</p>`}
+          : `<p class="mini-note">${isTa ? 'நவாம்ச நிலை தகவல் கிடைக்கவில்லை; N/A.' : isHi ? 'नवांश स्थिति उपलब्ध नहीं है; N/A।' : 'Navamsa positions unavailable; N/A.'}</p>`}
       </div>
     </div>
 
@@ -2099,7 +2112,7 @@ ${REPORT_GLOSSARY_CSS}
       isTa
         ? 'பாரம்பரிய ஜோதிடக் குறியீடுகள் மட்டுமே; மருத்துவம், நிதி, சட்டம் அல்லது உறவு ஆலோசனை அல்ல.'
         : isHi
-        ? 'पारंपरिक ज्योतिषीय संकेत मात्र; यह चिकित्सा, वित्त, कानूनी या संबंध सलाह नहीं है।'
+        ? 'ये पारंपरिक ज्योतिषीय संकेत हैं; चिकित्सा, वित्त, कानूनी या संबंध सलाह नहीं हैं।'
         : 'Traditional Jyotisha indicators only; not medical, financial, legal, or relationship advice.'
     }</div>
 
@@ -2161,9 +2174,9 @@ ${REPORT_GLOSSARY_CSS}
       <div class="card-title card-title-amber">${escapeHtml(summaryText.careTitle)}</div>
       <table class="care-table${summaryCompact ? ' is-compact' : ''}">
         <colgroup>
-          <col style="width: 17%" />
-          <col style="width: 33%" />
-          <col style="width: 50%" />
+          <col style="width: 15%" />
+          <col style="width: 28%" />
+          <col style="width: 57%" />
         </colgroup>
         <thead>
           <tr>

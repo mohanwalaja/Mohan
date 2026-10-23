@@ -1465,7 +1465,7 @@ HTML;
         $navamsaCardTitle = $isTa ? 'நவாம்ச கட்டம் (Navamsa D9)' : ($isHi ? 'नवांश चक्र (Navamsa D9)' : 'Navamsa Chart (D9)');
         $navamsaBlockHtml = $navamsaRows !== ''
             ? '<table class="rasi-table">' . $navamsaRows . '</table>'
-            : '<p class="mini-note">' . ($isTa ? 'நவாம்ச நிலை தகவல் கிடைக்கவில்லை; N/A.' : ($isHi ? 'नवांश स्थिति उपलब्ध नहीं; N/A।' : 'Navamsa positions unavailable; N/A.')) . '</p>';
+            : '<p class="mini-note">' . ($isTa ? 'நவாம்ச நிலை தகவல் கிடைக்கவில்லை; N/A.' : ($isHi ? 'नवांश स्थिति उपलब्ध नहीं है; N/A।' : 'Navamsa positions unavailable; N/A.')) . '</p>';
 
         $chartCardTitle = $isTa ? 'ராசி கட்டம் (Rasi Chart)' : ($isHi ? 'राशि चक्र (Rasi Chakra)' : 'Rasi Chart (Chakra)');
         $rasiNavamsaRowHtml = <<<HTML
@@ -1524,10 +1524,10 @@ HTML;
                 'severityHi' => $isGuruAfflicted === null ? 'N/A' : ($isGuruAfflicted ? 'मध्यम' : 'शुभ स्थिति (दोष रहित)'),
                 'descriptionEn' => $isGuruAfflicted === null ? 'Jupiter, Rahu or Ketu sign data is unavailable; Guru Chandala Dosha is not assessed.' : ($isGuruAfflicted ? 'Jupiter (Guru) is conjunct or aspected by shadow planets Rahu/Ketu, forming Guru Chandala Dosha. Lord Dakshinamurthy and Shiva worship recommended.' : 'No trigger was found under this limited sign-level rule; this does not establish that Jupiter is free from other afflictions.'),
                 'descriptionTa' => $isGuruAfflicted === null ? 'குரு, ராகு அல்லது கேதுவின் ராசித் தகவல் கிடைக்கவில்லை; குரு சண்டாள தோஷம் மதிப்பிடப்படவில்லை.' : ($isGuruAfflicted ? 'சுப கிரகமான குரு பகவானும் சாயா கிரகமான ராகு/கேதுவும் ஒரே ராசியில் இணைவு அல்லது பார்வையில் உள்ளதால் குரு சண்டாள தோஷம் உருவாகிறது. ஸ்ரீ தட்சிணாமூர்த்தி மற்றும் சிவ வழிபாடு மூலம் குருவின் பரிபூரண சுப யோகம் உண்டாகும்.' : 'இந்த வரையறுக்கப்பட்ட ராசி விதியில் குறியீடு இல்லை; இதனால் குருவுக்கு வேறு பாதிப்புகள் இல்லை என உறுதிப்படுத்த முடியாது.'),
-                'descriptionHi' => $isGuruAfflicted === null ? 'गुरु, राहु या केतु की राशि-संबंधी जानकारी उपलब्ध नहीं है; गुरु चांडाल दोष का आकलन नहीं हुआ।' : ($isGuruAfflicted ? 'शुभ ग्रह गुरु एवं छाया ग्रह राहु/केतु की युति अथवा दृष्टि के कारण गुरु चांडाल दोष का प्रभाव है।' : 'इस सीमित राशि-आधारित नियम में संकेत नहीं मिला; इससे अन्य ग्रह-दोषों की अनुपस्थिति सिद्ध नहीं होती।'),
+                'descriptionHi' => $isGuruAfflicted === null ? 'गुरु, राहु या केतु की राशि-संबंधी जानकारी उपलब्ध नहीं है; गुरु चांडाल दोष का आकलन नहीं हुआ है।' : ($isGuruAfflicted ? 'शुभ ग्रह गुरु एवं छाया ग्रह राहु/केतु की युति अथवा दृष्टि के कारण गुरु चांडाल दोष का प्रभाव है।' : 'इस सीमित राशि-आधारित नियम में संकेत नहीं मिला है; इससे अन्य ग्रह-दोषों की अनुपस्थिति सिद्ध नहीं होती है।'),
                 'traditionalRemedyEn' => 'Pray to Lord Dakshinamurthy or Lord Shiva.',
                 'traditionalRemedyTa' => 'தட்சிணாமூர்த்தி அல்லது சிவன் பெயரைச் சொல்லி பிரார்த்தனை செய்யுங்கள்.',
-                'traditionalRemedyHi' => 'भगवान दक्षिणामूर्ति या भगवान शिव का नाम लेकर प्रार्थना करें。',
+                'traditionalRemedyHi' => 'भगवान दक्षिणामूर्ति या भगवान शिव का नाम लेकर प्रार्थना करें।',
             ];
         }
 
@@ -1558,33 +1558,33 @@ HTML;
                 $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($ezharaiTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge ' . $ezharaiBadgeForPdf . '">' . self::e($ezharaiStatusForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($ezharaiDescForPdf) . '</div></div>';
             }
             if ($isAshtamaForPdf) {
-                $ashtamaStatusForPdf = $isTa ? 'அஷ்டம சனி உள்ளது — 8-ஆம் வீடு' : ($isHi ? 'अष्टम शनि — 8वें भाव में' : 'Ashtama Sani — Saturn in 8th');
+                $ashtamaStatusForPdf = $isTa ? 'அஷ்டம சனி உள்ளது — 8-ஆம் வீடு' : ($isHi ? 'अष्टम शनि — आठवें भाव में है' : 'Ashtama Sani — Saturn in 8th');
                 $ashtamaBadgeForPdf = 'badge-moderate';
                 $ashtamaDescForPdf = astro_jathagam_dosha_explainer('sani', $lang);
-                $ashtamaTitleForPdf = $isTa ? 'அஷ்டம சனி (Ashtama Sani — 8-ஆம் வீடு)' : ($isHi ? 'अष्टम शनि (Ashtama Sani — 8वाँ भाव)' : 'Ashtama Sani (Saturn in 8th House)');
+                $ashtamaTitleForPdf = $isTa ? 'அஷ்டம சனி (Ashtama Sani — 8-ஆம் வீடு)' : ($isHi ? 'अष्टम शनि (आठवाँ भाव)' : 'Ashtama Sani (Saturn in 8th House)');
                 $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($ashtamaTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge ' . $ashtamaBadgeForPdf . '">' . self::e($ashtamaStatusForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($ashtamaDescForPdf) . '</div></div>';
             }
             if ($isKandakaForPdf) {
-                if ($saniHouseForPdf === 4) { $kandakaStatusForPdf = $isTa ? 'அர்த்தாஷ்டம சனி — 4-ஆம் வீட்டில்' : ($isHi ? 'अर्धाष्टम शनि — 4th में' : 'Ardhashtama Sani — Saturn in 4th'); }
-                elseif ($saniHouseForPdf === 7) { $kandakaStatusForPdf = $isTa ? 'கண்டக சனி — 7-ஆம் வீட்டில்' : ($isHi ? 'कंटक शनि — 7वें में' : 'Kandaka Sani — Saturn in 7th'); }
-                elseif ($saniHouseForPdf === 10) { $kandakaStatusForPdf = $isTa ? 'கண்டக சனி — 10-ஆம் வீட்டில்' : ($isHi ? 'कंटक शनि — 10वें में' : 'Kandaka Sani — Saturn in 10th'); }
+                if ($saniHouseForPdf === 4) { $kandakaStatusForPdf = $isTa ? 'அர்த்தாஷ்டம சனி — 4-ஆம் வீட்டில்' : ($isHi ? 'अर्धाष्टम शनि — चौथे भाव में है' : 'Ardhashtama Sani — Saturn in 4th'); }
+                elseif ($saniHouseForPdf === 7) { $kandakaStatusForPdf = $isTa ? 'கண்டக சனி — 7-ஆம் வீட்டில்' : ($isHi ? 'कंटक शनि — सातवें भाव में है' : 'Kandaka Sani — Saturn in 7th'); }
+                elseif ($saniHouseForPdf === 10) { $kandakaStatusForPdf = $isTa ? 'கண்டக சனி — 10-ஆம் வீட்டில்' : ($isHi ? 'कंटक शनि — दसवें भाव में है' : 'Kandaka Sani — Saturn in 10th'); }
                 else { $kandakaStatusForPdf = $isTa ? 'கண்டக / அர்த்தாஷ்டம சனி உள்ளது' : ($isHi ? 'कंटक / अर्धाष्टम शनि है' : 'Kandaka / Ardhashtama Sani present'); }
                 $kandakaBadgeForPdf = 'badge-moderate';
                 $kandakaDescForPdf = astro_jathagam_dosha_explainer('sani', $lang);
-                $kandakaTitleForPdf = $isTa ? 'கண்டக / அர்த்தாஷ்டம சனி (4, 7, 10-ஆம் வீடு)' : ($isHi ? 'कंटक / अर्धाष्टम शनि (4, 7, 10वाँ भाव)' : 'Kandaka / Ardhashtama Sani (Saturn in 4th, 7th, 10th)');
+                $kandakaTitleForPdf = $isTa ? 'கண்டக / அர்த்தாஷ்டம சனி (4, 7, 10-ஆம் வீடு)' : ($isHi ? 'कंटक / अर्धाष्टम शनि (चौथा, सातवाँ, दसवाँ भाव)' : 'Kandaka / Ardhashtama Sani (Saturn in 4th, 7th, 10th)');
                 $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($kandakaTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge ' . $kandakaBadgeForPdf . '">' . self::e($kandakaStatusForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($kandakaDescForPdf) . '</div></div>';
             }
             $hasAnySaniForPdf = $isEzharaiForPdf || $isAshtamaForPdf || $isKandakaForPdf;
             if (!$hasAnySaniForPdf) {
                 $noSaniTitleForPdf = $isTa ? 'சனி தோஷ நிலை' : ($isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status');
-                $noSaniBadgeForPdf = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'No Sani dosha is active in your chart');
+                $noSaniBadgeForPdf = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'आपकी कुंडली में कोई शनि दोष सक्रिय नहीं है' : 'No Sani dosha is active in your chart');
                 $noSaniDescForPdf = astro_jathagam_dosha_explainer('sani', $lang);
                 $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($noSaniTitleForPdf) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge badge-clean">' . self::e($noSaniBadgeForPdf) . '</span></td></tr></table><div class="dosha-desc">' . self::e($noSaniDescForPdf) . '</div></div>';
             }
         } else {
             // No saniStatus (legacy payload) — show the same "no active" card as fallback
             $fallbackTitle = $isTa ? 'சனி தோஷ நிலை' : ($isHi ? 'शनि दोष स्थिति' : 'Sani Dosha Status');
-            $fallbackBadge = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'कोई सक्रिय शनि दोष नहीं' : 'No Sani dosha is active in your chart');
+            $fallbackBadge = $isTa ? 'எந்த சனி தோஷமும் இல்லை' : ($isHi ? 'आपकी कुंडली में कोई शनि दोष सक्रिय नहीं है' : 'No Sani dosha is active in your chart');
             $fallbackDesc = astro_jathagam_dosha_explainer('sani', $lang);
             $saniCardsHtml .= '<div class="dosha-card"><table style="width:100%; border-collapse:collapse; margin:0 0 1.2mm;"><tr><td style="font-weight:bold; color:#7a1f1f; font-size:9.5px; vertical-align:middle; text-align:left;">' . self::e($fallbackTitle) . '</td><td style="text-align:right; vertical-align:middle; width:35%;"><span class="dosha-badge badge-clean">' . self::e($fallbackBadge) . '</span></td></tr></table><div class="dosha-desc">' . self::e($fallbackDesc) . '</div></div>';
         }
@@ -1894,7 +1894,7 @@ HTML;
             if ($isCombust) { $reasons[] = $isTa ? 'சூரியனுக்கு அருகில் அஸ்தமன நிலையில்' : ($isHi ? 'सूर्य के निकट अस्त' : 'combust/too close to Sun'); }
             if (!empty($conjunctNames)) { $reasons[] = $isTa ? ($lifeConjunctionOrbDeg . '°-க்குள் ' . implode('/', $conjunctNames) . ' சேர்க்கையுடன்') : ($isHi ? ($lifeConjunctionOrbDeg . '° के भीतर ' . implode('/', $conjunctNames) . ' के साथ') : ('joined within ' . $lifeConjunctionOrbDeg . '° with ' . implode('/', $conjunctNames))); }
             if (!empty($offsetMaleficNames)) { $reasons[] = $isTa ? ('உச்ச/சொந்த ராசி அதிபதி ஒரு பாவச் சேர்க்கையை ஈடுசெய்கிறார் (' . implode('/', $offsetMaleficNames) . ')') : ($isHi ? ('उच्च/स्वराशि का स्वामी एक पाप-युति की भरपाई करता है (' . implode('/', $offsetMaleficNames) . ')') : ('exalted/own-sign lord offsets one malefic conjunction (' . implode('/', $offsetMaleficNames) . ')')); }
-            if (!empty($weakMaleficNames)) { $reasons[] = $isTa ? (implode('/', $weakMaleficNames) . ' நீச நிலையில் உள்ளதால் வலுவான பாவ கிரகமாகக் கணக்கிடப்படவில்லை') : ($isHi ? (implode('/', $weakMaleficNames) . ' नीच होने से प्रबल पाप ग्रह नहीं माना गया') : (implode('/', $weakMaleficNames) . ' is debilitated, so not counted as a strong malefic')); }
+            if (!empty($weakMaleficNames)) { $reasons[] = $isTa ? (implode('/', $weakMaleficNames) . ' நீச நிலையில் உள்ளதால் வலுவான பாவ கிரகமாகக் கணக்கிடப்படவில்லை') : ($isHi ? (implode('/', $weakMaleficNames) . ' नीच होने से प्रबल पाप ग्रह नहीं माना गया है') : (implode('/', $weakMaleficNames) . ' is debilitated, so not counted as a strong malefic')); }
             if ($isRetrograde) { $reasons[] = $isTa ? 'வக்கிரமாக இருப்பதால் பொறுமை தேவை' : ($isHi ? 'वक्री होने से धैर्य आवश्यक' : 'retrograde, requiring review and patience'); }
             return [
                 'lordGraha' => $lordGraha,
@@ -1928,8 +1928,12 @@ HTML;
         };
         $lifeStatus = function ($placement) use ($isTa, $isHi, $lifeLordName) {
             if (empty($placement['isAvailable'])) return 'N/A';
-            if (!empty($placement['reason'])) { return $placement['reason']; }
-            return $isTa ? ($lifeLordName($placement) . ' ஆதரவு நிலையில்') : ($isHi ? ($lifeLordName($placement) . ' सहायक स्थिति में') : ($lifeLordName($placement) . ' in a supportive placement'));
+            if (!empty($placement['reason'])) {
+                if (!$isHi) { return $placement['reason']; }
+                $trimmedReason = trim((string) preg_replace('/।\s*$/u', '', (string) $placement['reason']));
+                return preg_match('/(?:है|हैं)(?:\s*\([^)]*\))?$/u', $trimmedReason) ? $trimmedReason : ($trimmedReason . ' है');
+            }
+            return $isTa ? ($lifeLordName($placement) . ' ஆதரவு நிலையில்') : ($isHi ? ($lifeLordName($placement) . ' सहायक स्थिति में है') : ($lifeLordName($placement) . ' in a supportive placement'));
         };
         $lifePos = function ($placement) use ($isTa, $isHi, $lifeLordName) {
             if (empty($placement['isAvailable'])) return 'N/A';
@@ -1969,16 +1973,20 @@ HTML;
             }
             $karakaPlace = $isTa ? ($bhavaForKaraka . '-ஆம் பாவத்தில்') : ($isHi ? (self::houseOrdinalHi($bhavaForKaraka) . ' भाव में') : ('in the ' . self::houseOrdinalEn($bhavaForKaraka) . ' house'));
             $karakaRole = $isTa ? $roleTa : ($isHi ? $roleHi : $roleEn);
+            if ($isHi) {
+                return ' ' . $karakaRole . ': ' . $karakaName . ' ' . $karakaPlace . $karakaDignityText . ($karakaRasiLabel !== '' ? ' — ' . $karakaRasiLabel . ' राशि में' : '') . ' स्थित है।';
+            }
             return ' ' . $karakaRole . ': ' . $karakaName . ' ' . $karakaPlace . $karakaDignityText . ($karakaRasiLabel !== '' ? ' — ' . $karakaRasiLabel : '') . '.';
         };
         $lifeLordRoleLine = function ($houseNum, $roleTa, $roleHi, $roleEn) use ($getLifePlacement, $lifePos, $isTa, $isHi) {
             $placementForRole = $getLifePlacement($houseNum);
             if (empty($placementForRole['isAvailable'])) { return ''; }
             $roleState = !empty($placementForRole['isChallenging'])
-                ? ($isTa ? 'கவனம் தேவை' : ($isHi ? 'ध्यान आवश्यक' : 'needs attention'))
-                : ($isTa ? 'ஆதரவு நிலை' : ($isHi ? 'सहायक स्थिति' : 'supportive'));
+                ? ($isTa ? 'கவனம் தேவை' : ($isHi ? 'ध्यान आवश्यक है' : 'needs attention'))
+                : ($isTa ? 'ஆதரவு நிலை' : ($isHi ? 'सहायक स्थिति में है' : 'supportive'));
             $roleName = $isTa ? $roleTa : ($isHi ? $roleHi : $roleEn);
-            return ' ' . $roleName . ': ' . $lifePos($placementForRole) . ' — ' . $roleState . '.';
+            $endMark = $isHi ? '।' : '.';
+            return ' ' . $roleName . ': ' . $lifePos($placementForRole) . ' — ' . $roleState . $endMark;
         };
         $venusLineForLife = $karakaLineForLife('venus', 'திருமண காரகன் சுக்கிரன்', 'विवाह कारक शुक्र', 'Venus, karaka of marriage');
         $jupiterLineForLife = $karakaLineForLife('jupiter', 'தன காரகன் குரு', 'धन कारक गुरु', 'Jupiter, karaka of wealth');
@@ -2046,10 +2054,10 @@ HTML;
         $fortuneLeadHi = $ninthLordInEighthNow ? 'सावधानी' : 'शुभ';
         $fortuneLeadEn = $ninthLordInEighthNow ? 'Caution' : 'Good';
         $fortuneCautionTa = $ninthLordInEighthNow ? ' 9-ஆம் அதிபதி 8-ஆம் பாவத்தில் உள்ளதால் இது நன்மையாகக் கணக்கிடப்படவில்லை; பாக்கியம் முயற்சி, தாமதம் அல்லது ஆராய்ச்சி வழியே வரும்.' : '';
-        $fortuneCautionHi = $ninthLordInEighthNow ? ' नवमेश अष्टम भाव में होने से इसे शुभ नहीं माना गया; भाग्य परिश्रम, विलंब या शोध से मिलता है।' : '';
+        $fortuneCautionHi = $ninthLordInEighthNow ? ' नवमेश अष्टम भाव में होने से इसे शुभ नहीं माना गया है; भाग्य परिश्रम, विलंब या शोध से मिलता है।' : '';
         $fortuneCautionEn = $ninthLordInEighthNow ? ' The 9th lord sits in the 8th house, so this is read as a caution rather than a benefit: fortune arrives through effort, delay or research.' : '';
         $yogaExtraTa = ($saralaYogaNow ? ' ' . ($saralaYogaNow['nameTa'] ?? '') . '.' : '') . ($saturnOwnYogaNow ? ' ' . ($saturnOwnYogaNow['nameTa'] ?? '') . '.' : '');
-        $yogaExtraHi = ($saralaYogaNow ? ' ' . ($saralaYogaNow['nameHi'] ?? '') . '.' : '') . ($saturnOwnYogaNow ? ' ' . ($saturnOwnYogaNow['nameHi'] ?? '') . '.' : '');
+        $yogaExtraHi = ($saralaYogaNow ? ' ' . ($saralaYogaNow['nameHi'] ?? '') . ' है।' : '') . ($saturnOwnYogaNow ? ' ' . ($saturnOwnYogaNow['nameHi'] ?? '') . ' है।' : '');
         $yogaExtraEn = ($saralaYogaNow ? ' ' . ($saralaYogaNow['nameEn'] ?? '') . '.' : '') . ($saturnOwnYogaNow ? ' ' . ($saturnOwnYogaNow['nameEn'] ?? '') . '.' : '');
         $kendraCareerNoteTa = '';
         $kendraCareerNoteHi = '';
@@ -2134,7 +2142,7 @@ HTML;
                         ? ($isTa ? 'நடப்பு ஆண்டு ⚠ கவனம்' : ($isHi ? 'आगामी वर्ष ⚠ सावधान' : 'Upcoming Year ⚠ Caution'))
                         : ($isTa ? 'நடப்பு ஆண்டு ✓ வாய்ப்பு' : ($isHi ? 'आगामी वर्ष ✓ अवसर' : 'Upcoming Year ✓ Opportunity'))),
                 'caution' => $dashaIsChallengingForLife === true,
-                'text' => $isTa ? 'ஜென்ம ராசி மற்றும் ' . $dashaLabelForLife . '.' . ($dashaNoticeTa !== '' ? ' ' . $dashaNoticeTa : '') . ' நன்மை: பழைய முயற்சிகளை முடித்து ஆன்மீக தெளிவு பெறலாம். கவனம்: அடுத்த 12 மாதங்களில் அவசர முடிவு, ஆரோக்கிய அலட்சியம், தேவையற்ற செலவு தவிர்க்கவும்.' : ($isHi ? 'जन्म राशि और ' . $dashaLabelForLife . '।' . ($dashaNoticeHi !== '' ? ' ' . $dashaNoticeHi : '') . ' शुभ: पुराने कार्य पूरे करके आध्यात्मिक स्पष्टता मिल सकती है। सावधानी: अगले 12 महीनों में जल्दबाज़ निर्णय, स्वास्थ्य-लापरवाही और अनावश्यक खर्च से बचें।' : 'Janma Rasi and ' . $dashaLabelForLife . '.' . ($dashaNoticeEn !== '' ? ' ' . $dashaNoticeEn : '') . ' Good: the next 12 months can help complete pending efforts and improve spiritual clarity. Caution: avoid rushed decisions, health neglect, and unnecessary spending.'),
+                'text' => $isTa ? 'ஜென்ம ராசி மற்றும் ' . $dashaLabelForLife . '.' . ($dashaNoticeTa !== '' ? ' ' . $dashaNoticeTa : '') . ' நன்மை: பழைய முயற்சிகளை முடித்து ஆன்மீக தெளிவு பெறலாம். கவனம்: அடுத்த 12 மாதங்களில் அவசர முடிவு, ஆரோக்கிய அலட்சியம், தேவையற்ற செலவு தவிர்க்கவும்.' : ($isHi ? 'जन्म राशि और ' . $dashaLabelForLife . ' सक्रिय है।' . ($dashaNoticeHi !== '' ? ' ' . $dashaNoticeHi : '') . ' शुभ: पुराने कार्य पूरे करके आध्यात्मिक स्पष्टता मिल सकती है। सावधानी: अगले 12 महीनों में जल्दबाज़ निर्णय, स्वास्थ्य-लापरवाही और अनावश्यक खर्च से बचें।' : 'Janma Rasi and ' . $dashaLabelForLife . '.' . ($dashaNoticeEn !== '' ? ' ' . $dashaNoticeEn : '') . ' Good: the next 12 months can help complete pending efforts and improve spiritual clarity. Caution: avoid rushed decisions, health neglect, and unnecessary spending.'),
             ],
         ];
 
@@ -2142,7 +2150,7 @@ HTML;
         $lifeHouseNumbersForCards = [1, 2, 5, 10, 7, 4, 9];
         $unavailableLifeText = $isTa
             ? 'தேவையான கிரக நிலை கிடைக்கவில்லை (N/A); இந்த ஜாதகத்திற்கான வழிகாட்டலைத் தீர்மானிக்க முடியாது.'
-            : ($isHi ? 'आवश्यक ग्रह स्थिति उपलब्ध नहीं (N/A); इस कुंडली के लिए मार्गदर्शन निर्धारित नहीं किया जा सकता।' : 'Required planetary placement unavailable (N/A); chart-specific guidance cannot be determined.');
+            : ($isHi ? 'आवश्यक ग्रह स्थिति उपलब्ध नहीं है (N/A); इस कुंडली के लिए मार्गदर्शन निर्धारित नहीं किया जा सकता है।' : 'Required planetary placement unavailable (N/A); chart-specific guidance cannot be determined.');
         foreach ($lifePlacementsForCards as $index => $placement) {
             if (!empty($placement['isAvailable'])) { continue; }
             $lifeCardsData[$index]['badge'] = $lifeBadge($lifeHouseNumbersForCards[$index], $placement);
@@ -2150,7 +2158,7 @@ HTML;
             $lifeCardsData[$index]['text'] = $unavailableLifeText;
         }
 
-        $lifeDisclaimer = $isTa ? 'பாரம்பரிய ஜோதிடக் குறியீடுகள் மட்டுமே; மருத்துவம், நிதி, சட்டம் அல்லது உறவு ஆலோசனை அல்ல.' : ($isHi ? 'पारंपरिक ज्योतिषीय संकेत मात्र; यह चिकित्सा, वित्त, कानूनी या संबंध सलाह नहीं है।' : 'Traditional Jyotisha indicators only; not medical, financial, legal, or relationship advice.');
+        $lifeDisclaimer = $isTa ? 'பாரம்பரிய ஜோதிடக் குறியீடுகள் மட்டுமே; மருத்துவம், நிதி, சட்டம் அல்லது உறவு ஆலோசனை அல்ல.' : ($isHi ? 'ये पारंपरिक ज्योतिषीय संकेत मात्र हैं; यह चिकित्सा, वित्त, कानूनी या संबंध सलाह नहीं है।' : 'Traditional Jyotisha indicators only; not medical, financial, legal, or relationship advice.');
         $lifeCardsHtml = '<table class="life-grid">';
         for ($i = 0; $i < count($lifeCardsData); $i += 2) {
             $lifeCardsHtml .= '<tr>';
@@ -2242,7 +2250,7 @@ HTML;
             $summaryCareRows = '<tr><td colspan="3" class="summary-empty">' . self::e($summaryText['noCarePlanet']) . '</td></tr>';
         }
         $summaryCareHtml = '<table class="summary-care"><colgroup>'
-            . '<col style="width:17%" /><col style="width:33%" /><col style="width:50%" /></colgroup><thead><tr>'
+            . '<col style="width:15%" /><col style="width:28%" /><col style="width:57%" /></colgroup><thead><tr>'
             . '<th>' . self::e($summaryText['tablePlanet']) . '</th>'
             . '<th>' . self::e($summaryText['tableDifficulties']) . '</th>'
             . '<th>' . self::e($summaryText['tableRemedies']) . '</th>'
@@ -2633,6 +2641,46 @@ CSS;
      * existing Navagraha reference entries; `lamp`/`mantra`/`donation`/
      * `support`/`difficulties` are the additive Short Summary fields.
      */
+    // =====================================================================
+    // BIRTH JATHAGAM - PAGE 3 (SHORT SUMMARY)
+    //
+    // Generated by `npx tsx scripts/emit-php-summary.ts` from
+    // src/services/jathagamDoshaData.ts and src/services/jathagamPlanetSummary.ts.
+    // Do not hand-edit: regenerate instead, and re-run the parity fixture
+    // (tests/fixtures/jathagam-summary-parity.json) on both stacks.
+    //
+    // The Short Summary is a plain-language readback of pages 1 and 2. Its
+    // supportive / needs-care lists come from ONE named rule mirrored from
+    // src/services/jathagamPlanetSummary.ts, and every remedy line reuses the
+    // report's existing Navagraha material (deity, weekday, charity) plus the
+    // additive lamp-oil and mantra fields. No second remedy system exists.
+    // =====================================================================
+
+    /**
+     * Per-graha page-3 material. `name`/`deity`/`day`/`charity` are the
+     * existing Navagraha reference entries; `lamp`/`mantra`/`donation`/
+     * `support`/`difficulties` are the additive Short Summary fields.
+     */
+    // =====================================================================
+    // BIRTH JATHAGAM - PAGE 3 (SHORT SUMMARY)
+    //
+    // Generated by `npx tsx scripts/emit-php-summary.ts` from
+    // src/services/jathagamDoshaData.ts and src/services/jathagamPlanetSummary.ts.
+    // Do not hand-edit: regenerate instead, and re-run the parity fixture
+    // (tests/fixtures/jathagam-summary-parity.json) on both stacks.
+    //
+    // The Short Summary is a plain-language readback of pages 1 and 2. Its
+    // supportive / needs-care lists come from ONE named rule mirrored from
+    // src/services/jathagamPlanetSummary.ts, and every remedy line reuses the
+    // report's existing Navagraha material (deity, weekday, charity) plus the
+    // additive lamp-oil and mantra fields. No second remedy system exists.
+    // =====================================================================
+
+    /**
+     * Per-graha page-3 material. `name`/`deity`/`day`/`charity` are the
+     * existing Navagraha reference entries; `lamp`/`mantra`/`donation`/
+     * `support`/`difficulties` are the additive Short Summary fields.
+     */
     public static function jathagamSummaryRemedyData(): array
     {
         return [
@@ -2657,20 +2705,30 @@ CSS;
                     'ta' => 'கோதுமை, வெல்லம், சிவப்புத் துணி',
                     'hi' => 'गेहूँ, गुड़, लाल वस्त्र',
                 ],
+                'worship' => [
+                    'en' => 'Lord Surya, the Sun God should be worshipped on Sunday.',
+                    'ta' => 'சூரிய பகவான் வழிபாடு ஞாயிறு அன்று செய்யவும்.',
+                    'hi' => 'भगवान सूर्य की आराधना रविवार को करें।',
+                ],
                 'lamp' => [
-                    'en' => 'Sesame oil lamp',
-                    'ta' => 'நல்லெண்ணெய் விளக்கு',
-                    'hi' => 'तिल के तेल का दीपक',
+                    'en' => 'Light a sesame oil lamp during prayer.',
+                    'ta' => 'நல்லெண்ணெய் தீபம் ஏற்றி வணங்கவும்.',
+                    'hi' => 'पूजा में तिल के तेल का दीपक जलाएँ।',
                 ],
                 'donation' => [
-                    'en' => 'Wheat or jaggery',
-                    'ta' => 'கோதுமை அல்லது வெல்லம்',
-                    'hi' => 'गेहूँ या गुड़',
+                    'en' => 'Donate wheat or jaggery to those in need.',
+                    'ta' => 'கோதுமை தானம் அளிக்கவும்.',
+                    'hi' => 'गेहूँ या गुड़ का दान करें।',
                 ],
                 'mantra' => [
-                    'en' => 'Om Suryaya Namah',
-                    'ta' => 'ஓம் சூரியாய நம:',
-                    'hi' => 'ॐ सूर्याय नमः',
+                    'en' => 'Chant \'Om Suryaya Namah\' with devotion.',
+                    'ta' => '\'ஓம் சூர்யாய நமஹ\' என ஜெபிக்கவும்.',
+                    'hi' => '\'ॐ सूर्याय नमः\' मंत्र का जप करें।',
+                ],
+                'compactLine' => [
+                    'en' => 'On Sunday, pray to Lord Surya with a sesame oil lamp, donate wheat or jaggery, and chant \'Om Suryaya Namah\'.',
+                    'ta' => 'சூரிய பகவானுக்கு ஞாயிற்றுக்கிழமை கோதுமை தானம் அளித்து \'ஓம் சூர்யாய நமஹ\' என்று ஜெபம் செய்ய வேண்டும்.',
+                    'hi' => 'रविवार को भगवान सूर्य को तिल के तेल का दीपक जलाकर गेहूँ दान करें और \'ॐ सूर्याय नमः\' का जप करें।',
                 ],
                 'support' => [
                     'en' => 'Respect and recognition, a steady position',
@@ -2704,20 +2762,30 @@ CSS;
                     'ta' => 'அரிசி, பால், சர்க்கரை, வெள்ளைத் துணி',
                     'hi' => 'चावल, दूध, चीनी या सफेद वस्त्र',
                 ],
+                'worship' => [
+                    'en' => 'Lord Shiva should be worshipped on Monday.',
+                    'ta' => 'சிவபெருமான் வழிபாடு திங்கள் அன்று செய்யவும்.',
+                    'hi' => 'भगवान शिव की आराधना सोमवार को करें।',
+                ],
                 'lamp' => [
-                    'en' => 'Ghee lamp',
-                    'ta' => 'நெய் விளக்கு',
-                    'hi' => 'घी का दीपक',
+                    'en' => 'Light a ghee lamp during prayer.',
+                    'ta' => 'நெய் தீபம் ஏற்றி வணங்கவும்.',
+                    'hi' => 'पूजा में घी का दीपक जलाएँ।',
                 ],
                 'donation' => [
-                    'en' => 'Rice or milk',
-                    'ta' => 'அரிசி அல்லது பால்',
-                    'hi' => 'चावल या दूध',
+                    'en' => 'Donate rice or milk to those in need.',
+                    'ta' => 'அரிசி அல்லது பால் தானம் அளிக்கவும்.',
+                    'hi' => 'चावल या दूध का दान करें।',
                 ],
                 'mantra' => [
-                    'en' => 'Om Chandraya Namah',
-                    'ta' => 'ஓம் சந்திராய நம:',
-                    'hi' => 'ॐ चन्द्राय नमः',
+                    'en' => 'Chant \'Om Chandraya Namah\' with devotion.',
+                    'ta' => '\'ஓம் சந்திராய நமஹ\' என ஜெபிக்கவும்.',
+                    'hi' => '\'ॐ चन्द्राय नमः\' मंत्र का जप करें।',
+                ],
+                'compactLine' => [
+                    'en' => 'On Monday, pray to Lord Shiva with a ghee lamp, donate rice or milk, and chant \'Om Chandraya Namah\'.',
+                    'ta' => 'சிவபெருமானுக்கு திங்கட்கிழமை அரிசி தானம் அளித்து \'ஓம் சந்திராய நமஹ\' என்று ஜெபம் செய்ய வேண்டும்.',
+                    'hi' => 'सोमवार को भगवान शिव को घी का दीपक जलाकर चावल या दूध दान करें और \'ॐ चन्द्राय नमः\' का जप करें।',
                 ],
                 'support' => [
                     'en' => 'Calm mind, family happiness, care for others',
@@ -2751,20 +2819,30 @@ CSS;
                     'ta' => 'சிவப்புப் பயறு, வெல்லம், சிவப்புத் துணி',
                     'hi' => 'लाल दाल, गुड़ या लाल वस्त्र',
                 ],
+                'worship' => [
+                    'en' => 'Lord Murugan (Karthikeya) or Lord Hanuman should be worshipped on Tuesday.',
+                    'ta' => 'முருகன் (கார்த்திகேயன்) அல்லது அனுமன் வழிபாடு செவ்வாய் அன்று செய்யவும்.',
+                    'hi' => 'भगवान कार्तिकेय या हनुमान जी की आराधना मंगलवार को करें।',
+                ],
                 'lamp' => [
-                    'en' => 'Sesame oil lamp',
-                    'ta' => 'நல்லெண்ணெய் விளக்கு',
-                    'hi' => 'तिल के तेल का दीपक',
+                    'en' => 'Light a sesame oil lamp during prayer.',
+                    'ta' => 'நல்லெண்ணெய் தீபம் ஏற்றி வணங்கவும்.',
+                    'hi' => 'पूजा में तिल के तेल का दीपक जलाएँ।',
                 ],
                 'donation' => [
-                    'en' => 'Toor dal or jaggery',
-                    'ta' => 'துவரம் பருப்பு அல்லது வெல்லம்',
-                    'hi' => 'अरहर दाल या गुड़',
+                    'en' => 'Donate red lentils or jaggery to those in need.',
+                    'ta' => 'வெல்லம் தானம் அளிக்கவும்.',
+                    'hi' => 'अरहर दाल या गुड़ का दान करें।',
                 ],
                 'mantra' => [
-                    'en' => 'Om Angarakaya Namah',
-                    'ta' => 'ஓம் அங்காரகாய நம:',
-                    'hi' => 'ॐ अंगारकाय नमः',
+                    'en' => 'Chant \'Om Angarakaya Namah\' with devotion.',
+                    'ta' => '\'ஓம் அங்காரகாய நமஹ\' என ஜெபிக்கவும்.',
+                    'hi' => '\'ॐ अंगारकाय नमः\' मंत्र का जप करें।',
+                ],
+                'compactLine' => [
+                    'en' => 'On Tuesday, pray to Lord Murugan or Lord Hanuman with a sesame oil lamp, donate red lentils or jaggery, and chant \'Om Angarakaya Namah\'.',
+                    'ta' => 'முருகப் பெருமானுக்கு செவ்வாய்க்கிழமை வெல்லம் தானம் அளித்து \'ஓம் அங்காரகாய நமஹ\' என்று ஜெபம் செய்ய வேண்டும்.',
+                    'hi' => 'मंगलवार को भगवान कार्तिकेय या हनुमान जी को तिल के तेल का दीपक जलाकर अरहर दाल दान करें और \'ॐ अंगारकाय नमः\' का जप करें।',
                 ],
                 'support' => [
                     'en' => 'Courage, hard work, property and siblings',
@@ -2798,20 +2876,30 @@ CSS;
                     'ta' => 'பச்சைப் பயறு, பச்சைத் துணி, நூல்கள்',
                     'hi' => 'हरी मूँग, हरा वस्त्र या पुस्तकें',
                 ],
+                'worship' => [
+                    'en' => 'Lord Vishnu or Lord Ganesha should be worshipped on Wednesday.',
+                    'ta' => 'மகா விஷ்ணு அல்லது விநாயகர் வழிபாடு புதன் அன்று செய்யவும்.',
+                    'hi' => 'भगवान विष्णु या भगवान गणेश की आराधना बुधवार को करें।',
+                ],
                 'lamp' => [
-                    'en' => 'Ghee lamp',
-                    'ta' => 'நெய் விளக்கு',
-                    'hi' => 'घी का दीपक',
+                    'en' => 'Light a ghee lamp during prayer.',
+                    'ta' => 'நெய் தீபம் ஏற்றி வணங்கவும்.',
+                    'hi' => 'पूजा में घी का दीपक जलाएँ।',
                 ],
                 'donation' => [
-                    'en' => 'Green gram',
-                    'ta' => 'பச்சைப் பயறு',
-                    'hi' => 'हरी मूँग',
+                    'en' => 'Donate green gram to those in need.',
+                    'ta' => 'பச்சைப் பயறு தானம் அளிக்கவும்.',
+                    'hi' => 'हरी मूँग का दान करें।',
                 ],
                 'mantra' => [
-                    'en' => 'Om Budhaya Namah',
-                    'ta' => 'ஓம் புதாய நம:',
-                    'hi' => 'ॐ बुधाय नमः',
+                    'en' => 'Chant \'Om Budhaya Namah\' with devotion.',
+                    'ta' => '\'ஓம் புதாய நமஹ\' என ஜெபிக்கவும்.',
+                    'hi' => '\'ॐ बुधाय नमः\' मंत्र का जप करें।',
+                ],
+                'compactLine' => [
+                    'en' => 'On Wednesday, pray to Lord Vishnu or Lord Ganesha with a ghee lamp, donate green gram, and chant \'Om Budhaya Namah\'.',
+                    'ta' => 'மகா விஷ்ணுவுக்கு புதன்கிழமை பச்சைப் பயறு தானம் அளித்து \'ஓம் புதாய நமஹ\' என்று ஜெபம் செய்ய வேண்டும்.',
+                    'hi' => 'बुधवार को भगवान विष्णु या गणेश जी को घी का दीपक जलाकर हरी मूँग दान करें और \'ॐ बुधाय नमः\' का जप करें।',
                 ],
                 'support' => [
                     'en' => 'Education, speech, business sense',
@@ -2845,20 +2933,30 @@ CSS;
                     'ta' => 'கொண்டைக்கடலை, மஞ்சள், வாழைப்பழம், மஞ்சள் துணி',
                     'hi' => 'चना, हल्दी, केले, पीला वस्त्र',
                 ],
+                'worship' => [
+                    'en' => 'Lord Brihaspati or Lord Dakshinamurthy should be worshipped on Thursday.',
+                    'ta' => 'குரு பகவான் அல்லது தட்சிணாமூர்த்தி வழிபாடு வியாழன் அன்று செய்யவும்.',
+                    'hi' => 'भगवान बृहस्पति या दक्षिणामूर्ति की आराधना गुरुवार को करें।',
+                ],
                 'lamp' => [
-                    'en' => 'Ghee lamp',
-                    'ta' => 'நெய் விளக்கு',
-                    'hi' => 'घी का दीपक',
+                    'en' => 'Light a ghee lamp during prayer.',
+                    'ta' => 'நெய் தீபம் ஏற்றி வணங்கவும்.',
+                    'hi' => 'पूजा में घी का दीपक जलाएँ।',
                 ],
                 'donation' => [
-                    'en' => 'Chickpeas or turmeric',
-                    'ta' => 'கொண்டைக்கடலை அல்லது மஞ்சள்',
-                    'hi' => 'चना या हल्दी',
+                    'en' => 'Donate chickpeas or turmeric to those in need.',
+                    'ta' => 'மஞ்சள் தானம் அளிக்கவும்.',
+                    'hi' => 'चना या हल्दी का दान करें।',
                 ],
                 'mantra' => [
-                    'en' => 'Om Gurave Namah',
-                    'ta' => 'ஓம் குரவே நம:',
-                    'hi' => 'ॐ गुरवे नमः',
+                    'en' => 'Chant \'Om Gurave Namah\' with devotion.',
+                    'ta' => '\'ஓம் குரவே நமஹ\' என ஜெபிக்கவும்.',
+                    'hi' => '\'ॐ गुरवे नमः\' मंत्र का जप करें।',
+                ],
+                'compactLine' => [
+                    'en' => 'On Thursday, pray to Lord Brihaspati or Lord Dakshinamurthy with a ghee lamp, donate chickpeas or turmeric, and chant \'Om Gurave Namah\'.',
+                    'ta' => 'குரு பகவானுக்கு வியாழக்கிழமை கொண்டைக்கடலை தானம் அளித்து \'ஓம் குரவே நமஹ\' என்று ஜெபம் செய்ய வேண்டும்.',
+                    'hi' => 'गुरुवार को भगवान बृहस्पति या दक्षिणामूर्ति को घी का दीपक जलाकर चना या हल्दी दान करें और \'ॐ गुरवे नमः\' का जप करें।',
                 ],
                 'support' => [
                     'en' => 'Wisdom, good guidance, children and growth',
@@ -2892,20 +2990,30 @@ CSS;
                     'ta' => 'அரிசி, தயிர், வெள்ளை இனிப்பு, வெள்ளைத் துணி',
                     'hi' => 'चावल, दही, सफेद मिठाई या सफेद वस्त्र',
                 ],
+                'worship' => [
+                    'en' => 'Goddess Maha Lakshmi should be worshipped on Friday.',
+                    'ta' => 'மகா லட்சுமி வழிபாடு வெள்ளி அன்று செய்யவும்.',
+                    'hi' => 'माँ महालक्ष्मी की आराधना शुक्रवार को करें।',
+                ],
                 'lamp' => [
-                    'en' => 'Ghee lamp',
-                    'ta' => 'நெய் விளக்கு',
-                    'hi' => 'घी का दीपक',
+                    'en' => 'Light a ghee lamp during prayer.',
+                    'ta' => 'நெய் தீபம் ஏற்றி வணங்கவும்.',
+                    'hi' => 'पूजा में घी का दीपक जलाएँ।',
                 ],
                 'donation' => [
-                    'en' => 'Rice or white sweets',
-                    'ta' => 'அரிசி அல்லது வெள்ளை இனிப்பு',
-                    'hi' => 'चावल या सफेद मिठाई',
+                    'en' => 'Donate rice or white sweets to those in need.',
+                    'ta' => 'அரிசி தானம் அளிக்கவும்.',
+                    'hi' => 'चावल या सफेद मिठाई का दान करें।',
                 ],
                 'mantra' => [
-                    'en' => 'Om Shukraya Namah',
-                    'ta' => 'ஓம் சுக்கிராய நம:',
-                    'hi' => 'ॐ शुक्राय नमः',
+                    'en' => 'Chant \'Om Shukraya Namah\' with devotion.',
+                    'ta' => '\'ஓம் சுக்கிராய நமஹ\' என ஜெபிக்கவும்.',
+                    'hi' => '\'ॐ शुक्राय नमः\' मंत्र का जप करें।',
+                ],
+                'compactLine' => [
+                    'en' => 'On Friday, pray to Goddess Maha Lakshmi with a ghee lamp, donate rice or white sweets, and chant \'Om Shukraya Namah\'.',
+                    'ta' => 'மகா லட்சுமிக்கு வெள்ளிக்கிழமை அரிசி தானம் அளித்து \'ஓம் சுக்கிராய நமஹ\' என்று ஜெபம் செய்ய வேண்டும்.',
+                    'hi' => 'शुक्रवार को माँ महालक्ष्मी को घी का दीपक जलाकर चावल या सफेद मिठाई दान करें और \'ॐ शुक्राय नमः\' का जप करें।',
                 ],
                 'support' => [
                     'en' => 'Comfort, good relationships, art and beauty',
@@ -2939,20 +3047,30 @@ CSS;
                     'ta' => 'கருப்பு எள்ளு, நல்லெண்ணெய், இரும்பு, போர்வைகள்',
                     'hi' => 'काले तिल, तिल का तेल, लोहा, कंबल',
                 ],
+                'worship' => [
+                    'en' => 'Lord Shani or Lord Hanuman should be worshipped on Saturday.',
+                    'ta' => 'சனி பகவான் அல்லது அனுமன் வழிபாடு சனி அன்று செய்யவும்.',
+                    'hi' => 'भगवान शनि या हनुमान जी की आराधना शनिवार को करें।',
+                ],
                 'lamp' => [
-                    'en' => 'Sesame oil lamp',
-                    'ta' => 'நல்லெண்ணெய் விளக்கு',
-                    'hi' => 'तिल के तेल का दीपक',
+                    'en' => 'Light a sesame oil lamp during prayer.',
+                    'ta' => 'நல்லெண்ணெய் தீபம் ஏற்றி வணங்கவும்.',
+                    'hi' => 'पूजा में तिल के तेल का दीपक जलाएँ।',
                 ],
                 'donation' => [
-                    'en' => 'Black sesame or iron',
-                    'ta' => 'கருப்பு எள்ளு அல்லது இரும்பு',
-                    'hi' => 'काले तिल या लोहा',
+                    'en' => 'Donate black sesame or iron to those in need.',
+                    'ta' => 'கருப்பு எள்ளு தானம் அளிக்கவும்.',
+                    'hi' => 'काले तिल या लोहा का दान करें।',
                 ],
                 'mantra' => [
-                    'en' => 'Om Shanaye Namah',
-                    'ta' => 'ஓம் சனைச்சராய நம:',
-                    'hi' => 'ॐ शनैश्चराय नमः',
+                    'en' => 'Chant \'Om Shanaye Namah\' with devotion.',
+                    'ta' => '\'ஓம் சனைச்சராய நமஹ\' என ஜெபிக்கவும்.',
+                    'hi' => '\'ॐ शनैश्चराय नमः\' मंत्र का जप करें।',
+                ],
+                'compactLine' => [
+                    'en' => 'On Saturday, pray to Lord Shani or Lord Hanuman with a sesame oil lamp, donate black sesame or iron, and chant \'Om Shanaye Namah\'.',
+                    'ta' => 'சனி பகவானுக்கு சனிக்கிழமை கருப்பு எள்ளு தானம் அளித்து \'ஓம் சனைச்சராய நமஹ\' என்று ஜெபம் செய்ய வேண்டும்.',
+                    'hi' => 'शनिवार को भगवान शनि या हनुमान जी को तिल के तेल का दीपक जलाकर काले तिल दान करें और \'ॐ शनैश्चराय नमः\' का जप करें।',
                 ],
                 'support' => [
                     'en' => 'Discipline, long-term success, service to others',
@@ -2986,20 +3104,30 @@ CSS;
                     'ta' => 'கருப்பு உளுந்து, தேங்காய், எள், போர்வைகள்',
                     'hi' => 'काला उड़द, नारियल, तिल के बीज, कंबल',
                 ],
+                'worship' => [
+                    'en' => 'Goddess Durga or Lord Bhairava should be worshipped on Saturday.',
+                    'ta' => 'துர்க்கை அல்லது பைரவர் வழிபாடு சனி அன்று செய்யவும்.',
+                    'hi' => 'माँ दुर्गा या भगवान भैरव की आराधना शनिवार को करें।',
+                ],
                 'lamp' => [
-                    'en' => 'Sesame oil lamp',
-                    'ta' => 'நல்லெண்ணெய் விளக்கு',
-                    'hi' => 'तिल के तेल का दीपक',
+                    'en' => 'Light a sesame oil lamp during prayer.',
+                    'ta' => 'நல்லெண்ணெய் தீபம் ஏற்றி வணங்கவும்.',
+                    'hi' => 'पूजा में तिल के तेल का दीपक जलाएँ।',
                 ],
                 'donation' => [
-                    'en' => 'Black gram or coconut',
-                    'ta' => 'கருப்பு உளுந்து அல்லது தேங்காய்',
-                    'hi' => 'काला उड़द या नारियल',
+                    'en' => 'Donate black gram or coconut to those in need.',
+                    'ta' => 'கருப்பு உளுந்து தானம் அளிக்கவும்.',
+                    'hi' => 'काला उड़द या नारियल का दान करें।',
                 ],
                 'mantra' => [
-                    'en' => 'Om Rahave Namah',
-                    'ta' => 'ஓம் ராஹவே நம:',
-                    'hi' => 'ॐ राहवे नमः',
+                    'en' => 'Chant \'Om Rahave Namah\' with devotion.',
+                    'ta' => '\'ஓம் ராஹவே நமஹ\' என ஜெபிக்கவும்.',
+                    'hi' => '\'ॐ राहवे नमः\' मंत्र का जप करें।',
+                ],
+                'compactLine' => [
+                    'en' => 'On Saturday, pray to Goddess Durga or Lord Bhairava with a sesame oil lamp, donate black gram or coconut, and chant \'Om Rahave Namah\'.',
+                    'ta' => 'துர்க்கை அம்மனுக்கு சனிக்கிழமை கருப்பு உளுந்து தானம் அளித்து \'ஓம் ராஹவே நமஹ\' என்று ஜெபம் செய்ய வேண்டும்.',
+                    'hi' => 'शनिवार को माँ दुर्गा या भगवान भैरव को तिल के तेल का दीपक जलाकर काला उड़द दान करें और \'ॐ राहवे नमः\' का जप करें।',
                 ],
                 'support' => [
                     'en' => 'Courage to try new things, foreign links',
@@ -3033,20 +3161,30 @@ CSS;
                     'ta' => 'எள்ளு, கொள்ளு, போர்வைகள்',
                     'hi' => 'तिल, कुल्थी, कंबल',
                 ],
+                'worship' => [
+                    'en' => 'Lord Ganesha should be worshipped on Tuesday or Saturday.',
+                    'ta' => 'விநாயகர் வழிபாடு செவ்வாய் அல்லது சனி அன்று செய்யவும்.',
+                    'hi' => 'भगवान गणेश की आराधना मंगलवार या शनिवार को करें।',
+                ],
                 'lamp' => [
-                    'en' => 'Ghee lamp',
-                    'ta' => 'நெய் விளக்கு',
-                    'hi' => 'घी का दीपक',
+                    'en' => 'Light a ghee lamp during prayer.',
+                    'ta' => 'நெய் தீபம் ஏற்றி வணங்கவும்.',
+                    'hi' => 'पूजा में घी का दीपक जलाएँ।',
                 ],
                 'donation' => [
-                    'en' => 'Horse gram or sesame',
-                    'ta' => 'கொள்ளு அல்லது எள்ளு',
-                    'hi' => 'कुल्थी या तिल',
+                    'en' => 'Donate horse gram or sesame to those in need.',
+                    'ta' => 'கொள்ளு தானம் அளிக்கவும்.',
+                    'hi' => 'कुल्थी या तिल का दान करें।',
                 ],
                 'mantra' => [
-                    'en' => 'Om Ketave Namah',
-                    'ta' => 'ஓம் கேதவே நம:',
-                    'hi' => 'ॐ केतवे नमः',
+                    'en' => 'Chant \'Om Ketave Namah\' with devotion.',
+                    'ta' => '\'ஓம் கேதவே நமஹ\' என ஜெபிக்கவும்.',
+                    'hi' => '\'ॐ केतवे नमः\' मंत्र का जप करें।',
+                ],
+                'compactLine' => [
+                    'en' => 'On Tuesday or Saturday, pray to Lord Ganesha with a ghee lamp, donate horse gram or sesame, and chant \'Om Ketave Namah\'.',
+                    'ta' => 'விநாயகப் பெருமானுக்கு செவ்வாய்க்கிழமை கொள்ளு தானம் அளித்து \'ஓம் கேதவே நமஹ\' என்று ஜெபம் செய்ய வேண்டும்.',
+                    'hi' => 'मंगलवार या शनिवार को भगवान गणेश को घी का दीपक जलाकर कुल्थी या तिल दान करें और \'ॐ केतवे नमः\' का जप करें।',
                 ],
                 'support' => [
                     'en' => 'Detachment, spiritual growth, deep insight',
@@ -3113,32 +3251,32 @@ CSS;
             'noCarePlanet' => [
                 'en' => 'No planet is flagged in your chart',
                 'ta' => 'எந்தக் கிரகமும் கவனம் தேவை என்று குறிக்கப்படவில்லை',
-                'hi' => 'आपकी कुंडली में किसी ग्रह पर विशेष ध्यान का संकेत नहीं है',
+                'hi' => 'आपकी कुंडली में किसी ग्रह पर विशेष ध्यान का संकेत नहीं है।',
             ],
             'noSupportPlanet' => [
                 'en' => 'No single planet stands out as specially supportive in this chart',
                 'ta' => 'இந்த ஜாதகத்தில் சிறப்பாக ஆதரவாக இருக்கும் ஒரு கிரகம் தனியாக இல்லை',
-                'hi' => 'इस कुंडली में कोई एक ग्रह विशेष रूप से सहायक के रूप में सामने नहीं आता',
+                'hi' => 'इस कुंडली में कोई एक ग्रह विशेष रूप से सहायक के रूप में सामने नहीं आता है।',
             ],
             'assessmentIncomplete' => [
                 'en' => 'Dosha assessment is incomplete (N/A) because required planetary placements are unavailable; no remedy or clean-status conclusion is inferred.',
                 'ta' => 'தேவையான கிரக நிலை கிடைக்காததால் தோஷ மதிப்பீடு முழுமையில்லை (N/A); பரிகாரம் அல்லது இல்லாமை குறித்து முடிவு செய்யப்படவில்லை.',
-                'hi' => 'आवश्यक ग्रह स्थिति उपलब्ध न होने से दोष-मूल्यांकन अधूरा है (N/A); उपाय या दोष-रहित होने का निष्कर्ष नहीं निकाला गया।',
+                'hi' => 'आवश्यक ग्रह स्थिति उपलब्ध न होने से दोष-मूल्यांकन अधूरा है (N/A); उपाय या दोष-रहित होने का निष्कर्ष नहीं निकाला गया है।',
             ],
             'reassurance' => [
                 'en' => 'No planet is "bad". This is guidance, not a reason for fear. For decisions about health, money or law, please also consult a qualified professional.',
                 'ta' => 'எந்த கிரகமும் \'கெட்டது\' அல்ல. இது பயப்படுவதற்காக அல்ல, வழிகாட்டுதலுக்காக மட்டுமே. உடல்நலம், பணம், சட்டம் தொடர்பான முடிவுகளுக்கு தகுந்த நிபுணரையும் அணுகுங்கள்.',
-                'hi' => 'कोई भी ग्रह "बुरा" नहीं होता। यह डरने के लिए नहीं, मार्गदर्शन के लिए है। स्वास्थ्य, धन या कानून से जुड़े निर्णयों के लिए योग्य विशेषज्ञ से भी परामर्श करें।',
+                'hi' => 'कोई भी ग्रह \'बुरा\' नहीं होता है। यह डरने के लिए नहीं, मार्गदर्शन के लिए है। स्वास्थ्य, धन या कानून से जुड़े निर्णयों के लिए योग्य विशेषज्ञ से भी परामर्श करें।',
             ],
             'summaryLead' => [
                 'en' => 'In your chart, {supportive} support you, while {care} need extra care.',
                 'ta' => 'உங்கள் ஜாதகத்தில் {supportive} ஆதரவாக உள்ளன; {care} கூடுதல் கவனம் தேவை.',
-                'hi' => 'आपकी कुंडली में {supportive} सहायक हैं, {care} को विशेष ध्यान चाहिए।',
+                'hi' => 'आपकी कुंडली में {supportive} सहायक हैं और {care} पर विशेष ध्यान देना आवश्यक है।',
             ],
             'summaryLeadNoSupport' => [
                 'en' => 'In your chart, no single planet stands out as specially supportive, while {care} need extra care.',
                 'ta' => 'உங்கள் ஜாதகத்தில் சிறப்பாக ஆதரவாக இருக்கும் கிரகம் தனியாக இல்லை; {care} கூடுதல் கவனம் தேவை.',
-                'hi' => 'आपकी कुंडली में कोई एक ग्रह विशेष रूप से सहायक सामने नहीं आता, जबकि {care} को विशेष ध्यान चाहिए।',
+                'hi' => 'आपकी कुंडली में कोई एक ग्रह विशेष रूप से सहायक सामने नहीं आता है, जबकि {care} पर विशेष ध्यान देना आवश्यक है।',
             ],
             'summaryLeadNoCare' => [
                 'en' => 'In your chart, {supportive} support you, and no planet needs extra care.',
@@ -3158,7 +3296,7 @@ CSS;
             'dailyHabit' => [
                 'en' => 'Every day: five minutes of morning prayer, respect elders, and help those in need.',
                 'ta' => 'தினமும்: காலையில் ஐந்து நிமிட பிரார்த்தனை, மூத்தோரை மதித்தல், தேவைப்படுவோருக்கு உதவுதல்.',
-                'hi' => 'प्रतिदिन: सुबह पाँच मिनट प्रार्थना, बड़ों का सम्मान, और ज़रूरतमंदों की सहायता.',
+                'hi' => 'प्रतिदिन सुबह पाँच मिनट प्रार्थना करें, बड़ों का सम्मान करें और ज़रूरतमंदों की सहायता करें।',
             ],
             'compactModeNote' => [
                 'en' => '',
@@ -3316,12 +3454,16 @@ CSS;
             if ($isSupportiveHouse) { $supportScore += 1; }
 
             if ($careScore > 0) {
-                $worship = $data[$key]['deity'][$lang] . ' · ' . $data[$key]['day'][$lang];
+                $worship = (string) ($data[$key]['worship'][$lang] ?? ($data[$key]['deity'][$lang] . ' · ' . $data[$key]['day'][$lang]));
                 $lamp = (string) ($data[$key]['lamp'][$lang] ?? '');
                 $donation = (string) ($data[$key]['donation'][$lang] ?? '');
                 $mantra = (string) ($data[$key]['mantra'][$lang] ?? '');
-                $compactParts = [explode(' · ', $worship)[0], $data[$key]['day'][$lang], $lamp, $donation, $mantra];
-                $compactParts = array_values(array_filter($compactParts, static function ($part) { return trim((string) $part) !== ''; }));
+                $compactLine = (string) ($data[$key]['compactLine'][$lang] ?? '');
+                if ($compactLine === '') {
+                    $compactParts = [explode(' · ', $worship)[0], $data[$key]['day'][$lang], $lamp, $donation, $mantra];
+                    $compactParts = array_values(array_filter($compactParts, static function ($part) { return trim((string) $part) !== ''; }));
+                    $compactLine = implode(' · ', $compactParts);
+                }
                 $needsCare[] = [
                     'key' => $key,
                     'house' => $house,
@@ -3331,7 +3473,7 @@ CSS;
                     'lamp' => $lamp,
                     'donation' => $donation,
                     'mantra' => $mantra,
-                    'compactLine' => implode(' · ', $compactParts)
+                    'compactLine' => $compactLine
                 ];
                 continue;
             }
@@ -3385,22 +3527,6 @@ CSS;
         ];
     }
 
-
-    // =====================================================================
-    // NAVAGRAHA REFERENCE MATERIAL (RETAINED)
-    //
-    // The Navagraha guidance prose and the nine-row reference table are the
-    // report's Navagraha reference data. Page 3 is the Short Summary now, so
-    // nothing in this report prints them any more - they are kept, not
-    // deleted, as the PHP twin of NAVAGRAHA_GUIDANCE / NAVAGRAHA_DOSHA_DATA
-    // and the exported Navagraha builders in src/services/jathagamDoshaData.ts
-    // and src/services/jathagamHtmlBuilder.ts, and the Short Summary draws its
-    // remedies from the same material through
-    // jathagamSummaryRemedyData() / classifyJathagamPlanetsForSummary().
-    //
-    // REVIEW: unchanged from the original page-3 text - no review needed.
-    // =====================================================================
-
     /**
      * Guidance prose for the Navagraha panel, raw (unescaped) per language.
      */
@@ -3446,7 +3572,7 @@ CSS;
                     ['पारंपरिक भक्ति', 'मन को शांत करने वाली आराधना कष्ट सहने की शक्ति देती है।'],
                     ['सदाचार', 'ईमानदार जीवन ग्रहों के प्रतिकूल प्रभाव से रक्षा करता है।'],
                 ],
-                'closing' => 'जीवन में आने वाले सभी कष्ट अस्थायी हैं। वे हमें तपाये हुए सोने की भाँति बदलने के लिए आते हैं, नष्ट करने के लिए नहीं।',
+                'closing' => 'जीवन में आने वाले सभी कष्ट अस्थायी हैं। वे हमें नष्ट करने के लिए नहीं, बल्कि तपाये हुए सोने की भाँति निखारने के लिए आते हैं।',
             ];
         } else {
             $navGuidance = [
@@ -3646,8 +3772,8 @@ CSS;
         $brideLagna = self::e(self::rasiNameForNumber($bride['lagnaRasi'] ?? $result['brideLagnaRasi'] ?? null, $lang));
         $brideMarsHouseValue = $result['brideMarsHouse'] ?? null;
         $groomMarsHouseValue = $result['groomMarsHouse'] ?? null;
-        $brideMarsHouse = self::e(is_numeric($brideMarsHouseValue) && (float) $brideMarsHouseValue === (float) (int) $brideMarsHouseValue && (int) $brideMarsHouseValue >= 1 && (int) $brideMarsHouseValue <= 12 ? 'House ' . (int) $brideMarsHouseValue : 'N/A');
-        $groomMarsHouse = self::e(is_numeric($groomMarsHouseValue) && (float) $groomMarsHouseValue === (float) (int) $groomMarsHouseValue && (int) $groomMarsHouseValue >= 1 && (int) $groomMarsHouseValue <= 12 ? 'House ' . (int) $groomMarsHouseValue : 'N/A');
+        $brideMarsHouse = self::e(is_numeric($brideMarsHouseValue) && (float) $brideMarsHouseValue === (float) (int) $brideMarsHouseValue && (int) $brideMarsHouseValue >= 1 && (int) $brideMarsHouseValue <= 12 ? ($isHi ? ((int) $brideMarsHouseValue . 'वाँ भाव') : ('House ' . (int) $brideMarsHouseValue)) : 'N/A');
+        $groomMarsHouse = self::e(is_numeric($groomMarsHouseValue) && (float) $groomMarsHouseValue === (float) (int) $groomMarsHouseValue && (int) $groomMarsHouseValue >= 1 && (int) $groomMarsHouseValue <= 12 ? ($isHi ? ((int) $groomMarsHouseValue . 'वाँ भाव') : ('House ' . (int) $groomMarsHouseValue)) : 'N/A');
 
         $groomDob = self::e(self::birthDate($result['groomDob'] ?? $groom['dob'] ?? '', 'N/A'));
         $groomTob = self::e($result['groomTob'] ?? $groom['tob'] ?? 'N/A');
@@ -3723,7 +3849,7 @@ CSS;
             $verdictText = $isTa
                 ? 'இந்த மதிப்பீட்டின்படி பரிந்துரைக்கப்படவில்லை; நிபுணர் ஆலோசனை பெறவும்.'
                 : ($isHi
-                    ? 'इस आकलन के अनुसार अनुशंसित नहीं; विशेषज्ञ सलाह लें।'
+                    ? 'इस आकलन के अनुसार यह विवाह अनुशंसित नहीं है; कृपया विशेषज्ञ ज्योतिषी से सलाह लें।'
                     : 'Not recommended on this assessment; seek expert review.');
         } else {
             $verdictText = 'N/A';
@@ -3805,7 +3931,7 @@ CSS;
                 ? ($isTa ? 'சிறிய சமனின்மை உள்ளது; எளிய பரிகாரங்களுக்கு ஜோதிடரிடம் ஆலோசனை பெறவும்.' : ($isHi ? 'मामूली असंतुलन है; सरल उपायों के लिए ज्योतिषी से सलाह लें।' : 'A mild imbalance is indicated; ask an astrologer about simple remedies.'))
                 : ($doshaBalanceCode === 'IMBALANCE'
                     ? ($isTa ? 'செவ்வாய் தோஷ சமநிலை இல்லை; பரிகாரங்களுக்கு நிபுணர் ஆலோசனை பெறவும்.' : ($isHi ? 'मंगल दोष में असंतुलन है; उपायों के लिए विशेषज्ञ सलाह लें।' : 'A Kuja Dosha imbalance is indicated; seek expert guidance on remedies.'))
-                    : ($isTa ? 'கிடைத்த ஜாதகத் தகவல்களால் செவ்வாய் தோஷத்தை மதிப்பிட முடியவில்லை.' : ($isHi ? 'उपलब्ध जन्म विवरण से मंगल दोष का आकलन नहीं हो सका।' : 'Kuja Dosha could not be assessed from the available chart data.'))));
+                    : ($isTa ? 'கிடைத்த ஜாதகத் தகவல்களால் செவ்வாய் தோஷத்தை மதிப்பிட முடியவில்லை.' : ($isHi ? 'उपलब्ध जन्म विवरण से मंगल दोष का आकलन नहीं किया जा सका है।' : 'Kuja Dosha could not be assessed from the available chart data.'))));
         $doshaTitle = $isTa ? 'செவ்வாய் தோஷச் சுருக்கம்' : ($isHi ? 'मंगल दोष सारांश' : 'Kuja (Mars) Dosha Summary');
         $lblDoshaBride = $isTa ? 'பெண்' : ($isHi ? 'वधू' : 'Bride');
         $lblDoshaGroom = $isTa ? 'ஆண்' : ($isHi ? 'वर' : 'Groom');
@@ -3860,6 +3986,13 @@ CSS;
 
         // prepared-date stamp: first page only, on the LEFT of the reference
         // line — never centred with the page tag (owner request, Oct 2026).
+        $lblWedName = $isHi ? 'नाम' : 'Name';
+        $lblWedDob = 'DOB';
+        $lblWedPlace = $isHi ? 'जन्म स्थान' : 'Place';
+        $lblWedRasi = $isHi ? 'राशि' : 'Rasi';
+        $lblWedStar = $isHi ? 'नक्षत्र' : 'Star';
+        $lblWedLagna = $isHi ? 'लग्न' : 'Lagna';
+        $lblWedMars = $isHi ? 'मंगल' : 'Mars';
         $preparedLabel = self::preparedDateStamp($result, $lang);
         $body = self::topHeader('ASTRO SIVAM', $headerSub, $orderNumber, 1, self::WEDDING_PAGE_TOTAL, $lang, '', false, $preparedLabel);
         $body .= <<<HTML
@@ -3867,20 +4000,20 @@ CSS;
   <table style="width:100%; font-size:10px; line-height:1.5;"><tr>
     <td style="width:48%; vertical-align:top;">
       <div style="color:#7a1f1f; font-size:10.5px; font-weight:bold; margin-bottom:1.5mm;">{$lblGroom}</div>
-      <div style="margin-bottom:1mm;">Name: <b>{$groomName}</b></div>
-      <div style="margin-bottom:1mm;">DOB: {$groomDob} ({$groomTob})</div>
-      <div style="margin-bottom:1mm;">Place: {$groomPlace}</div>
-      <div style="margin-bottom:1mm;">Rasi: <b>{$groomRasi}</b> &bull; Star: <b>{$groomNak}</b></div>
-      <div>Lagna: <b>{$groomLagna}</b> &bull; Mars: <b>{$groomMarsHouse}</b></div>
+      <div style="margin-bottom:1mm;">{$lblWedName}: <b>{$groomName}</b></div>
+      <div style="margin-bottom:1mm;">{$lblWedDob}: {$groomDob} ({$groomTob})</div>
+      <div style="margin-bottom:1mm;">{$lblWedPlace}: {$groomPlace}</div>
+      <div style="margin-bottom:1mm;">{$lblWedRasi}: <b>{$groomRasi}</b> &bull; {$lblWedStar}: <b>{$groomNak}</b></div>
+      <div>{$lblWedLagna}: <b>{$groomLagna}</b> &bull; {$lblWedMars}: <b>{$groomMarsHouse}</b></div>
     </td>
     <td style="width:4%; border-left:1px solid #e8d9b8;"></td>
     <td style="width:48%; vertical-align:top;">
       <div style="color:#7a1f1f; font-size:10.5px; font-weight:bold; margin-bottom:1.5mm;">{$lblBride}</div>
-      <div style="margin-bottom:1mm;">Name: <b>{$brideName}</b></div>
-      <div style="margin-bottom:1mm;">DOB: {$brideDob} ({$brideTob})</div>
-      <div style="margin-bottom:1mm;">Place: {$bridePlace}</div>
-      <div style="margin-bottom:1mm;">Rasi: <b>{$brideRasi}</b> &bull; Star: <b>{$brideNak}</b></div>
-      <div>Lagna: <b>{$brideLagna}</b> &bull; Mars: <b>{$brideMarsHouse}</b></div>
+      <div style="margin-bottom:1mm;">{$lblWedName}: <b>{$brideName}</b></div>
+      <div style="margin-bottom:1mm;">{$lblWedDob}: {$brideDob} ({$brideTob})</div>
+      <div style="margin-bottom:1mm;">{$lblWedPlace}: {$bridePlace}</div>
+      <div style="margin-bottom:1mm;">{$lblWedRasi}: <b>{$brideRasi}</b> &bull; {$lblWedStar}: <b>{$brideNak}</b></div>
+      <div>{$lblWedLagna}: <b>{$brideLagna}</b> &bull; {$lblWedMars}: <b>{$brideMarsHouse}</b></div>
     </td>
   </tr></table>
 </div>
@@ -4173,7 +4306,7 @@ HTML;
             'lblStar' => $isTa ? 'நட்சத்திரம்' : ($isHi ? 'नक्षत्र' : 'STAR'),
             'lblNalla' => $isTa ? 'நல்ல நேரம்' : ($isHi ? 'शुभ समय' : 'NALLA NERAM'),
             'lblGrade' => $isTa ? 'தரம்' : ($isHi ? 'श्रेणी' : 'GRADE'),
-            'lblNoDays' => $isTa ? 'இந்த மாதத்தில் சிறந்த அல்லது சுப தேதிகள் இல்லை.' : ($isHi ? 'इस माह में कोई BEST या GOOD तिथि नहीं मिली।' : 'No BEST or GOOD dates in this month.'),
+            'lblNoDays' => $isTa ? 'இந்த மாதத்தில் சிறந்த அல்லது சுப தேதிகள் இல்லை.' : ($isHi ? 'इस माह में कोई उत्तम या शुभ तिथि उपलब्ध नहीं है।' : 'No BEST or GOOD dates in this month.'),
             'secCouple' => $isTa ? 'மணமகன் & மணமகள் விவரங்கள்' : ($isHi ? 'वर एवं वधू विवरण' : 'BRIDE & GROOM PARTICULARS'),
             'lblStar' => $isTa ? 'ஜன்ம நட்சத்திரம்' : ($isHi ? 'जन्म नक्षत्र' : 'JANMA NAKSHATRA'),
             'lblRasi' => $isTa ? 'ராசி' : ($isHi ? 'राशि' : 'RASI'),
@@ -4465,7 +4598,7 @@ HTML;
         // Longer continuations expand the cell and keep the guide below dates.
         $secondPage = '<div class="sheet muhurtham-sheet">'
             . '<table class="muhurtham-page2-upper"><tr><td style="height:100mm;padding:0;vertical-align:top;">'
-            . self::topHeader('ASTRO SIVAM', $t['docTitle'] . ' - ' . $t['continued'], $orderNumberSafe, 2, self::MUHURTHAM_PAGE_TOTAL, $lang, $eventTitle . ' • Clean dates only')
+            . self::topHeader('ASTRO SIVAM', $t['docTitle'] . ' - ' . $t['continued'], $orderNumberSafe, 2, self::MUHURTHAM_PAGE_TOTAL, $lang, $eventTitle . ($isHi ? ' • केवल शुद्ध तिथियाँ' : ' • Clean dates only'))
             . $upperHalf
             . '</td></tr></table>'
             . $selectionGuide
@@ -4871,7 +5004,7 @@ HTML;
         $whySoundText = $isTa
             ? 'பெயர் ஒலியை மட்டும் வைத்துத் தேர்ந்தெடுப்பதல்ல — மரபு குழந்தையின் பிறந்த நட்சத்திரம் மற்றும் பாதத்திலிருந்து முதல் ஒலியை நிர்ணயிக்கிறது; அதனால் பெயர் குழந்தையின் நட்சத்திரம் தொடங்கும் இடத்திலிருந்தே தொடங்குகிறது. மேலே உள்ள நான்கு ஒலிகளில் ஒன்றில் தொடங்கும் எந்தப் பெயரையும் குடும்பம் தேர்ந்தெடுக்கலாம். இந்த அறிக்கையின் அனைத்துப் பெயர் பட்டியலும் அந்த ஒலிகளில் தொடங்குவதற்குக் காரணம் இதுவே: பொருள் உங்கள் தேர்வு, முதல் ஒலி ஆசி.'
             : ($isHi
-                ? 'नाम केवल सुनने में अच्छा लगने से नहीं चुना जाता — परंपरा पहली ध्वनि शिशु के जन्म नक्षत्र और पाद से तय करती है, इसलिए नाम वहीं से शुरू होता है जहाँ शिशु का नक्षत्र शुरू होता है। परिवार ऊपर दी गई चार ध्वनियों में से किसी एक से शुरू होने वाला कोई भी नाम चुन सकता है। इस रिपोर्ट की हर नाम-सूची इन्हीं ध्वनियों से शुरू होती है: अर्थ आपकी पसंद, पहली ध्वनि आशीर्वाद।'
+                ? 'नाम केवल सुनने में अच्छा लगने से नहीं चुना जाता है — परंपरा पहली ध्वनि शिशु के जन्म नक्षत्र और पाद से तय करती है, इसलिए नाम वहीं से शुरू होता है जहाँ शिशु का नक्षत्र शुरू होता है। परिवार ऊपर दी गई चार ध्वनियों में से किसी एक से शुरू होने वाला कोई भी नाम चुन सकता है। इस रिपोर्ट की हर नाम-सूची इन्हीं ध्वनियों से शुरू होती है: अर्थ आपकी पसंद है, पहली ध्वनि आशीर्वाद है।'
                 : 'A name is not chosen by sound alone - tradition fixes the FIRST sound from the birth star and pada, so the name begins where the child\'s star begins. The family then picks any name that starts with one of the four syllables printed above. That is why every name list in this report starts with those sounds: the meaning is your choice, the first sound is the blessing.');
         $sec5 = $isTa ? 'வேத குணநலன்கள்' : ($isHi ? 'वैदिक गुण' : 'VEDIC GUNAM & VIRTUES');
 
@@ -4907,7 +5040,7 @@ HTML;
         $certText = $isTa
             ? "இவ்வறிக்கை {$babyName} குழந்தையின் ஜன்ம நட்சத்திரம், சுப அக்ஷரங்கள் லஹிரி அயனாம்ச முறைப்படி கணிக்கப்பட்டதை உறுதிப்படுத்துகிறது. வழங்கப்பட்ட பெயர் அடையாளத்திற்காக மட்டுமே; அது பிறந்த பாத ஒலிக்குப் பொருந்துவதாகச் சான்றளிக்கப்படவில்லை."
             : ($isHi
-                ? "यह रिपोर्ट {$babyName} के जन्म नक्षत्र और शुभ नामाक्षरों की गणना प्रमाणित करती है। दिया गया नाम केवल पहचान के लिए है; जन्म-पाद की ध्वनि से उसका मेल प्रमाणित नहीं है।"
+                ? "यह रिपोर्ट {$babyName} के जन्म नक्षत्र और शुभ नामाक्षरों की गणना को प्रमाणित करती है। दिया गया नाम केवल पहचान के लिए है; जन्म-पाद की ध्वनि से उसका मेल प्रमाणित नहीं है।"
                 : "This report certifies the computed Janma Nakshatra and naming syllables for {$babyName}. The supplied name is for identification only, not a certified birth-pada name match.");
         $signRole = $isTa ? 'அங்கீகரிக்கப்பட்ட ஜோதிடர்' : ($isHi ? 'अधिकृत ज्योतिषी' : 'AUTHORIZED ASTROLOGER');
         $footerLabel = $isTa ? 'அதிகாரப்பூர்வ வேத நாமகரண அறிக்கை' : ($isHi ? 'आधिकारिक वैदिक नामकरण रिपोर्ट' : 'Official Vedic Namakaran Report');
@@ -4916,8 +5049,8 @@ HTML;
         $preparedLabel = self::preparedDateStamp($result, $lang);
         $bnPreparedSpan = $preparedLabel !== '' ? '<span class="bn-prepared">' . self::e($preparedLabel) . '</span>' : '';
 
-        $virtue1 = $isTa ? 'பிரகாசமான உயிர்த்திருவும் அறிவும் — கூர்மையான பார்வை, உயர்ந்த மன சுறுசுறுப்பு.' : ($isHi ? 'तेजस्वी ओज एवं बुद्धि — तीक्ष्ण बुद्धि, सूक्ष्म दृष्टि एवं उत्तम स्वभाव।' : 'Radiant Vitality &amp; Intellect — keen observational clarity, mental agility and noble presence.');
-        $virtue2 = $isTa ? 'கருணை & தர்ம நெறி — உண்மை, ஈகை, வலிய அற உணர்வு.' : ($isHi ? 'करुणा एवं धर्म — सत्यनिष्ठा, उदारता एवं नैतिक बल।' : 'Compassion &amp; Dharma Alignment — truthfulness, generosity and strong moral grounding.');
+        $virtue1 = $isTa ? 'பிரகாசமான உயிர்த்திருவும் அறிவும் — கூர்மையான பார்வை, உயர்ந்த மன சுறுசுறுப்பு.' : ($isHi ? 'तेजस्वी ओज एवं बुद्धि — तीक्ष्ण बुद्धि, सूक्ष्म दृष्टि एवं उत्तम स्वभाव का विकास होता है।' : 'Radiant Vitality &amp; Intellect — keen observational clarity, mental agility and noble presence.');
+        $virtue2 = $isTa ? 'கருணை & தர்ம நெறி — உண்மை, ஈகை, வலிய அற உணர்வு.' : ($isHi ? 'करुणा एवं धर्म — सत्यनिष्ठा, उदारता एवं नैतिक बल प्राप्त होता है।' : 'Compassion &amp; Dharma Alignment — truthfulness, generosity and strong moral grounding.');
         $virtue3 = $isTa ? 'சுப பெய் அதிர்வுகள் — நாமகரண ஒலி நீண்ட ஆயுள், வெற்றி, ஆன்மீக பாதுகாப்பு.' : ($isHi ? 'शुभ नाम-कंपन — नामाक्षर दीर्घायु, सफलता एवं आध्यात्मिक सुरक्षा देते हैं।' : 'Auspicious Name Vibrations — the namakshara sound harmonizes longevity, success and spiritual protection.');
         $virtue4 = $isTa ? 'குடும்ப சுப வளர்ச்சி — ஜன்ம பாத அக்ஷரங்கள் ஆரோக்கியம், பாசம், சுப ஆரம்பங்கள்.' : ($isHi ? 'पारिवारिक मंगल वृद्धि — जन्म पाद अक्षर स्वास्थ्य, स्नेह एवं शुभ आरंभ देते हैं।' : 'Family Blessing &amp; Growth — janma pada syllables support healthy development, affection and auspicious beginnings.');
 
@@ -4932,7 +5065,7 @@ HTML;
         $birthSound = self::e($primaryPada['letterEn']);
         $matches = self::nameMatchesPada($rawName, $primaryPada['letterTa']);
         $nameCheck = $isTa ? "பெயரின் முதல் ஒலி ({$firstSound}) ஜன்ம பாத ஒலிக்கு ({$birthSound}) " . ($matches ? 'பொருந்துகிறது' : 'பொருந்தவில்லை')
-            : ($isHi ? "नाम की पहली ध्वनि ({$firstSound}) जन्म पाद ({$birthSound}) से " . ($matches ? 'मेल खाती है' : 'मेल नहीं खाती')
+            : ($isHi ? "नाम की पहली ध्वनि ({$firstSound}) जन्म पाद ({$birthSound}) से " . ($matches ? 'मेल खाती है।' : 'मेल नहीं खाती है।')
             : "Name's first sound ({$firstSound}) " . ($matches ? 'matches' : 'does not match') . " the birth-pada sound ({$birthSound}).");
         $thRasi = $isTa ? 'நவாம்சம்' : ($isHi ? 'नवांश' : 'Navamsa');
         $signRole = $isTa ? 'அங்கீகரிக்கப்பட்டவர்' : ($isHi ? 'अधिकृत हस्ताक्षरकर्ता' : 'Authorised Signatory');

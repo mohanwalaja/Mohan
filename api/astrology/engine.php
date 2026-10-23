@@ -1329,7 +1329,7 @@ class AstroEngine {
             'severityEn' => 'N/A', 'severityTa' => 'N/A', 'severityHi' => 'N/A',
             'explanationEn' => 'Required Mars, Lagna, Moon, Venus or Jupiter placement data is unavailable; Sevvay Dosha is not assessed.',
             'explanationTa' => 'செவ்வாய், லக்னம், சந்திரன், சுக்கிரன் அல்லது குருவின் ராசி நிலை கிடைக்கவில்லை; செவ்வாய் தோஷம் மதிப்பிடப்படவில்லை.',
-            'explanationHi' => 'मंगल, लग्न, चंद्र, शुक्र अथवा गुरु की राशि स्थिति उपलब्ध नहीं है; मंगल दोष का आकलन नहीं हुआ।',
+            'explanationHi' => 'मंगल, लग्न, चंद्र, शुक्र अथवा गुरु की राशि स्थिति उपलब्ध नहीं है; मंगल दोष का आकलन नहीं हुआ है।',
         ];
         if ($mars === null || $lagna === null || $moon === null || $venus === null || $jupiter === null) {
             return $result; // Missing data must stay N/A, never a false "clean" result.
@@ -1378,19 +1378,19 @@ class AstroEngine {
             $add($exceptions, 'OWN_SIGN',
                 "Mars is in its own sign {$signName($mars)} (Swakshetra); Sevvay Dosha does not apply.",
                 "செவ்வாய் தனது ஆட்சி வீடான {$signNameTa($mars)} ராசியில் உள்ளதால் செவ்வாய் தோஷம் இல்லை.",
-                "मंगल अपनी स्वराशि {$signName($mars)} में है; मंगल दोष लागू नहीं होता।");
+                "मंगल अपनी स्वराशि {$signName($mars)} में है; मंगल दोष लागू नहीं होता है।");
         }
         if ($mars === 10) {
             $add($exceptions, 'EXALTED',
                 'Mars is exalted in Magaram (Capricorn); an exalted Mars does not give Sevvay Dosha.',
                 'செவ்வாய் மகர ராசியில் உச்சம் பெற்றுள்ளதால் செவ்வாய் தோஷம் இல்லை.',
-                'मंगल मकर राशि में उच्च का है; उच्च मंगल से मंगल दोष नहीं होता।');
+                'मंगल मकर राशि में उच्च का है; उच्च मंगल से मंगल दोष नहीं होता है।');
         }
         if (in_array($mars, self::KUJA_UNIVERSAL_SIGN_EXCEPTIONS, true)) {
             $add($exceptions, 'LEO_AQUARIUS',
                 "Mars in {$signName($mars)} is exempt from Sevvay Dosha in every dosha house (Simha/Kumbha exception).",
                 "{$signNameTa($mars)} ராசியில் உள்ள செவ்வாய்க்கு எந்த தோஷ ஸ்தானத்திலும் தோஷம் இல்லை (சிம்ம/கும்ப விலக்கு).",
-                "{$signName($mars)} राशि का मंगल किसी भी दोष भाव में मंगल दोष नहीं देता (सिंह/कुंभ अपवाद)।");
+                "{$signName($mars)} राशि का मंगल किसी भी दोष भाव में मंगल दोष नहीं देता है (सिंह/कुंभ अपवाद)।");
         }
         // House-sign exceptions neutralise only the reference point whose
         // count they match; the dosha is cancelled on this ground only when
@@ -1415,13 +1415,13 @@ class AstroEngine {
             $add($exceptions, 'HOUSE_SIGN',
                 sprintf('Mars in %s in %s is a classical house-sign exception (Sevvay Dosha Vilakku), so the dosha does not apply.', $signName($mars), implode(' and ', $en)),
                 sprintf('%s ராசியில் உள்ள செவ்வாய்க்கு %s ஆகிய இடங்களுக்கான சாஸ்திர விலக்கு உண்டு; எனவே தோஷம் இல்லை.', $signNameTa($mars), implode(', ', $ta)),
-                sprintf('%s राशि का मंगल %s के लिए शास्त्रीय भाव-राशि अपवाद में आता है; अतः दोष लागू नहीं होता।', $signName($mars), implode(' एवं ', $hi)));
+                sprintf('%s राशि का मंगल %s के लिए शास्त्रीय भाव-राशि अपवाद में आता है; अतः दोष लागू नहीं होता है।', $signName($mars), implode(' एवं ', $hi)));
         }
         if (in_array($lagna, [4, 5], true) && in_array($houses['lagna'], self::kujaDoshaHouses(), true)) {
             $add($exceptions, 'YOGAKARAKA_LAGNA',
                 "For a {$signName($lagna)} Lagna Mars is the Yogakaraka; its placement does not create Sevvay Dosha.",
                 "{$signNameTa($lagna)} லக்னத்திற்கு செவ்வாய் யோககாரகர்; அவரது நிலை செவ்வாய் தோஷத்தை உண்டாக்காது.",
-                "{$signName($lagna)} लग्न के लिए मंगल योगकारक है; उसकी स्थिति से मंगल दोष नहीं बनता।");
+                "{$signName($lagna)} लग्न के लिए मंगल योगकारक है; उसकी स्थिति से मंगल दोष नहीं बनता है।");
         }
         if ($jupiter === $mars) {
             $add($exceptions, 'GURU_MANGALA',
@@ -1504,7 +1504,7 @@ class AstroEngine {
             $result['severityHi'] = 'मंगल दोष नहीं (दोष निवृत्ति नियम लागू)';
             $result['explanationEn'] = $placementEn . ' ' . $join($exceptions, 'en') . ' Under Dosha Nivrutti this count is relieved for marriage matching; this is an indicator only and guarantees no particular outcome.';
             $result['explanationTa'] = $placementTa . ' ' . $join($exceptions, 'ta') . ' திருமணப் பொருத்தத்தில் தோஷ நிவர்த்தி விதியால் இது தணிக்கப்படுகிறது; இது குறியீடு மட்டுமே, உறுதியான பலனை உறுதி செய்யாது.';
-            $result['explanationHi'] = $placementHi . ' ' . $join($exceptions, 'hi') . ' विवाह मिलान में दोष निवृत्ति नियम से इसे शमित माना जाता है; यह केवल संकेत है, किसी निश्चित परिणाम की गारंटी नहीं।';
+            $result['explanationHi'] = $placementHi . ' ' . $join($exceptions, 'hi') . ' विवाह मिलान में दोष निवृत्ति नियम से इसे शमित माना जाता है; यह केवल संकेत है, किसी निश्चित परिणाम की गारंटी नहीं है।';
         } elseif ($mild) {
             $result['status'] = 'DOSHA_MILD';
             $result['severityEn'] = 'Mild Sevvay Dosha (reduced by classical rules)';
@@ -1611,7 +1611,7 @@ class AstroEngine {
             'yoniGroomAnimalHi' => $groomYoniNames['hi'],
             'explanationEn' => 'Bride: ' . $brideYoniNames['en'] . '; Groom: ' . $groomYoniNames['en'] . '. Yoni relationship: ' . $yoniRelationshipText['en'] . '.',
             'explanationTa' => 'மணமகள்: ' . $brideYoniNames['ta'] . '; மணமகன்: ' . $groomYoniNames['ta'] . '. யோனி உறவு: ' . $yoniRelationshipText['ta'] . '.',
-            'explanationHi' => 'वधू: ' . $brideYoniNames['hi'] . '; वर: ' . $groomYoniNames['hi'] . '। योनि संबंध: ' . $yoniRelationshipText['hi'] . '।',
+            'explanationHi' => 'वधू: ' . $brideYoniNames['hi'] . '; वर: ' . $groomYoniNames['hi'] . ' — योनि संबंध ' . $yoniRelationshipText['hi'] . ' है।',
         ];
 
         $rasiDiff = (($girlRasiIdx - $boyRasiIdx + 12) % 12) + 1;
@@ -1817,7 +1817,7 @@ class AstroEngine {
         $caveat = [
             'en' => 'This rule reduces the effect of the debilitation; it does not erase it, and no particular result is guaranteed.',
             'ta' => 'இந்த விதி நீச நிலையின் விளைவைத் தணிக்கிறது; அதை முழுமையாக நீக்குவதுமில்லை, உறுதியான பலனை உறுதி செய்வதுமில்லை.',
-            'hi' => 'यह नियम नीच स्थिति के प्रभाव को कम करता है; उसे मिटाता नहीं और किसी निश्चित परिणाम की गारंटी नहीं देता।',
+            'hi' => 'यह नियम नीच स्थिति के प्रभाव को कम करता है; उसे मिटाता नहीं है और किसी निश्चित परिणाम की गारंटी नहीं देता है।',
         ];
         $tagEn = implode('; ', array_column($reasons, 'tagEn'));
         $tagTa = implode('; ', array_column($reasons, 'tagTa'));
@@ -1946,7 +1946,7 @@ class AstroEngine {
                     'winnerLatitude' => round($winnerLatitude, 4), 'loserLatitude' => round($loserLatitude, 4),
                     'descriptionEn' => $nameA['en'] . ' and ' . $nameB['en'] . ' are ' . $sepText . '° apart in ' . $sign['en'] . ' — Graha Yuddha. Decided by ecliptic latitude (north wins): ' . $nameW['en'] . ' (' . ($winnerLatitude >= 0 ? '+' : '') . number_format($winnerLatitude, 3, '.', '') . '°) defeats ' . $nameL['en'] . ' (' . number_format($loserLatitude, 3, '.', '') . '°).',
                     'descriptionTa' => $sign['ta'] . ' ராசியில் ' . $nameA['ta'] . '–' . $nameB['ta'] . ' இடையே ' . $sepText . '° இடைவெளி — கிரக யுத்தம். வடக்கு அகலாங்கு (ecliptic latitude) விதிப்படி ' . $nameW['ta'] . ' (' . number_format($winnerLatitude, 3, '.', '') . '°) ' . $nameL['ta'] . '-ஐ (' . number_format($loserLatitude, 3, '.', '') . '°) வெல்கிறார்.',
-                    'descriptionHi' => ($sign['hi'] ?? $sign['en']) . ' राशि में ' . $nameA['hi'] . '–' . $nameB['hi'] . ' के बीच ' . $sepText . '° — ग्रह युद्ध। उत्तर दिशा के अक्षांश (ecliptic latitude) के नियम से ' . $nameW['hi'] . ' (' . number_format($winnerLatitude, 3, '.', '') . '°) ने ' . $nameL['hi'] . ' (' . number_format($loserLatitude, 3, '.', '') . '°) को पराजित किया।',
+                    'descriptionHi' => ($sign['hi'] ?? $sign['en']) . ' राशि में ' . $nameA['hi'] . '–' . $nameB['hi'] . ' के बीच ' . $sepText . '° का अंतर है — ग्रह युद्ध। उत्तर अक्षांश नियम से ' . $nameW['hi'] . ' (' . number_format($winnerLatitude, 3, '.', '') . '°) ने ' . $nameL['hi'] . ' (' . number_format($loserLatitude, 3, '.', '') . '°) को पराजित किया है।',
                 ];
             }
         }
@@ -1979,7 +1979,10 @@ class AstroEngine {
             $houseListEn = implode(' and ', array_map($ordinal, $houses));
             $signListEn = implode(', ', array_map(static function ($sign) { return self::$RASIS[$sign - 1]['en']; }, $ownedSigns));
             $signListTa = implode(', ', array_map(static function ($sign) { return self::$RASIS[$sign - 1]['ta']; }, $ownedSigns));
+            $signListHi = implode(', ', array_map(static function ($sign) { return preg_replace('/\s*\([^)]*\)\s*$/u', '', self::$RASIS[$sign - 1]['hi']); }, $ownedSigns));
             $housesTa = implode(', ', array_map(static function ($house) { return $house . '-ஆம்'; }, $houses));
+            $housesHi = implode(', ', array_map(static function ($house) { return $house . 'वें'; }, $houses));
+            $grahaLabelHi = preg_replace('/\s*\([^)]*\)\s*$/u', '', $names['hi']);
             $entries[] = [
                 'graha' => $graha,
                 'grahaNameEn' => $names['en'], 'grahaNameTa' => $names['ta'], 'grahaNameHi' => $names['hi'],
@@ -1990,8 +1993,9 @@ class AstroEngine {
                     . ($appliesToLagnaLord ? ' As the Lagna lord it is traditionally exempt, but the note is kept.' : ''),
                 'descriptionTa' => $names['ta'] . ' இந்த லக்னத்திற்கு ' . $housesTa . ' பாவங்களை (' . $signListTa . ') ஆள்கிறார் — கேந்திராதிபதி தோஷம். நல்ல கிரகம் இரண்டு கேந்திரங்களை ஆள்வது அந்த பாவ விஷயங்களுக்கு எச்சரிக்கையாகக் கருதப்படுகிறது.'
                     . ($appliesToLagnaLord ? ' லக்னாதிபதி என்பதால் மரபு விலக்கு உண்டு; குறிப்பு மட்டும் வைக்கப்பட்டுள்ளது.' : ''),
-                'descriptionHi' => $names['hi'] . ' इस लग्न के लिए ' . $houseListEn . ' भावों (' . $signListEn . ') के स्वामी हैं — केंद्राधिपति दोष। शुभ ग्रह का दो केंद्रों पर स्वामित्व सावधानी माना जाता है।'
-                    . ($appliesToLagnaLord ? ' लग्नेश होने से छूट है, फिर भी उल्लेख रखा गया है।' : ''),
+                'descriptionHi' => $appliesToLagnaLord
+                    ? $grahaLabelHi . ' इस लग्न के लिए ' . $housesHi . ' भावों (' . $signListHi . ') के स्वामी हैं। लग्नेश होने से केंद्राधिपति दोष से पारंपरिक छूट है, फिर भी कार्य/विवाह कार्ड में यह उल्लेख किया गया है।'
+                    : $grahaLabelHi . ' इस लग्न के लिए ' . $housesHi . ' भावों (' . $signListHi . ') के स्वामी हैं, इसलिए केंद्राधिपति दोष लगता है। शुभ ग्रह का दो केंद्रों पर स्वामित्व सावधानी माना जाता है।',
             ];
         }
         return $entries;
@@ -2019,7 +2023,7 @@ class AstroEngine {
                 'severity' => 'auspicious',
                 'descriptionEn' => $info['en'] . ', lord of the 8th house, occupies the 8th house itself (Sarala Yoga). Traditionally this protects longevity and turns crises into endurance, research depth and inheritance of knowledge rather than sudden loss.',
                 'descriptionTa' => '8-ஆம் பாவ அதிபதி ' . $info['ta'] . ' அதே 8-ஆம் பாவத்தில் அமர்ந்துள்ளார் (சரள யோகம்). மரபில் இது ஆயுள் மற்றும் தைரியத்தைப் பாதுகாக்கும்; நெருக்கடிகளை அறிவுத் தேடலாக மாற்றும்.',
-                'descriptionHi' => 'अष्टम भाव के स्वामी ' . $info['hi'] . ' स्वयं अष्टम भाव में हैं (सरल योग)। परंत्रा में यह आयु और धैर्य की रक्षा करता है।',
+                'descriptionHi' => 'अष्टम भाव के स्वामी ' . $info['hi'] . ' स्वयं अष्टम भाव में हैं (सरल योग)। परंपरा में यह आयु और धैर्य की रक्षा करता है।',
             ];
         }
         $saturnSign = $rasiByGraha['saturn'] ?? null;
@@ -2506,7 +2510,7 @@ class AstroEngine {
                 'severityHi' => $isPitruDosha === null ? 'N/A' : ($isPitruDosha ? 'मध्यम' : 'शुभ स्थिति'),
                 'descriptionEn' => $isPitruDosha === null ? 'Required Sun, Rahu, Ketu or Saturn house data is unavailable; this indicator is not assessed.' : ($isPitruDosha ? 'The Sun shares a sign with Rahu or Ketu, or Saturn occupies the 9th house under this simplified rule.' : 'No Sun-node same-sign or Saturn-in-9th trigger was found under this limited rule; it does not assess all traditional Pitru criteria or the strength of the 9th lord.'),
                 'descriptionTa' => $isPitruDosha === null ? 'சூரியன், ராகு, கேது அல்லது சனியின் தேவையான பாவத் தகவல் கிடைக்கவில்லை; இந்தக் குறியீடு மதிப்பிடப்படவில்லை.' : ($isPitruDosha ? 'இந்த எளிய விதிப்படி சூரியன் ராகு/கேதுவுடன் ஒரே ராசியில் உள்ளார் அல்லது சனி 9-ஆம் பாவத்தில் உள்ளார்.' : 'இந்த வரையறுக்கப்பட்ட விதியில் சூரியன்-ராகு/கேது ஒரே ராசி அல்லது சனி 9-ஆம் பாவக் குறியீடு இல்லை; இது 9-ஆம் அதிபதியின் பலத்தையோ பிற பாரம்பரிய பித்ரு விதிகளையோ மதிப்பிடாது.'),
-                'descriptionHi' => $isPitruDosha === null ? 'सूर्य, राहु, केतु या शनि के आवश्यक भाव-डेटा उपलब्ध नहीं हैं; इस संकेत का आकलन नहीं हुआ।' : ($isPitruDosha ? 'इस सरल नियम के अनुसार सूर्य राहु/केतु के साथ एक राशि में हैं, या शनि नवम भाव में है।' : 'इस सीमित नियम में सूर्य-राहु/केतु की एक-राशि युति या शनि-नवम भाव का संकेत नहीं मिला; यह नवमेश के बल या अन्य पारंपरिक पितृ नियमों का मूल्यांकन नहीं करता।'),
+                'descriptionHi' => $isPitruDosha === null ? 'सूर्य, राहु, केतु या शनि के आवश्यक भाव-डेटा उपलब्ध नहीं हैं; इस संकेत का आकलन नहीं हुआ है।' : ($isPitruDosha ? 'इस सरल नियम के अनुसार सूर्य राहु/केतु के साथ एक राशि में हैं, या शनि नवम भाव में है।' : 'इस सीमित नियम में सूर्य-राहु/केतु की एक-राशि युति या शनि-नवम भाव का संकेत नहीं मिला; यह नवमेश के बल या अन्य पारंपरिक पितृ नियमों का मूल्यांकन नहीं करता है।'),
                 'traditionalRemedyEn' => 'Pray to Maha Vishnu.',
                 'traditionalRemedyTa' => 'மகா விஷ்ணு பெயரைச் சொல்லி பிரார்த்தனை செய்யுங்கள்.',
                 'traditionalRemedyHi' => 'महाविष्णु का नाम लेकर प्रार्थना करें।',
@@ -2519,7 +2523,7 @@ class AstroEngine {
                 'severityHi' => $isGuruChandalaDosha === null ? 'N/A' : ($isGuruChandalaDosha ? 'मध्यम' : 'इस राशि-आधारित नियम में संकेत नहीं'),
                 'descriptionEn' => $isGuruChandalaDosha === null ? 'Jupiter, Rahu or Ketu sign data is unavailable; Guru Chandala Dosha is not assessed.' : ($isGuruChandalaDosha ? 'Jupiter shares a sign with or is opposite Rahu/Ketu under this sign-level rule; interpretations vary.' : 'No trigger was found under this limited sign-level rule; this does not establish the absence of other afflictions.'),
                 'descriptionTa' => $isGuruChandalaDosha === null ? 'குரு, ராகு அல்லது கேதுவின் ராசித் தகவல் கிடைக்கவில்லை; குரு சண்டாள தோஷம் மதிப்பிடப்படவில்லை.' : ($isGuruChandalaDosha ? 'இந்த ராசி விதிப்படி குரு ராகு/கேதுவுடன் ஒரே ராசி அல்லது எதிர் ராசியில் உள்ளார்; விளக்கங்கள் மரபுக்கு மாறுபடும்.' : 'இந்த வரையறுக்கப்பட்ட ராசி விதியில் குறியீடு இல்லை; இதனால் பிற பாதிப்புகள் இல்லை என உறுதிப்படுத்த முடியாது.'),
-                'descriptionHi' => $isGuruChandalaDosha === null ? 'गुरु, राहु या केतु की राशि-संबंधी जानकारी उपलब्ध नहीं है; गुरु चांडाल दोष का आकलन नहीं हुआ।' : ($isGuruChandalaDosha ? 'इस राशि-आधारित नियम के अनुसार गुरु राहु/केतु के साथ या उनसे विपरीत राशि में हैं; व्याख्याएँ भिन्न हो सकती हैं।' : 'इस सीमित राशि-आधारित नियम में संकेत नहीं मिला; इससे अन्य ग्रह-दोषों की अनुपस्थिति सिद्ध नहीं होती।'),
+                'descriptionHi' => $isGuruChandalaDosha === null ? 'गुरु, राहु या केतु की राशि-संबंधी जानकारी उपलब्ध नहीं है; गुरु चांडाल दोष का आकलन नहीं हुआ है।' : ($isGuruChandalaDosha ? 'इस राशि-आधारित नियम के अनुसार गुरु राहु/केतु के साथ या उनसे विपरीत राशि में हैं; व्याख्याएँ भिन्न हो सकती हैं।' : 'इस सीमित राशि-आधारित नियम में संकेत नहीं मिला; इससे अन्य ग्रह-दोषों की अनुपस्थिति सिद्ध नहीं होती है।'),
                 'traditionalRemedyEn' => 'Pray to Lord Dakshinamurthy or Lord Shiva.',
                 'traditionalRemedyTa' => 'தட்சிணாமூர்த்தி அல்லது சிவன் பெயரைச் சொல்லி பிரார்த்தனை செய்யுங்கள்.',
                 'traditionalRemedyHi' => 'भगवान दक्षिणामूर्ति या भगवान शिव का नाम लेकर प्रार्थना करें।',
@@ -2647,7 +2651,7 @@ class AstroEngine {
                     $doshaRef['severityHi'] = $pitruStrengthLabelHi;
                     $doshaRef['descriptionEn'] = 'The Sun and ' . $nodeNameEn . ' share a sign but are ' . $sunNodeSeparationText . '° apart — outside the 12° orb, so no dosha is flagged: weak (same sign only).';
                     $doshaRef['descriptionTa'] = 'சூரியனும் ' . $nodeNameTa . ' உம் ஒரே ராசியில் ' . $sunNodeSeparationText . '° இடைவெளியில் உள்ளனர் — 12° எல்லைக்குள் இல்லாததால் தோஷம் கொடுக்கவில்லை; பலவீனமான (ஒரே ராசி மட்டும்) அறிகுறி.';
-                    $doshaRef['descriptionHi'] = 'सूर्य और ' . $nodeNameHi . ' एक ही राशि में हैं पर ' . $sunNodeSeparationText . '° दूर — 12° सीमा से बाहर, इसलिए दोष नहीं: दुर्बल (केवल समान राशि)।';
+                    $doshaRef['descriptionHi'] = 'सूर्य और ' . $nodeNameHi . ' एक ही राशि में हैं पर ' . $sunNodeSeparationText . '° दूर हैं — 12° सीमा से बाहर होने के कारण यह दुर्बल (केवल समान राशि) संकेत है।';
                 } elseif ($pitruStrength === 'present') {
                     $doshaRef['descriptionEn'] = 'The Sun is within 12° of ' . $nodeNameEn . ' (' . $sunNodeSeparationText . '° apart)' . ($isSaturnIn9th ? ' and Saturn occupies the 9th house by sign' : '') . '. These are simplified indicators only, not a complete Pitru assessment.';
                     $doshaRef['descriptionTa'] = 'சூரியன் ' . $nodeNameTa . ' உடன் 12° எல்லைக்குள் (' . $sunNodeSeparationText . '°) உள்ளார்' . ($isSaturnIn9th ? '; சனி 9-ஆம் பாவத்திலும் உள்ளார்' : '') . '. இவை தேர்ந்தெடுத்த எளிய குறியீடுகள் மட்டுமே.';
@@ -2704,13 +2708,13 @@ class AstroEngine {
 
         $saniTransitStatusEn = $isSaniFavourable ? 'Favourable Transit' : 'Transit demands remedies';
         $saniTransitStatusTa = $isSaniFavourable ? 'அனுகூலமான சனி பெயர்ச்சி' : 'பரிகாரங்கள் தேவைப்படும் சனி பெயர்ச்சி';
-        $saniTransitStatusHi = $isSaniFavourable ? 'अनुकूल शनि गोचर' : 'उपाय योग्य शनि गोचर';
+        $saniTransitStatusHi = $isSaniFavourable ? 'शनि का गोचर अनुकूल है' : 'शनि के गोचर में उपाय अपेक्षित हैं';
 
         // Career placement-aware wording (10th lord)
         if (empty($h10['isAvailable'])) {
             $careerEn = 'Career-lord placement is unavailable (N/A); chart-derived career guidance cannot be determined.';
             $careerTa = 'தொழில் அதிபதியின் நிலை கிடைக்கவில்லை (N/A); ஜாதக அடிப்படையிலான வழிகாட்டலைத் தீர்மானிக்க முடியாது.';
-            $careerHi = 'दशमेश की स्थिति उपलब्ध नहीं (N/A); कुंडली-आधारित मार्गदर्शन निर्धारित नहीं किया जा सकता।';
+            $careerHi = 'दशमेश की स्थिति उपलब्ध नहीं है (N/A); कुंडली-आधारित मार्गदर्शन निर्धारित नहीं किया जा सकता है।';
         } elseif ($h10['isDusthana'] && !$h10['isOwnSign']) {
             $careerEn = "With the career lord in the " . $ordinal($h10['bhava']) . " house, career progress requires patience, consistent effort, and navigating workplace dynamics with care.";
             $careerTa = "10-ஆம் இட அதிபதி {$h10['bhava']}-ஆம் இடத்தில் அமைந்துள்ளதால், தொழிலில் பொறுமையும் தொடர் முயற்சியும் தேவைப்படும். விவேகமான திட்டமிடல் வெற்றியைத் தரும்.";
@@ -2718,7 +2722,7 @@ class AstroEngine {
         } else {
             $careerEn = "With the career lord " . ($h10['isOwnSign'] ? 'placed in its own sign' : "in the " . $ordinal($h10['bhava']) . " house") . ", career strength is greatly enhanced with natural leadership and recognition.";
             $careerTa = "10-ஆம் இட அதிபதி " . $ownTa($h10) . " அமைந்துள்ளதால், தொழில் மிகவும் பலம் பெறும். இயல்பான தலைமைத்துவமும் அங்கீகாரமும் கிடைக்கும்.";
-            $careerHi = "दशमेश " . $ownHi($h10) . " में स्थित होने से कार्यक्षेत्र में उन्नति एवं प्रतिष्ठा प्राप्त होगी।";
+            $careerHi = "दशमेश " . $ownHi($h10) . " में स्थित होने से कार्यक्षेत्र में उन्नति एवं प्रतिष्ठा प्राप्त होती है।";
         }
         // Item 3: when the 10th lord is debilitated (Mars for a Mithunam Lagna,
         // say) name the Neecha Bhanga rule rather than implying a guaranteed
@@ -2729,7 +2733,7 @@ class AstroEngine {
         if (empty($h7['isAvailable'])) {
             $marriageEn = '7th-lord placement is unavailable (N/A); chart-derived relationship guidance cannot be determined.';
             $marriageTa = '7-ஆம் அதிபதியின் நிலை கிடைக்கவில்லை (N/A); ஜாதக அடிப்படையிலான உறவு வழிகாட்டலைத் தீர்மானிக்க முடியாது.';
-            $marriageHi = 'सप्तमेश की स्थिति उपलब्ध नहीं (N/A); कुंडली-आधारित संबंध मार्गदर्शन निर्धारित नहीं किया जा सकता।';
+            $marriageHi = 'सप्तमेश की स्थिति उपलब्ध नहीं है (N/A); कुंडली-आधारित संबंध मार्गदर्शन निर्धारित नहीं किया जा सकता है।';
         } elseif ($h7['isDusthana'] && !$h7['isOwnSign']) {
             $marriageEn = "With the 7th lord in the " . $ordinal($h7['bhava']) . " house, mutual understanding, patient communication, and adjustments are essential for marital harmony.";
             $marriageTa = "7-ஆம் இட அதிபதி {$h7['bhava']}-ஆம் இடத்தில் அமைந்துள்ளதால், திருமண வாழ்வில் பரஸ்பர புரிதலும் பொறுமையும் நல்லிணக்கத்தை வளர்க்கும்.";
@@ -2737,44 +2741,44 @@ class AstroEngine {
         } else {
             $marriageEn = "With the 7th lord " . ($h7['isOwnSign'] ? 'placed in its own sign' : "in the " . $ordinal($h7['bhava']) . " house") . ", married life is strongly supported with natural harmony.";
             $marriageTa = "7-ஆம் இட அதிபதி " . $ownTa($h7) . " அமைந்துள்ளதால், திருமண வாழ்க்கை மிகவும் பலம் பெறும்.";
-            $marriageHi = "सप्तमेश " . $ownHi($h7) . " में स्थित होने से दांपत्य जीवन सुखद रहेगा।";
+            $marriageHi = "सप्तमेश " . $ownHi($h7) . " में स्थित होने से दांपत्य जीवन सुखद रहता है।";
         }
 
         // Family / Property placement-aware wording (4th lord)
         if (empty($h4['isAvailable'])) {
             $familyEn = '4th-lord placement is unavailable (N/A); chart-derived property guidance cannot be determined.';
             $familyTa = '4-ஆம் அதிபதியின் நிலை கிடைக்கவில்லை (N/A); ஜாதக அடிப்படையிலான சொத்து வழிகாட்டலைத் தீர்மானிக்க முடியாது.';
-            $familyHi = 'चतुर्थेश की स्थिति उपलब्ध नहीं (N/A); कुंडली-आधारित संपत्ति मार्गदर्शन निर्धारित नहीं किया जा सकता।';
+            $familyHi = 'चतुर्थेश की स्थिति उपलब्ध नहीं है (N/A); कुंडली-आधारित संपत्ति मार्गदर्शन निर्धारित नहीं किया जा सकता है।';
         } elseif ($h4['isDusthana'] && !$h4['isOwnSign']) {
             $familyEn = "With the 4th lord in the " . $ordinal($h4['bhava']) . " house, property transactions and domestic matters require careful diligence and verification.";
             $familyTa = "சுக அதிபதி {$h4['bhava']}-ஆம் இடத்தில் அமைந்துள்ளதால், சொத்து மற்றும் குடும்ப விவகாரங்களில் கூடுதல் கவனம் தேவைப்படும்.";
-            $familyHi = "चतुर्थेश {$h4['bhava']}वें भाव में स्थित होने से भूमि-भवन एवं पारिवारिक मामलों में सावधानी बरतें।";
+            $familyHi = "चतुर्थेश {$h4['bhava']}वें भाव में स्थित होने से भूमि-भवन एवं पारिवारिक मामलों में सावधानी आवश्यक है।";
         } else {
             $familyEn = "With the 4th lord " . ($h4['isOwnSign'] ? 'in its own sign' : "in the " . $ordinal($h4['bhava']) . " house") . ", prospects for owning property/land are favourable and domestic happiness is indicated.";
             $familyTa = "சுக அதிபதி " . $ownTa($h4) . " அமைந்துள்ளதால், சொந்த வீடு/நிலம் வாய்ப்பு நல்ல நிலையில் இருக்கும். குடும்ப மகிழ்ச்சியும் அமையும்.";
-            $familyHi = "चतुर्थेश " . $ownHi($h4) . " में स्थित होने से गृह लाभ के योग हैं।";
+            $familyHi = "चतुर्थेश " . $ownHi($h4) . " में स्थित होने से गृह लाभ के योग बनते हैं।";
         }
 
         // Foreign Travel / Fortune placement-aware wording (9th lord)
         if (empty($h9['isAvailable'])) {
             $foreignTravelEn = '9th-lord placement is unavailable (N/A); chart-derived travel guidance cannot be determined.';
             $foreignTravelTa = '9-ஆம் அதிபதியின் நிலை கிடைக்கவில்லை (N/A); ஜாதக அடிப்படையிலான பயண வழிகாட்டலைத் தீர்மானிக்க முடியாது.';
-            $foreignTravelHi = 'नवमेश की स्थिति उपलब्ध नहीं (N/A); कुंडली-आधारित यात्रा मार्गदर्शन निर्धारित नहीं किया जा सकता।';
+            $foreignTravelHi = 'नवमेश की स्थिति उपलब्ध नहीं है (N/A); कुंडली-आधारित यात्रा मार्गदर्शन निर्धारित नहीं किया जा सकता है।';
         } elseif ($h9['isDusthana'] && !$h9['isOwnSign']) {
             $foreignTravelEn = "With the 9th lord in the " . $ordinal($h9['bhava']) . " house, fortunes improve through persistent self-effort, higher learning, and spiritual devotion.";
             $foreignTravelTa = "பாக்கிய அதிபதி {$h9['bhava']}-ஆம் இடத்தில் அமைந்துள்ளதால், சுய முயற்சி மற்றும் ஆன்மீக வழிபாட்டின் மூலம் அதிர்ஷ்டமும் உயர்வும் கிட்டும்.";
-            $foreignTravelHi = "नवमेश {$h9['bhava']}वें भाव में स्थित होने से निरंतर प्रयास एवं आध्यात्मिक साधना से भाग्योदय होगा।";
+            $foreignTravelHi = "नवमेश {$h9['bhava']}वें भाव में स्थित होने से निरंतर प्रयास एवं आध्यात्मिक साधना से भाग्योदय होता है।";
         } else {
             $foreignTravelEn = "With the 9th lord " . ($h9['isOwnSign'] ? 'in its own sign' : "in the " . $ordinal($h9['bhava']) . " house") . ", foreign connections and fortune are favourably indicated.";
             $foreignTravelTa = "பாக்கிய அதிபதி " . $ownTa($h9) . " அமைந்துள்ளதால், வெளிநாட்டு தொடர்பு மற்றும் அதிர்ஷ்டம் சாதகமாக இருக்கும்.";
-            $foreignTravelHi = "नवमेश " . $ownHi($h9) . " में स्थित होने से विदेश संपर्क शुभ रहेगा।";
+            $foreignTravelHi = "नवमेश " . $ownHi($h9) . " में स्थित होने से विदेश संपर्क शुभ रहता है।";
         }
 
         // Current period guidance (derived from live Sani transit)
         if ($isSaniFavourable) {
             $currentPeriodGuidanceEn = "Saturn's transit in the {$saturnHouseOrdinal} house from Janma Rasi is favourable, supporting career progress and success. Worshipping Lord Ganesha and regular prayers will sustain positive momentum.";
             $currentPeriodGuidanceTa = "ஜென்ம ராசியிலிருந்து {$saturnHouseFromMoon}-ஆம் இடத்தில் சனி பகவான் சஞ்சரிப்பதால் நற்பலன்களும் காரிய வெற்றியும் உண்டாகும். விநாயகர் மற்றும் பெருமாள் வழிபாடு தொடர்ந்து நலம் சேர்க்கும்.";
-            $currentPeriodGuidanceHi = "जन्म राशि से {$saturnHouseOrdinal} भाव में शनि का गोचर अनुकूल फल एवं कार्यक्षेत्र में प्रगति प्रदान करेगा। भगवान गणेश एवं विष्णु की आराधना से शुभता बढ़ेगी।";
+            $currentPeriodGuidanceHi = "जन्म राशि से {$saturnHouseOrdinal} भाव में शनि का गोचर अनुकूल फल एवं कार्यक्षेत्र में प्रगति प्रदान करता है। भगवान गणेश एवं विष्णु की आराधना से शुभता बढ़ती है।";
         } else {
             $currentPeriodGuidanceEn = "Saturn's transit in the {$saturnHouseOrdinal} house from Janma Rasi calls for patience and discipline. Pray to Ganesha or Shiva.";
             $currentPeriodGuidanceTa = "ஜென்ம ராசியிலிருந்து {$saturnHouseFromMoon}-ஆம் இடத்தில் சனி பகவான் சஞ்சரிப்பதால் பொறுமையும் கவனமும் தேவை. விநாயகர் அல்லது சிவனைப் பிரார்த்தனை செய்யுங்கள்.";
@@ -2783,7 +2787,7 @@ class AstroEngine {
 
         $healthEn = !empty($h1['isAvailable']) ? "With the Lagna lord " . $ownEn($h1) . ", attention to diet and lifestyle habits is advised. Regular exercise supports good health." : 'Lagna-lord placement unavailable (N/A); chart-derived health guidance cannot be determined.';
         $healthTa = !empty($h1['isAvailable']) ? "லக்னாதிபதி " . $ownTa($h1) . " அமைந்துள்ளதால், உணவு மற்றும் வாழ்க்கை முறையில் கவனம் தேவை. ஒழுங்கான உடற்பயிற்சி நல்ல ஆரோக்கியத்தைத் தரும்." : 'லக்னாதிபதியின் நிலை கிடைக்கவில்லை (N/A); ஜாதக அடிப்படையிலான ஆரோக்கிய வழிகாட்டலைத் தீர்மானிக்க முடியாது.';
-        $healthHi = !empty($h1['isAvailable']) ? "लग्नेश " . $ownHi($h1) . " में स्थित होने के कारण खान-पान एवं दिनचर्या पर ध्यान देना लाभकारी रहेगा।" : 'लग्नेश की स्थिति उपलब्ध नहीं (N/A); कुंडली-आधारित स्वास्थ्य मार्गदर्शन निर्धारित नहीं किया जा सकता।';
+        $healthHi = !empty($h1['isAvailable']) ? "लग्नेश " . $ownHi($h1) . " में स्थित होने के कारण खान-पान एवं दिनचर्या पर ध्यान देना लाभकारी रहता है।" : 'लग्नेश की स्थिति उपलब्ध नहीं है (N/A); कुंडली-आधारित स्वास्थ्य मार्गदर्शन निर्धारित नहीं किया जा सकता है।';
         // Item 3: the Health card names the Neecha Bhanga rule when the Lagna
         // lord is debilitated, never a flat "cancelled" and never a promise.
         if (!empty($h1['dignityNoteEn'])) { $healthEn .= ' ' . $h1['dignityNoteEn']; $healthTa .= ' ' . $h1['dignityNoteTa']; $healthHi .= ' ' . $h1['dignityNoteHi']; }
@@ -2794,10 +2798,10 @@ class AstroEngine {
             'healthHi' => $healthHi,
             'wealthEn' => !empty($h2['isAvailable']) ? "With the 2nd lord " . $ownEn($h2) . ", gains arrive through multiple income streams. Consistent saving habits build strong finances over time." : '2nd-lord placement unavailable (N/A); chart-derived financial guidance cannot be determined.',
             'wealthTa' => !empty($h2['isAvailable']) ? "தன அதிபதி " . $ownTa($h2) . " அமைந்துள்ளதால், பல வழிகளிலிருந்து இலாபம் கிடைக்கும். சேமிப்பு பழக்கம் தொடர்ந்தால் நல்ல நிதி நிலை உருவாகும்." : 'தன அதிபதியின் நிலை கிடைக்கவில்லை (N/A); ஜாதக அடிப்படையிலான நிதி வழிகாட்டலைத் தீர்மானிக்க முடியாது.',
-            'wealthHi' => !empty($h2['isAvailable']) ? "द्वितीयेश " . $ownHi($h2) . " में स्थित होने से विभिन्न स्रोतों से धन लाभ होगा।" : 'द्वितीयेश की स्थिति उपलब्ध नहीं (N/A); कुंडली-आधारित वित्तीय मार्गदर्शन निर्धारित नहीं किया जा सकता।',
+            'wealthHi' => !empty($h2['isAvailable']) ? "द्वितीयेश " . $ownHi($h2) . " में स्थित होने से विभिन्न स्रोतों से धन लाभ होता है।" : 'द्वितीयेश की स्थिति उपलब्ध नहीं है (N/A); कुंडली-आधारित वित्तीय मार्गदर्शन निर्धारित नहीं किया जा सकता है।',
             'educationEn' => !empty($h5['isAvailable']) ? "With the 5th lord " . $ownEn($h5) . ", interest in higher education and spiritual knowledge is indicated." : '5th-lord placement unavailable (N/A); chart-derived education guidance cannot be determined.',
             'educationTa' => !empty($h5['isAvailable']) ? "வித்யா அதிபதி " . $ownTa($h5) . " அமைந்துள்ளதால், உயர்கல்வி மற்றும் ஆன்மீக அறிவில் ஆர்வம் காணப்படும்." : '5-ஆம் அதிபதியின் நிலை கிடைக்கவில்லை (N/A); ஜாதக அடிப்படையிலான கல்வி வழிகாட்டலைத் தீர்மானிக்க முடியாது.',
-            'educationHi' => !empty($h5['isAvailable']) ? "पंचमेश " . $ownHi($h5) . " में स्थित होने से उच्च शिक्षा में रुचि रहेगी।" : 'पंचमेश की स्थिति उपलब्ध नहीं (N/A); कुंडली-आधारित शिक्षा मार्गदर्शन निर्धारित नहीं किया जा सकता।',
+            'educationHi' => !empty($h5['isAvailable']) ? "पंचमेश " . $ownHi($h5) . " में स्थित होने से उच्च शिक्षा में रुचि रहती है।" : 'पंचमेश की स्थिति उपलब्ध नहीं है (N/A); कुंडली-आधारित शिक्षा मार्गदर्शन निर्धारित नहीं किया जा सकता है।',
             'careerEn' => $careerEn,
             'careerTa' => $careerTa,
             'careerHi' => $careerHi,
@@ -2825,7 +2829,7 @@ class AstroEngine {
         $dasha['nextMahadasa'] = $nextMahadasa;
         $dashaContextEn = sprintf('The running period is %s Mahadasa with %s Bhukti.', $dasha['currentLord'] ?? 'N/A', $dasha['subLord'] ?? 'N/A');
         $dashaContextTa = sprintf('தற்போது %s மகாதிசை, %s புக்தி.', $dasha['currentLordTa'] ?? 'N/A', $dasha['subLordTa'] ?? 'N/A');
-        $dashaContextHi = sprintf('वर्तमान में %s महादशा, %s भुक्ति।', $dasha['currentLordHi'] ?? 'N/A', $dasha['subLordHi'] ?? 'N/A');
+        $dashaContextHi = sprintf('वर्तमान में %s महादशा में %s भुक्ति चल रही है।', $dasha['currentLordHi'] ?? 'N/A', $dasha['subLordHi'] ?? 'N/A');
         $summary['currentPeriodGuidanceEn'] = $dashaContextEn . ' ' . $summary['currentPeriodGuidanceEn'] . ($nextMahadasa['noticeEn'] !== '' ? ' ' . $nextMahadasa['noticeEn'] : '');
         $summary['currentPeriodGuidanceTa'] = $dashaContextTa . ' ' . $summary['currentPeriodGuidanceTa'] . ($nextMahadasa['noticeTa'] !== '' ? ' ' . $nextMahadasa['noticeTa'] : '');
         $summary['currentPeriodGuidanceHi'] = $dashaContextHi . ' ' . $summary['currentPeriodGuidanceHi'] . ($nextMahadasa['noticeHi'] !== '' ? ' ' . $nextMahadasa['noticeHi'] : '');
@@ -2899,12 +2903,14 @@ class AstroEngine {
             'lagna' => [
                 'rasi' => $lagna['en'],
                 'rasiTa' => $lagna['ta'],
+                'rasiHi' => $lagna['hi'],
                 'lord' => $lagna['lord'],
                 'lordTa' => $lagna['lordTa']
             ],
             'rasi' => [
                 'name' => $rasi['en'],
                 'nameTa' => $rasi['ta'],
+                'nameHi' => $rasi['hi'],
                 'lord' => $rasi['lord'],
                 'lordTa' => $rasi['lordTa']
             ],
@@ -3013,16 +3019,16 @@ class AstroEngine {
         $girlH = self::calculateHoroscope($girl);
 
         $poruthamDefs = [
-            ['id' => 'dina', 'nameEn' => 'Dina Porutham', 'nameTa' => 'தினப் பொருத்தம்', 'nameHi' => 'दिन पोरुथम', 'pts' => 3, 'max' => 3, 'enum' => 'UTTHAMAM', 'expEn' => 'Longevity, good health and freedom from discord.', 'expTa' => 'நீண்ட ஆயுள், நல்ல ஆரோக்கியம் மற்றும் கருத்து வேறுபாடு இன்மை.', 'expHi' => 'दीर्घायु, अच्छा स्वास्थ्य एवं मतभेद रहित जीवन।', 'lackEn' => 'The star distance does not carry full Dina strength; vitality, health support and freedom from discord are only partly assured.', 'lackTa' => 'நட்சத்திர இடைவெளியில் முழு தின பலம் இல்லை; ஆரோக்கியம், ஆயுள் ஆதரவு மற்றும் கருத்து ஒற்றுமை முழுமையாக இல்லை.', 'lackHi' => 'नक्षत्र दूरी में पूर्ण दिन बल नहीं है; स्वास्थ्य, दीर्घायु एवं मतभेद-रहितता का समर्थन अपूर्ण है।', 'crucial' => false],
-            ['id' => 'gana', 'nameEn' => 'Gana Porutham', 'nameTa' => 'கணப் பொருத்தம்', 'nameHi' => 'गण पोरुथम', 'pts' => 4, 'max' => 4, 'enum' => 'UTTHAMAM', 'expEn' => 'Harmonious temperament and mutual affection.', 'expTa' => 'இணக்கமான சுபாவமும் பரஸ்பர பாசமும்.', 'expHi' => 'सामंजस्यपूर्ण स्वभाव एवं परस्पर स्नेह।', 'lackEn' => 'The two Ganas differ, so temperamental harmony and mutual affection are not assured and need deliberate adjustment.', 'lackTa' => 'இரு கணங்கள் வேறுபடுவதால் குண ஒற்றுமையும் பாசமும் தானாக அமையாது; விட்டுக்கொடுத்தல் தேவை.', 'lackHi' => 'दोनों गण भिन्न हैं; स्वभाव-सामंजस्य एवं परस्पर स्नेह के लिए समझदारी आवश्यक है।', 'crucial' => false],
-            ['id' => 'mahendra', 'nameEn' => 'Mahendra Porutham', 'nameTa' => 'மகேந்திரப் பொருத்தம்', 'nameHi' => 'महेंद्र पोरुथम', 'pts' => 3, 'max' => 3, 'enum' => 'UTTHAMAM', 'expEn' => 'Children, lineage expansion and wealth generation.', 'expTa' => 'குழந்தைகள், வம்சவிருத்தி மற்றும் செல்வ வளர்ச்சி.', 'expHi' => 'संतान, वंश वृद्धि एवं धन लाभ।', 'lackEn' => 'The star distance gives no Mahendra support, so this blessing for children, lineage growth and wealth is absent.', 'lackTa' => 'நட்சத்திர இடைவெளியில் மகேந்திர ஆதரவு இல்லை; குழந்தை, வம்சவிருத்தி மற்றும் செல்வ வளர்ச்சி ஆசி இல்லை.', 'lackHi' => 'नक्षत्र दूरी से महेंद्र सहायता नहीं मिलती; संतान, वंश वृद्धि एवं धन लाभ का फल नहीं है।', 'crucial' => false],
-            ['id' => 'stree_deergha', 'nameEn' => 'Stree Deergha Porutham', 'nameTa' => 'ஸ்திரீ தீர்க்கப் பொருத்தம்', 'nameHi' => 'स्त्री दीर्घ पोरुथम', 'pts' => 2, 'max' => 2, 'enum' => 'UTTHAMAM', 'expEn' => 'Long, prosperous life and all-round growth for the bride.', 'expTa' => 'மனைவிக்கு நீண்ட ஆயுளும் அனைத்துவிதமான வளர்ச்சியும்.', 'expHi' => 'वधू को दीर्घायु, सुख एवं सर्वांगीण उन्नति।', 'lackEn' => 'The star distance is short, so long life and all-round growth for the bride are not strengthened.', 'lackTa' => 'நட்சத்திர இடைவெளி குறைவு; மணமகளுக்கு நீண்ட ஆயுளும் அனைத்துவித வளர்ச்சியும் வலுப்படுத்தப்படவில்லை.', 'lackHi' => 'नक्षत्र दूरी कम है; वधू की दीर्घायु एवं सर्वांगीण उन्नति को बल नहीं मिलता।', 'crucial' => false],
-            ['id' => 'yoni', 'nameEn' => 'Yoni Porutham', 'nameTa' => 'யோனிப் பொருத்தம்', 'nameHi' => 'योनि पोरुथम', 'pts' => 4, 'max' => 4, 'enum' => 'UTTHAMAM', 'expEn' => 'Physical and biological compatibility.', 'expTa' => 'உடல் மற்றும் உயிரியல் இணக்கம்.', 'expHi' => 'शारीरिक एवं जैविक अनुकूलता।', 'lackEn' => 'The two Yoni animals are not a strong match (neutral or inimical), so physical and biological harmony is weak or strained.', 'lackTa' => 'இரு யோனி விலங்குகளும் வலுவான பொருத்தம் அல்ல (நடுநிலை அல்லது பகை); உடல் மற்றும் உயிரியல் இணக்கம் பலவீனம் அல்லது வலி.', 'lackHi' => 'दोनों योनि पशु मजबूत मेल नहीं हैं (तटस्थ या शत्रु); शारीरिक एवं जैविक सामंजस्य कमज़ोर है।', 'crucial' => false],
-            ['id' => 'rasi', 'nameEn' => 'Rasi Porutham', 'nameTa' => 'ராசிப் பொருத்தம்', 'nameHi' => 'राशि पोरुथम', 'pts' => 5, 'max' => 5, 'enum' => 'UTTHAMAM', 'expEn' => 'Union of families and life stability.', 'expTa' => 'குடும்பங்களின் ஒற்றுமை மற்றும் வாழ்க்கை உறுதி.', 'expHi' => 'परिवारों का मिलन एवं जीवन स्थिरता।', 'lackEn' => 'The Moon signs are an inauspicious distance apart, so family union and life stability need conscious effort.', 'lackTa' => 'சந்திர ராசிகள் சாதகமற்ற இடைவெளியில் உள்ளன; குடும்ப ஒற்றுமையும் வாழ்க்கை உறுதியும் முயற்சியால் மட்டுமே அமையும்.', 'lackHi' => 'चंद्र राशियाँ अशुभ दूरी में हैं; पारिवारिक मिलन एवं जीवन स्थिरता के लिए प्रयास आवश्यक है।', 'crucial' => false],
+            ['id' => 'dina', 'nameEn' => 'Dina Porutham', 'nameTa' => 'தினப் பொருத்தம்', 'nameHi' => 'दिन पोरुथम', 'pts' => 3, 'max' => 3, 'enum' => 'UTTHAMAM', 'expEn' => 'Longevity, good health and freedom from discord.', 'expTa' => 'நீண்ட ஆயுள், நல்ல ஆரோக்கியம் மற்றும் கருத்து வேறுபாடு இன்மை.', 'expHi' => 'यह दीर्घायु, उत्तम स्वास्थ्य एवं मतभेद रहित जीवन प्रदान करता है।', 'lackEn' => 'The star distance does not carry full Dina strength; vitality, health support and freedom from discord are only partly assured.', 'lackTa' => 'நட்சத்திர இடைவெளியில் முழு தின பலம் இல்லை; ஆரோக்கியம், ஆயுள் ஆதரவு மற்றும் கருத்து ஒற்றுமை முழுமையாக இல்லை.', 'lackHi' => 'नक्षत्र दूरी में पूर्ण दिन बल नहीं है; स्वास्थ्य, दीर्घायु एवं मतभेद-रहितता का समर्थन अपूर्ण है।', 'crucial' => false],
+            ['id' => 'gana', 'nameEn' => 'Gana Porutham', 'nameTa' => 'கணப் பொருத்தம்', 'nameHi' => 'गण पोरुथम', 'pts' => 4, 'max' => 4, 'enum' => 'UTTHAMAM', 'expEn' => 'Harmonious temperament and mutual affection.', 'expTa' => 'இணக்கமான சுபாவமும் பரஸ்பர பாசமும்.', 'expHi' => 'यह सामंजस्यपूर्ण स्वभाव एवं परस्पर स्नेह प्रदान करता है।', 'lackEn' => 'The two Ganas differ, so temperamental harmony and mutual affection are not assured and need deliberate adjustment.', 'lackTa' => 'இரு கணங்கள் வேறுபடுவதால் குண ஒற்றுமையும் பாசமும் தானாக அமையாது; விட்டுக்கொடுத்தல் தேவை.', 'lackHi' => 'दोनों गण भिन्न हैं; स्वभाव-सामंजस्य एवं परस्पर स्नेह के लिए समझदारी आवश्यक है।', 'crucial' => false],
+            ['id' => 'mahendra', 'nameEn' => 'Mahendra Porutham', 'nameTa' => 'மகேந்திரப் பொருத்தம்', 'nameHi' => 'महेंद्र पोरुथम', 'pts' => 3, 'max' => 3, 'enum' => 'UTTHAMAM', 'expEn' => 'Children, lineage expansion and wealth generation.', 'expTa' => 'குழந்தைகள், வம்சவிருத்தி மற்றும் செல்வ வளர்ச்சி.', 'expHi' => 'यह संतान सुख, वंश वृद्धि एवं धन लाभ के लिए शुभ है।', 'lackEn' => 'The star distance gives no Mahendra support, so this blessing for children, lineage growth and wealth is absent.', 'lackTa' => 'நட்சத்திர இடைவெளியில் மகேந்திர ஆதரவு இல்லை; குழந்தை, வம்சவிருத்தி மற்றும் செல்வ வளர்ச்சி ஆசி இல்லை.', 'lackHi' => 'नक्षत्र दूरी से महेंद्र सहायता नहीं मिलती है; संतान, वंश वृद्धि एवं धन लाभ का फल नहीं मिलता है।', 'crucial' => false],
+            ['id' => 'stree_deergha', 'nameEn' => 'Stree Deergha Porutham', 'nameTa' => 'ஸ்திரீ தீர்க்கப் பொருத்தம்', 'nameHi' => 'स्त्री दीर्घ पोरुथम', 'pts' => 2, 'max' => 2, 'enum' => 'UTTHAMAM', 'expEn' => 'Long, prosperous life and all-round growth for the bride.', 'expTa' => 'மனைவிக்கு நீண்ட ஆயுளும் அனைத்துவிதமான வளர்ச்சியும்.', 'expHi' => 'इससे वधू को दीर्घायु, सुख एवं सर्वांगीण उन्नति प्राप्त होती है।', 'lackEn' => 'The star distance is short, so long life and all-round growth for the bride are not strengthened.', 'lackTa' => 'நட்சத்திர இடைவெளி குறைவு; மணமகளுக்கு நீண்ட ஆயுளும் அனைத்துவித வளர்ச்சியும் வலுப்படுத்தப்படவில்லை.', 'lackHi' => 'नक्षत्र दूरी कम है; वधू की दीर्घायु एवं सर्वांगीण उन्नति को बल नहीं मिलता है।', 'crucial' => false],
+            ['id' => 'yoni', 'nameEn' => 'Yoni Porutham', 'nameTa' => 'யோனிப் பொருத்தம்', 'nameHi' => 'योनि पोरुथम', 'pts' => 4, 'max' => 4, 'enum' => 'UTTHAMAM', 'expEn' => 'Physical and biological compatibility.', 'expTa' => 'உடல் மற்றும் உயிரியல் இணக்கம்.', 'expHi' => 'यह शारीरिक एवं जैविक अनुकूलता दर्शाता है।', 'lackEn' => 'The two Yoni animals are not a strong match (neutral or inimical), so physical and biological harmony is weak or strained.', 'lackTa' => 'இரு யோனி விலங்குகளும் வலுவான பொருத்தம் அல்ல (நடுநிலை அல்லது பகை); உடல் மற்றும் உயிரியல் இணக்கம் பலவீனம் அல்லது வலி.', 'lackHi' => 'दोनों योनि पशु मजबूत मेल नहीं हैं (तटस्थ या शत्रु); शारीरिक एवं जैविक सामंजस्य कमज़ोर है।', 'crucial' => false],
+            ['id' => 'rasi', 'nameEn' => 'Rasi Porutham', 'nameTa' => 'ராசிப் பொருத்தம்', 'nameHi' => 'राशि पोरुथम', 'pts' => 5, 'max' => 5, 'enum' => 'UTTHAMAM', 'expEn' => 'Union of families and life stability.', 'expTa' => 'குடும்பங்களின் ஒற்றுமை மற்றும் வாழ்க்கை உறுதி.', 'expHi' => 'इससे परिवारों का मिलन एवं जीवन में स्थिरता रहती है।', 'lackEn' => 'The Moon signs are an inauspicious distance apart, so family union and life stability need conscious effort.', 'lackTa' => 'சந்திர ராசிகள் சாதகமற்ற இடைவெளியில் உள்ளன; குடும்ப ஒற்றுமையும் வாழ்க்கை உறுதியும் முயற்சியால் மட்டுமே அமையும்.', 'lackHi' => 'चंद्र राशियाँ अशुभ दूरी में हैं; पारिवारिक मिलन एवं जीवन स्थिरता के लिए प्रयास आवश्यक है।', 'crucial' => false],
             ['id' => 'rasiyadhipathi', 'nameEn' => 'Rasiyadhipathi Porutham', 'nameTa' => 'ராசியாதிபதிப் பொருத்தம்', 'nameHi' => 'राशि अधिपति पोरुथम', 'pts' => 4, 'max' => 4, 'enum' => 'UTTHAMAM', 'expEn' => 'Friendly planetary lords bringing peace.', 'expTa' => 'நட்பான ராசி அதிபதிகள் அமைதியைத் தரும்.', 'expHi' => 'मैत्रीपूर्ण राशि स्वामी शांति प्रदान करते हैं।', 'lackEn' => 'The ruling lords are not mutual friends, so peace between the families depends on conscious understanding.', 'lackTa' => 'ராசி அதிபதிகள் பரஸ்பர நண்பர்கள் அல்ல; குடும்பங்களிடையே அமைதி புரிந்துணர்வால் மட்டுமே அமையும்.', 'lackHi' => 'राशि स्वामी परस्पर मित्र नहीं हैं; शांति हेतु समझदारी आवश्यक है।', 'crucial' => false],
-            ['id' => 'vasiya', 'nameEn' => 'Vasiya Porutham', 'nameTa' => 'வசியப் பொருத்தம்', 'nameHi' => 'वश्य पोरुथम', 'pts' => 2, 'max' => 2, 'enum' => 'MADHYAMAM', 'expEn' => 'Mutual attraction and mental alignment.', 'expTa' => 'பரஸ்பர ஈர்ப்பும் மன ஒற்றுமையும்.', 'expHi' => 'परस्पर आकर्षण एवं मानसिक तालमेल।', 'lackEn' => 'The special Vasiya pull is absent; mutual attraction and mental alignment stay at an ordinary level.', 'lackTa' => 'விசேஷ வசிய ஈர்ப்பு இல்லை; பரஸ்பர கவர்ச்சியும் மன ஒற்றுமையும் சாதாரண அளவிலேயே இருக்கும்.', 'lackHi' => 'विशेष वश्य आकर्षण नहीं है; परस्पर आकर्षण एवं मानसिक तालमेल सामान्य स्तर पर रहेगा।', 'crucial' => false],
-            ['id' => 'rajju', 'nameEn' => 'Rajju Porutham', 'nameTa' => 'ரஜ்ஜுப் பொருத்தம்', 'nameHi' => 'रज्जु पोरुथम', 'pts' => 5, 'max' => 5, 'enum' => 'UTTHAMAM', 'expEn' => 'Aayush and lifelong marital bonding (most essential).', 'expTa' => 'ஆயுளும் வாழ்நாள் முழுவதும் திருமண பந்தமும் (மிக முக்கியமானது).', 'expHi' => 'आयुष्य एवं आजीवन दांपत्य बंधन (सर्वाधिक महत्वपूर्ण)।', 'lackEn' => 'Both stars fall in the SAME Rajju group (Eka Rajju dosha), so the classical protection of lifespan and marital security is missing.', 'lackTa' => 'இரு நட்சத்திரங்களும் ஒரே ரஜ்ஜு குழுவில் உள்ளன (ஏக ரஜ்ஜு தோஷம்); ஆயுள் மற்றும் மாங்கல்ய பாதுகாப்பு இல்லை.', 'lackHi' => 'दोनों नक्षत्र एक ही रज्जु समूह में हैं (एक रज्जु दोष); आयु एवं वैवाहिक सुरक्षा का संरक्षण अनुपस्थित है।', 'crucial' => true],
-            ['id' => 'vedha', 'nameEn' => 'Vedha Porutham', 'nameTa' => 'வேதைப் பொருத்தம்', 'nameHi' => 'वेध पोरुथम', 'pts' => 3, 'max' => 3, 'enum' => 'UTTHAMAM', 'expEn' => 'Free from malefic psychic affliction.', 'expTa' => 'தீய நட்சத்திர வேதை இன்மை.', 'expHi' => 'अशुभ वेध दोष से मुक्त।', 'lackEn' => 'A Vedha (obstruction) pair is present, so friction, disputes and avoidable obstacles are indicated.', 'lackTa' => 'வேதை (தடை) ஜோடி உள்ளது; கருத்து வேறுபாடு, தகராறு மற்றும் தடைகள் ஏற்படலாம்.', 'lackHi' => 'वेध (बाधा) युग्म है; मतभेद, विवाद एवं बाधाएँ संभव हैं।', 'crucial' => false]
+            ['id' => 'vasiya', 'nameEn' => 'Vasiya Porutham', 'nameTa' => 'வசியப் பொருத்தம்', 'nameHi' => 'वश्य पोरुथम', 'pts' => 2, 'max' => 2, 'enum' => 'MADHYAMAM', 'expEn' => 'Mutual attraction and mental alignment.', 'expTa' => 'பரஸ்பர ஈர்ப்பும் மன ஒற்றுமையும்.', 'expHi' => 'इससे परस्पर आकर्षण एवं मानसिक तालमेल बना रहता है।', 'lackEn' => 'The special Vasiya pull is absent; mutual attraction and mental alignment stay at an ordinary level.', 'lackTa' => 'விசேஷ வசிய ஈர்ப்பு இல்லை; பரஸ்பர கவர்ச்சியும் மன ஒற்றுமையும் சாதாரண அளவிலேயே இருக்கும்.', 'lackHi' => 'विशेष वश्य आकर्षण नहीं है; परस्पर आकर्षण एवं मानसिक तालमेल सामान्य स्तर पर रहता है।', 'crucial' => false],
+            ['id' => 'rajju', 'nameEn' => 'Rajju Porutham', 'nameTa' => 'ரஜ்ஜுப் பொருத்தம்', 'nameHi' => 'रज्जु पोरुथम', 'pts' => 5, 'max' => 5, 'enum' => 'UTTHAMAM', 'expEn' => 'Aayush and lifelong marital bonding (most essential).', 'expTa' => 'ஆயுளும் வாழ்நாள் முழுவதும் திருமண பந்தமும் (மிக முக்கியமானது).', 'expHi' => 'यह दीर्घायु एवं आजीवन दांपत्य बंधन के लिए अत्यंत शुभ है।', 'lackEn' => 'Both stars fall in the SAME Rajju group (Eka Rajju dosha), so the classical protection of lifespan and marital security is missing.', 'lackTa' => 'இரு நட்சத்திரங்களும் ஒரே ரஜ்ஜு குழுவில் உள்ளன (ஏக ரஜ்ஜு தோஷம்); ஆயுள் மற்றும் மாங்கல்ய பாதுகாப்பு இல்லை.', 'lackHi' => 'दोनों नक्षत्र एक ही रज्जु समूह में हैं (एक रज्जु दोष); आयु एवं वैवाहिक सुरक्षा का संरक्षण अनुपस्थित है।', 'crucial' => true],
+            ['id' => 'vedha', 'nameEn' => 'Vedha Porutham', 'nameTa' => 'வேதைப் பொருத்தம்', 'nameHi' => 'वेध पोरुथम', 'pts' => 3, 'max' => 3, 'enum' => 'UTTHAMAM', 'expEn' => 'Free from malefic psychic affliction.', 'expTa' => 'தீய நட்சத்திர வேதை இன்மை.', 'expHi' => 'दोनों जन्म नक्षत्र अशुभ वेध दोष से मुक्त हैं।', 'lackEn' => 'A Vedha (obstruction) pair is present, so friction, disputes and avoidable obstacles are indicated.', 'lackTa' => 'வேதை (தடை) ஜோடி உள்ளது; கருத்து வேறுபாடு, தகராறு மற்றும் தடைகள் ஏற்படலாம்.', 'lackHi' => 'वेध (बाधा) युग्म है; मतभेद, विवाद एवं बाधाएँ संभव हैं।', 'crucial' => false]
         ];
 
         $enumToLegacyStatus = [
@@ -3240,11 +3246,11 @@ class AstroEngine {
                     ? ($bothDosha
                         ? 'दोनों कुंडलियों में मंगल दोष होने से दोष साम्य बनता है; मंगल दोष की दृष्टि से यह संबंध शुभ है।'
                         : ($bothClean && ($groomKuja['status'] === 'DOSHA_CANCELLED' || $brideKuja['status'] === 'DOSHA_CANCELLED')
-                            ? 'मंगल दोष भाव में होते हुए भी शास्त्रीय अपवाद से दोष निवृत्ति होती है। कोई सक्रिय मंगल दोष नहीं; यह संबंध शुभ है।'
+                            ? 'मंगल दोष भाव में होते हुए भी शास्त्रीय अपवाद से दोष निवृत्ति होती है। कोई सक्रिय मंगल दोष नहीं है; यह संबंध शुभ है।'
                             : 'मंगल दोष की दृष्टि से यह संबंध शुभ है।'))
                     : ($samyamStatus === 'MINOR_IMBALANCE'
                         ? "केवल {$mildSideHi} पक्ष में अल्प मंगल दोष है (शास्त्रीय नियमों से न्यून)। यह गंभीर दोष नहीं है; मंगलवार को अंगारक पूजा जैसे सरल उपाय पर्याप्त हैं।"
-                        : "{$fullSideHi} पक्ष में सक्रिय मंगल दोष है और दूसरे पक्ष में नहीं। आगे बढ़ने से पूर्व मंगल दोष के पारंपरिक उपाय (अंगारक/सुब्रह्मण्य पूजा, कुज शांति) करने की सलाह दी जाती है।"))
+                        : "{$fullSideHi} पक्ष में सक्रिय मंगल दोष है और दूसरे पक्ष में नहीं है। आगे बढ़ने से पूर्व मंगल दोष के पारंपरिक उपाय (अंगारक/सुब्रह्मण्य पूजा, कुज शांति) करने की सलाह दी जाती है।"))
         ];
 
         $verdictStatus = $anyCrucialFailed ? 'PORUNDHADHU' : ($scorePercent >= 70 ? 'UTTHAMAM' : ($scorePercent >= 50 ? 'MADHYAMAM' : 'PORUNDHADHU'));
@@ -3263,7 +3269,7 @@ class AstroEngine {
         // was repeated three times on the same page.
         $sevvayDosham['recommendationEn'] .= ' This guidance concerns Kuja Dosha alone, not the overall marriage recommendation.';
         $sevvayDosham['recommendationTa'] .= ' இது செவ்வாய் தோஷம் குறித்த வழிகாட்டல் மட்டுமே; முழுத் திருமணப் பொருத்தத்தின் பரிந்துரை அல்ல.';
-        $sevvayDosham['recommendationHi'] .= ' यह केवल मंगल दोष का मार्गदर्शन है, समग्र विवाह अनुशंसा नहीं।';
+        $sevvayDosham['recommendationHi'] .= ' यह केवल मंगल दोष का मार्गदर्शन है, समग्र विवाह अनुशंसा नहीं है।';
 
         if ($anyCrucialFailed) {
             $overallVerdictEn = "Not Recommended - {$failedEn} mismatch. Requires detailed astrological assessment.";
@@ -3272,15 +3278,15 @@ class AstroEngine {
         } elseif ($verdictStatus === 'UTTHAMAM') {
             $overallVerdictEn = 'Highly Recommended - Utthama Porutham';
             $overallVerdictTa = 'மிகவும் பரிந்துரைக்கப்படுகிறது - உத்தம பொருத்தம்';
-            $overallVerdictHi = 'अत्यधिक अनुशंसित - उत्तम संबंध';
+            $overallVerdictHi = 'अत्यधिक अनुशंसित - यह उत्तम विवाह संबंध है।';
         } elseif ($verdictStatus === 'MADHYAMAM') {
             $overallVerdictEn = 'Acceptable with Remedies - Madhyama Porutham';
             $overallVerdictTa = 'மத்திமப் பொருத்தம் - பரிகாரங்களுடன் ஏற்றது';
-            $overallVerdictHi = 'मध्यम मिलान - उपायों के साथ विचारणीय';
+            $overallVerdictHi = 'मध्यम मिलान - उपायों के साथ विवाह विचारणीय है।';
         } else {
             $overallVerdictEn = 'Not Recommended - Porutham does not meet the recommended standard';
             $overallVerdictTa = 'திருமணத்திற்கு பரிந்துரைக்கப்படவில்லை';
-            $overallVerdictHi = 'विवाह हेतु अनुशंसित नहीं';
+            $overallVerdictHi = 'पर्याप्त पोरुथम के अभाव में यह विवाह अनुशंसित नहीं है।';
         }
 
         $formatBirthPlaceLabel = static function ($place, $country): string {
@@ -3317,14 +3323,14 @@ class AstroEngine {
             'brideRasi' => $girlH['chandraRasi'],
             'brideRasiNameEn' => $girlH['rasi']['name'],
             'brideRasiNameTa' => $girlH['rasi']['nameTa'],
-            'brideRasiNameHi' => $girlH['rasi']['name'],
+            'brideRasiNameHi' => $girlH['rasi']['nameHi'],
             'brideNakshatraNameEn' => $girlH['janmaNakshatraEn'],
             'brideNakshatraNameTa' => $girlH['janmaNakshatraTa'],
-            'brideNakshatraNameHi' => $girlH['janmaNakshatraEn'],
+            'brideNakshatraNameHi' => $girlH['janmaNakshatraHi'],
             'bridePada' => $girlH['janmaPada'],
             'brideLagnaNameEn' => $girlH['lagna']['rasi'],
             'brideLagnaNameTa' => $girlH['lagna']['rasiTa'],
-            'brideLagnaNameHi' => $girlH['lagna']['rasi'],
+            'brideLagnaNameHi' => $girlH['lagna']['rasiHi'],
             'brideMarsHouse' => $brideMarsHouse,
 
             'groomName' => $boyH['devoteeName'],
@@ -3334,14 +3340,14 @@ class AstroEngine {
             'groomRasi' => $boyH['chandraRasi'],
             'groomRasiNameEn' => $boyH['rasi']['name'],
             'groomRasiNameTa' => $boyH['rasi']['nameTa'],
-            'groomRasiNameHi' => $boyH['rasi']['name'],
+            'groomRasiNameHi' => $boyH['rasi']['nameHi'],
             'groomNakshatraNameEn' => $boyH['janmaNakshatraEn'],
             'groomNakshatraNameTa' => $boyH['janmaNakshatraTa'],
-            'groomNakshatraNameHi' => $boyH['janmaNakshatraEn'],
+            'groomNakshatraNameHi' => $boyH['janmaNakshatraHi'],
             'groomPada' => $boyH['janmaPada'],
             'groomLagnaNameEn' => $boyH['lagna']['rasi'],
             'groomLagnaNameTa' => $boyH['lagna']['rasiTa'],
-            'groomLagnaNameHi' => $boyH['lagna']['rasi'],
+            'groomLagnaNameHi' => $boyH['lagna']['rasiHi'],
             'groomMarsHouse' => $groomMarsHouse,
 
             'totalPoruthamsMatched' => $totalPoruthamsMatched,

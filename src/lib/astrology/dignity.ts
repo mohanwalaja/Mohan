@@ -168,7 +168,7 @@ export const NEECHA_BHANGA_TEXT: DignityText = {
 export const NEECHA_BHANGA_CAVEAT: DignityText = {
   en: 'This rule reduces the effect of the debilitation; it does not erase it, and no particular result is guaranteed.',
   ta: 'இந்த விதி நீச நிலையின் விளைவைத் தணிக்கிறது; அதை முழுமையாக நீக்குவதுமில்லை, உறுதியான பலனை உறுதி செய்வதுமில்லை.',
-  hi: 'यह नियम नीच स्थिति के प्रभाव को कम करता है; उसे मिटाता नहीं और किसी निश्चित परिणाम की गारंटी नहीं देता।'
+  hi: 'यह नियम नीच स्थिति के प्रभाव को कम करता है; उसे मिटाता नहीं है और किसी निश्चित परिणाम की गारंटी नहीं देता है।'
 };
 
 function joinTags(parts: string[], fallback: string): string {
@@ -322,7 +322,7 @@ export const GRAHA_TEXT: Record<string, DignityText> = {
   [Graha.SUKRA]: { en: 'Venus', ta: 'சுக்கிரன்', hi: 'शुक्र' },
   [Graha.SANI]: { en: 'Saturn', ta: 'சனி', hi: 'शनि' },
   [Graha.RAHU]: { en: 'Rahu', ta: 'ராகு', hi: 'राहु' },
-  [Graha.KETU]: { en: 'Ketu', ta: 'கேது', hi: 'கேது' }
+  [Graha.KETU]: { en: 'Ketu', ta: 'கேது', hi: 'केतु' }
 };
 
 /** Dignity of one graha, plus its Neecha Bhanga finding when debilitated. */

@@ -235,10 +235,10 @@ export function calculateWeddingCompatibility(
       ? 'Only a partial Dina match - the star distance supports average, not full, vitality and longevity.'
       : 'No Dina support - the star distance carries neither full vitality and longevity nor freedom from discord, so it needs support from the other crucial Poruthams.',
     explanationHi: dinaStatus === PoruthamStatus.UTTHAMAM
-      ? 'दंपत्ति के दीर्घायु, उत्तम स्वास्थ्य और समृद्धि का कारक है।'
+      ? 'यह दंपत्ति की दीर्घायु, उत्तम स्वास्थ्य और समृद्धि का शुभ कारक है।'
       : dinaStatus === PoruthamStatus.MADHYAMAM
-      ? 'आंशिक मेल - मध्यम नक्षत्र दूरी; पूर्ण स्वास्थ्य एवं दीर्घायु समर्थन नहीं।'
-      : 'दिन पोरुथम नहीं - नक्षत्र दूरी स्वास्थ्य, दीर्घायु एवं मतभेद-रहितता का बल नहीं देती।',
+      ? 'आंशिक मेल है — मध्यम नक्षत्र दूरी होने से पूर्ण स्वास्थ्य एवं दीर्घायु समर्थन नहीं है।'
+      : 'दिन पोरुथम अनुकूल नहीं है — नक्षत्र दूरी स्वास्थ्य, दीर्घायु एवं मतभेद-रहितता का बल नहीं देती है।',
     isCrucial: true
   });
 
@@ -276,7 +276,7 @@ export function calculateWeddingCompatibility(
     explanationEn: `Bride: ${ganaNamesEn[bGana]}, Groom: ${ganaNamesEn[gGana]}. ` +
       (ganaStatus === PoruthamStatus.UTTHAMAM ? 'Excellent psychological resonance and emotional compatibility.' : 'Divergent temperaments; requires patient mutual adjustment.'),
     explanationHi: `कन्या: ${ganaNamesHi[bGana]}, वर: ${ganaNamesHi[gGana]}। ` +
-      (ganaStatus === PoruthamStatus.UTTHAMAM ? 'उत्तम मानसिक और भावनात्मक तालमेल।' : 'परस्पर समझदारी आवश्यक।'),
+      (ganaStatus === PoruthamStatus.UTTHAMAM ? 'उत्तम मानसिक और भावनात्मक तालमेल रहता है।' : 'स्वभाव में अंतर होने से परस्पर समझदारी आवश्यक है।'),
     isCrucial: true
   });
 
@@ -300,8 +300,8 @@ export function calculateWeddingCompatibility(
       ? 'Auspicious! Bestows blessed offspring, family lineage expansion, and prosperity.'
       : 'Not supportive - the star distance gives no Mahendra strength for progeny and lineage growth (each chart is judged separately from its 5th house).',
     explanationHi: mahendraStatus === PoruthamStatus.UTTHAMAM
-      ? 'संतान सुख और कुल वृद्धि के लिए अत्यंत शुभ।'
-      : 'सहायक नहीं - नक्षत्र दूरी से महेंद्र बल नहीं मिलता (संतान योग प्रत्येक कुंडली के पंचम भाव से अलग देखा जाता है)।',
+      ? 'यह संतान सुख और कुल वृद्धि के लिए अत्यंत शुभ है।'
+      : 'सहायक नहीं है — नक्षत्र दूरी से महेंद्र बल नहीं मिलता है (संतान योग प्रत्येक कुंडली के पंचम भाव से अलग देखा जाता है)।',
     isCrucial: false
   });
 
@@ -332,10 +332,10 @@ export function calculateWeddingCompatibility(
       ? 'Only a moderate star interval - long-term prosperity for the bride is weakly supported.'
       : 'No Stree Deergha support - the short star interval gives the bride neither full longevity nor all-round growth.',
     explanationHi: sthreeStatus === PoruthamStatus.UTTHAMAM
-      ? 'वधु के दीर्घ सौभाग्य और गृह समृद्धि की वृद्धि।'
+      ? 'इससे वधू के दीर्घ सौभाग्य और गृह समृद्धि में वृद्धि होती है।'
       : sthreeStatus === PoruthamStatus.MADHYAMAM
-      ? 'मध्यम दूरी - वधू की दीर्घकालिक समृद्धि को सीमित समर्थन मात्र।'
-      : 'स्त्री दीर्घ पोरुथम नहीं - कम नक्षत्र दूरी से वधू को दीर्घायु एवं सर्वांगीण विकास का बल नहीं मिलता।',
+      ? 'मध्यम नक्षत्र दूरी है — वधू की दीर्घकालिक समृद्धि को सीमित समर्थन मिलता है।'
+      : 'स्त्री दीर्घ पोरुथम अनुकूल नहीं है — कम नक्षत्र दूरी से वधू को दीर्घायु एवं सर्वांगीण विकास का बल नहीं मिलता है।',
     isCrucial: false
   });
 
@@ -369,7 +369,7 @@ export function calculateWeddingCompatibility(
     maxPoints: 1.0,
     explanationTa: `மணமகள்: ${brideYoniAnimal.ta}; மணமகன்: ${groomYoniAnimal.ta}. யோனி உறவு: ${yoniRelationshipTa}.`,
     explanationEn: `Bride: ${brideYoniAnimal.en}; Groom: ${groomYoniAnimal.en}. Yoni relationship: ${yoniRelationshipEn}.`,
-    explanationHi: `वधू: ${brideYoniAnimal.hi}; वर: ${groomYoniAnimal.hi}। योनि संबंध: ${yoniRelationshipHi}।`,
+    explanationHi: `वधू: ${brideYoniAnimal.hi}; वर: ${groomYoniAnimal.hi} — योनि संबंध ${yoniRelationshipHi} है।`,
     isCrucial: true,
     yoniBrideAnimalTa: brideYoniAnimal.ta,
     yoniBrideAnimalEn: brideYoniAnimal.en,
@@ -418,8 +418,8 @@ export function calculateWeddingCompatibility(
       ? 'Only moderate sign compatibility - mutual respect exists, but family unity needs conscious effort.'
       : 'Shashtashtaka (6/8 distance); relies on mitigating benefic planetary aspects.',
     explanationHi: rasiStatus === PoruthamStatus.UTTHAMAM
-      ? 'पारिवारिक सुख-शांति और कुल गौरव के लिए श्रेष्ठ।'
-      : 'राशि मेल मध्यम है; पारिवारिक एकता हेतु प्रयास आवश्यक।',
+      ? 'यह पारिवारिक सुख-शांति और कुल गौरव के लिए श्रेष्ठ है।'
+      : 'राशि मेल मध्यम है; पारिवारिक एकता हेतु सचेत प्रयास आवश्यक है।',
     isCrucial: true
   });
 
@@ -453,7 +453,7 @@ export function calculateWeddingCompatibility(
     explanationEn: `Bride Lord: ${bLord}, Groom Lord: ${gLord}. ` +
       (rasiAdhipathiStatus === PoruthamStatus.UTTHAMAM ? 'Ruling planets are mutual friends, fostering deep lifelong companionship.' : 'Only neutral planetary affinity - the ruling planets are not mutual friends, so mental harmony needs conscious effort.'),
     explanationHi: `कन्या राश्याधिपति: ${RASI_INFO[bRasi].lordHi}, वर राश्याधिपति: ${RASI_INFO[gRasi].lordHi}। ` +
-      (rasiAdhipathiStatus === PoruthamStatus.UTTHAMAM ? 'ग्रह स्वामी मित्र हैं, जिससे सौहार्द बना रहेगा।' : 'राशि स्वामी परस्पर मित्र नहीं हैं; मानसिक सामंजस्य हेतु प्रयास आवश्यक।'),
+      (rasiAdhipathiStatus === PoruthamStatus.UTTHAMAM ? 'दोनों ग्रह स्वामी मित्र हैं, जिससे आजीवन सौहार्द बना रहता है।' : 'राशि स्वामी परस्पर मित्र नहीं हैं; मानसिक सामंजस्य हेतु प्रयास आवश्यक है।'),
     isCrucial: false
   });
 
@@ -483,8 +483,8 @@ export function calculateWeddingCompatibility(
       ? 'Auspicious! Special magnetic bond, continuous adoration, and endearing mutual attraction.'
       : 'Only ordinary affection - the special Vasiya (mutual attraction) pull is absent.',
     explanationHi: isVasiya
-      ? 'परस्पर प्रगाढ़ प्रेम और आकर्षण का सूचक।'
-      : 'सामान्य स्नेह मात्र - विशेष वश्य आकर्षण नहीं।',
+      ? 'यह परस्पर प्रगाढ़ प्रेम और आकर्षण का शुभ सूचक है।'
+      : 'यहाँ सामान्य स्नेह रहता है — विशेष वश्य आकर्षण नहीं है।',
     isCrucial: false
   });
 
@@ -509,8 +509,8 @@ export function calculateWeddingCompatibility(
       ? `Auspicious! Different Rajjus (Bride: ${RAJJU_NAMES_EN[bRajju]}, Groom: ${RAJJU_NAMES_EN[gRajju]}). Confers unbroken marital security and longevity.`
       : `Same Rajju affliction (${RAJJU_NAMES_EN[bRajju]}). Classical Rajju affliction requires expert astrological review.`,
     explanationHi: !isSameRajju
-      ? `भिन्न रज्जु (वधु: ${RAJJU_NAMES_HI[bRajju]}, वर: ${RAJJU_NAMES_HI[gRajju]})। अखंड सौभाग्य एवं दीर्घायु का वरदान।`
-      : `एक रज्जु दोष (${RAJJU_NAMES_HI[bRajju]})। कुंडली का गहन विश्लेषण आवश्यक।`,
+      ? `भिन्न रज्जु (वधू: ${RAJJU_NAMES_HI[bRajju]}, वर: ${RAJJU_NAMES_HI[gRajju]}) होने से अखंड सौभाग्य एवं दीर्घायु का वरदान मिलता है।`
+      : `एक रज्जु दोष (${RAJJU_NAMES_HI[bRajju]}) है; दोनों कुंडलियों का गहन विश्लेषण आवश्यक है।`,
     isCrucial: true
   });
 
@@ -533,8 +533,8 @@ export function calculateWeddingCompatibility(
       ? 'Auspicious! Free of Vedha obstruction. Shields against sorrow, dispute, and unnecessary friction.'
       : 'Vedha obstruction present between the chosen nakshatras.',
     explanationHi: !isVedhaAfflicted
-      ? 'वेध दोष से मुक्त। गृह कलह और बाधाओं से सुरक्षा।'
-      : 'वेध बाधा उपस्थित है।',
+      ? 'यह मिलान वेध दोष से मुक्त है तथा गृह कलह और बाधाओं से सुरक्षा देता है।'
+      : 'चुने गए नक्षत्रों के बीच वेध बाधा उपस्थित है।',
     isCrucial: true
   });
 
@@ -689,12 +689,12 @@ export function calculateWeddingCompatibility(
     : `Low compatibility (${matchedCount}/10 Poruthams). Not recommended without mitigating factors.`;
 
   const verdictHi = verdictStatus === PoruthamStatus.UTTHAMAM
-    ? `अत्यंत शुभ मिलान! 10 में से ${matchedCount} गुण/पोरुथम मिले हैं तथा रज्जु, वेध और मंगल दोष संतुलित हैं। विवाह हेतु सर्वथा उपयुक्त।`
+    ? `अत्यंत शुभ मिलान! 10 में से ${matchedCount} गुण/पोरुथम मिले हैं तथा रज्जु, वेध और मंगल दोष संतुलित हैं। यह मिलान विवाह हेतु सर्वथा उपयुक्त है।`
     : verdictStatus === PoruthamStatus.MADHYAMAM
-    ? `मध्यम मिलान: 10 में से ${matchedCount} पोरुथम मिले; उपायों के साथ स्वीकार्य।`
+    ? `मध्यम मिलान: 10 में से ${matchedCount} पोरुथम मिले हैं; उपायों के साथ यह स्वीकार्य है।`
     : !criticalPoruthamsOk
     ? `${failedCriticalHi} दोष है। विस्तृत ज्योतिषीय मूल्यांकन आवश्यक है।`
-    : `अनुकूलता कम है (${matchedCount}/10)।`;
+    : `इस मिलान में अनुकूलता कम (${matchedCount}/10) है; विशेष ज्योतिषीय समाधान के बिना यह अनुशंसित नहीं है।`;
 
   const generatedAt = new Date();
   const generatedAtTimeZoneId = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';

@@ -23,6 +23,7 @@ import {
   NAVAGRAHA_DOSHA_DATA,
   NAVAGRAHA_ORDER,
   SHORT_SUMMARY_DONATION,
+  SHORT_SUMMARY_FULL_REMEDIES,
   SHORT_SUMMARY_LAMP_OIL,
   SHORT_SUMMARY_MANTRA,
   SHORT_SUMMARY_REMEDY_LABELS,
@@ -82,6 +83,7 @@ push('        return [');
 for (const key of NAVAGRAHA_ORDER) {
   const info = NAVAGRAHA_DOSHA_DATA[key];
   const profile = JATHAGAM_PLANET_PROFILES[key];
+  const fullRemedy = SHORT_SUMMARY_FULL_REMEDIES[key];
   push(`            ${q(key)} => [`);
   push(`                'name' => [`);
   push(triple(GRAHA_NAMES_REPORT[key] as unknown as Record<string, string>, '                    '));
@@ -95,14 +97,20 @@ for (const key of NAVAGRAHA_ORDER) {
   push(`                'charity' => [`);
   push(triple(info.charity as unknown as Record<string, string>, '                    '));
   push(`                ],`);
+  push(`                'worship' => [`);
+  push(triple(fullRemedy.worship, '                    '));
+  push(`                ],`);
   push(`                'lamp' => [`);
-  push(triple(SHORT_SUMMARY_LAMP_OIL[key], '                    '));
+  push(triple(fullRemedy.lamp, '                    '));
   push(`                ],`);
   push(`                'donation' => [`);
-  push(triple(SHORT_SUMMARY_DONATION[key], '                    '));
+  push(triple(fullRemedy.donation, '                    '));
   push(`                ],`);
   push(`                'mantra' => [`);
-  push(triple(SHORT_SUMMARY_MANTRA[key], '                    '));
+  push(triple(fullRemedy.mantra, '                    '));
+  push(`                ],`);
+  push(`                'compactLine' => [`);
+  push(triple(fullRemedy.compactLine, '                    '));
   push(`                ],`);
   push(`                'support' => [`);
   push(triple(profile.support, '                    '));
@@ -284,12 +292,16 @@ push('            if ($lordInSupportiveHouse) { $supportScore += 2; }');
 push('            if ($isSupportiveHouse) { $supportScore += 1; }');
 push('');
 push('            if ($careScore > 0) {');
-push('                $worship = $data[$key][\'deity\'][$lang] . \' · \' . $data[$key][\'day\'][$lang];');
+push('                $worship = (string) ($data[$key][\'worship\'][$lang] ?? ($data[$key][\'deity\'][$lang] . \' · \' . $data[$key][\'day\'][$lang]));');
 push('                $lamp = (string) ($data[$key][\'lamp\'][$lang] ?? \'\');');
 push('                $donation = (string) ($data[$key][\'donation\'][$lang] ?? \'\');');
 push('                $mantra = (string) ($data[$key][\'mantra\'][$lang] ?? \'\');');
-push('                $compactParts = [explode(\' · \', $worship)[0], $data[$key][\'day\'][$lang], $lamp, $donation, $mantra];');
-push('                $compactParts = array_values(array_filter($compactParts, static function ($part) { return trim((string) $part) !== \'\'; }));');
+push('                $compactLine = (string) ($data[$key][\'compactLine\'][$lang] ?? \'\');');
+push('                if ($compactLine === \'\') {');
+push('                    $compactParts = [explode(\' · \', $worship)[0], $data[$key][\'day\'][$lang], $lamp, $donation, $mantra];');
+push('                    $compactParts = array_values(array_filter($compactParts, static function ($part) { return trim((string) $part) !== \'\'; }));');
+push('                    $compactLine = implode(\' · \', $compactParts);');
+push('                }');
 push('                $needsCare[] = [');
 push('                    \'key\' => $key,');
 push('                    \'house\' => $house,');
@@ -299,7 +311,7 @@ push('                    \'worship\' => $worship,');
 push('                    \'lamp\' => $lamp,');
 push('                    \'donation\' => $donation,');
 push('                    \'mantra\' => $mantra,');
-push('                    \'compactLine\' => implode(\' · \', $compactParts)');
+push('                    \'compactLine\' => $compactLine');
 push('                ];');
 push('                continue;');
 push('            }');

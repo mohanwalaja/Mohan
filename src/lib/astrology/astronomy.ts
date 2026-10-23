@@ -465,62 +465,62 @@ export function getBhavaDetails(bhavaNum: number): {
     case 1:
       return {
         nameTa: 'தனு பாவம் (1st House)', nameEn: '1st Bhava - Self, Personality & Physical Vitality', nameHi: 'तनु भाव - लग्न एवं व्यक्तित्व',
-        sigTa: 'உடல் ஆரோக்கியம், தோற்றம், சுயம், கீர்த்தி மற்றும் ஆயுள்.', sigEn: 'Physical vitality, personality, character, and longevity.', sigHi: 'शारीरिक स्वास्थ्य, आभा और जीवन ऊर्जा।'
+        sigTa: 'உடல் ஆரோக்கியம், தோற்றம், சுயம், கீர்த்தி மற்றும் ஆயுள்.', sigEn: 'Physical vitality, personality, character, and longevity.', sigHi: 'यह भाव शारीरिक स्वास्थ्य, व्यक्तित्व और जीवन ऊर्जा को दर्शाता है।'
       };
     case 2:
       return {
         nameTa: 'தன பாவம் (2nd House)', nameEn: '2nd Bhava - Wealth, Family & Speech', nameHi: 'धन भाव - संपत्ति एवं वाणी',
-        sigTa: 'செல்வம், குடும்பம், வாக்கு வன்மை, ஆரம்பக் கல்வி, கண் பார்வை.', sigEn: 'Financial liquidity, family harmony, eloquence of speech, and assets.', sigHi: 'धन संचय, पारिवारिक सुख एवं वाणी प्रभाव।'
+        sigTa: 'செல்வம், குடும்பம், வாக்கு வன்மை, ஆரம்பக் கல்வி, கண் பார்வை.', sigEn: 'Financial liquidity, family harmony, eloquence of speech, and assets.', sigHi: 'यह भाव धन संचय, पारिवारिक सुख एवं वाणी के प्रभाव को दर्शाता है।'
       };
     case 3:
       return {
         nameTa: 'சகஜ பாவம் (3rd House)', nameEn: '3rd Bhava - Siblings, Courage & Initiative', nameHi: 'सहज भाव - पराक्रम एवं भ्रातृ',
-        sigTa: 'தைரியம், இளைய சகோதரர், முயற்சிகள், தகவல் தொடர்பு.', sigEn: 'Courage, younger siblings, communications, and self-efforts.', sigHi: 'साहस, छोटे भाई-बहन और संकल्प शक्ति।'
+        sigTa: 'தைரியம், இளைய சகோதரர், முயற்சிகள், தகவல் தொடர்பு.', sigEn: 'Courage, younger siblings, communications, and self-efforts.', sigHi: 'यह भाव साहस, छोटे भाई-बहन और संकल्प शक्ति को दर्शाता है।'
       };
     case 4:
       return {
         nameTa: 'சுக பாவம் (4th House)', nameEn: '4th Bhava - Mother, Comforts & Property', nameHi: 'सुख भाव - मातृ एवं वाहन',
-        sigTa: 'தாய், பூமி, வீடு, வாகனம், கல்வி மற்றும் சுகவாழ்வு.', sigEn: 'Mother, real estate, landed properties, conveyances, and happiness.', sigHi: 'माता, अचल संपत्ति, वाहन सुख और आंतरिक शांति।'
+        sigTa: 'தாய், பூமி, வீடு, வாகனம், கல்வி மற்றும் சுகவாழ்வு.', sigEn: 'Mother, real estate, landed properties, conveyances, and happiness.', sigHi: 'यह भाव माता, अचल संपत्ति, वाहन सुख और आंतरिक शांति को दर्शाता है।'
       };
     case 5:
       return {
         nameTa: 'புத்திர பாவம் (5th House)', nameEn: '5th Bhava - Intellect, Progeny & Past Merits', nameHi: 'पुत्र भाव - संतान एवं बुद्धि',
-        sigTa: 'புத்தி கூர்மை, குழந்தைகள், பூர்வ புண்ணியம், கலை ஞானம்.', sigEn: 'Children, analytical intellect, creativity, and past life merits (Purva Punya).', sigHi: 'संतान सुख, तीव्र बुद्धि और पूर्व जन्म के पुण्य।'
+        sigTa: 'புத்தி கூர்மை, குழந்தைகள், பூர்வ புண்ணியம், கலை ஞானம்.', sigEn: 'Children, analytical intellect, creativity, and past life merits (Purva Punya).', sigHi: 'यह भाव संतान सुख, तीव्र बुद्धि और पूर्व जन्म के पुण्य को दर्शाता है।'
       };
     case 6:
       return {
         nameTa: 'சத்ரு பாவம் (6th House)', nameEn: '6th Bhava - Health, Rivals & Debts', nameHi: 'शत्रु भाव - रोग, ऋण एवं प्रतियोगिता',
-        sigTa: 'ஆரோக்கியம், கடன் நிவாரணம், போட்டி மற்றும் உழைப்பு.', sigEn: 'Health challenges, overcoming adversaries, debt management, and daily service.', sigHi: 'प्रतिस्पर्धा विजय, स्वास्थ्य सुरक्षा और ऋण मुक्ति।'
+        sigTa: 'ஆரோக்கியம், கடன் நிவாரணம், போட்டி மற்றும் உழைப்பு.', sigEn: 'Health challenges, overcoming adversaries, debt management, and daily service.', sigHi: 'यह भाव प्रतिस्पर्धा में विजय, स्वास्थ्य सुरक्षा और ऋण मुक्ति को दर्शाता है।'
       };
     case 7:
       return {
         nameTa: 'களத்திர பாவம் (7th House)', nameEn: '7th Bhava - Spouse, Marriage & Partnerships', nameHi: 'कलत्र भाव - जीवनसाथी एवं साझेदारी',
-        sigTa: 'வாழ்க்கைத் துணை, திருமணம், கூட்டுத் தொழில் மற்றும் சமூக உறவுகள்.', sigEn: 'Life partner, marital harmony, business partnerships, and diplomacy.', sigHi: 'वैवाहिक सुख, जीवनसाथी और व्यापारिक साझेदारी।'
+        sigTa: 'வாழ்க்கைத் துணை, திருமணம், கூட்டுத் தொழில் மற்றும் சமூக உறவுகள்.', sigEn: 'Life partner, marital harmony, business partnerships, and diplomacy.', sigHi: 'यह भाव वैवाहिक सुख, जीवनसाथी और व्यापारिक साझेदारी को दर्शाता है।'
       };
     case 8:
       return {
         nameTa: 'ஆயுள் பாவம் (8th House)', nameEn: '8th Bhava - Longevity, Transformation & Occult', nameHi: 'आयु भाव - दीर्घायु एवं गूढ़ ज्ञान',
-        sigTa: 'ஆயுள், திடீர் திருப்பங்கள், ஆன்மீக ஞானம், ஆராய்ச்சி அறிவு.', sigEn: 'Longevity, unforeseen transformations, hidden wealth, and spiritual depth.', sigHi: 'आयु, रहस्यमयी अनुभव और गहन आध्यात्मिक अंतर्दृष्टि।'
+        sigTa: 'ஆயுள், திடீர் திருப்பங்கள், ஆன்மீக ஞானம், ஆராய்ச்சி அறிவு.', sigEn: 'Longevity, unforeseen transformations, hidden wealth, and spiritual depth.', sigHi: 'यह भाव दीर्घायु, परिवर्तन और गहन आध्यात्मिक अंतर्दृष्टि को दर्शाता है।'
       };
     case 9:
       return {
         nameTa: 'பாக்ய பாவம் (9th House)', nameEn: '9th Bhava - Fortune, Dharma & Higher Knowledge', nameHi: 'भाग्य भाव - धर्म एवं भाग्य',
-        sigTa: 'தந்தை, குரு ஆசி, அதிர்ஷ்டம், ஆன்மீக யாத்திரைகள், உயர்கல்வி.', sigEn: 'Father, spiritual mentor (Guru), fortune, philanthropy, and pilgrimages.', sigHi: 'पिता का आशीर्वाद, भाग्योदय और आध्यात्मिक प्रगति।'
+        sigTa: 'தந்தை, குரு ஆசி, அதிர்ஷ்டம், ஆன்மீக யாத்திரைகள், உயர்கல்வி.', sigEn: 'Father, spiritual mentor (Guru), fortune, philanthropy, and pilgrimages.', sigHi: 'यह भाव पिता का आशीर्वाद, भाग्योदय और आध्यात्मिक प्रगति को दर्शाता है।'
       };
     case 10:
       return {
         nameTa: 'கர்ம பாவம் (10th House)', nameEn: '10th Bhava - Profession, Status & Achievements', nameHi: 'कर्म भाव - व्यवसाय एवं प्रतिष्ठा',
-        sigTa: 'தொழில், பதவி, சமூக அந்தஸ்து, தலைமைத்துவம் மற்றும் வெற்றி.', sigEn: 'Career, executive governance, reputation, status, and life accomplishments.', sigHi: 'कार्यक्षेत्र में उन्नति, पद-प्रतिष्ठा और व्यावसायिक सफलता।'
+        sigTa: 'தொழில், பதவி, சமூக அந்தஸ்து, தலைமைத்துவம் மற்றும் வெற்றி.', sigEn: 'Career, executive governance, reputation, status, and life accomplishments.', sigHi: 'यह भाव कार्यक्षेत्र में उन्नति, पद-प्रतिष्ठा और व्यावसायिक सफलता को दर्शाता है।'
       };
     case 11:
       return {
         nameTa: 'லாப பாவம் (11th House)', nameEn: '11th Bhava - Gains, Aspirations & Social Circle', nameHi: 'लाभ भाव - आय एवं आकांक्षाएं',
-        sigTa: 'வருமான பெருக்கம், விருப்பங்கள் நிறைவேறுதல், மூத்த சகோதரர்.', sigEn: 'Financial gains, fulfilled ambitions, wide influential networks, and prosperity.', sigHi: 'आर्थिक लाभ, मनोकामना पूर्ति और मित्रों का सहयोग।'
+        sigTa: 'வருமான பெருக்கம், விருப்பங்கள் நிறைவேறுதல், மூத்த சகோதரர்.', sigEn: 'Financial gains, fulfilled ambitions, wide influential networks, and prosperity.', sigHi: 'यह भाव आर्थिक लाभ, मनोकामना पूर्ति और मित्रों के सहयोग को दर्शाता है।'
       };
     default:
       return {
         nameTa: 'விரய பாவம் (12th House)', nameEn: '12th Bhava - Expenses, Foreign Lands & Moksha', nameHi: 'व्यय भाव - विदेश गमन एवं मोक्ष',
-        sigTa: 'சுப விரயங்கள், வெளிநாட்டுப் பயணம், தூக்கம் மற்றும் மோக்ஷ ஞானம்.', sigEn: 'Auspicious expenditures, foreign travels, sound sleep, and spiritual liberation (Moksha).', sigHi: 'शुभ व्यय, विदेश यात्रा और मोक्ष मार्ग।'
+        sigTa: 'சுப விரயங்கள், வெளிநாட்டுப் பயணம், தூக்கம் மற்றும் மோக்ஷ ஞானம்.', sigEn: 'Auspicious expenditures, foreign travels, sound sleep, and spiritual liberation (Moksha).', sigHi: 'यह भाव शुभ व्यय, विदेश यात्रा और मोक्ष मार्ग को दर्शाता है।'
       };
   }
 }
@@ -1055,8 +1055,8 @@ export function calculatePrecisionHoroscope(
           `${warSign.nameTa} ராசியில் ${GRAHA_INFO[planetA].nameTa}–${GRAHA_INFO[planetB].nameTa} இடையே ${separationText}° இடைவெளி — கிரக யுத்தம். ` +
           `வடக்கு அகலாங்கு (ecliptic latitude) விதிப்படி ${GRAHA_INFO[winner].nameTa} (${winnerLatitude.toFixed(3)}°) ${GRAHA_INFO[loser].nameTa}-ஐ (${loserLatitude.toFixed(3)}°) வெல்கிறார்.`,
         descriptionHi:
-          `${warSign.nameHi} राशि में ${GRAHA_INFO[planetA].nameHi}–${GRAHA_INFO[planetB].nameHi} के बीच ${separationText}° — ग्रह युद्ध। ` +
-          `उत्तर दिशा के अक्षांश (ecliptic latitude) के नियम से ${GRAHA_INFO[winner].nameHi} (${winnerLatitude.toFixed(3)}°) ने ${GRAHA_INFO[loser].nameHi} (${loserLatitude.toFixed(3)}°) को पराजित किया।`
+          `${warSign.nameHi} राशि में ${GRAHA_INFO[planetA].nameHi}–${GRAHA_INFO[planetB].nameHi} के बीच ${separationText}° का अंतर है — ग्रह युद्ध। ` +
+          `उत्तर अक्षांश नियम से ${GRAHA_INFO[winner].nameHi} (${winnerLatitude.toFixed(3)}°) ने ${GRAHA_INFO[loser].nameHi} (${loserLatitude.toFixed(3)}°) को पराजित किया है।`
       });
     }
   }
@@ -1080,7 +1080,8 @@ export function calculatePrecisionHoroscope(
     const houseListEn = houses.map(house => houseOrdinal(house)).join(' and ');
     const signListEn = ownedSigns.map(sign => RASI_INFO[sign as Rasi].nameEn).join(', ');
     const signListTa = ownedSigns.map(sign => RASI_INFO[sign as Rasi].nameTa).join(', ');
-    const signListHi = ownedSigns.map(sign => RASI_INFO[sign as Rasi].nameHi).join(', ');
+    const signListHi = ownedSigns.map(sign => RASI_INFO[sign as Rasi].nameHi.replace(/\s*\([^)]*\)\s*$/, '')).join(', ');
+    const grahaLabelHi = info.nameHi.replace(/\s*\([^)]*\)\s*$/, '');
     const houseListTa = houses.map(house => `${house}-ஆம்`).join(', ');
     const houseListHi = houses.map(house => `${house}वें`).join(', ');
     kendradhipati.push({
@@ -1099,8 +1100,8 @@ export function calculatePrecisionHoroscope(
         ? `${info.nameTa} இந்த லக்னத்திற்கு ${houseListTa} பாவங்களை (${signListTa}) ஆள்கிறார். லக்னாதிபதி என்பதால் கேந்திராதிபதி தோஷத்தில் இருந்து மரபு விலக்கு அளிக்கிறது; ஆயினும் தொழில்/திருமண அட்டைகளில் குறிப்பிடப்பட்டுள்ளது.`
         : `${info.nameTa} இந்த லக்னத்திற்கு ${houseListTa} பாவங்களை (${signListTa}) ஆள்கிறார் — கேந்திராதிபதி தோஷம். நல்ல கிரகம் இரண்டு கேந்திரங்களை ஆள்வது அந்த பாவ விஷயங்களுக்கு எச்சரிக்கையாகக் கருதப்படுகிறது; தொழில்/திருமண அட்டைகளில் குறிப்பிடப்பட்டுள்ளது.`,
       descriptionHi: appliesToLagnaLord
-        ? `${info.nameHi} इस लग्न के लिए ${houseListHi} भावों (${signListHi}) के स्वामी हैं। लग्नेश होने से केंद्राधिपति दोष से पारंपरिक छूट है, फिर भी कार्य/विवाह कार्ड में यह उल्लेख किया गया है।`
-        : `${info.nameHi} इस लग्न के लिए ${houseListHi} भावों (${signListHi}) के स्वामी हैं — केंद्राधिपति दोष। शुभ ग्रह का दो केंद्रों पर स्वामित्व उन भावों के लिए सावधानी माना जाता है; कार्य/विवाह कार्ड में इसका उल्लेख है।`
+        ? `${grahaLabelHi} इस लग्न के लिए ${houseListHi} भावों (${signListHi}) के स्वामी हैं। लग्नेश होने से केंद्राधिपति दोष से पारंपरिक छूट है, फिर भी कार्य/विवाह कार्ड में यह उल्लेख किया गया है।`
+        : `${grahaLabelHi} इस लग्न के लिए ${houseListHi} भावों (${signListHi}) के स्वामी हैं, इसलिए केंद्राधिपति दोष लगता है। शुभ ग्रह का दो केंद्रों पर स्वामित्व उन भावों के लिए सावधानी माना जाता है; कार्य/विवाह कार्ड में इसका उल्लेख है।`
     });
   }
 
@@ -1166,7 +1167,7 @@ export function calculatePrecisionHoroscope(
       : '';
   const kendraNoteHi = (entry: typeof kendradhipatiCareerNote): string =>
     entry
-      ? ` केंद्राधिपति दोष: ${entry.grahaNameHi} इस लग्न के ${entry.houses.join(', ')} भावों के स्वामी हैं${entry.appliesToLagnaLord ? ' (लग्नेश — पारंपरिक छूट, फिर भी उल्लेख)' : ''}.`
+      ? ` केंद्राधिपति दोष: ${entry.grahaNameHi} इस लग्न के ${entry.houses.join(', ')} भावों के स्वामी हैं${entry.appliesToLagnaLord ? ' (लग्नेश होने से पारंपरिक छूट है, फिर भी उल्लेख किया गया है)' : ''}।`
       : '';
   const kendradhipatiCareerEn = kendraNoteEn(kendradhipatiCareerNote);
   const kendradhipatiCareerTa = kendraNoteTa(kendradhipatiCareerNote);
@@ -1388,7 +1389,7 @@ export function calculatePrecisionHoroscope(
         : 'The seven classical planets do not fall within one semicircle under this implementation. This is only one criterion, not a complete chart assessment.',
       descriptionHi: isKalaSarpa
         ? 'इस गणना में सात पारंपरिक ग्रह राहु–केतु अक्ष के एक अर्धवृत्त में हैं। इस मानदंड पर परंपराओं में मतभेद हैं।'
-        : 'इस गणना में सात पारंपरिक ग्रह एक अर्धवृत्त में नहीं हैं। यह केवल एक मानदंड है, पूर्ण कुंडली मूल्यांकन नहीं।',
+        : 'इस गणना में सात पारंपरिक ग्रह एक अर्धवृत्त में नहीं हैं। यह केवल एक मानदंड है, पूर्ण कुंडली मूल्यांकन नहीं है।',
       traditionalRemedyTa: 'சிவன் பெயரைச் சொல்லி பிரார்த்தனை செய்யுங்கள்.',
       traditionalRemedyEn: 'Pray to Lord Shiva.',
       traditionalRemedyHi: 'भगवान शिव का नाम लेकर प्रार्थना करें।'
@@ -1416,10 +1417,10 @@ export function calculatePrecisionHoroscope(
         ? `The Sun and ${closestNode?.nameEn} share a sign but are ${sunNodeSeparation}° apart — outside the 12° orb, so no dosha is flagged: weak (same sign only).`
         : 'The Sun is not within 12° of Rahu/Ketu and Saturn is not in the 9th house by sign. This limited rule does not establish ancestral blessings or the absence of other interpretations.',
       descriptionHi: isPitruDosha
-        ? `${isSunWithNodes ? `सूर्य ${closestNode?.nameHi} से 12° के भीतर (${sunNodeSeparation}° अंतर) है। ` : ''}${isSaturnIn9th ? 'शनि राशि-आधारित नवम भाव में हैं। ' : ''}ये केवल सरल संकेत हैं, पूर्ण पितृ मूल्यांकन नहीं।`
+        ? `${isSunWithNodes ? `सूर्य ${closestNode?.nameHi} से 12° के भीतर (${sunNodeSeparation}° अंतर) है। ` : ''}${isSaturnIn9th ? 'शनि राशि-आधारित नवम भाव में हैं। ' : ''}ये केवल सरल संकेत हैं, पूर्ण पितृ मूल्यांकन नहीं हैं।`
         : pitruStrength === 'weak'
-        ? `सूर्य और ${closestNode?.nameHi} एक ही राशि में हैं पर ${sunNodeSeparation}° दूर — 12° सीमा से बाहर, इसलिए दोष नहीं: दुर्बल (केवल एक ही राशि)।`
-        : 'सूर्य राहु/केतु से 12° के भीतर नहीं हैं और शनि राशि-आधारित नवम भाव में नहीं हैं। यह सीमित नियम पितृ-कृपा या अन्य व्याख्याओं की अनुपस्थिति सिद्ध नहीं करता।',
+        ? `सूर्य और ${closestNode?.nameHi} एक ही राशि में हैं पर ${sunNodeSeparation}° दूर हैं — 12° सीमा से बाहर होने के कारण यह दुर्बल (केवल एक ही राशि) संकेत है।`
+        : 'सूर्य राहु/केतु से 12° के भीतर नहीं हैं और शनि राशि-आधारित नवम भाव में नहीं हैं। यह सीमित नियम पितृ-कृपा या अन्य व्याख्याओं की अनुपस्थिति सिद्ध नहीं करता है।',
       traditionalRemedyTa: 'மகா விஷ்ணு பெயரைச் சொல்லி பிரார்த்தனை செய்யுங்கள்.',
       traditionalRemedyEn: 'Pray to Maha Vishnu.',
       traditionalRemedyHi: 'महाविष्णु का नाम लेकर प्रार्थना करें।',
@@ -1446,7 +1447,7 @@ export function calculatePrecisionHoroscope(
         : 'Jupiter does not share a sign with Rahu/Ketu under this rule. This is a sign-level criterion, not a complete yoga assessment.',
       descriptionHi: isGuruChandala
         ? 'इस राशि-आधारित नियम के अनुसार गुरु राहु या केतु के साथ एक राशि में हैं। अंश-दूरी या युति की शक्ति नहीं मापी गई; परंपराएँ भिन्न हैं।'
-        : 'इस नियम के अनुसार गुरु राहु/केतु के साथ एक राशि में नहीं हैं। यह केवल राशि-आधारित मानदंड है, पूर्ण योग मूल्यांकन नहीं।',
+        : 'इस नियम के अनुसार गुरु राहु/केतु के साथ एक राशि में नहीं हैं। यह केवल राशि-आधारित मानदंड है, पूर्ण योग मूल्यांकन नहीं है।',
       traditionalRemedyTa: 'தட்சிணாமூர்த்தி அல்லது சிவன் பெயரைச் சொல்லி பிரார்த்தனை செய்யுங்கள்.',
       traditionalRemedyEn: 'Pray to Lord Dakshinamurthy or Lord Shiva.',
       traditionalRemedyHi: 'भगवान दक्षिणामूर्ति या भगवान शिव का नाम लेकर प्रार्थना करें।'
@@ -1570,7 +1571,7 @@ export function calculatePrecisionHoroscope(
     : `भाव ${houseNumber} के स्वामी की स्थिति उपलब्ध नहीं है (N/A)।`;
   const caveatEn = 'Traditional Jyotish symbolism only; not a guaranteed prediction or professional advice.';
   const caveatTa = 'இவை பாரம்பரிய ஜோதிடக் குறியீடுகள் மட்டுமே; உறுதியான கணிப்போ மருத்துவ/நிதி ஆலோசனையோ அல்ல.';
-  const caveatHi = 'यह केवल पारंपरिक ज्योतिषीय संकेत हैं; निश्चित भविष्यवाणी या चिकित्सा/वित्तीय सलाह नहीं।';
+  const caveatHi = 'ये केवल पारंपरिक ज्योतिषीय संकेत हैं; निश्चित भविष्यवाणी या चिकित्सा/वित्तीय सलाह नहीं हैं।';
   const secondLord = houseLordPlacement(2);
   const fourthLord = houseLordPlacement(4);
   const fifthLord = houseLordPlacement(5);
@@ -1588,8 +1589,8 @@ export function calculatePrecisionHoroscope(
       ? 'Ascendant-lord house placement unavailable (N/A); no interpretation was generated.'
       : `Traditional Jyotish observation: the Ascendant is ${lagnaInfo.nameEn}, and its lord ${lagnaInfo.lordEn} is placed in House ${lagnaLordBhava}. This is a symbolic reading, not a medical assessment or health forecast.`,
     healthHi: lagnaLordBhava === null
-      ? 'लग्नेश का भाव उपलब्ध नहीं है (N/A); व्याख्या नहीं बनाई गई।'
-      : `पारंपरिक ज्योतिषीय टिप्पणी: लग्न ${lagnaInfo.nameHi} है और लग्नेश ${lagnaInfo.lordHi} भाव ${lagnaLordBhava} में स्थित हैं। यह ज्योतिषीय व्याख्या है, चिकित्सा मूल्यांकन या स्वास्थ्य पूर्वानुमान नहीं।`,
+      ? 'लग्नेश का भाव उपलब्ध नहीं है (N/A); व्याख्या नहीं बनाई गई है।'
+      : `पारंपरिक ज्योतिषीय टिप्पणी: लग्न ${lagnaInfo.nameHi} है और लग्नेश ${lagnaInfo.lordHi} भाव ${lagnaLordBhava} में स्थित हैं। यह ज्योतिषीय व्याख्या है, चिकित्सा मूल्यांकन या स्वास्थ्य पूर्वानुमान नहीं है।`,
 
     wealthTa: `${housePlacementTa(secondLord, 2)} ${housePlacementTa(eleventhLord, 11)} ${caveatTa}`,
     wealthEn: `${housePlacementEn(secondLord, 2)} ${housePlacementEn(eleventhLord, 11)} ${caveatEn}`,
@@ -1617,7 +1618,7 @@ export function calculatePrecisionHoroscope(
 
     currentPeriodGuidanceTa: `ஜென்ம ராசி ${chandraInfo.nameTa}. தற்போது ${currentDasha.mahadashaLordTa} மகாதிசை (${currentDasha.mahadashaStart} முதல் ${currentDasha.mahadashaEnd} வரை), ${currentDasha.antardashaLordTa} புத்தியுடன் உள்ளது.${currentDasha.mahadashaChangeNoticeTa ? ' ' + currentDasha.mahadashaChangeNoticeTa : ''} இது பாரம்பரிய ஜோதிட காலக் குறிப்பு மட்டுமே; உறுதியான நிகழ்வு கணிப்பு அல்ல.`,
     currentPeriodGuidanceEn: `Janma Rasi is ${chandraInfo.nameEn}. The calculated period is ${currentDasha.mahadashaLordEn} Mahadasha (${currentDasha.mahadashaStart} to ${currentDasha.mahadashaEnd}) with ${currentDasha.antardashaLordEn} Bhukti (${currentDasha.antardashaStart} to ${currentDasha.antardashaEnd}).${currentDasha.mahadashaChangeNoticeEn ? ' ' + currentDasha.mahadashaChangeNoticeEn : ''} Traditional timing symbolism only; not a certain event prediction.`,
-    currentPeriodGuidanceHi: `जन्म राशि ${chandraInfo.nameHi} है। गणना के अनुसार ${currentDasha.mahadashaLordHi} महादशा (${currentDasha.mahadashaStart} से ${currentDasha.mahadashaEnd}) में ${currentDasha.antardashaLordHi} अंतर्दशा (${currentDasha.antardashaStart} से ${currentDasha.antardashaEnd}) चल रही है।${currentDasha.mahadashaChangeNoticeHi ? ' ' + currentDasha.mahadashaChangeNoticeHi : ''} यह पारंपरिक ज्योतिषीय काल-संकेत है, निश्चित घटना की भविष्यवाणी नहीं।`
+    currentPeriodGuidanceHi: `जन्म राशि ${chandraInfo.nameHi} है। गणना के अनुसार ${currentDasha.mahadashaLordHi} महादशा (${currentDasha.mahadashaStart} से ${currentDasha.mahadashaEnd}) में ${currentDasha.antardashaLordHi} अंतर्दशा (${currentDasha.antardashaStart} से ${currentDasha.antardashaEnd}) चल रही है।${currentDasha.mahadashaChangeNoticeHi ? ' ' + currentDasha.mahadashaChangeNoticeHi : ''} यह पारंपरिक ज्योतिषीय काल-संकेत है, निश्चित घटना की भविष्यवाणी नहीं है।`
   };
 
   return {
