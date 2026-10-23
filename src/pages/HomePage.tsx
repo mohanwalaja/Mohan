@@ -18,6 +18,8 @@ import { JsonLd } from '../components/common/JsonLd';
 import { RouteLink } from '../components/common/RouteLink';
 import { HOME_FAQ_ITEMS } from '../data/homeFaq';
 import { buildFaqPageJsonLd } from '../services/structuredData';
+import { useAuth } from '../context/AuthContext';
+import { getServicePrices } from '../services/pricing';
 // Only the day count is used here now: the full "Personal astrologer chat
 // included" line belongs to the Services page, the service page headers and
 // checkout, not to the home page (owner request, 2026-10-21).
@@ -107,7 +109,7 @@ const HOW_IT_WORKS = [
   {
     number: '4',
     title: 'Receive your PDF by email',
-    description: 'Our priest team prepares reports daily between 9:00 AM – 11:00 AM IST. Following admin review and approval, your verified PDF report and tax invoice are emailed directly to you.'
+    description: 'Our priest team checks all reports every 6 hours. Once every report is reviewed and the admin approves it, your verified PDF report and tax invoice are emailed directly to you.'
   }
 ];
 
@@ -115,6 +117,13 @@ const HOW_IT_WORKS = [
 const FAQ_JSON_LD = buildFaqPageJsonLd(HOME_FAQ_ITEMS);
 
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
+  const { settings } = useAuth();
+
+  const bjPrices = getServicePrices(settings, 'BIRTH_JATHAGAM');
+  const mcPrices = getServicePrices(settings, 'MARRIAGE_COMPATIBILITY');
+  const bnPrices = getServicePrices(settings, 'BABY_NAMING');
+  const mhPrices = getServicePrices(settings, 'MUHURTHAM');
+
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -172,7 +181,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               </span>
               <span className="flex items-center gap-2">
                 <Mail className="h-4 w-4 shrink-0 text-gold" />
-                Prepared daily 9–11 AM IST &amp; emailed
+                Reports checked every 6 hrs &amp; emailed after approval
               </span>
               <span className="flex items-center gap-2">
                 <Languages className="h-4 w-4 shrink-0 text-gold" />
@@ -200,6 +209,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {HOME_SERVICES.map(service => {
             const ServiceIcon = service.icon;
+            const prices =
+              service.type === 'BIRTH_JATHAGAM'
+                ? bjPrices
+                : service.type === 'MARRIAGE_COMPATIBILITY'
+                ? mcPrices
+                : service.type === 'BABY_NAMING'
+                ? bnPrices
+                : mhPrices;
 
             return (
               <article
@@ -213,6 +230,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="display-serif text-2xl font-bold text-ink">{service.title}</h3>
+                      <div className="mt-1 flex items-center gap-2 text-xs font-bold text-amber-300">
+                        <span>US$ {prices.USD}</span>
+                        <span className="text-slate-400">·</span>
+                        <span>₹{prices.INR.toLocaleString('en-IN')}</span>
+                      </div>
                       <p className="mt-2 text-[15px] leading-6 text-slate-200">{service.description}</p>
                     </div>
                   </div>
