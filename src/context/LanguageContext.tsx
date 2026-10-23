@@ -49,7 +49,7 @@ const translations: Record<string, string> = {
   service_baby_title: 'Baby Naming (Nakshatra Letters)',
   service_baby_desc: 'Determine auspicious starting syllables, exact birth pada vibration, Nakshatra deity and lord energies, plus curated traditional and modern name suggestions.',
   service_muhurtham_title: 'Subha Muhurtham (Auspicious Dates)',
-  service_muhurtham_desc: 'Six-month auspicious date calendar for 18 Vedic ceremonies computed from tithi, nakshatra, yoga, karana and lagna with Nalla Neram windows, Rahu Kalam avoidance and Tara Balam star checks.',
+  service_muhurtham_desc: 'Six-month auspicious date calendar for 18 Vedic ceremonies computed from tithi, nakshatra, yoga, karana and lagna with Nalla Neram best-time windows and Tara Balam star checks.',
   order_now: 'Order Report',
   preview_free: 'Calculate Preview',
 

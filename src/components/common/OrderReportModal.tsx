@@ -1132,7 +1132,6 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order: initi
                               <th className="px-2.5 py-2 text-left font-bold">Tithi</th>
                               <th className="px-2.5 py-2 text-left font-bold">Nakshatra</th>
                               <th className="px-2.5 py-2 text-left font-bold">Nalla Neram</th>
-                              <th className="px-2.5 py-2 text-left font-bold">Rahu Kalam</th>
                               <th className="px-2.5 py-2 text-left font-bold">Grade</th>
                             </tr>
                           </thead>
@@ -1152,13 +1151,6 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order: initi
                                     .map((w: any) => (typeof w === 'string' ? w : `${w?.start || ''}-${w?.end || ''}`))
                                     .filter((v: string) => v && v !== '-')
                                     .join(', ') || '—'}
-                                </td>
-                                <td className="px-2.5 py-1.5 whitespace-nowrap">
-                                  {day.rahuKalam
-                                    ? (typeof day.rahuKalam === 'string'
-                                      ? day.rahuKalam
-                                      : `${day.rahuKalam.start || ''}-${day.rahuKalam.end || ''}`)
-                                    : '—'}
                                 </td>
                                 <td className="px-2.5 py-1.5">
                                   <span

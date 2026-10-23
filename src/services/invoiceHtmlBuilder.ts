@@ -621,7 +621,7 @@ export function buildInvoiceHtml(order: Order): string {
     serviceDesc = 'Nakshatra Pada Syllables, Numerological Analysis & Auspicious Name Recommendations';
   } else if (order.serviceType === 'MUHURTHAM') {
     serviceTitle = 'Subha Muhurtham (6-Month Auspicious Dates)';
-    serviceDesc = 'Six-Month Panchangam Muhurtham Calendar, Nalla Neram Windows, Rahu Kalam & Personal Star Checks';
+    serviceDesc = 'Six-Month Panchangam Muhurtham Calendar, Nalla Neram Windows & Personal Star Checks';
   }
 
   const langDisplay = invoiceLanguageLabel(order.language);
@@ -908,7 +908,7 @@ function getServiceCopy(serviceType: string): { title: string; desc: string } {
   if (serviceType === 'MUHURTHAM') {
     return {
       title: 'Subha Muhurtham (6-Month Auspicious Dates)',
-      desc: 'Six-Month Panchangam Muhurtham Calendar, Nalla Neram Windows, Rahu Kalam & Personal Star Checks'
+      desc: 'Six-Month Panchangam Muhurtham Calendar, Nalla Neram Windows & Personal Star Checks'
     };
   }
   return {

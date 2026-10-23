@@ -60,7 +60,7 @@ export const CURATED_TESTIMONIALS: readonly DisplayReview[] = [
     serviceLabel: 'Subha Muhurtham (Auspicious Dates)',
     rating: 5,
     datePublished: '2026-02',
-    body: 'The 6-month muhurtham calendar made fixing our Griha Pravesam date so easy. Every auspicious window came with Nalla Neram timings and Rahu Kalam warnings, verified by the priest team. Excellent authentic Panchangam work.',
+    body: 'The 6-month muhurtham calendar made fixing our Griha Pravesam date so easy. Every auspicious window came with its Nalla Neram timings, verified by the priest team. Excellent authentic Panchangam work.',
     verifiedPurchase: false
   },
   {

@@ -76,8 +76,8 @@ const REPORT_INCLUSIONS: { title: string; text: string }[] = [
     text: 'Wedding, Griha Pravesam, Bhoomi Pooja, Business Start, Annaprasanam, Seemantham, Upanayanam and more.'
   },
   {
-    title: 'Nalla Neram, Rahu Kalam & Yamaganda',
-    text: 'Timings worked out for your function location’s local sunrise and timezone.'
+    title: 'Nalla Neram Best-Time Windows',
+    text: 'Only the auspicious windows are shown, worked out for your function location’s local sunrise and timezone.'
   },
   {
     title: 'Tara Balam & Chandrashtama Checks',

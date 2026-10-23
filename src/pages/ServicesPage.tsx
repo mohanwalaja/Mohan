@@ -129,7 +129,7 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onNavigate }) => {
       description: 'Receive muhurtham dates across six months: the two months before your selected month, then that month and the following three. Available for 18 ceremonies including Wedding, Griha Pravesam, Bhoomi Pooja, Business Start, Annaprasanam, Seemantham, Upanayanam and more. Computed from tithi, nakshatra, yoga, karana, lagna and Guru-Sukra strength.',
       features: [
         '18 Vedic Ceremonies Covered',
-        'Nalla Neram, Rahu Kalam & Yamaganda',
+        'Nalla Neram Best-Time Windows',
         'Tara Balam & Chandrashtama Star Checks',
         'English, Tamil & Hindi PDF Reports',
       ],

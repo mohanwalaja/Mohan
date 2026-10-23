@@ -81,7 +81,7 @@ const HOME_SERVICES: HomeService[] = [
     type: 'MUHURTHAM',
     title: 'Subha Muhurtham',
     description: 'A six-month calendar of suitable dates and times for your chosen ceremony.',
-    detail: 'Panchangam checks, Nalla Neram, Rahu Kalam, and Tara Balam',
+    detail: 'Panchangam checks, Nalla Neram best times, and Tara Balam',
     route: 'muhurtham',
     icon: CalendarDays,
     cardClass: 'service-card-saffron',

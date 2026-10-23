@@ -95,7 +95,7 @@ export const BIRTH_JATHAGAM_FAQ_ITEMS: readonly FaqItem[] = [
 export const MUHURTHAM_FAQ_ITEMS: readonly FaqItem[] = [
   {
     question: 'What is Subha Muhurtham (auspicious date) selection?',
-    answer: 'Muhurtham is the traditional selection of an auspicious date and time for an event. We compute it from tithi, nakshatra, yoga, karana, lagna and Guru–Sukra strength, avoid Rahu Kalam, and mark Nalla Neram windows for the ceremony you choose.'
+    answer: 'Muhurtham is the traditional selection of an auspicious date and time for an event. We compute it from tithi, nakshatra, yoga, karana, lagna and Guru–Sukra strength, and mark the Nalla Neram best-time windows for the ceremony you choose.'
   },
   {
     question: 'Which ceremonies can I choose a Muhurtham for?',

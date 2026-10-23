@@ -135,6 +135,14 @@ const testFiles = [
   'tests/dosha-rule-accuracy.test.ts',
   'tests/porutham-reference.test.ts',
   'tests/muhurtham-astronomy-regression.test.ts',
+  // Owner decision (2026-10-24): the Muhurtham product advertises and prints
+  // ONLY the good time. The avoidance windows stay an internal part of the scan
+  // (they are how Nalla Neram is derived) but must never reappear in the
+  // homepage card, the Muhurtham page, the Services feature list, the FAQ, a
+  // testimonial, the invoice line, the SEO description, the rules knowledge
+  // base, the order preview table — or the sample PDF a visitor opens before
+  // paying, which this renders for real in en/ta/hi.
+  'tests/muhurtham-good-time-only.test.ts',
   'tests/sample-engine-meaning.test.ts',
   'tests/report-dob-format.test.ts',
   'tests/ai-astrologer-sources.test.ts',
