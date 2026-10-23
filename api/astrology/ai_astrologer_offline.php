@@ -41,19 +41,19 @@ class AstroAiOffline
      * wedding") still find the right card without a model to interpret them.
      */
     const EXTRA_PHRASES = [
-        'career' => ['job', 'jobs', 'work', 'office', 'promotion', 'boss', 'business', 'salary', 'profession', 'employment', 'career',
+        'career' => ['job', 'jobs', 'work', 'working', 'office', 'promotion', 'promoted', 'promote', 'interview', 'hired', 'increment', 'raise', 'startup', 'boss', 'business', 'salary', 'profession', 'employment', 'career',
             'வேலை', 'உத்தியோகம்', 'தொழில்', 'பதவி', 'வியாபாரம்', 'नौकरी', 'काम', 'व्यापार', 'व्यवसाय', 'प्रमोशन', 'करियर', 'कैरियर', 'तरक्की'],
-        'marriage' => ['marriage', 'married', 'marry', 'wedding', 'wife', 'husband', 'spouse', 'partner', 'love', 'relationship', 'divorce', 'child', 'children', 'baby',
+        'marriage' => ['marriage', 'married', 'marry', 'marrying', 'engaged', 'engagement', 'wedding', 'wife', 'husband', 'spouse', 'partner', 'love', 'relationship', 'divorce', 'child', 'children', 'kids', 'baby', 'conceive',
             'திருமணம்', 'கல்யாணம்', 'மனைவி', 'கணவர்', 'காதல்', 'குழந்தை', 'विवाह', 'शादी', 'पत्नी', 'पति', 'प्रेम', 'संतान', 'बच्चे'],
-        'wealth' => ['money', 'wealth', 'finance', 'income', 'debt', 'loan', 'savings', 'rich', 'financial',
+        'wealth' => ['money', 'wealth', 'finance', 'finances', 'income', 'earn', 'earning', 'debt', 'debts', 'loan', 'loans', 'save', 'saving', 'savings', 'expenses', 'rich', 'financial',
             'பணம்', 'செல்வம்', 'வருமானம்', 'கடன்', 'சேமிப்பு', 'धन', 'पैसा', 'आय', 'कर्ज', 'बचत'],
-        'education' => ['study', 'studies', 'exam', 'education', 'college', 'school', 'degree', 'university',
+        'education' => ['study', 'studies', 'studying', 'exam', 'exams', 'education', 'college', 'school', 'degree', 'degrees', 'scholarship', 'university',
             'படிப்பு', 'கல்வி', 'தேர்வு', 'பரீட்சை', 'पढ़ाई', 'शिक्षा', 'परीक्षा'],
-        'property' => ['house', 'home', 'land', 'property', 'flat', 'apartment', 'vehicle', 'car',
+        'property' => ['house', 'home', 'land', 'plot', 'plots', 'property', 'flat', 'flats', 'apartment', 'vehicle', 'vehicles', 'car', 'cars',
             'வீடு', 'நிலம்', 'சொத்து', 'வாகனம்', 'घर', 'जमीन', 'संपत्ति', 'मकान', 'वाहन'],
-        'travel-foreign' => ['abroad', 'foreign', 'travel', 'visa', 'overseas', 'settle', 'migrate', 'australia', 'canada', 'usa', 'uk', 'new zealand',
+        'travel-foreign' => ['abroad', 'foreign', 'travel', 'visa', 'visas', 'onsite', 'overseas', 'settle', 'settled', 'settling', 'migrate', 'australia', 'canada', 'usa', 'uk', 'new zealand',
             'வெளிநாடு', 'பயணம்', 'விசா', 'विदेश', 'यात्रा', 'वीज़ा', 'वीजा'],
-        'health' => ['health', 'sick', 'illness', 'pain', 'tired', 'sleep', 'stress', 'anxiety',
+        'health' => ['health', 'vitality', 'stamina', 'recovery', 'sick', 'illness', 'pain', 'tired', 'sleep', 'stress', 'anxiety',
             'உடல்நலம்', 'நோய்', 'தூக்கம்', 'மன அழுத்தம்', 'स्वास्थ्य', 'बीमार', 'नींद', 'तनाव'],
         'current-guidance' => ['dasha', 'dasa', 'bhukti', 'period', 'this year', 'next year', 'future', 'sade sati', 'ezharai', 'nakshatra', 'star', 'panchangam', 'horoscope', 'chart', 'my life',
             'தசை', 'திசை', 'புக்தி', 'ஏழரை', 'நட்சத்திரம்', 'ஜாதகம்', 'எதிர்காலம்', 'இந்த வருடம்', 'பஞ்சாங்கம்',
@@ -143,10 +143,24 @@ class AstroAiOffline
             return self::finish($route['bubbles'], '', null, (bool) ($route['handoff'] ?? false), $lang);
         }
         if ($guidedKind === 'remedy') {
+            $guidedId = (string) ($guided['id'] ?? '');
+            if ($guidedId === 'remedy-rahuketu') {
+                $bubbles = [
+                    self::remedyText('Rahu', $lang),
+                    self::remedyText('Ketu', $lang),
+                ];
+                return self::finish($bubbles, self::remedyMultiSourceLine(['Rahu', 'Ketu']), null, false, $lang);
+            }
             $planet = (isset($guided['planet']) && is_string($guided['planet']) && isset(self::PLANET_NAMES[$guided['planet']]))
                 ? $guided['planet'] : null;
             $target = $planet ?? self::dashaPlanet($chart);
             $bubbles = [self::remedyText($target, $lang)];
+            if ($guidedId === 'remedy-personal' && $chart !== null) {
+                $secondary = self::secondaryPersonalRemedy($chart, $target, $lang);
+                if ($secondary !== '') {
+                    $bubbles[] = $secondary;
+                }
+            }
             if (($guided['focus'] ?? '') === 'temple') {
                 $temple = self::templeText($lang);
                 if ($temple !== '') {
@@ -198,6 +212,16 @@ class AstroAiOffline
             return self::finish($bubbles, $sourceLine, $forcedArea, $forcedArea === 'health', $lang);
         }
 
+        // 2b. Specific classical astrology topics (Bhavas 1-12, named Doshas,
+        // Yogas, Transits/Peyarchi, Panchangam windows, 10 Poruthams, Navamsa,
+        // Lagna/Rasi/Nakshatra structure, Baby-naming Padas, Navagraha temples)
+        // win before generic single-word area/planet matching so "5th house"
+        // never routes to Property and "Rahu Kalam" never omits timings.
+        $enc = self::encyclopediaAnswer($q, $lang, $chart, $name);
+        if ($enc !== null) {
+            return self::finish($enc['bubbles'], $enc['sourceLine'], $enc['areaId'], false, $lang);
+        }
+
         // Area choice on WHOLE words (the shared retrieve() matches substrings,
         // so "current" would hit the property phrase "rent"). Re-scope the
         // rules when the whole-word winner differs.
@@ -209,9 +233,35 @@ class AstroAiOffline
         $planet = self::mentionedPlanet($q);
         $wantsRemedy = self::containsAny($q, self::REMEDY_WORDS);
 
-        // 3. A remedy question with no life-area: remedies registry only.
-        if ($areaId === null && ($wantsRemedy || $planet !== null)) {
-            $bubbles = [self::remedyText($planet ?? self::dashaPlanet($chart), $lang)];
+        // 3. A planet or remedy question with no specific life-area (including
+        // "Tell me about Guru in my chart" where only generic words like
+        // "chart"/"horoscope" matched current-guidance): include classical
+        // graha signification + personal chart placement + affordable remedies.
+        $planetWithoutSpecificArea = $planet !== null
+            && ($areaId === null || ($areaId === 'current-guidance' && !self::containsAny($q, self::PERIOD_WORDS)));
+        if ($planetWithoutSpecificArea || ($areaId === null && $wantsRemedy)) {
+            $bothNodes = self::containsAny($q, self::PLANET_NAMES['Rahu']) && self::containsAny($q, self::PLANET_NAMES['Ketu']);
+            if ($bothNodes) {
+                $bubbles = [self::remedyText('Rahu', $lang), self::remedyText('Ketu', $lang)];
+                if ($chart === null) {
+                    $bubbles[] = self::personalHint($lang);
+                }
+                return self::finish($bubbles, self::remedyMultiSourceLine(['Rahu', 'Ketu']), null, false, $lang);
+            }
+            $bubbles = [];
+            if ($planet !== null && !$wantsRemedy) {
+                $profile = self::grahaProfileLine($planet, $lang, $chart);
+                if ($profile !== '') {
+                    $bubbles[] = $profile;
+                }
+            }
+            $bubbles[] = self::remedyText($planet ?? self::dashaPlanet($chart), $lang);
+            if ($planet === null && self::containsAny($q, ['temple', 'temples', 'sthalam', 'கோயில்', 'கோவில்', 'मंदिर'])) {
+                $temple = self::templeText($lang);
+                if ($temple !== '') {
+                    $bubbles[] = $temple;
+                }
+            }
             if ($chart === null) {
                 $bubbles[] = self::personalHint($lang);
             }
@@ -299,9 +349,14 @@ class AstroAiOffline
             if ($chart === null) {
                 $bubbles[] = self::personalHint($lang);
             }
-            // Practical steps are written in English in the rule base.
-            if ($tips && $lang === 'en') {
-                $bubbles[] = 'Practical steps: ' . implode('; ', array_slice(array_values(array_unique($tips)), 0, 3)) . '.';
+            // Practical steps are localized per language in the rule base.
+            if ($tips) {
+                $tipPrefix = self::t($lang, [
+                    'en' => 'Practical steps: ',
+                    'ta' => 'நடைமுறை படிகள்: ',
+                    'hi' => 'व्यावहारिक कदम: ',
+                ]);
+                $bubbles[] = $tipPrefix . implode('; ', array_slice(array_values(array_unique($tips)), 0, 3)) . ($lang === 'hi' ? '।' : '.');
             }
             if ($forceTiming || self::containsAny(mb_strtolower($question, 'UTF-8'), self::TIMING_WORDS)) {
                 $period = self::periodLine($chart, $lang);
@@ -358,9 +413,14 @@ class AstroAiOffline
                 'hi' => 'आपकी कुंडली पर शास्त्रीय तमिल ग्रंथ क्या जोड़ते हैं:',
             ]) . "\n" . implode("\n", $ruleLines);
         }
-        // Practical steps are written in English in the rule base.
-        if ($tips && $lang === 'en') {
-            $bubbles[] = 'Practical steps: ' . implode('; ', array_slice(array_values(array_unique($tips)), 0, 3)) . '.';
+        // Practical steps are localized per language in the rule base.
+        if ($tips) {
+            $tipPrefix = self::t($lang, [
+                'en' => 'Practical steps: ',
+                'ta' => 'நடைமுறை படிகள்: ',
+                'hi' => 'व्यावहारिक कदम: ',
+            ]);
+            $bubbles[] = $tipPrefix . implode('; ', array_slice(array_values(array_unique($tips)), 0, 3)) . ($lang === 'hi' ? '।' : '.');
         }
 
         if ($forceTiming || self::containsAny(mb_strtolower($question, 'UTF-8'), self::TIMING_WORDS)) {
@@ -411,6 +471,17 @@ class AstroAiOffline
 
         // Curated options each ask one thing; answer that thing, not the whole card.
         if ($focus !== null && $chart !== null) {
+            if (in_array('current-dasha-explained', $focus, true)) {
+                $period = self::periodLine($chart, $lang);
+                return array_values(array_filter([
+                    trim(($name !== '' ? $name . ', ' : '') . $period),
+                    self::t($lang, [
+                        'en' => 'The Mahadasha sets the overarching multi-year chapter of life, while the Bhukti (Antardasha) inside it governs the immediate months and daily momentum — check both lords together rather than one planet alone.',
+                        'ta' => 'மகாதசை பல ஆண்டுகளுக்கான பெரிய வாழ்க்கை அத்தியாயத்தைக் காட்டுகிறது; அதற்குள் நடக்கும் புக்தி (அந்தர்தசை) தற்போதைய மாதங்களின் உடனடி போக்கைத் தீர்மானிக்கிறது — இரு தசா-புக்தி நாதர்களையும் இணைத்தே பலன் காண வேண்டும்.',
+                        'hi' => 'महादशा कई वर्षों के बड़े जीवन-अध्याय को दर्शाती है, जबकि उसके भीतर चल रही भुक्ति (अंतर्दशा) वर्तमान महीनों की तात्कालिक दिशा तय करती है — दोनों स्वामियों को साथ मिलाकर ही फल समझना चाहिए।',
+                    ]),
+                ], fn ($line) => $line !== ''));
+            }
             if (in_array('current-nakshatra', $focus, true)) {
                 $star = self::starLine($chart, $lang);
                 return [trim(($name !== '' ? $name . ', ' : '') . ($star !== '' ? $star : self::generalAreaText('current-guidance', $lang)))];
@@ -567,14 +638,11 @@ class AstroAiOffline
             }));
         }
         if (empty($all)) {
-            return [
-                self::t($lang, [
-                    'en' => 'A dosha check needs your own chart. I could not read the dosha results for this conversation.',
-                    'ta' => 'தோஷ பரிசோதனைக்கு உங்கள் சொந்த ஜாதகம் தேவை. இந்த உரையாடலுக்கான தோஷ முடிவுகளை என்னால் படிக்க முடியவில்லை.',
-                    'hi' => 'दोष जाँच के लिए आपकी अपनी कुंडली चाहिए। इस बातचीत के दोष परिणाम मैं नहीं पढ़ सका।',
-                ]),
+            $classical = self::classicalDoshaFallback($wanted, $lang);
+            return array_values(array_filter([
+                $classical,
                 self::personalHint($lang),
-            ];
+            ], static fn ($s) => $s !== ''));
         }
 
         $verdict = static function ($present, string $lang): string {
@@ -1230,7 +1298,7 @@ class AstroAiOffline
         $offer = '';
         foreach (($reg['universal'] ?? []) as $u) {
             if (($u['id'] ?? '') === 'navagraha-sthalam') {
-                $offer = (string) ($u['offer'] ?? '');
+                $offer = (string) ($u['offerI18n'][$lang] ?? ($u['offer'] ?? ''));
                 break;
             }
         }
@@ -1285,7 +1353,7 @@ class AstroAiOffline
                     'meaning' => $rule['meaning'][$lang] ?? ($rule['meaning']['en'] ?? ''),
                     'general' => $rule['general'][$lang] ?? ($rule['general']['en'] ?? ''),
                     'easing' => $rule['easing'] ?? '',
-                    'practical' => $rule['practical'] ?? [],
+                    'practical' => $rule['practicalI18n'][$lang] ?? ($rule['practical'] ?? []),
                     'sources' => $labels,
                     'fired' => AstroAiProvider::evaluateCondition($rule['condition'] ?? [], $chart, $question),
                 ];
@@ -1421,19 +1489,23 @@ class AstroAiOffline
                 if (($g['graha'] ?? '') !== $planet) {
                     continue;
                 }
-                $label = $lang === 'ta' ? (string) ($g['tamil'] ?? $planet) . ' (' . $planet . ')'
-                    : ($lang === 'hi' ? (string) ($g['hindi'] ?? $planet) . ' (' . $planet . ')' : $planet);
+                $label = $lang === 'ta' ? (string) ($g['tamil'] ?? $planet)
+                    : ($lang === 'hi' ? (string) ($g['hindi'] ?? $planet) : $planet);
                 $l = self::t($lang, [
                     'en' => ['Simple remedies for ', 'Day: ', 'Prayer: ', 'Charity: ', 'Temple: '],
                     'ta' => [' - எளிய பரிகாரங்கள்', 'கிழமை: ', 'வழிபாடு: ', 'தானம்: ', 'கோயில்: '],
                     'hi' => [' - सरल उपाय', 'दिन: ', 'प्रार्थना: ', 'दान: ', 'मंदिर: '],
                 ]);
                 $head = $lang === 'en' ? $l[0] . $label . ':' : $label . $l[0] . ':';
+                $weekday = (string) ($g['weekdayI18n'][$lang] ?? ($g['weekday'] ?? ''));
+                $prayer = (string) ($g['mantra']['simpleI18n'][$lang] ?? ($g['mantra']['simple'] ?? ''));
+                $charity = (string) ($g['charityI18n'][$lang] ?? ($g['charity'] ?? ''));
+                $temple = (string) ($g['temple']['nameI18n'][$lang] ?? ($g['temple']['name'] ?? ''));
                 return $head
-                    . "\n• " . $l[1] . ($g['weekday'] ?? '')
-                    . "\n• " . $l[2] . ($g['mantra']['simple'] ?? '')
-                    . "\n• " . $l[3] . ($g['charity'] ?? '')
-                    . "\n• " . $l[4] . ($g['temple']['name'] ?? '')
+                    . "\n• " . $l[1] . $weekday
+                    . "\n• " . $l[2] . $prayer
+                    . "\n• " . $l[3] . $charity
+                    . "\n• " . $l[4] . $temple
                     . "\n" . self::t($lang, [
                         'en' => 'Do what you can with devotion - no costly ritual is needed.',
                         'ta' => 'உங்களால் முடிந்ததை பக்தியுடன் செய்யுங்கள் - செலவான சடங்குகள் தேவையில்லை.',
@@ -1443,7 +1515,7 @@ class AstroAiOffline
         }
         $lines = [];
         foreach (($reg['universal'] ?? []) as $u) {
-            $lines[] = '• ' . ($u['offer'] ?? '');
+            $lines[] = '• ' . (string) ($u['offerI18n'][$lang] ?? ($u['offer'] ?? ''));
         }
         return self::t($lang, [
             'en' => 'Simple remedies our texts recommend for everyone:',
@@ -1454,17 +1526,325 @@ class AstroAiOffline
 
     private static function remedySourceLine(?string $planet): string
     {
+        return self::remedyMultiSourceLine($planet !== null ? [$planet] : []);
+    }
+
+    /**
+     * @param string[] $planets
+     */
+    private static function remedyMultiSourceLine(array $planets): string
+    {
         $reg = json_decode((string) file_get_contents(self::kbFile('/knowledge/ai-astrologer/rules/remedies.json')), true) ?: [];
         $ids = [];
         foreach (($reg['grahas'] ?? []) as $g) {
-            if ($planet !== null && ($g['graha'] ?? '') === $planet) {
+            if (in_array((string) ($g['graha'] ?? ''), $planets, true)) {
                 foreach (($g['source'] ?? []) as $s) {
                     $ids[] = (string) ($s['id'] ?? '');
                 }
             }
         }
         $ids = array_values(array_filter(array_unique($ids), [AstroAiProvider::class, 'isCitableId']));
-        return $ids ? 'Source: ' . implode(' · ', array_slice($ids, 0, 3)) : '';
+        return $ids ? 'Source: ' . implode(' · ', array_slice($ids, 0, 4)) : '';
+    }
+
+    /** Adds active Bhukti / Janma-star lord prayer alongside running Mahadasha for personal remedies. */
+    private static function secondaryPersonalRemedy(array $chart, ?string $primary, string $lang): string
+    {
+        $candidates = [];
+        foreach (['currentAntardasha', 'moonNakshatraLord'] as $field) {
+            $p = (string) ($chart[$field] ?? '');
+            if ($p !== '' && isset(self::PLANET_NAMES[$p]) && $p !== $primary && !in_array($p, $candidates, true)) {
+                $candidates[] = $p;
+            }
+        }
+        if ($candidates === []) {
+            return '';
+        }
+        $reg = json_decode((string) file_get_contents(self::kbFile('/knowledge/ai-astrologer/rules/remedies.json')), true) ?: [];
+        $lines = [];
+        foreach (array_slice($candidates, 0, 2) as $cand) {
+            foreach (($reg['grahas'] ?? []) as $g) {
+                if (($g['graha'] ?? '') !== $cand) {
+                    continue;
+                }
+                $label = $lang === 'ta' ? (string) ($g['tamil'] ?? $cand)
+                    : ($lang === 'hi' ? (string) ($g['hindi'] ?? $cand) : $cand);
+                $day = (string) ($g['weekdayI18n'][$lang] ?? ($g['weekday'] ?? ''));
+                $prayer = (string) ($g['mantra']['simpleI18n'][$lang] ?? ($g['mantra']['simple'] ?? ''));
+                $lines[] = '• ' . $label . ' (' . $day . '): ' . $prayer;
+            }
+        }
+        if ($lines === []) {
+            return '';
+        }
+        return self::t($lang, [
+            'en' => 'Also supportive for your active sub-period / birth-star lord:',
+            'ta' => 'உங்கள் நடப்பு புக்தி / ஜன்ம நட்சத்திர அதிபதிக்கு கூடுதல் எளிய வழிபாடு:',
+            'hi' => 'आपकी सक्रिय भुक्ति / जन्म-नक्षत्र स्वामी हेतु अतिरिक्त सरल उपासना:',
+        ]) . "\n" . implode("\n", $lines);
+    }
+
+    /** Classical explanation shown when Dosha options are tapped before binding a chart. */
+    private static function classicalDoshaFallback(string $wanted, string $lang): string
+    {
+        $enc = json_decode((string) file_get_contents(self::kbFile('/knowledge/ai-astrologer/rules/astrology-encyclopedia.json')), true) ?: [];
+        $topics = is_array($enc['topics'] ?? null) ? $enc['topics'] : [];
+        if ($wanted !== 'all') {
+            foreach ($topics as $t) {
+                if (($t['category'] ?? '') === 'dosha' && ($t['doshaKey'] ?? '') === $wanted) {
+                    return (string) ($t['body'][$lang] ?? ($t['body']['en'] ?? ''));
+                }
+            }
+        }
+        $summaryLines = [];
+        foreach ($topics as $t) {
+            if (($t['category'] ?? '') === 'dosha' && in_array((string) ($t['doshaKey'] ?? ''), ['kuja', 'kalasarpa', 'pitru', 'guruchandala'], true)) {
+                $body = (string) ($t['body'][$lang] ?? ($t['body']['en'] ?? ''));
+                $sep = $lang === 'hi' ? '।' : '.';
+                $cut = mb_strpos($body, $sep, 0, 'UTF-8');
+                $firstSentence = $cut !== false ? mb_substr($body, 0, $cut + 1, 'UTF-8') : $body;
+                $summaryLines[] = '• ' . trim($firstSentence);
+            }
+        }
+        $intro = self::t($lang, [
+            'en' => 'How classical Vedic & Tamil texts read the four standard chart doshas (attach your report to check your personal verdicts):',
+            'ta' => 'மரபு வேத மற்றும் தமிழ் நூல்களின்படி நான்கு முக்கிய தோஷங்களின் விளக்கம் (உங்கள் தனிப்பட்ட முடிவிற்கு அறிக்கையை இணைக்கவும்):',
+            'hi' => 'शास्त्रीय वैदिक व तमिल ग्रंथों में चार प्रमुख दोषों का सार (अपनी व्यक्तिगत स्थिति देखने हेतु रिपोर्ट जोड़ें):',
+        ]);
+        return $summaryLines !== [] ? $intro . "\n" . implode("\n", $summaryLines) : $intro;
+    }
+
+    /** Classical signification + personal house placement for a named Graha. */
+    private static function grahaProfileLine(string $planet, string $lang, ?array $chart): string
+    {
+        $enc = json_decode((string) file_get_contents(self::kbFile('/knowledge/ai-astrologer/rules/astrology-encyclopedia.json')), true) ?: [];
+        $profile = (string) ($enc['grahas']['profiles'][$planet][$lang] ?? ($enc['grahas']['profiles'][$planet]['en'] ?? ''));
+        if ($profile === '') {
+            return '';
+        }
+        if ($chart === null || !isset($chart['planetHouse'][$planet])) {
+            return $profile;
+        }
+        $house = (int) $chart['planetHouse'][$planet];
+        $dig = (string) ($chart['dignity'][$planet] ?? 'neutral');
+        $digWord = [
+            'strong' => ['en' => 'strong own/exalted dignity', 'ta' => 'ஆட்சி/உச்ச பலத்துடன்', 'hi' => 'स्वराशि/उच्च बल के साथ'],
+            'weak' => ['en' => 'needing gentle support', 'ta' => 'மென்மையான கவனம் தேவைப்படும் நிலையில்', 'hi' => 'सौम्य संतुलन की आवश्यकता के साथ'],
+            'neutral' => ['en' => 'balanced placement', 'ta' => 'சமநிலையில்', 'hi' => 'संतुलित स्थिति में'],
+        ][$dig] ?? ['en' => 'balanced placement', 'ta' => 'சமநிலையில்', 'hi' => 'संतुलित स्थिति में'];
+        $personal = self::t($lang, [
+            'en' => 'In your horoscope, this planet stands in house ' . $house . ' (' . $digWord['en'] . ').',
+            'ta' => 'உங்கள் ஜாதகத்தில் இக்கிரகம் ' . $house . '-ஆம் வீட்டில் (' . $digWord['ta'] . ') அமைந்துள்ளது.',
+            'hi' => 'आपकी कुंडली में यह ग्रह ' . $house . 'वें भाव में (' . $digWord['hi'] . ') स्थित है।',
+        ]);
+        return $profile . "\n" . $personal;
+    }
+
+    /**
+     * Multi-source Vedic & Tamil encyclopedia matcher for specific Bhavas,
+     * Doshas, Yogas, Gochara transits, Panchangam windows, 10 Poruthams,
+     * Navamsa/Lagna/Rasi/Nakshatra structure, Namakaranam Padas, and all 9
+     * Navagraha temples — combining personal chart facts whenever attached.
+     *
+     * @return ?array{bubbles:string[], sourceLine:string, areaId:?string}
+     */
+    private static function encyclopediaAnswer(string $q, string $lang, ?array $chart, string $name): ?array
+    {
+        $enc = json_decode((string) file_get_contents(self::kbFile('/knowledge/ai-astrologer/rules/astrology-encyclopedia.json')), true) ?: [];
+        if ($enc === []) {
+            return null;
+        }
+
+        // 1. Explicit numbered Bhava / House query (1..12 or all 12 houses).
+        $houseNum = self::detectAskedBhava($q);
+        if ($houseNum !== null) {
+            $src = [];
+            foreach (($enc['bhavas']['source'] ?? []) as $s) {
+                $id = (string) ($s['id'] ?? '');
+                if ($id !== '' && AstroAiProvider::isCitableId($id)) {
+                    $src[] = AstroAiProvider::formatCitation($s, $lang);
+                }
+            }
+            $sourceLine = $src ? 'Source: ' . implode(' · ', array_slice(array_values(array_unique($src)), 0, 3)) : '';
+            if ($houseNum === 0) {
+                $body = (string) ($enc['bhavas']['overview'][$lang] ?? ($enc['bhavas']['overview']['en'] ?? ''));
+                $bubbles = [$body];
+                if ($chart === null) {
+                    $bubbles[] = self::personalHint($lang);
+                }
+                return ['bubbles' => $bubbles, 'sourceLine' => $sourceLine, 'areaId' => null];
+            }
+            $key = (string) $houseNum;
+            $body = (string) ($enc['bhavas']['houses'][$key][$lang] ?? ($enc['bhavas']['houses'][$key]['en'] ?? ''));
+            if ($body !== '') {
+                $bubbles = [$body];
+                if ($chart !== null) {
+                    $chartNote = self::chartBhavaLine($chart, $houseNum, $lang);
+                    if ($chartNote !== '') {
+                        $bubbles[] = $chartNote;
+                    }
+                } else {
+                    $bubbles[] = self::personalHint($lang);
+                }
+                return ['bubbles' => $bubbles, 'sourceLine' => $sourceLine, 'areaId' => null];
+            }
+        }
+
+        // 2. Explicit topic match from triggers (longest matching phrase wins).
+        $bestTopic = null;
+        $bestLen = 0;
+        foreach (($enc['topics'] ?? []) as $topic) {
+            foreach (['en', 'ta', 'hi'] as $tl) {
+                foreach (($topic['triggers'][$tl] ?? []) as $phrase) {
+                    $p = mb_strtolower(trim((string) $phrase), 'UTF-8');
+                    if ($p !== '' && self::hasWord($q, $p)) {
+                        $len = mb_strlen($p, 'UTF-8');
+                        if ($len > $bestLen) {
+                            $bestLen = $len;
+                            $bestTopic = $topic;
+                        }
+                    }
+                }
+            }
+        }
+        if ($bestTopic === null) {
+            return null;
+        }
+
+        $body = (string) ($bestTopic['body'][$lang] ?? ($bestTopic['body']['en'] ?? ''));
+        $bubbles = [];
+
+        // Enrich with the customer's own chart verdict whenever applicable!
+        $doshaKey = (string) ($bestTopic['doshaKey'] ?? '');
+        if ($doshaKey !== '' && $doshaKey !== 'all' && $chart !== null && !empty($chart['doshaDetails'])) {
+            $personal = self::doshaBubbles(['dosha' => $doshaKey], $lang, $chart, $name);
+            if ($personal !== []) {
+                $bubbles[] = $personal[0];
+            }
+        } elseif (($bestTopic['id'] ?? '') === 'transit-sadesati-ashtama-kantaka' && $chart !== null) {
+            $saniFromMoon = (int) ($chart['saniTransitFromMoon'] ?? 0);
+            if ($saniFromMoon > 0) {
+                $inSadeSati = in_array($saniFromMoon, [12, 1, 2], true);
+                $inAshtama = $saniFromMoon === 8;
+                $bubbles[] = self::t($lang, [
+                    'en' => ($name !== '' ? $name . ', i' : 'I') . 'n your chart, transit Saturn stands in house ' . $saniFromMoon . ' counted from your natal Moon — '
+                        . ($inSadeSati ? 'Ezharai Sani (Sade Sati) is currently active.' : ($inAshtama ? 'Ashtama Sani (8th from Moon) is currently active.' : 'Sade Sati and Ashtama Sani are not active right now.')),
+                    'ta' => ($name !== '' ? $name . ', ' : '') . 'உங்கள் ஜாதகப்படி தற்போது கோசார சனி உங்கள் ஜன்ம ராசியிலிருந்து ' . $saniFromMoon . '-ஆம் இடத்தில் உள்ளார் — '
+                        . ($inSadeSati ? 'தற்போது ஏழரைச் சனி நடைபெறுகிறது.' : ($inAshtama ? 'தற்போது அஷ்டம சனி நடைபெறுகிறது.' : 'தற்போது ஏழரைச் சனியோ அஷ்டம சனியோ இல்லை.')),
+                    'hi' => ($name !== '' ? $name . ', ' : '') . 'आपकी कुंडली के अनुसार गोचर शनि आपकी जन्म राशि से ' . $saniFromMoon . 'वें भाव में हैं — '
+                        . ($inSadeSati ? 'अभी साढ़ेसाती सक्रिय है।' : ($inAshtama ? 'अभी अष्टम शनि (ढैय्या) सक्रिय है।' : 'अभी साढ़ेसाती और अष्टम शनि सक्रिय नहीं हैं।')),
+                ]);
+            }
+        } elseif (($bestTopic['id'] ?? '') === 'fundamentals-lagna-rasi-nakshatra-navamsa-dasha' && $chart !== null) {
+            $star = self::starLine($chart, $lang);
+            $period = self::periodLine($chart, $lang);
+            $joined = trim($star . ' ' . $period);
+            if ($joined !== '') {
+                $bubbles[] = $joined;
+            }
+        }
+
+        $bubbles[] = $body;
+        if ($chart === null && in_array((string) ($bestTopic['category'] ?? ''), ['dosha', 'yoga', 'transit', 'fundamentals'], true)) {
+            $bubbles[] = self::personalHint($lang);
+        }
+
+        $src = [];
+        foreach (($bestTopic['source'] ?? []) as $s) {
+            $id = (string) ($s['id'] ?? '');
+            if ($id !== '' && AstroAiProvider::isCitableId($id)) {
+                $src[] = AstroAiProvider::formatCitation($s, $lang);
+            }
+        }
+        $sourceLine = $src ? 'Source: ' . implode(' · ', array_slice(array_values(array_unique($src)), 0, 3)) : '';
+        $areaId = ($bestTopic['id'] ?? '') === 'transit-sadesati-ashtama-kantaka' ? 'current-guidance' : null;
+        return ['bubbles' => $bubbles, 'sourceLine' => $sourceLine, 'areaId' => $areaId];
+    }
+
+    /** Detects explicit astrological house queries (1..12, or 0 for all 12 houses). */
+    private static function detectAskedBhava(string $q): ?int
+    {
+        if (preg_match('/\b(12|twelve)\s+(houses|bhavas)\b/u', $q) === 1
+            || mb_strpos($q, '12 பாவ', 0, 'UTF-8') !== false
+            || mb_strpos($q, '12 வீடு', 0, 'UTF-8') !== false
+            || mb_strpos($q, 'பன்னிரண்டு பாவ', 0, 'UTF-8') !== false
+            || mb_strpos($q, '12 भाव', 0, 'UTF-8') !== false
+            || mb_strpos($q, 'बारह भाव', 0, 'UTF-8') !== false
+            || self::hasWord($q, 'kendra') || self::hasWord($q, 'trikona')
+            || self::hasWord($q, 'dusthana') || self::hasWord($q, 'upachaya')) {
+            return 0;
+        }
+        $map = [
+            12 => ['12th house', 'twelfth house', '12th bhava', 'vyaya bhava', '12-ஆம் வீடு', '12ஆம் வீடு', '12-ஆம் பாவம்', '12वाँ भाव', '12वे भाव', '12वें भाव', 'बारहवाँ भाव', 'द्वादश भाव'],
+            11 => ['11th house', 'eleventh house', '11th bhava', 'labha bhava', '11-ஆம் வீடு', '11ஆம் வீடு', '11-ஆம் பாவம்', '11वाँ भाव', '11वे भाव', '11वें भाव', 'ग्यारहवाँ भाव', 'एकादश भाव'],
+            10 => ['10th house', 'tenth house', '10th bhava', 'karma bhava', '10-ஆம் வீடு', '10ஆம் வீடு', '10-ஆம் பாவம்', '10वाँ भाव', '10वे भाव', '10वें भाव', 'दसवाँ भाव', 'दशम भाव'],
+            9 => ['9th house', 'ninth house', '9th bhava', 'bhagya bhava', 'dharma bhava', '9-ஆம் வீடு', '9ஆம் வீடு', '9-ஆம் பாவம்', '9वाँ भाव', '9वे भाव', '9वें भाव', 'नवाँ भाव', 'नवम भाव'],
+            8 => ['8th house', 'eighth house', '8th bhava', 'randhra bhava', '8-ஆம் வீடு', '8ஆம் வீடு', '8-ஆம் பாவம்', '8वाँ भाव', '8वे भाव', '8वें भाव', 'आठवाँ भाव', 'अष्टम भाव'],
+            7 => ['7th house', 'seventh house', '7th bhava', 'kalatra bhava', '7-ஆம் வீடு', '7ஆம் வீடு', '7-ஆம் பாவம்', '7वाँ भाव', '7वे भाव', '7वें भाव', 'सातवाँ भाव', 'सप्तम भाव'],
+            6 => ['6th house', 'sixth house', '6th bhava', 'roga bhava', '6-ஆம் வீடு', '6ஆம் வீடு', '6-ஆம் பாவம்', '6वाँ भाव', '6ठे भाव', 'छठा भाव', 'षष्ठ भाव'],
+            5 => ['5th house', 'fifth house', '5th bhava', 'putra bhava', 'poorvapunya', '5-ஆம் வீடு', '5ஆம் வீடு', '5-ஆம் பாவம்', '5वाँ भाव', '5वे भाव', '5वें भाव', 'पाँचवाँ भाव', 'पंचम भाव'],
+            4 => ['4th house', 'fourth house', '4th bhava', 'sukha bhava', '4-ஆம் வீடு', '4ஆம் வீடு', '4-ஆம் பாவம்', '4था भाव', '4थे भाव', 'चौथा भाव', 'चतुर्थ भाव'],
+            3 => ['3rd house', 'third house', '3rd bhava', 'sahaja bhava', 'parakrama bhava', '3-ஆம் வீடு', '3ஆம் வீடு', '3-ஆம் பாவம்', '3रा भाव', '3रे भाव', 'तीसरा भाव', 'तृतीय भाव'],
+            2 => ['2nd house', 'second house', '2nd bhava', 'dhana bhava', 'kutumba bhava', '2-ஆம் வீடு', '2ஆம் வீடு', '2-ஆம் பாவம்', '2रा भाव', '2रे भाव', 'दूसरा भाव', 'द्वितीय भाव'],
+            1 => ['1st house', 'first house', '1st bhava', 'tanu bhava', '1-ஆம் வீடு', '1ஆம் வீடு', '1-ஆம் பாவம்', '1ला भाव', '1ले भाव', 'पहला भाव', 'प्रथम भाव'],
+        ];
+        foreach ($map as $num => $phrases) {
+            foreach ($phrases as $p) {
+                if (self::hasWord($q, $p)) {
+                    return $num;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Personal chart placement line for a specific house 1..12. */
+    private static function chartBhavaLine(array $chart, int $houseNum, string $lang): string
+    {
+        $planetLabels = [
+            'Surya' => ['en' => 'Surya (Sun)', 'ta' => 'சூரியன்', 'hi' => 'सूर्य'],
+            'Chandra' => ['en' => 'Chandra (Moon)', 'ta' => 'சந்திரன்', 'hi' => 'चंद्रमा'],
+            'Sevvai' => ['en' => 'Sevvai (Mars)', 'ta' => 'செவ்வாய்', 'hi' => 'मंगल'],
+            'Budha' => ['en' => 'Budha (Mercury)', 'ta' => 'புதன்', 'hi' => 'बुध'],
+            'Guru' => ['en' => 'Guru (Jupiter)', 'ta' => 'குரு', 'hi' => 'गुरु'],
+            'Sukra' => ['en' => 'Sukra (Venus)', 'ta' => 'சுக்கிரன்', 'hi' => 'शुक्र'],
+            'Sani' => ['en' => 'Sani (Saturn)', 'ta' => 'சனி', 'hi' => 'शनि'],
+            'Rahu' => ['en' => 'Rahu', 'ta' => 'ராகு', 'hi' => 'राहु'],
+            'Ketu' => ['en' => 'Ketu', 'ta' => 'கேது', 'hi' => 'केतु'],
+        ];
+        $occupants = [];
+        foreach (($chart['planetHouse'] ?? []) as $p => $h) {
+            if ($p === 'Moon') {
+                continue;
+            }
+            if ((int) $h === $houseNum && isset($planetLabels[$p])) {
+                $occupants[] = $planetLabels[$p][$lang] ?? $p;
+            }
+        }
+        $lordTo = $chart['lordHouse'][$houseNum] ?? null;
+        $parts = [];
+        if ($occupants !== []) {
+            $list = implode(', ', $occupants);
+            $parts[] = self::t($lang, [
+                'en' => 'Planets placed in your house ' . $houseNum . ': ' . $list . '.',
+                'ta' => 'உங்கள் ' . $houseNum . '-ஆம் வீட்டில் நின்ற கிரகங்கள்: ' . $list . '.',
+                'hi' => 'आपके ' . $houseNum . 'वें भाव में स्थित ग्रह: ' . $list . '।',
+            ]);
+        } else {
+            $parts[] = self::t($lang, [
+                'en' => 'No natal planet sits directly in house ' . $houseNum . ' of your chart.',
+                'ta' => 'உங்கள் ஜாதகத்தில் ' . $houseNum . '-ஆம் வீட்டில் நேரில் கிரகம் எதுவும் இல்லை.',
+                'hi' => 'आपकी कुंडली के ' . $houseNum . 'वें भाव में कोई ग्रह सीधे स्थित नहीं है।',
+            ]);
+        }
+        if ($lordTo !== null) {
+            $parts[] = self::t($lang, [
+                'en' => 'The lord of house ' . $houseNum . ' occupies house ' . (int) $lordTo . '.',
+                'ta' => $houseNum . '-ஆம் வீட்டு அதிபதி ' . (int) $lordTo . '-ஆம் வீட்டில் அமர்ந்துள்ளார்.',
+                'hi' => $houseNum . 'वें भाव का स्वामी ' . (int) $lordTo . 'वें भाव में स्थित है।',
+            ]);
+        }
+        return implode(' ', $parts);
     }
 
     // ------------------------------------------------------------------
@@ -1662,7 +2042,9 @@ class AstroAiOffline
                 foreach ($phrases as $phrase) {
                     $rest = str_replace(mb_strtolower($phrase, 'UTF-8'), ' ', $rest);
                 }
-                if (self::matchExtraArea($rest) !== null || self::containsAny($rest, self::REMEDY_WORDS)) {
+                if (self::matchExtraArea($rest) !== null
+                    || self::containsAny($rest, self::REMEDY_WORDS)
+                    || self::encyclopediaAnswer($rest, $lang, null, '') !== null) {
                     return [];
                 }
                 $bubbles = [self::smallTalkText($id, $lang)];
@@ -1733,7 +2115,8 @@ class AstroAiOffline
             return false;
         }
         return self::containsAny($q, self::GREETING_WORDS) && self::matchExtraArea($q) === null
-            && !self::containsAny($q, self::REMEDY_WORDS);
+            && !self::containsAny($q, self::REMEDY_WORDS)
+            && self::encyclopediaAnswer($q, 'en', null, '') === null;
     }
 
     private static function areaPhrases(): array

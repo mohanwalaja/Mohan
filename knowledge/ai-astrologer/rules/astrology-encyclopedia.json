@@ -1,0 +1,564 @@
+{
+  "version": "1.0.0",
+  "generatedOn": "2026-10-23",
+  "_purpose": "Multi-source verified Vedic and Tamil Jyotisha reference articles for personal chart readings, doshas, yogas, bhavas, grahas, transits, panchangam, porutham, baby naming, subha muhurtham, and chart fundamentals across English, Tamil, and Hindi.",
+  "topics": [
+    {
+      "id": "dosha-kuja-ref",
+      "category": "dosha",
+      "doshaKey": "kuja",
+      "triggers": {
+        "en": ["kuja dosha", "kuja dosham", "sevvai dosha", "sevvai dosham", "chevvai dosha", "chevvai dosham", "mangal dosha", "manglik", "angaraka dosha"],
+        "ta": ["செவ்வாய் தோஷம்", "குஜ தோஷம்", "அங்காரக தோஷம்"],
+        "hi": ["कुज दोष", "मंगल दोष", "मांगलिक दोष", "मांगलिक"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "EN-09", "level": "book" },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-07", "level": "book" },
+        { "id": "TP-06", "level": "content" }
+      ],
+      "body": {
+        "en": "Kuja (Sevvai / Mangal) Dosha occurs when Mars occupies the 2nd, 4th, 7th, 8th, or 12th house counted from Lagna, the natal Moon, or Venus (with classical South Indian practice also noting the 1st house in specific texts). In Brihat Parashara Hora Shastra, Poorva Parasariyam, and Uttara Kalamrita, it is treated strictly as a marriage-matching balance factor rather than a personal misfortune: many charts have automatic cancellation (Mars in own sign Aries/Scorpio or exaltation Capricorn, aspected/conjoined by Jupiter, or specific Lagna placements), or mutual balance (Dosha Samyam) with the partner. Traditional observance: Tuesday prayers to Lord Murugan / Subramaniya and visiting Vaitheeswaran Kovil.",
+        "ta": "செவ்வாய் (குஜ / அங்காரக) தோஷம் என்பது லக்னம், சந்திரன் அல்லது சுக்கிரனுக்கு 2, 4, 7, 8 அல்லது 12-ஆம் இடங்களில் செவ்வாய் அமையும் நிலையாகும். பூர்வ பாராசரியம் மற்றும் தமிழ் ஜோதிட மரபில் இது தனிப்பட்ட துரதிர்ஷ்டம் அல்ல; திருமணப் பொருத்தத்தில் இரு ஜாதகங்களையும் ஒப்பிட்டு சமன் செய்யும் (தோஷ சாம்யம்) அம்சமே. செவ்வாய் ஆட்சி (மேஷம்/விருச்சிகம்), உச்சம் (மகரம்) அல்லது குரு பார்வை/சேர்க்கை பெற்றால் தோஷ நிவர்த்தி உண்டாகும். எளிய வழிபாடு: செவ்வாய்க்கிழமை முருகப்பெருமான் வழிபாடு மற்றும் வைத்தீஸ்வரன் கோயில் தரிசனம்.",
+        "hi": "कुज (मंगल / सेव्वई) दोष तब बनता है जब मंगल लग्न, चंद्र या शुक्र से 2, 4, 7, 8 या 12वें भाव में स्थित हो। बृहत् पाराशर होरा शास्त्र और तमिल परंपरा में इसे व्यक्तिगत दुर्भाग्य नहीं, बल्कि विवाह मिलान में दोनों कुंडलियों के बीच संतुलन (दोष साम्य) देखने का बिंदु माना जाता है। मंगल के स्वराशि (मेष/वृश्चिक), उच्च (मकर) या गुरु की दृष्टि/युति में होने पर स्वतः परिहार हो जाता है। सरल उपाय: मंगलवार को सुब्रह्मण्य/हनुमान आराधना और वैदीश्वरन कोविल दर्शन।"
+      }
+    },
+    {
+      "id": "dosha-kalasarpa-ref",
+      "category": "dosha",
+      "doshaKey": "kalasarpa",
+      "triggers": {
+        "en": ["kala sarpa", "kalasarpa", "kaal sarp", "rahu ketu dosha", "sarpa dosha", "naga dosha"],
+        "ta": ["கால சர்ப்ப", "காலசர்ப்ப", "சர்ப்ப தோஷம்", "நாக தோஷம்", "ராகு கேது தோஷம்"],
+        "hi": ["काल सर्प", "कालसर्प", "सर्प दोष", "नाग दोष"]
+      },
+      "source": [
+        { "id": "EN-09", "level": "book" },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-07", "level": "passage", "page": "17" },
+        { "id": "TP-10", "level": "content" },
+        { "id": "TP-11", "level": "content" }
+      ],
+      "body": {
+        "en": "Kala Sarpa Yoga / Dosha forms when all seven planets (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn) sit on one side of the Rahu-Ketu axis with no planet outside it. Classical Parashari texts give greater weight to Lagna strength, Kendra lords, and running Dasha than to the axis alone: if even one planet sits outside or strong benefics hold Kendras, its pressure softens markedly and often channels into intense focus and self-made rise after early effort. Simple traditional remedies: Durga lamp worship for Rahu, Lord Vinayagar prayer with durva grass for Ketu, and visiting Thirunageswaram (Rahu Sthalam) or Keezhaperumpallam (Ketu Sthalam).",
+        "ta": "கால சர்ப்ப யோகம் / தோஷம் என்பது சூரியன் முதல் சனி வரையிலான ஏழு கிரகங்களும் ராகு-கேது அச்சின் ஒரே பக்கத்தில் அடங்கி நிற்கும் அமைப்பாகும். பூர்வ பாராசரிய மரபில் தனி அச்சை விட லக்ன பலம், கேந்திர அதிபதிகள் மற்றும் நடப்பு தசா-புக்திக்கே அதிக முக்கியத்துவம் தரப்படுகிறது; ஒரு கிரகம் வெளியில் இருந்தாலோ சுப பலம் இருந்தாலோ ஆரம்ப முயற்சிக்குப் பின் சிறந்த உயர்வு தரும். எளிய வழிபாடு: ராகுவுக்கு துர்க்கை வழிபாடு (திருநாகேஸ்வரம்) மற்றும் கேதுவுக்கு விநாயகர் அருகம்புல் வழிபாடு (கீழப்பெரும்பள்ளம்).",
+        "hi": "काल सर्प योग / दोष तब बनता है जब सूर्य से शनि तक सभी सात ग्रह राहु-केतु अक्ष के एक ही ओर स्थित हों। शास्त्रीय पाराशरी परंपरा में केवल अक्ष से अधिक महत्व लग्न बल, केंद्र स्वामियों और चल रही दशा-भुक्ति को दिया जाता है; यदि एक भी ग्रह बाहर हो या शुभ ग्रह बलवान हों तो प्रारंभिक परिश्रम के बाद एकाग्र सफलता मिलती है। सरल उपाय: राहु हेतु माँ दुर्गा दीप-पूजा (तिरुनागेश्वरम) और केतु हेतु गणेश जी को दूर्वा अर्पण (कीलपेरुम्पल्लम)।"
+      }
+    },
+    {
+      "id": "dosha-pitru-ref",
+      "category": "dosha",
+      "doshaKey": "pitru",
+      "triggers": {
+        "en": ["pitru dosha", "pitra dosha", "ancestral dosha"],
+        "ta": ["பித்ரு தோஷம்", "பிதுர் தோஷம்", "முன்னோர் தோஷம்"],
+        "hi": ["पितृ दोष", "पितर दोष"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-07", "level": "book" },
+        { "id": "TP-04", "level": "content" }
+      ],
+      "body": {
+        "en": "Pitru Dosha is read when the 9th house (house of dharma and ancestors), the 9th lord, or the Sun (karaka of father and lineage) stands afflicted by Rahu, Ketu, or Saturn. Tradition reads this calmly as an invitation to honour family elders and lineage duties rather than as fear: offering sesame-water tarpanam on Amavasya, feeding the hungry (annadhanam) in elders memory, caring respectfully for parents, and praying to Surya at Suryanar Kovil.",
+        "ta": "பித்ரு தோஷம் என்பது 9-ஆம் இடம் (பாக்கிய/பித்ரு ஸ்தானம்), 9-ஆம் அதிபதி அல்லது பித்ரு காரகனான சூரியன் ராகு, கேது அல்லது சனியால் பாதிக்கப்படும் அமைப்பாகும். மரபு இதை அச்சமாக அல்லாமல் முன்னோர் நினைவையும் பெற்றோர் கடமையையும் போற்றச் சொல்லும் குறிப்பாகக் கருதுகிறது. எளிய பரிகாரம்: அமாவாசை தர்ப்பணம்/எள் நீர் வழிபாடு, பசியுள்ளோருக்கு அன்னதானம், பெற்றோர்-பெரியோர் அரவணைப்பு மற்றும் சூரியனார் கோயில் தரிசனம்.",
+        "hi": "पितृ दोष तब पढ़ा जाता है जब नवम भाव (धर्म एवं पितृ स्थान), नवमेश या सूर्य राहु, केतु अथवा शनि से पीड़ित हों। शास्त्र इसे भय के रूप में नहीं, बल्कि पूर्वजों के प्रति कृतज्ञता और बड़ों की सेवा के स्मरण के रूप में देखते हैं। सरल उपाय: अमावस्या पर तिल-तर्पण, अन्नदान, माता-पिता व वृद्धजनों का सम्मान और सूर्यनार कोविल में सूर्य वंदना।"
+      }
+    },
+    {
+      "id": "dosha-guruchandala-ref",
+      "category": "dosha",
+      "doshaKey": "guruchandala",
+      "triggers": {
+        "en": ["guru chandala", "guru chandal", "chandala yoga", "chandala dosha"],
+        "ta": ["குரு சண்டால", "சண்டால யோகம்", "சண்டால தோஷம்"],
+        "hi": ["गुरु चांडाल", "चांडाल दोष", "चांडाल योग"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "EN-04", "level": "book" },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-07", "level": "passage", "page": "15-16" },
+        { "id": "TP-08", "level": "content" }
+      ],
+      "body": {
+        "en": "Guru Chandala Yoga / Dosha forms when Jupiter (Guru) shares a sign with Rahu (or Ketu). Saravali and Parashari classics read this as questioning convention or facing mixed advice from mentors during Guru/Rahu Bhuktis; when Jupiter holds own/exalted dignity or benefic aspect, it produces sharp, independent analytical ability. Simple remedies: Thursday Dakshinamurthy / Guru prayer at Alangudi, Durga/Vinayagar worship, and checking major decisions calmly before acting.",
+        "ta": "குரு சண்டால யோகம் / தோஷம் என்பது குரு பகவான் ராகு (அல்லது கேது) உடன் ஒரே ராசியில் இணையும் நிலையாகும். சாராவளி மற்றும் பூர்வ பாராசரிய நூல்கள் இதை மரபைக் கேள்வி கேட்கும் சுய சிந்தனை அல்லது ஆலோசனையில் கவனம் தேவைப்படும் அமைப்பாகக் கூறுகின்றன; குரு ஆட்சி/உச்சம் பெற்றால் சிறந்த ஆராய்ச்சித் திறன் தரும். எளிய வழிபாடு: வியாழக்கிழமை தட்சிணாமூர்த்தி / ஆலங்குடி குரு வழிபாடு மற்றும் துர்க்கை/விநாயகர் பிரார்த்தனை.",
+        "hi": "गुरु चांडाल योग / दोष तब बनता है जब बृहस्पति (गुरु) राहु (या केतु) के साथ एक ही राशि में स्थित हों। सारावली और पाराशरी ग्रंथ इसे स्वतंत्र सोच तथा सलाह परखकर निर्णय लेने का संकेत मानते हैं; गुरु बलवान हों तो गहरी शोध क्षमता मिलती है। सरल उपाय: गुरुवार को दक्षिणामूर्ति / आलंगुडी गुरु आराधना और दुर्गा/गणेश वंदना।"
+      }
+    },
+    {
+      "id": "dosha-other-classical",
+      "category": "dosha",
+      "doshaKey": "all",
+      "triggers": {
+        "en": ["kalathra dosha", "kalatra dosha", "putra dosha", "santhana dosha", "kemadruma", "sakata yoga", "grahan dosha", "papa kartari", "punarphoo"],
+        "ta": ["களத்திர தோஷம்", "புத்திர தோஷம்", "கேமத்ரும", "சகட யோகம்", "கிரகண தோஷம்", "பாப கர்த்தரி", "புனர்பூ"],
+        "hi": ["कलत्र दोष", "पुत्र दोष", "केमद्रुम", "शकट योग", "ग्रहण दोष", "पाप कर्तरी", "पुनर्फू"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI - VI-8 papa kartari, kemadruma and sakata." },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-02", "level": "book" },
+        { "id": "TA-07", "level": "book" }
+      ],
+      "body": {
+        "en": "Classical Jyotisha evaluates minor combinations alongside their built-in cancellations (Bhanga): Kalathra Dosha (affliction to the 7th house/Sukra) and Putra Dosha (affliction to the 5th house/Guru) soften whenever Jupiter or the house lord is strong; Kemadruma (no planets flanking Moon in 2nd/12th from Moon) cancels as soon as any planet occupies a Kendra from Lagna or Moon; Sakata (Moon 6th/8th/12th from Guru) softens when Moon sits in a Kendra from Lagna; Papa Kartari (Phaladeepika VI-8, malefics hemming a house) eases in benefic transits/Dashas; and Grahan / Punarphoo (luminary with nodes or Moon-Saturn) asks for calm mindfulness, routine, and simple weekday lamp prayer.",
+        "ta": "மரபு ஜோதிடத்தில் துணை தோஷங்கள் எப்போதும் நிவர்த்தி (பங்கம்) விதிகளுடன் சேர்ந்தே பார்க்கப்படுகின்றன: களத்திர தோஷம் (7-ஆம் இடம்/சுக்கிரன் பாதிப்பு) மற்றும் புத்திர தோஷம் (5-ஆம் இடம்/குரு பாதிப்பு) குரு அல்லது பாவாதிபதி பலத்தால் தணியும்; கேமத்ரும யோகம் லக்ன/சந்திர கேந்திரத்தில் கிரகம் இருந்தால் உடனே பங்கமாகும்; சகட யோகம் சந்திரன் லக்ன கேந்திரத்தில் இருந்தால் நிவர்த்தியாகும்; பாப கர்த்தரி (பலதீபிகை VI-8) சுப தசா-கோசாரத்தில் தணியும்; கிரகண/புனர்பூ அமைப்புகளுக்கு திங்கள்/சனி விளக்கு வழிபாடும் நிதானமான பழக்கமும் சிறந்த பலன் தரும்.",
+        "hi": "शास्त्रीय ज्योतिष में सूक्ष्म दोषों को सदैव उनके भंग (परिहार) नियमों के साथ पढ़ा जाता है: कलत्र दोष (सप्तम/शुक्र) व पुत्र दोष (पंचम/गुरु) शुभ दृष्टि या भावेश बल से शांत होते हैं; केमद्रुम योग लग्न या चंद्र से केंद्र में ग्रह होने पर भंग हो जाता है; शकट योग चंद्र के लग्न-केंद्र में होने से हल्का पड़ता है; पाप कर्तरी (फलदीपिका VI-8) शुभ गोचर/दशा में सहज हो जाता है; तथा ग्रहण/पुनर्फू योग में शांत दिनचर्या व दीप-प्रार्थना श्रेष्ठ रहती है।"
+      }
+    },
+    {
+      "id": "yoga-gajakesari",
+      "category": "yoga",
+      "yogaKey": "gajakesari",
+      "triggers": {
+        "en": ["gajakesari", "gaja kesari"],
+        "ta": ["கஜகேசரி"],
+        "hi": ["गजकेसरी"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI - auspicious yogas." },
+        { "id": "EN-04", "level": "book" },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-02", "level": "book" }
+      ],
+      "body": {
+        "en": "Gajakesari Yoga forms when Jupiter (Guru) stands in a Kendra — the 1st, 4th, 7th, or 10th house — counted from the natal Moon. Brihat Parashara Hora Shastra, Phaladeepika, Saravali, and Sadhaka Parisatham praise it for steady wisdom, good counsel, public respect, and resilience during difficulty, delivering most strongly during Jupiter or Moon Mahadasha/Bhukti when neither planet is severely debilitated.",
+        "ta": "கஜகேசரி யோகம் என்பது சந்திரனுக்கு கேந்திர இடங்களான 1, 4, 7 அல்லது 10-ஆம் வீடுகளில் குரு பகவான் அமையும் சுப யோகமாகும். பூர்வ பாராசரியம், பலதீபிகை, சாராவளி மற்றும் சாதக பாரிசாதம் ஆகிய நூல்கள் இதை நன்மதிப்பு, தெளிவான அறிவு, பேச்சாற்றல் மற்றும் இக்கட்டிலும் தாங்கி நிற்கும் மனவலிமை தரும் யோகமாகப் போற்றுகின்றன; குரு அல்லது சந்திர தசா-புக்தியில் இதன் பலன் சிறப்பாக வெளிப்படும்.",
+        "hi": "गजकेसरी योग तब बनता है जब बृहस्पति (गुरु) जन्म के चंद्रमा से केंद्र स्थान — 1, 4, 7 या 10वें भाव — में स्थित हों। बृहत् पाराशर होरा शास्त्र, फलदीपिका, सारावली और साधक पारिजातम् इसे विवेक, समाज में मान-सम्मान, वाक्-कौशल और कठिनाइयों में स्थिरता देने वाला शुभ योग बताते हैं, जिसका फल गुरु या चंद्र की दशा-भुक्ति में विशेष दिखता है।"
+      }
+    },
+    {
+      "id": "yoga-budhaditya",
+      "category": "yoga",
+      "yogaKey": "budhaditya",
+      "triggers": {
+        "en": ["budhaditya", "budha aditya", "nipuna yoga"],
+        "ta": ["புதாதித்ய", "புத ஆதித்ய", "நிபுண யோகம்"],
+        "hi": ["बुधादित्य", "निपुण योग"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI - yogas." },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-03", "level": "book" }
+      ],
+      "body": {
+        "en": "Budhaditya (Nipuna) Yoga forms when the Sun (Surya) and Mercury (Budha) occupy the same sign. Classical texts read it as analytical sharpness, skill in writing/calculation/administration, and quick learning — working best when placed in Kendra or Trikona houses (1, 4, 5, 7, 9, 10) and especially in the 2nd, 5th, 10th, or 11th.",
+        "ta": "புதாதித்ய (நிபுண) யோகம் என்பது சூரியனும் புதனும் ஒரே ராசியில் இணைந்திருக்கும் அமைப்பாகும். பூர்வ பாராசரியம் மற்றும் பிருஹஜ்ஜாதக உரை இதை கூர்மையான பகுத்தறிவு, கணக்கு/எழுத்து/நிர்வாகத் திறமை மற்றும் விரைந்து கற்கும் ஆற்றல் தரும் யோகமாகக் கூறுகின்றன; கேந்திர-திரிகோண வீடுகளில் இதன் பலன் மிகுதி.",
+        "hi": "बुधादित्य (निपुण) योग सूर्य और बुध के एक ही राशि में युति करने से बनता है। शास्त्रीय ग्रंथ इसे तीक्ष्ण बुद्धि, लेखन-गणना-प्रशासन में निपुणता और शीघ्र सीखने की क्षमता का सूचक मानते हैं, विशेषकर केंद्र व त्रिकोण भावों में।"
+      }
+    },
+    {
+      "id": "yoga-raja",
+      "category": "yoga",
+      "yogaKey": "rajayoga",
+      "triggers": {
+        "en": ["raja yoga", "rajyoga", "raj yoga", "dharma karmadhipati"],
+        "ta": ["ராஜ யோகம்", "இராஜ யோகம்", "தர்ம கர்மாதிபதி"],
+        "hi": ["राजयोग", "राज योग", "धर्म कर्माधिपति"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI & VII - raja yogas." },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-02", "level": "book" }
+      ],
+      "body": {
+        "en": "Raja Yoga in Parashari astrology arises when a Kendra lord (1st, 4th, 7th, 10th — pillars of action) joins, aspects, or exchanges houses with a Trikona lord (1st, 5th, 9th — pillars of merit and fortune). The supreme form is Dharma-Karmadhipati Yoga linking the 9th and 10th lords, supporting earned leadership, responsibility, and public trust primarily during the Mahadasha or Bhukti of those two planets.",
+        "ta": "ராஜ யோகம் என்பது கேந்திர அதிபதிகளும் (1, 4, 7, 10 — முயற்சி தூண்கள்) திரிகோண அதிபதிகளும் (1, 5, 9 — பூர்வபுண்ணிய/பாக்கிய தூண்கள்) இணைதல், பரிவர்த்தனை அல்லது பார்வை பெறும் உயர்ந்த அமைப்பாகும். குறிப்பாக 9 மற்றும் 10-ஆம் அதிபதிகள் இணையும் தர்ம-கர்மாதிபதி யோகம் பொறுப்பு, தலைமைப் பண்பு மற்றும் தொழில் உயர்வை அக்கிரகங்களின் தசா-புக்தியில் வழங்குகிறது.",
+        "hi": "पाराशरी ज्योतिष में राजयोग तब बनता है जब केंद्र भावों (1, 4, 7, 10) और त्रिकोण भावों (1, 5, 9) के स्वामियों में युति, दृष्टि या राशि परिवर्तन हो। नवमेश और दशमेश का धर्म-कर्माधिपति योग सर्वोत्तम माना गया है, जो उन ग्रहों की दशा-भुक्ति में कर्मनिष्ठा, पद-प्रतिष्ठा और नेतृत्व प्रदान करता है।"
+      }
+    },
+    {
+      "id": "yoga-dhana",
+      "category": "yoga",
+      "yogaKey": "dhanayoga",
+      "triggers": {
+        "en": ["dhana yoga", "dhan yoga", "lakshmi yoga", "wealth yoga"],
+        "ta": ["தன யோகம்", "லட்சுமி யோகம்", "செல்வ யோகம்"],
+        "hi": ["धन योग", "लक्ष्मी योग"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-02", "level": "passage", "verse": 47, "page": "20" },
+        { "id": "TA-02", "level": "passage", "verse": 50, "page": "23" }
+      ],
+      "body": {
+        "en": "Dhana Yoga links the houses of resources and gains — the 2nd (accumulated wealth), 11th (income), 5th (merit), and 9th (fortune), together with Lagna lord, Guru, and Sukra. Sadhaka Parisatham verses 47 and 50 single out the mutual exchange or linkage of the 1st, 2nd, and 11th lords as steady, honest prosperity that matures during the Dasha/Bhukti of those lords.",
+        "ta": "தன யோகம் என்பது 2-ஆம் இடம் (சேமிப்பு), 11-ஆம் இடம் (லாபம்), 5-ஆம் இடம், 9-ஆம் இடம் மற்றும் லக்னாதிபதி ஆகியோர் இணையும் அல்லது பரிவர்த்தனை பெறும் அமைப்பாகும். சாதக பாரிசாதம் பாடல்கள் 47 மற்றும் 50-ன்படி 1, 2, 11 அதிபதிகளின் தொடர்பு நேர்மையான வழியில் நிலையான பொருளாதார வளர்ச்சியை அக்கிரகங்களின் தசா-புக்தியில் தருகிறது.",
+        "hi": "धन योग तब बनता है जब द्वितीय भाव (संचित धन), एकादश भाव (लाभ), पंचम, नवम और लग्नेश का परस्पर संबंध या परिवर्तन हो। साधक पारिजातम् श्लोक 47 व 50 के अनुसार 1, 2 और 11वें स्वामियों का संबंध परिश्रम व ईमानदारी से स्थायी आर्थिक उन्नति अपनी दशा-भुक्ति में देता है।"
+      }
+    },
+    {
+      "id": "yoga-mahapurusha",
+      "category": "yoga",
+      "yogaKey": "mahapurusha",
+      "triggers": {
+        "en": ["mahapurusha", "pancha mahapurusha", "ruchaka", "bhadra yoga", "hamsa yoga", "malavya", "sasa yoga", "shasha yoga"],
+        "ta": ["பஞ்ச மகாபுருஷ", "மகாபுருஷ", "ருசக", "பத்ர யோகம்", "ஹம்ச யோகம்", "மாளவ்ய", "சச யோகம்"],
+        "hi": ["पंच महापुरुष", "महापुरुष योग", "रुचक", "भद्र योग", "हंस योग", "मालव्य", "शश योग"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI - pancha mahapurusha yogas." },
+        { "id": "TA-02", "level": "book" },
+        { "id": "TA-03", "level": "book" }
+      ],
+      "body": {
+        "en": "The five Pancha Mahapurusha Yogas arise when one of the five non-luminary planets stands in its own or exaltation sign inside a Kendra (1, 4, 7, 10) from Lagna: Ruchaka (Mars — courage and execution), Bhadra (Mercury — intellect and speech), Hamsa (Jupiter — ethics and teaching), Malavya (Venus — grace, comfort and art), and Sasa (Saturn — discipline, organization and endurance).",
+        "ta": "பஞ்ச மகாபுருஷ யோகங்கள் என்பது பஞ்ச தாரா கிரகங்களில் ஒன்று ஆட்சி அல்லது உச்சம் பெற்று லக்ன கேந்திரத்தில் (1, 4, 7, 10) அமர்வதாகும்: ருசக யோகம் (செவ்வாய் — துணிவும் செயல் திறனும்), பத்ர யோகம் (புதன் — அறிவும் வாக்கு வன்மையும்), ஹம்ச யோகம் (குரு — தர்மமும் ஞானமும்), மாளவ்ய யோகம் (சுக்கிரன் — கலை மற்றும் சுக வாழ்வு), சச யோகம் (சனி — உழைப்பு, ஒழுக்கம், நிர்வாகம்).",
+        "hi": "पंच महापुरुष योग तब बनते हैं जब मंगल, बुध, गुरु, शुक्र या शनि अपनी स्वराशि अथवा उच्च राशि में होकर लग्न से केंद्र (1, 4, 7, 10) में बैठें: रुचक (मंगल — साहस व नेतृत्व), भद्र (बुध — बुद्धि व वाणी), हंस (गुरु — ज्ञान व धर्म), मालव्य (शुक्र — कला व सुख-सुविधा) और शश योग (शनि — अनुशासन, श्रम व प्रशासन)।"
+      }
+    },
+    {
+      "id": "yoga-neechabhanga-vipareeta-parivartana",
+      "category": "yoga",
+      "yogaKey": "special",
+      "triggers": {
+        "en": ["neecha bhanga", "neechabhanga", "vipareeta", "viparita", "harsha yoga", "sarala yoga", "vimala yoga", "parivartana", "chandra mangala", "amala yoga"],
+        "ta": ["நீச்சபங்க", "நீச்ச பங்க", "விபரீத ராஜ", "ஹர்ஷ யோகம்", "சரள யோகம்", "விமல யோகம்", "பரிவர்த்தனை", "சந்திர மங்கள", "அமல யோகம்"],
+        "hi": ["नीचभंग", "नीच भंग", "विपरीत राजयोग", "हर्ष योग", "सरल योग", "विमल योग", "परिवर्तन योग", "चंद्र मंगल", "अमला योग"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI - parivartana at VI-32, vipareeta and neecha bhanga." },
+        { "id": "EN-09", "level": "book" },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-02", "level": "book" }
+      ],
+      "body": {
+        "en": "Three classic turnaround combinations in Phaladeepika (Adhyaya VI), Uttara Kalamrita, and Sadhaka Parisatham: (1) Neecha Bhanga Raja Yoga cancels a planet debilitation when its sign lord or exaltation lord sits in a Kendra from Lagna/Moon or aspects it — turning early struggle into hard-won mastery; (2) Vipareeta Raja Yoga (Harsha, Sarala, Vimala) places the 6th, 8th, or 12th lord in another dusthana (6/8/12), helping you rise through crisis resolution; (3) Parivartana Yoga (VI-32) joins two houses powerfully when their lords exchange signs.",
+        "ta": "பலதீபிகை (அதிகாரம் VI), உத்தர காலாமிருதம் மற்றும் சாதக பாரிசாதம் கூறும் மூன்று முக்கிய திருப்புமுனை யோகங்கள்: (1) நீச்சபங்க ராஜ யோகம் — நீச்சம் பெற்ற கிரகத்தின் வீட்டதிபதி அல்லது உச்ச நாதன் லக்ன/சந்திர கேந்திரத்தில் இருந்தால் ஆரம்ப சவால்களைக் கடந்து உயர்வு தரும்; (2) விபரீத ராஜ யோகம் (ஹர்ஷ, சரள, விமல) — 6, 8, 12 அதிபதிகள் 6/8/12 வீடுகளிலேயே மாறி அமர்ந்து தடைகளை வெல்லும் திறன் தரும்; (3) பரிவர்த்தனை யோகம் — இரு பாவாதிபதிகள் இடம் மாறி இரு வீடுகளையும் பலப்படுத்தும்.",
+        "hi": "फलदीपिका (अध्याय VI), उत्तरकालामृत और साधक पारिजातम् के तीन प्रमुख उत्थान योग: (1) नीचभंग राजयोग — जब नीच ग्रह का राशि-स्वामी या उच्च-स्वामी लग्न/चंद्र से केंद्र में हो, तो प्रारंभिक संघर्ष के बाद ठोस उपलब्धि मिलती है; (2) विपरीत राजयोग (हर्ष, सरल, विमल) — 6, 8, 12वें भाव के स्वामी 6/8/12 में ही स्थित होकर चुनौतियों को अवसर बनाते हैं; (3) परिवर्तन योग — दो भाव-स्वामियों का राशि विनिमय दोनों भावों को जोड़कर बल देता है।"
+      }
+    },
+    {
+      "id": "transit-sadesati-ashtama-kantaka",
+      "category": "transit",
+      "transitKey": "sani",
+      "triggers": {
+        "en": ["ashtama sani", "ashtamasani", "ardhastama", "kantaka sani", "kandaka sani", "sani peyarchi", "saturn transit", "sade sati", "ezharai sani", "elzhara sani"],
+        "ta": ["அஷ்டம சனி", "அர்த்தாஷ்டம சனி", "கண்டக சனி", "சனி பெயர்ச்சி", "ஏழரைச் சனி", "ஏழரை சனி"],
+        "hi": ["अष्टम शनि", "अर्धाष्टम शनि", "कंटक शनि", "शनि गोचर", "साढ़ेसाती", "शनि ढैय्या", "ढैय्या"]
+      },
+      "source": [
+        { "id": "EN-02", "level": "chapter", "note": "Adhyaya XXVI - Saturn transits from natal Moon." },
+        { "id": "TA-04", "level": "book" },
+        { "id": "TA-15", "level": "book" },
+        { "id": "TP-03", "level": "content" }
+      ],
+      "body": {
+        "en": "Saturn (Sani) spends roughly 2.5 years in each sign counted from your natal Moon (Phaladeepika Adhyaya XXVI & Dhinachari Kosara Bodhini): (1) Ezharai Sani / Sade Sati (7.5 years) covers the 12th sign (Viraya Sani), 1st sign (Janma Sani), and 2nd sign (Patha/Kutumba Sani); (2) Ardhastama / Kantaka Sani occurs in the 4th, 7th, and 10th signs from Moon; (3) Ashtama Sani occurs in the 8th sign from Moon (~2.5 years). Saturn sits positively in the 3rd, 6th, and 11th from Moon. Demanding Sani phases reward patience, punctuality, honest effort, regular rest, Saturday sesame-oil lamp worship, feeding workers/stray animals, and visiting Thirunallar.",
+        "ta": "சனி பகவான் ஒவ்வொரு ராசியிலும் சுமார் 2.5 ஆண்டுகள் சஞ்சரிக்கிறார் (பலதீபிகை அதிகாரம் XXVI மற்றும் தினசரி கோசார போதினி): (1) ஏழரைச் சனி (7.5 ஆண்டுகள்) — ராசிக்கு 12-ல் விரய சனி, 1-ல் ஜன்ம சனி, 2-ல் பாத/குடும்ப சனி; (2) அர்த்தாஷ்டம / கண்டக சனி — ராசிக்கு 4, 7, 10-ஆம் இடங்கள்; (3) அஷ்டம சனி — ராசிக்கு 8-ஆம் இடம் (2.5 ஆண்டுகள்). ராசிக்கு 3, 6, 11-ல் சனி நற்பலன் தரும். சனி அழுத்தக் காலங்கள் தண்டனை அல்ல; நிதானம், நேர்மையான உழைப்பு, சீரான உறக்கம், சனிக்கிழமை எள் தீபம், உழைப்பாளிகளுக்கு அன்னதானம் மற்றும் திருநள்ளாறு வழிபாட்டால் அமைதியாகக் கடக்கலாம்.",
+        "hi": "शनि प्रत्येक राशि में लगभग 2.5 वर्ष गोचर करते हैं (फलदीपिका अध्याय XXVI एवं गोचर परंपरा): (1) साढ़ेसाती (7.5 वर्ष) — जन्म राशि से 12वें, 1ले और 2रे भाव में गोचर; (2) अर्धाष्टम / कंटक शनि (ढैय्या) — चंद्र से 4थे, 7वें या 10वें भाव में; (3) अष्टम शनि (ढैय्या) — चंद्र से 8वें भाव में। चंद्र से 3रे, 6ठे और 11वें भाव में शनि विशेष शुभ फल देते हैं। कठिन शनि गोचर दंड नहीं बल्कि अनुशासन का काल है: धैर्य, नियमित दिनचर्या, शनिवार तिल-तेल दीप, श्रमिक सेवा और तिरुनल्लार दर्शन हितकारी हैं।"
+      }
+    },
+    {
+      "id": "transit-guru-rahuketu-chandrashtamam",
+      "category": "transit",
+      "transitKey": "other",
+      "triggers": {
+        "en": ["guru peyarchi", "jupiter transit", "rahu ketu peyarchi", "rahu transit", "ketu transit", "chandrashtamam", "chandrashtama"],
+        "ta": ["குரு பெயர்ச்சி", "ராகு கேது பெயர்ச்சி", "ராகு பெயர்ச்சி", "கேது பெயர்ச்சி", "சந்திராஷ்டமம்", "சந்திராஷ்டம"],
+        "hi": ["गुरु गोचर", "बृहस्पति गोचर", "राहु केतु गोचर", "चंद्राष्टम"]
+      },
+      "source": [
+        { "id": "EN-02", "level": "chapter", "note": "Adhyaya XXVI - gochara rules from Moon." },
+        { "id": "TA-04", "level": "book" },
+        { "id": "TA-12", "level": "book" },
+        { "id": "TA-14", "level": "book" },
+        { "id": "TA-15", "level": "book" }
+      ],
+      "body": {
+        "en": "Key Tamil Gochara (transit) checks from your Janma Rasi: (1) Guru Peyarchi (annual ~12-month sign shift) brings classic Guru Balam when Jupiter transits the 2nd, 5th, 7th, 9th, or 11th sign from your Moon — traditionally used to time marriage, study, and auspicious milestones (Alangudi Thursday worship steadies the other houses); (2) Rahu-Ketu Peyarchi shifts backward every ~18 months, reading strongest in the 3rd, 6th, and 11th from Moon; (3) Chandrashtamam occurs for ~2.25 days every month when the Moon transits the 8th Rasi (17th Nakshatra) from your birth star — keep calm routine, drive patiently, avoid heated arguments, and postpone brand-new ventures by two days.",
+        "ta": "ஜன்ம ராசியிலிருந்து பார்க்கப்படும் முக்கிய கோசார (பெயர்ச்சி) விதிகள்: (1) குரு பெயர்ச்சி (ஆண்டுக்கு ஒருமுறை) — ராசிக்கு 2, 5, 7, 9, 11-ஆம் இடங்களில் குரு வரும்போது 'குரு பலம்' உண்டாகி திருமணம், கல்வி, சுப காரியங்களுக்கு ஆதரவு தரும் (பிற இடங்களில் வியாழக்கிழமை ஆலங்குடி வழிபாடு நன்று); (2) ராகு-கேது பெயர்ச்சி (18 மாதங்களுக்கு ஒருமுறை பின்னோக்கி நகர்வு) — ராசிக்கு 3, 6, 11-ல் நற்பலன் தரும்; (3) சந்திராஷ்டமம் — மாதந்தோறும் சுமார் 2.25 நாட்கள் சந்திரன் உங்கள் ஜன்ம ராசிக்கு 8-ஆம் ராசியில் (17-ஆவது நட்சத்திரத்தில்) செல்லும் காலம்; அந்நாட்களில் வழக்கமான பணிகளை அமைதியாகச் செய்து, வாக்குவாதம் மற்றும் புதிய தொடக்கங்களை இரண்டு நாட்கள் தள்ளிவைப்பது மரபு.",
+        "hi": "जन्म राशि से देखे जाने वाले प्रमुख गोचर नियम: (1) गुरु गोचर (प्रतिवर्ष राशि परिवर्तन) — चंद्र से 2, 5, 7, 9 और 11वें भाव में गुरु गोचर 'गुरु बल' देता है जो विवाह, शिक्षा व शुभ कार्यों में सहायक है (अन्य भावों में गुरुवार आलंगुडी पूजा श्रेष्ठ है); (2) राहु-केतु गोचर (18 माह का वक्री गोचर) — चंद्र से 3, 6, 11 में शुभ माना जाता है; (3) चंद्राष्टम — प्रत्येक माह लगभग सवा दो दिन जब चंद्रमा जन्म राशि से 8वीं राशि (17वें नक्षत्र) में होता है; इन दिनों नियमित कार्य शांत मन से करें और नए शुभ आरंभ दो दिन टालना उचित रहता है।"
+      }
+    },
+    {
+      "id": "panchangam-rahukalam-yamagandam-gulikai",
+      "category": "panchangam",
+      "triggers": {
+        "en": ["rahu kalam", "rahukalam", "rahu kaal", "yamagandam", "yamaganda", "emagandam", "gulikai", "kuligai", "gulika kalam", "nalla neram", "gowri panchangam", "abhijit muhurtham", "brahma muhurtham", "subha hora", "amirtha yoga", "siddha yoga", "marana yoga", "kari naal"],
+        "ta": ["ராகு காலம்", "இராகு காலம்", "எமகண்டம்", "யமகண்டம்", "குளிகை", "நல்ல நேரம்", "கௌரி பஞ்சாங்கம்", "அபிஜித்", "பிரம்ம முகூர்த்தம்", "சுப ஓரை", "அமிர்த யோகம்", "சித்த யோகம்", "மரண யோகம்", "கரிநாள்"],
+        "hi": ["राहु काल", "राहुकाल", "यमगण्ड", "यमगंड", "गुलिक काल", "गुलिक", "नल्ला नेरम", "चौघड़िया", "अभिजित मुहूर्त", "ब्रह्म मुहूर्त", "शुभ होरा", "अमृत योग", "सिद्ध योग", "मरण योग"]
+      },
+      "source": [
+        { "id": "TA-12", "level": "book" },
+        { "id": "TA-14", "level": "book" },
+        { "id": "TA-25", "level": "content" }
+      ],
+      "body": {
+        "en": "Daily Tamil Panchangam time windows (for standard 6:00 AM sunrise to 6:00 PM sunset; shift slightly by local sunrise): • Rahu Kalam: Mon 7:30-9:00 AM, Sat 9:00-10:30 AM, Fri 10:30 AM-12:00 PM, Wed 12:00-1:30 PM, Thu 1:30-3:00 PM, Tue 3:00-4:30 PM, Sun 4:30-6:00 PM. • Yamagandam: Thu 6:00-7:30 AM, Wed 7:30-9:00 AM, Tue 9:00-10:30 AM, Mon 10:30 AM-12:00 PM, Sun 12:00-1:30 PM, Sat 1:30-3:00 PM, Fri 3:00-4:30 PM. • Gulikai Kalam: Sat 6:00-7:30 AM, Fri 7:30-9:00 AM, Thu 9:00-10:30 AM, Wed 10:30 AM-12:00 PM, Tue 12:00-1:30 PM, Mon 1:30-3:00 PM, Sun 3:00-4:30 PM (actions in Gulikai tend to repeat, so savings/purchases are welcomed while loans are avoided). • Auspicious starts use Nalla Neram, Gowri Nalla Neram, Abhijit Muhurtham (midday ~24 min before/after solar noon), Brahma Muhurtham (~1h36m before sunrise), and Siddha/Amirtha Yoga days while avoiding Marana Yoga and Kari Naal for fresh ceremonies.",
+        "ta": "தினசரி பஞ்சாங்க நேர அளவுகள் (காலை 6:00 சூரிய உதயம் முதல் மாலை 6:00 அஸ்தமனம் அடிப்படையில்; ஊரின் உதய நேரத்திற்கேற்ப சில நிமிடம் மாறும்): • ராகு காலம்: திங்கள் 7:30-9:00, சனி 9:00-10:30, வெள்ளி 10:30-12:00, புதன் 12:00-1:30, வியாழன் 1:30-3:00, செவ்வாய் 3:00-4:30, ஞாயிறு 4:30-6:00. • எமகண்டம்: வியாழன் 6:00-7:30, புதன் 7:30-9:00, செவ்வாய் 9:00-10:30, திங்கள் 10:30-12:00, ஞாயிறு 12:00-1:30, சனி 1:30-3:00, வெள்ளி 3:00-4:30. • குளிகை: சனி 6:00-7:30, வெள்ளி 7:30-9:00, வியாழன் 9:00-10:30, புதன் 10:30-12:00, செவ்வாய் 12:00-1:30, திங்கள் 1:30-3:00, ஞாயிறு 3:00-4:30 (குளிகையில் செய்யும் செயல் திரும்ப நிகழும் என்பதால் சேமிப்பு/சொத்து வாங்க நன்று; கடன் வாங்கத் தவிர்ப்பர்). • புதிய சுப தொடக்கங்களுக்கு நல்ல நேரம், கௌரி நல்ல நேரம், அபிஜித் முகூர்த்தம், பிரம்ம முகூர்த்தம் மற்றும் அமிர்த/சித்த யோக நாட்களைத் தேர்ந்தெடுத்து மரண யோகம் மற்றும் கரிநாளைத் தவிர்ப்பது மரபு.",
+        "hi": "दैनिक पंचांग काल-खंड (प्रातः 6:00 सूर्योदय से सायं 6:00 सूर्यास्त मानक अनुसार; स्थानीय सूर्योदय से थोड़ा समायोजित होता है): • राहु काल: सोम 7:30-9:00, शनि 9:00-10:30, शुक्र 10:30-12:00, बुध 12:00-1:30, गुरु 1:30-3:00, मंगल 3:00-4:30, रवि 4:30-6:00। • यमगण्ड: गुरु 6:00-7:30, बुध 7:30-9:00, मंगल 9:00-10:30, सोम 10:30-12:00, रवि 12:00-1:30, शनि 1:30-3:00, शुक्र 3:00-4:30। • गुलिक काल: शनि 6:00-7:30, शुक्र 7:30-9:00, गुरु 9:00-10:30, बुध 10:30-12:00, मंगल 12:00-1:30, सोम 1:30-3:00, रवि 3:00-4:30 (गुलिक में किया शुभ संचय दोहराता है, अतः बचत शुभ पर ऋण वर्जित माना जाता है)। • नए शुभ कार्य हेतु नल्ला नेरम, अभिजित मुहूर्त, ब्रह्म मुहूर्त तथा अमृत/सिद्ध योग चुनें और मरण योग में नया आरंभ टालें।"
+      }
+    },
+    {
+      "id": "panchangam-muhurtham-selection",
+      "category": "panchangam",
+      "triggers": {
+        "en": ["subha muhurtham", "shubh muhurat", "grihapravesam", "griha pravesh", "housewarming", "seemantham", "aksharabhyasam", "vivaha muhurtham", "how is muhurtham chosen", "muhurtham chosen"],
+        "ta": ["சுப முகூர்த்தம்", "சுப முஹூர்த்தம்", "கிரகப்பிரவேசம்", "புதுமனை புகுவிழா", "சீமந்தம்", "அட்சராப்யாசம்", "முகூர்த்தம் எப்படி"],
+        "hi": ["शुभ मुहूर्त", "गृह प्रवेश", "सीमंतम", "अक्षराभ्यास", "विवाह मुहूर्त", "मुहूर्त कैसे"]
+      },
+      "source": [
+        { "id": "EN-09", "level": "book" },
+        { "id": "TA-12", "level": "book" },
+        { "id": "TA-14", "level": "book" },
+        { "id": "TA-25", "level": "content" }
+      ],
+      "body": {
+        "en": "According to Kalaprakasikai, Jothida Kalanchiyam, and Uttara Kalamrita, selecting a Subha Muhurtham (for wedding, Grihapravesam, naming, or starting a venture) filters five Panchanga limbs plus personal chart harmony: (1) clean Shukla/bright Tithi (avoiding Amavasya and Rikta/Ashtami-Navami Tithis for ceremonies); (2) supportive weekday (Mon, Wed, Thu, Fri); (3) auspicious Nakshatra matching the ceremony (Rohini, Mrigasira, Uttara Phalguni, Hasta, Swati, Anuradha, Uttara Ashadha, Shravana, Uttara Bhadrapada, Revati, etc.) with Siddha/Amirtha Yoga; (4) personal Tara Balam & Chandra Balam strictly avoiding Chandrashtama for both individuals; and (5) a clean Lagna window inside Nalla Neram outside Rahu Kalam and Yamagandam.",
+        "ta": "காலப்பிரகாசிகை, சோதிடக்களஞ்சியம் மற்றும் உத்தர காலாமிருத விதிகளின்படி சுப முகூர்த்தம் (திருமணம், கிரகப்பிரவேசம், பெயர் சூட்டல், தொழில் தொடக்கம்) ஐந்து படிகளில் தேர்ந்தெடுக்கப்படுகிறது: (1) சுப திதி (வளர்பிறை சுப திதிகள்; அமாவாசை, அஷ்டமி, நவமி தவிர்த்து); (2) சுப வாரம் (திங்கள், புதன், வியாழன், வெள்ளி); (3) நிகழ்வுக்கு உகந்த சுப நட்சத்திரம் (ரோகிணி, மிருகசீரிடம், உத்திரம், ஹஸ்தம், சுவாதி, அனுஷம், உத்திராடம், திருவோணம், உத்திரட்டாதி, ரேவதி முதலியன) மற்றும் அமிர்த/சித்த யோகம்; (4) தாரா பலம், சந்திர பலம் மற்றும் இருவருக்கும் சந்திராஷ்டமம் இல்லாத நாள்; (5) ராகு காலம், எமகண்டம் தவிர்த்த சுத்தமான சுப லக்ன நல்ல நேரம்.",
+        "hi": "कालप्रकाशिका, ज्योतिष कलंजियम और उत्तरकालामृत के अनुसार शुभ मुहूर्त (विवाह, गृह प्रवेश, नामकरण या व्यवसाय आरंभ) पाँच प्रमुख जाँचों से चुना जाता है: (1) शुद्ध तिथि (शुक्ल पक्ष की शुभ तिथियाँ; अमावस्या व अष्टमी-नवमी त्यागकर); (2) सौम्य वार (सोम, बुध, गुरु, शुक्र); (3) कार्य के अनुकूल शुभ नक्षत्र (रोहिणी, मृगशिरा, उत्तरा फाल्गुनी, हस्त, स्वाति, अनुराधा, उत्तराषाढ़ा, श्रवण, उत्तराभाद्रपद, रेवती आदि) व अमृत/सिद्ध योग; (4) व्यक्तिगत तारा बल व चंद्र बल और दोनों के लिए चंद्राष्टम शुद्धि; तथा (5) राहु काल व यमगण्ड से मुक्त शुद्ध लग्न एवं नल्ला नेरम।"
+      }
+    },
+    {
+      "id": "panchangam-vratam-observances",
+      "category": "panchangam",
+      "triggers": {
+        "en": ["ekadashi", "ekadasi", "pradosham", "pradosh", "sankatahara", "chaturthi", "skanda sashti", "kanda sashti", "sashti", "amavasya", "amavasai", "pournami", "purnima"],
+        "ta": ["ஏகாதசி", "பிரதோஷம்", "சங்கடஹர சதுர்த்தி", "சதுர்த்தி", "சஷ்டி", "கந்த சஷ்டி", "அமாவாசை", "பௌர்ணமி"],
+        "hi": ["एकादशी", "प्रदोष", "संकष्टी चतुर्थी", "चतुर्थी", "षष्ठी", "स्कंद षष्ठी", "अमावस्या", "पूर्णिमा"]
+      },
+      "source": [
+        { "id": "TA-07", "level": "book" },
+        { "id": "TA-12", "level": "book" },
+        { "id": "TA-14", "level": "book" }
+      ],
+      "body": {
+        "en": "Traditional lunar tithi observances (Vratams) in Tamil & Vedic practice (observe fasting only as health comfortably allows): • Ekadashi (11th tithi): Maha Vishnu prayer, mental clarity, and disciplined habits; • Pradosham (13th tithi twilight, ~4:30-6:00 PM): Lord Shiva & Nandi worship to quiet karmic turbulence and Saturn/Moon strain; • Sankatahara Chaturthi (waning 4th tithi moonrise): Lord Vinayagar prayer for clearing obstacles and Ketu steadiness; • Sashti (6th tithi): Lord Murugan prayer for courage and Mars balance; • Amavasya (New Moon): ancestral tarpanam and annadhanam; • Pournami (Full Moon): Goddess Amman / Satyanarayana lamp worship for family harmony.",
+        "ta": "தமிழ் மற்றும் வேத மரபின் முக்கிய திதி வழிபாடுகள் (உடல்நலம் அனுமதிக்கும் அளவிலேயே விரதம் கடைப்பிடிக்கவும்): • ஏகாதசி (11-ஆம் திதி): பெருமாள் வழிபாடு, மனத்தெளிவு மற்றும் சுய ஒழுக்கம்; • பிரதோஷம் (திரயோதசி மாலை 4:30-6:00): சிவபெருமான்-நந்தி வழிபாடு, சனி/சந்திர அழுத்தத் தணிப்பு; • சங்கடஹர சதுர்த்தி (தேய்பிறை சதுர்த்தி): விநாயகர் வழிபாடு, தடை நீக்கம் மற்றும் கேது சாந்தி; • சஷ்டி (6-ஆம் திதி): முருகப்பெருமான் வழிபாடு, துணிவு மற்றும் செவ்வாய் சாந்தி; • அமாவாசை: முன்னோர் தர்ப்பணம் மற்றும் அன்னதானம்; • பௌர்ணமி: அம்மன் விளக்கு பூஜை மற்றும் குடும்ப ஒற்றுமை.",
+        "hi": "वैदिक एवं तमिल परंपरा के प्रमुख तिथि व्रत-उपासना (स्वास्थ्य की अनुकूलता के अनुसार ही उपवास रखें): • एकादशी (11वीं तिथि): भगवान विष्णु आराधना व मानसिक शुद्धि; • प्रदोष (त्रयोदशी संध्या ~4:30-6:00): भगवान शिव व नंदी पूजन, शनि/चंद्र जनित तनाव की शांति; • संकष्टी चतुर्थी: श्री गणेश आराधना, विघ्न निवारण व केतु शांति; • षष्ठी: भगवान कार्तिकेय/मुरुगन वंदना व मंगल संतुलन; • अमावस्या: पितृ तर्पण व अन्नदान; • पूर्णिमा: देवी दीप-पूजन व पारिवारिक सुख-शांति।"
+      }
+    },
+    {
+      "id": "matching-poruthams-complete",
+      "category": "matching",
+      "poruthamKey": "all",
+      "triggers": {
+        "en": ["10 porutham", "ten porutham", "poruthams", "porutham", "rajju", "dina porutham", "gana porutham", "mahendra porutham", "stree deergha", "yoni porutham", "rasi porutham", "rasiyathipathi", "rasiyadhipathi", "vasya porutham", "vasiya porutham", "vedha porutham", "nadi koota", "ashtakoota", "guna milan"],
+        "ta": ["10 பொருத்தம்", "பத்து பொருத்தம்", "பொருத்தங்கள்", "ரஜ்ஜு", "தினப் பொருத்தம்", "தின பொருத்தம்", "கணப் பொருத்தம்", "கண பொருத்தம்", "மகேந்திர", "ஸ்திரீ தீர்க்க", "யோனி பொருத்தம்", "ராசி பொருத்தம்", "ராசியாதிபதி", "வசிய பொருத்தம்", "வேதை", "நாடி பொருத்தம்"],
+        "hi": ["दस पोरुत्तम", "10 पोरुत्तम", "पोरुत्तम", "रज्जु", "दिन पोरुत्तम", "गण मिलान", "महेंद्र पोरुत्तम", "स्त्री दीर्घ", "योनि मिलान", "राशि मिलान", "राशिपति", "वश्य", "वेध", "नाड़ी दोष", "अष्टकूट", "गुण मिलान"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "TA-06", "level": "book" },
+        { "id": "TA-13", "level": "book" },
+        { "id": "TA-14", "level": "book" },
+        { "id": "TA-19", "level": "book" }
+      ],
+      "body": {
+        "en": "Tamil Marriage Compatibility evaluates the Ten Poruthams (plus Sevvai Dosha balance & Dasha Sandhi) alongside the 36-point Koota score: (1) Dina (health & daily vitality), (2) Gana — Deva/Manushya/Rakshasa temperament harmony, (3) Mahendra (progeny & family growth), (4) Stree Deergha (long-term wellbeing & prosperity), (5) Yoni (mutual closeness & compatibility), (6) Rasi (Moon-sign distance between couple, 7th-to-7th Saptama being prime), (7) Rasiyathipathi (friendship of the two Rasi lords), (8) Vasya (natural affection), (9) Rajju — the paramount longevity/mangalya check ensuring both stars do not collide on the same body-group cord (Pada, Kati, Nabhi, Kanta, Siro, with Arohana-Avarohana distinction), and (10) Vedha — verifying the two birth stars do not mutually afflict each other (and Nadi in the 36-point system checks physiological balance). Attach your Wedding Matching report above to read your exact pair score and table.",
+        "ta": "தமிழ் திருமணப் பொருத்த முறை பத்து பொருத்தங்களையும் (36 மதிப்பெண் கூட்டு முறையுடன் செவ்வாய் தோஷ சமநிலை மற்றும் தசா சந்தி சேர்த்து) பரிசீலிக்கிறது: (1) தினப் பொருத்தம் (ஆரோக்கியம், சுறுசுறுப்பு), (2) கணப் பொருத்தம் (தேவ, மனுஷ்ய, ராட்சச குண இயைபு), (3) மகேந்திரப் பொருத்தம் (புத்திர விருத்தி), (4) ஸ்திரீ தீர்க்கம் (மங்கலம், நீடித்த செழிப்பு), (5) யோனிப் பொருத்தம் (இல்லற அன்னியோன்யம்), (6) ராசிப் பொருத்தம் (இரு சந்திர ராசிகளின் தூரம் — சமசப்தமம் சிறப்பு), (7) ராசியாதிபதி பொருத்தம் (இரு ராசி அதிபதிகளின் நட்பு), (8) வசியப் பொருத்தம் (இயல்பான ஈர்ப்பு), (9) ரஜ்ஜுப் பொருத்தம் — மாங்கல்ய/ஆயுள் பலத்திற்கான மிக முக்கிய பொருத்தம் (பாத, கடி, நாபி, கண்ட, சிரோ ரஜ்ஜுக்களில் ஒரே பிரிவில் மோதாதிருத்தல் மற்றும் ஆரோகண-அவரோகண விதி), (10) வேதைப் பொருத்தம் — இரு நட்சத்திரங்களும் ஒன்றையொன்று தாக்காதிருத்தல் (வட மரபில் நாடிப் பொருத்தமும் பார்க்கப்படுகிறது). உங்கள் துல்லிய பொருத்த மதிப்பெண்ணை அறிய மேலே உங்கள் திருமணப் பொருத்த அறிக்கையை இணைக்கவும்.",
+        "hi": "तमिल विवाह मिलान पद्धति दस पोरुत्तमों (तथा 36 गुण अष्टकूट, कुज दोष संतुलन और दशा संधि) का समग्र मूल्यांकन करती है: (1) दिन (स्वास्थ्य व दैनिक स्फूर्ति), (2) गण — देव/मनुष्य/राक्षस स्वभाव सामंजस्य, (3) महेंद्र (वंश वृद्धि), (4) स्त्री दीर्घ (दीर्घकालीन समृद्धि), (5) योनि (आपसी सामंजस्य), (6) राशि (दोनों चंद्र राशियों का संबंध, समसप्तम श्रेष्ठ), (7) राशिपति (दोनों राशि स्वामियों की मित्रता), (8) वश्य (स्वाभाविक स्नेह), (9) रज्जु — सर्वप्रमुख सौभाग्य/दीर्घायु जाँच जिसमें दोनों नक्षत्र एक ही रज्जु समूह (पाद, कटि, नाभि, कंठ, शिर) में टकराने नहीं चाहिए, और (10) वेध — दोनों जन्म नक्षत्र परस्पर वेध-मुक्त हों (अष्टकूट में नाड़ी कूट भी देखा जाता है)। अपनी सटीक मिलान तालिका पढ़ने हेतु ऊपर अपनी विवाह मिलान रिपोर्ट जोड़ें।"
+      }
+    },
+    {
+      "id": "fundamentals-lagna-rasi-nakshatra-navamsa-dasha",
+      "category": "fundamentals",
+      "fundamentalKey": "chart",
+      "triggers": {
+        "en": ["what is lagna", "ascendant", "12 rasis", "twelve rasis", "12 zodiac", "27 nakshatras", "twenty seven nakshatras", "birth stars", "navamsa", "navamsha", "d9 chart", "vargottama", "vimshottari", "mahadasha years", "baby name starting", "starting letter", "janma pada", "namakaranam", "namakaran"],
+        "ta": ["லக்னம் என்றால்", "12 ராசி", "பன்னிரண்டு ராசி", "27 நட்சத்திர", "இருபத்தேழு நட்சத்திர", "நவாம்சம்", "வர்கோத்தமம்", "விம்சோத்தரி", "தசா வருட", "குழந்தை பெயர் எழுத்து", "நாமகரணம்", "நட்சத்திர பாதம்"],
+        "hi": ["लग्न क्या", "12 राशि", "बारह राशि", "27 नक्षत्र", "सत्ताईस नक्षत्र", "नवांश", "वर्गोत्तम", "विंशोत्तरी", "महादशा वर्ष", "नाम का पहला अक्षर", "नामकरण", "जन्म पाद"]
+      },
+      "source": [
+        { "id": "EN-01", "level": "book" },
+        { "id": "EN-02", "level": "chapter", "note": "Adhyaya I & III - rasi, lagna and navamsa basics." },
+        { "id": "TA-01", "level": "book" },
+        { "id": "TA-06", "level": "book" },
+        { "id": "TA-11", "level": "book" },
+        { "id": "TA-13", "level": "book" }
+      ],
+      "body": {
+        "en": "Core structure of your Vedic & Tamil horoscope: • Lagna (Ascendant) is the sign rising on the eastern horizon at your exact birth minute and place — setting all 12 houses of life; • Janma Rasi (12 signs: Mesha/Mars, Vrishabha/Venus, Mithuna/Mercury, Kataka/Moon, Simha/Sun, Kanya/Mercury, Tula/Venus, Vrischika/Mars, Dhanu/Jupiter, Makara/Saturn, Kumbha/Saturn, Meena/Jupiter) is your Moon sign; • Janma Nakshatra divides the zodiac into 27 stars × 4 Padas = 108 syllables (used directly for Namakaranam baby naming sounds in Nakshatra Chinthamani); • Navamsa (D9) splits each 30° sign into nine 3°20' parts (= 1 Nakshatra Pada each!) to reveal inner planetary fruitfulness, marriage harmony, and Vargottama strength (same sign in Rasi & Navamsa); • Vimshottari Mahadasha runs a 120-year sequence from your birth star lord: Ketu (7y), Venus/Sukra (20y), Sun/Surya (6y), Moon/Chandra (10y), Mars/Sevvai (7y), Rahu (18y), Jupiter/Guru (16y), Saturn/Sani (19y), Mercury/Budha (17y).",
+        "ta": "வேத மற்றும் தமிழ் ஜாதகத்தின் அடிப்படைக் கட்டமைப்பு: • லக்னம் (உதய ராசி): நீங்கள் பிறந்த துல்லிய நிமிடம் மற்றும் ஊரில் கிழக்குத் தொடுவானில் உதித்த ராசி — இதுவே 12 பாவங்களையும் தீர்மானிக்கிறது; • ஜன்ம ராசி (12 ராசிகள்: மேஷம்-செவ்வாய், ரிஷபம்-சுக்கிரன், மிதுனம்-புதன், கடகம்-சந்திரன், சிம்மம்-சூரியன், கன்னி-புதன், துலாம்-சுக்கிரன், விருச்சிகம்-செவ்வாய், தனுசு-குரு, மகரம்-சனி, கும்பம்-சனி, மீனம்-குரு): சந்திரன் நின்ற ராசி; • ஜன்ம நட்சத்திரம்: 27 நட்சத்திரங்கள் × தலா 4 பாதங்கள் = 108 பாத எழுத்துகள் (நட்சத்திர சிந்தாமணி முறைப்படி குழந்தை பெயர் முதல் எழுத்தைத் தீர்மானிக்கிறது); • நவாம்சம் (D9): ஒவ்வொரு ராசியையும் 9 கூறுகளாகப் பிரித்து (ஒரு நட்சத்திர பாதத்திற்கு ஒரு நவாம்சம்) கிரகத்தின் உண்மை பலம், திருமண நலம் மற்றும் வர்கோத்தம பலத்தைக் (ராசி-நவாம்சம் ஒரே வீடு) காட்டுகிறது; • விம்சோத்தரி மகாதசை (120 ஆண்டு வரிசை): கேது (7), சுக்கிரன் (20), சூரியன் (6), சந்திரன் (10), செவ்வாய் (7), ராகு (18), குரு (16), சனி (19), புதன் (17) ஆண்டுகள்.",
+        "hi": "वैदिक एवं तमिल जन्म कुंडली की मूल संरचना: • लग्न: जन्म के सटीक समय व स्थान पर पूर्वी क्षितिज में उदित राशि, जिससे जीवन के सभी 12 भाव तय होते हैं; • जन्म राशि (12 राशियाँ: मेष-मंगल, वृषभ-शुक्र, मिथुन-बुध, कर्क-चंद्र, सिंह-सूर्य, कन्या-बुध, तुला-शुक्र, वृश्चिक-मंगल, धनु-गुरु, मकर-शनि, कुंभ-शनि, मीन-गुरु): चंद्रमा की राशि; • जन्म नक्षत्र: 27 नक्षत्र × 4 पाद = 108 अक्षर-पाद, जिनसे नामकरण के पारंपरिक प्रारंभिक अक्षर निकलते हैं; • नवांश कुंडली (D9): प्रत्येक राशि का नवम विभाजन (3°20' = एक नक्षत्र पाद), जो ग्रहों की भीतरी फल-क्षमता, वैवाहिक सामंजस्य और वर्गोत्तम बल (राशि व नवांश में एक ही राशि) दिखाता है; • विंशोत्तरी महादशा (120 वर्ष क्रम): केतु (7), शुक्र (20), सूर्य (6), चंद्र (10), मंगल (7), राहु (18), गुरु (16), शनि (19), बुध (17) वर्ष।"
+      }
+    },
+    {
+      "id": "fundamentals-navagraha-temples",
+      "category": "temples",
+      "triggers": {
+        "en": ["9 navagraha", "nine navagraha", "navagraha temples", "navagraha sthalams", "navagraha sthalam", "all navagraha"],
+        "ta": ["நவக்கிரக ஸ்தல", "நவக்கிரக கோயில்", "ஒன்பது நவக்கிரக", "9 நவக்கிரக"],
+        "hi": ["नवग्रह मंदिर", "नवग्रह स्थल", "नौ नवग्रह"]
+      },
+      "source": [
+        { "id": "TP-01", "level": "content" },
+        { "id": "TP-03", "level": "content" },
+        { "id": "TP-04", "level": "content" },
+        { "id": "TP-08", "level": "content" },
+        { "id": "TA-07", "level": "book" },
+        { "id": "TA-08", "level": "book" }
+      ],
+      "body": {
+        "en": "The classical Nine Kaveri Delta Navagraha Parihara Sthalams of Tamil Nadu: (1) Surya (Sun): Suryanar Kovil, Aduthurai (also houses all 9 shrines together); (2) Chandra (Moon): Kailasanathar Temple, Thingalur; (3) Sevvai / Angaraka (Mars): Vaitheeswaran Kovil; (4) Budha (Mercury): Swetharanyeswarar Temple, Thiruvenkadu; (5) Guru (Jupiter): Apatsahayeswarar Temple, Alangudi; (6) Sukra (Venus): Agneeswarar Temple, Kanjanur; (7) Sani (Saturn): Dharbaranyeswarar Temple, Thirunallar; (8) Rahu: Naganathaswamy Temple, Thirunageswaram; (9) Ketu: Naganathaswamy Temple, Keezhaperumpallam.",
+        "ta": "தமிழ்நாட்டின் காவிரி டெல்டா ஒன்பது நவக்கிரக பரிகார ஸ்தலங்கள்: (1) சூரியன் (ஞாயிறு): சூரியனார் கோயில், ஆடுதுறை (ஒன்பது கிரகங்களுக்கும் தனிச் சந்நிதி உள்ளது); (2) சந்திரன் (திங்கள்): கைலாசநாதர் கோயில், திங்களூர்; (3) செவ்வாய் (அங்காரகன்): வைத்தீஸ்வரன் கோயில்; (4) புதன்: சுவேதாரண்யேஸ்வரர் கோயில், திருவெண்காடு; (5) குரு (வியாழன்): ஆபத்சகாயேஸ்வரர் கோயில், ஆலங்குடி; (6) சுக்கிரன் (வெள்ளி): அக்னீஸ்வரர் கோயில், கஞ்சனூர்; (7) சனி: தர்ப்பாரண்யேஸ்வரர் கோயில், திருநள்ளாறு; (8) ராகு: நாகநாதசுவாமி கோயில், திருநாகேஸ்வரம்; (9) கேது: நாகநாதசுவாமி கோயில், கீழப்பெரும்பள்ளம்.",
+        "hi": "तमिलनाडु के कावेरी डेल्टा स्थित नौ शास्त्रीय नवग्रह परिहार स्थल: (1) सूर्य: सूर्यनार कोविल, आदुतुरई (यहाँ सभी नौ ग्रहों के सन्निधि साथ भी हैं); (2) चंद्र: कैलासनाथर मंदिर, तिंगलूर; (3) मंगल (अंगारक): वैदीश्वरन कोविल; (4) बुध: श्वेतारण्येश्वरर मंदिर, तिरुवेंकाडु; (5) गुरु: आपत्सहायेश्वरर मंदिर, आलंगुडी; (6) शुक्र: अग्निश्वरर मंदिर, कंजनूर; (7) शनि: दर्भारण्येश्वरर मंदिर, तिरुनल्लार; (8) राहु: नागनाथस्वामी मंदिर, तिरुनागेश्वरम; (9) केतु: नागनाथस्वामी मंदिर, कीलपेरुम्पल्लम।"
+      }
+    },
+    {
+      "id": "fundamentals-panchapakshi-nadi",
+      "category": "traditions",
+      "triggers": {
+        "en": ["panchapakshi", "pancha pakshi", "nadi astrology", "nadi jothidam", "saptarishi nadi", "sukra nadi"],
+        "ta": ["பஞ்சபட்சி", "பஞ்ச பட்சி", "நாடி ஜோதிடம்", "சப்தரிஷி நாடி", "சுக்ர நாடி"],
+        "hi": ["पंचपक्षी", "नाड़ी ज्योतिष", "सप्तर्षि नाड़ी", "शुक्र नाड़ी"]
+      },
+      "source": [
+        { "id": "TA-16", "level": "book" },
+        { "id": "TA-18", "level": "book" },
+        { "id": "TA-19", "level": "book" },
+        { "id": "TA-01", "level": "book" }
+      ],
+      "body": {
+        "en": "Tamil Jyotisha preserves parallel streams alongside Parashari calculation: Bogar Munivar Panchapakshi Sastram assigns five sacred birds (Vulture, Owl, Crow, Cock, Peacock) by birth star and lunar paksha across five daily states (Rule, Eat, Walk, Sleep, Decline), while Saptarishi Anubhoga Jathaka Rahasyam and Sukranadi interpret planetary combinations through experiential Tamil nadi sutras. Note clearly that ASTRO SIVAM reports calculate charts strictly from astronomical sidereal Lahiri (Chitra Paksha) Parashari rules rather than Panchapakshi or palm-leaf nadi bundles.",
+        "ta": "தமிழ் ஜோதிட மரபில் பராசர கணிதத்துடன் இணைந்த தனித் தமிழ் நூல் மரபுகளும் உள்ளன: போகமுனிவரின் பஞ்சபட்சி சாஸ்திரம் பிறந்த நட்சத்திரம் மற்றும் பட்சத்தின் அடிப்படையில் ஐந்து பட்சிகளின் (வல்லூறு, ஆந்தை, காகம், கோழி, மயில்) ஐந்து தொழில்களைக் கொண்டு நேர பலனைக் கூறுகிறது; சப்தரிஷி அனுபோக ஜாதக ரகசியம் மற்றும் சுக்ரநாடி கிரகச் சேர்க்கைகளை அனுபவ சூத்திரங்களால் விளக்குகின்றன. குறிப்பு: ASTRO SIVAM அறிக்கைகள் பஞ்சபட்சி அல்லது ஓலைச்சுவடி நாடி முறையல்லாமல், துல்லிய லஹிரி (சித்திரை பட்ச) திருக்கணித பராசர விதிகளின்படியே கணிக்கப்படுகின்றன.",
+        "hi": "तमिल ज्योतिष परंपरा में पाराशरी गणना के समानांतर विशिष्ट तमिल धाराएँ भी हैं: बोगर मुनिवर का पंचपक्षी शास्त्र जन्म नक्षत्र और पक्ष के आधार पर पाँच पक्षियों की दैनिक अवस्थाओं से समय-बल देखता है, तथा सप्तर्षि अनुभव जातक रहस्यम और शुक्रनाड़ी ग्रह-योगों की व्यावहारिक व्याख्या करते हैं। स्पष्ट ध्यान रहे कि ASTRO SIVAM की सभी रिपोर्ट पंचपक्षी या ताड़पत्र नाड़ी के बजाय शुद्ध खगोलीय लाहिड़ी (चित्रा पक्ष) निरयण पाराशरी सिद्धांतों से ही गणना करती हैं।"
+      }
+    }
+  ],
+  "bhavas": {
+    "source": [
+      { "id": "EN-01", "level": "book" },
+      { "id": "EN-02", "level": "chapter", "note": "Adhyaya I & V - twelve bhavas and their results." },
+      { "id": "EN-06", "level": "book" },
+      { "id": "TA-01", "level": "book" },
+      { "id": "TA-02", "level": "book" }
+    ],
+    "overview": {
+      "en": "The 12 Bhavas (astrological houses) map every sphere of life starting from your Lagna: 1st Tanu (self, vitality, constitution), 2nd Dhana/Kutumba/Vak (savings, family, speech), 3rd Sahaja (courage, siblings, effort), 4th Sukha/Bandhu (mother, home, land, vehicles, peace), 5th Putra/Vidya (intellect, children, past merit), 6th Ripu/Roga/Rina (daily service, competition, debts, recovery — consult a qualified doctor for medical concerns), 7th Kalatra (marriage, spouse, partnerships), 8th Randhra (longevity factors, sudden shifts, deep research), 9th Dharma/Bhagya (fortune, father, mentors, higher learning), 10th Karma (career, authority, public duty), 11th Labha (gains, income, elder siblings), and 12th Vyaya/Moksha (expenses, sleep, charity, foreign residence). Houses 1,4,7,10 are Kendras; 1,5,9 are Trikonas; 3,6,10,11 are Upachayas; and 6,8,12 are Dusthanas.",
+      "ta": "ஜாதகத்தின் 12 பாவங்கள் (வீடுகள்) லக்னம் தொடங்கி வாழ்வின் அனைத்துத் துறைகளையும் காட்டுகின்றன: 1-ஆம் பாவம் தனு/லக்னம் (தோற்றம், உடல் வலிமை, சுய இயல்பு), 2-ஆம் பாவம் தன/குடும்ப/வாக்கு, 3-ஆம் பாவம் சகோதர/தைரிய/முயற்சி, 4-ஆம் பாவம் சுக/மாத்ரு/வீடு-நிலம்-வாகனம், 5-ஆம் பாவம் புத்திர/பூர்வபுண்ணிய/கல்வி, 6-ஆம் பாவம் ருண-ரோக-சத்ரு/உழைப்பு (உடல்நலப் பிரச்சினைக்கு தகுதியான மருத்துவரை அணுகவும்), 7-ஆம் பாவம் களத்திரம் (திருமணம், வாழ்க்கைத்துணை, கூட்டாண்மை), 8-ஆம் பாவம் ஆயுள்/திடீர் மாற்றம்/ஆராய்ச்சி, 9-ஆம் பாவம் பாக்கிய/தர்ம/பித்ரு/உயர்கல்வி, 10-ஆம் பாவம் கர்ம/தொழில்/பதவி, 11-ஆம் பாவம் லாபம்/மூத்த சகோதரம், 12-ஆம் பாவம் விரயம்/வெளிநாட்டு வாசம்/மோட்சம். 1,4,7,10 கேந்திரங்கள்; 1,5,9 திரிகோணங்கள்; 3,6,10,11 உபஜய ஸ்தானங்கள்; 6,8,12 மறைவு (துஸ்தான) வீடுகள்.",
+      "hi": "जन्म कुंडली के 12 भाव लग्न से आरंभ होकर जीवन के प्रत्येक क्षेत्र को दर्शाते हैं: प्रथम तनु भाव (स्वयं, शरीर व व्यक्तित्व), द्वितीय धन/कुटुंब/वाणी भाव, तृतीय सहज/पराक्रम/छोटे भाई-बहन भाव, चतुर्थ सुख/माता/भूमि-भवन-वाहन भाव, पंचम संतान/विद्या/पूर्वपुण्य भाव, षष्ठ रिपु-ऋण-रोग व सेवा भाव (स्वास्थ्य विषय में योग्य डॉक्टर से परामर्श लें), सप्तम कलत्र/विवाह व साझेदारी भाव, अष्टम परिवर्तन/शोध भाव, नवम धर्म/भाग्य/पिता व उच्च शिक्षा भाव, दशम कर्म/आजीविका व प्रतिष्ठा भाव, एकादश लाभ/आय भाव, तथा द्वादश व्यय/विदेश निवास व मोक्ष भाव। 1,4,7,10 केंद्र हैं; 1,5,9 त्रिकोण हैं; 3,6,10,11 उपचय हैं; और 6,8,12 दुःस्थान माने जाते हैं।"
+    },
+    "houses": {
+      "1": {
+        "en": "1st House (Lagna / Tanu Bhava): Governs your physical vitality, temperament, self-direction, and how the entire horoscope unfolds. A well-placed Lagna lord or benefic support here steadies resilience across life (for any physical health concern, always consult a qualified doctor alongside astrological guidance).",
+        "ta": "1-ஆம் பாவம் (லக்ன / தனு ஸ்தானம்): உடல் வலிமை, குணநலன், தன்னம்பிக்கை மற்றும் ஜாதகத்தின் ஒட்டுமொத்த திசையைக் குறிக்கும் மைய வீடு. லக்னாதிபதி பலம் பெற்றால் வாழ்வின் சவால்களைத் தாங்கும் உறுதி உயரும் (உடல்நலம் சார்ந்த கேள்விகளுக்கு தகுதியான மருத்துவரை அணுகுவது அவசியம்).",
+        "hi": "प्रथम भाव (लग्न / तनु भाव): यह शरीर की ऊर्जा, स्वभाव, आत्मबल और पूरी कुंडली की दिशा निर्धारित करता है। लग्नेश बलवान होने पर जीवन में स्थिरता और सहनशक्ति बढ़ती है (किसी भी स्वास्थ्य समस्या हेतु योग्य डॉक्टर से अवश्य सलाह लें)।"
+      },
+      "2": {
+        "en": "2nd House (Dhana, Kutumba & Vak Bhava): Signifies accumulated savings, family upbringing, speech (Vak Siddhi — Sadhaka Parisatham pp.20-24), food habits, and primary education. Benefic support builds steady family wealth and persuasive speech, whereas malefic pressure asks for disciplined budgeting.",
+        "ta": "2-ஆம் பாவம் (தன, குடும்ப மற்றும் வாக்கு ஸ்தானம்): சேமித்த செல்வம், குடும்பச் சூழல், பேச்சுத் திறன் (வாக்கு சித்தி — சாதக பாரிசாதம் பாடல்கள் 46-58) மற்றும் அடிப்படைக் கல்வியைக் குறிக்கிறது. சுப பலம் நேர்மையான சேமிப்பையும் இனிய வாக்கையும் தரும்; அழுத்தம் இருந்தால் திட்டமிட்ட சேமிப்பு அவசியம்.",
+        "hi": "द्वितीय भाव (धन, कुटुंब एवं वाणी भाव): यह संचित बचत, परिवार, वाणी के प्रभाव (वाक् सिद्धि — साधक पारिजातम् श्लोक 46-58) और प्रारंभिक शिक्षा का कारक है। शुभ बल स्थायी बचत व मधुर वाणी देता है, जबकि दबाव होने पर अनुशासित बजट लाभकारी रहता है।"
+      },
+      "3": {
+        "en": "3rd House (Sahaja / Parakrama Bhava): Represents personal initiative, courage, younger siblings, writing/media communication, short journeys, and hands-on skill. As an Upachaya (growth) house, consistent self-effort improves its results steadily over time.",
+        "ta": "3-ஆம் பாவம் (சகோதர / தைரிய / வீரிய ஸ்தானம்): விடாமுயற்சி, துணிச்சல், இளைய உடன்பிறப்புகள், எழுத்து-தகவல் தொடர்பு, சிறு பயணங்கள் மற்றும் கைத்திறனைக் குறிக்கிறது. இது உபஜய ஸ்தானம் என்பதால் சொந்த முயற்சியால் காலப்போக்கில் மேலும் வலுப்பெறும்.",
+        "hi": "तृतीय भाव (सहज / पराक्रम भाव): यह साहस, स्व-परिश्रम, छोटे भाई-बहन, लेखन-संवाद, छोटी यात्राओं और कौशल का भाव है। उपचय भाव होने के कारण निरंतर प्रयास से इसके फल समय के साथ निरंतर निखरते हैं।"
+      },
+      "4": {
+        "en": "4th House (Sukha, Matru & Bandhu Bhava): Rules inner contentment, mother, home, land, real estate, vehicles, and foundational schooling. A strong 4th lord and Moon favour peaceful home ownership when timed within a supportive Bhukti.",
+        "ta": "4-ஆம் பாவம் (சுக, மாத்ரு மற்றும் வீடு-வாகன ஸ்தானம்): மன நிம்மதி, தாயார், சொந்த வீடு, நிலம், வாகனம் மற்றும் பள்ளிக் கல்வியைக் குறிக்கிறது. 4-ஆம் அதிபதியும் சந்திரனும் பலம் பெற்றால் சாதகமான புக்தியில் வீடு-நிலம் அமையும்.",
+        "hi": "चतुर्थ भाव (सुख, मातृ एवं भूमि-वाहन भाव): यह मानसिक शांति, माता, स्वयं का घर, भूमि, वाहन और आधारभूत शिक्षा को दर्शाता है। चतुर्थेश और चंद्रमा बलवान हों तो अनुकूल भुक्ति में गृह-संपत्ति का योग मज़बूत होता है।"
+      },
+      "5": {
+        "en": "5th House (Putra, Vidya & Poorvapunya Bhava): A premier Trikona house governing intelligence, reasoning, memory, children, creative expression, traditional prayer (mantra siddhi), and past merit.",
+        "ta": "5-ஆம் பாவம் (புத்திர, வித்யா மற்றும் பூர்வபுண்ணிய ஸ்தானம்): நுண்ணறிவு, சிந்தனைத் தெளிவு, குழந்தைகள், படைப்பாற்றல், வழிபாட்டு சித்தி மற்றும் பூர்வ புண்ணியத்தைக் காட்டும் முக்கிய திரிகோண வீடு.",
+        "hi": "पंचम भाव (संतान, विद्या एवं पूर्वपुण्य भाव): यह प्रमुख त्रिकोण भाव बुद्धि, विवेक, स्मरण शक्ति, संतान, रचनात्मकता, मंत्र-साधना और पूर्वपुण्य को दर्शाता है।"
+      },
+      "6": {
+        "en": "6th House (Ripu, Roga & Rina Bhava): Covers daily work discipline, service professions, competitive exams, managing loans, and physical recovery. As an Upachaya house it rewards steady routine, though health concerns always require consulting a qualified doctor.",
+        "ta": "6-ஆம் பாவம் (ருண, ரோக, சத்ரு மற்றும் உத்தியோக ஸ்தானம்): அன்றாடப் பணி ஒழுக்கம், போட்டித் தேர்வு வெற்றி, கடன் மேலாண்மை மற்றும் உடல்நல மீட்சியைக் குறிக்கிறது (உடல்நலம் தொடர்பாக எப்போதும் தகுதியான மருத்துவரை அணுகவும்).",
+        "hi": "षष्ठ भाव (रिपु, ऋण, रोग एवं सेवा भाव): यह दैनिक कार्य-अनुशासन, प्रतियोगी परीक्षा, ऋण प्रबंधन और स्वास्थ्य सुधार से जुड़ा है (स्वास्थ्य संबंधी किसी भी विषय में योग्य डॉक्टर से परामर्श अवश्य लें)।"
+      },
+      "7": {
+        "en": "7th House (Kalatra Bhava): Governs marriage, spouse temperament, mutual trust, business partnerships, contracts, and how you deal with the public (Phaladeepika Adhyaya VII).",
+        "ta": "7-ஆம் பாவம் (களத்திர ஸ்தானம்): திருமணம், வாழ்க்கைத்துணை இயல்பு, தொழில் கூட்டாண்மை மற்றும் பொதுமக்கள் தொடர்பைக் குறிக்கும் கேந்திர வீடு (பலதீபிகை அதிகாரம் VII).",
+        "hi": "सप्तम भाव (कलत्र भाव): यह विवाह, जीवनसाथी के स्वभाव, व्यावसायिक साझेदारी और जनसंपर्क का प्रमुख केंद्र भाव है (फलदीपिका अध्याय VII)।"
+      },
+      "8": {
+        "en": "8th House (Randhra / Transformation Bhava): Indicates deep research, sudden transitions, joint/inherited family resources, insurance, inner transformation, and patience during long recovery (consult a qualified doctor for medical matters).",
+        "ta": "8-ஆம் பாவம் (ஆயுள் / ஆராய்ச்சி / திடீர் மாற்ற ஸ்தானம்): ஆழ்ந்த ஆராய்ச்சி, உயில்/கூட்டு நிதி, எதிர்பாராத மாற்றங்கள் மற்றும் பொறுமையான மீட்சியைக் குறிக்கிறது (மருத்துவ விஷயங்களில் தகுதியான மருத்துவரை அணுகவும்).",
+        "hi": "अष्टम भाव (रंध्र / परिवर्तन एवं शोध भाव): यह गहन शोध, आकस्मिक बदलाव, पैतृक/संयुक्त संसाधन और धैर्यपूर्ण पुनर्प्राप्ति का भाव है (चिकित्सा विषय में योग्य डॉक्टर की सलाह लें)।"
+      },
+      "9": {
+        "en": "9th House (Dharma & Bhagya Bhava): The highest Trikona of grace, dharma, father, teachers/gurus, postgraduate higher learning, pilgrimage, and long or overseas journeys.",
+        "ta": "9-ஆம் பாவம் (பாக்கிய மற்றும் தர்ம ஸ்தானம்): நல்வாய்ப்பு, தர்மம், தந்தை, குருமார்கள், உயர்கல்வி, புனித யாத்திரை மற்றும் நீண்ட/வெளிநாட்டுப் பயணங்களைக் காட்டும் உயர்ந்த திரிகோண வீடு.",
+        "hi": "नवम भाव (धर्म एवं भाग्य भाव): यह सर्वोच्च त्रिकोण भाव भाग्य, धर्म, पिता, गुरुजन, उच्च शिक्षा, तीर्थयात्रा और लंबी विदेश यात्राओं का कारक है।"
+      },
+      "10": {
+        "en": "10th House (Karma / Jeevana Bhava): The zenith Kendra governing career, profession, leadership, public reputation, accountability, and visible life contribution.",
+        "ta": "10-ஆம் பாவம் (கர்ம / ஜீவன / தொழில் ஸ்தானம்): தொழில், பதவி, தலைமைப் பொறுப்பு, சமூக மரியாதை மற்றும் கர்மச் செயல்பாட்டைக் குறிக்கும் முதன்மை கேந்திர வீடு.",
+        "hi": "दशम भाव (कर्म / राज्य / आजीविका भाव): यह आजीविका, पद-प्रतिष्ठा, कार्यक्षेत्र के उत्तरदायित्व और सामाजिक पहचान का सर्वोच्च केंद्र भाव है।"
+      },
+      "11": {
+        "en": "11th House (Labha Bhava): Signifies income realization, fulfilment of goals, elder siblings, supportive networks, and returns from sustained effort.",
+        "ta": "11-ஆம் பாவம் (லாப ஸ்தானம்): வருமானம், எண்ணிய இலக்குகள் நிறைவேறுதல், மூத்த உடன்பிறப்புகள் மற்றும் நட்பு வட்ட ஆதரவைக் குறிக்கும் வீடு.",
+        "hi": "एकादश भाव (लाभ भाव): यह आय प्राप्ति, लक्ष्यों की पूर्ति, बड़े भाई-बहन और सहयोगी मित्र-नेटवर्क का भाव है।"
+      },
+      "12": {
+        "en": "12th House (Vyaya & Foreign Residence Bhava): Governs planned expenditure, charity (dana), rest and sleep quality, spiritual retreat, and residence or work far from one birthplace.",
+        "ta": "12-ஆம் பாவம் (விரய, அயன-சயன மற்றும் வெளிநாட்டு வாச ஸ்தானம்): சுபச் செலவு, தர்ம-தானம், உறக்கம், ஆன்மிக அமைதி மற்றும் பிறந்த ஊருக்கு அப்பால் / வெளிநாட்டு வாழ்க்கையைக் குறிக்கிறது.",
+        "hi": "द्वादश भाव (व्यय, शयन एवं विदेश निवास भाव): यह शुभ व्यय, दान, निद्रा-विश्राम, आध्यात्मिक शांति और जन्मस्थान से दूर या विदेश निवास को दर्शाता है।"
+      }
+    }
+  },
+  "grahas": {
+    "source": [
+      { "id": "EN-01", "level": "book" },
+      { "id": "EN-02", "level": "chapter", "note": "Adhyaya II - graha characteristics and significations." },
+      { "id": "TA-01", "level": "book" },
+      { "id": "TA-05", "level": "book" },
+      { "id": "TA-08", "level": "book" }
+    ],
+    "profiles": {
+      "Surya": {
+        "en": "Surya (Sun — Atmakaraka): Signifies vitality, self-respect, integrity, father, public service, and clarity of purpose. Rules Simha (Leo), exalted in Mesha (Aries), debilitated in Tula (Libra).",
+        "ta": "சூரியன் (ஆத்ம காரகன்): தன்னம்பிக்கை, நேர்மை, தந்தை, தலைமைப் பண்பு மற்றும் அரசு/பொதுத் துறை தொடர்பைக் குறிப்பவர். சிம்மத்திற்கு அதிபதி; மேஷத்தில் உச்சம்; துலாத்தில் நீச்சம்.",
+        "hi": "सूर्य (आत्मकारक): आत्मबल, स्वाभिमान, सत्यनिष्ठा, पिता, नेतृत्व और राजसेवा के कारक। सिंह राशि के स्वामी, मेष में उच्च और तुला में नीच होते हैं।"
+      },
+      "Chandra": {
+        "en": "Chandra (Moon — Manokaraka): Signifies mind, emotional balance, mother, nourishment, memory, and public goodwill. Rules Kataka (Cancer), exalted in Vrishabha (Taurus), debilitated in Vrischika (Scorpio).",
+        "ta": "சந்திரன் (மனோகாரகன்): மனம், உணர்வுச் சமநிலை, தாயார், அன்பு, கற்பனைத் திறன் மற்றும் பயணத்தைக் குறிப்பவர். கடகத்திற்கு அதிபதி; ரிஷபத்தில் உச்சம்; விருச்சிகத்தில் நீச்சம்.",
+        "hi": "चंद्रमा (मनोकारक): मन, भावनात्मक संतुलन, माता, स्नेह और स्मरण शक्ति के कारक। कर्क राशि के स्वामी, वृषभ में उच्च और वृश्चिक में नीच होते हैं।"
+      },
+      "Sevvai": {
+        "en": "Sevvai / Kuja (Mars — Bhoomi & Bhratru Karaka): Signifies courage, willpower, siblings, land/property, engineering/technical skill, and decisive action. Rules Mesha & Vrischika, exalted in Makara (Capricorn), debilitated in Kataka (Cancer).",
+        "ta": "செவ்வாய் / அங்காரகன் (பூமி மற்றும் சகோதர காரகன்): வீரம், மன உறுதி, சகோதரர், நிலம்-வீடு மற்றும் தொழில்நுட்பத் திறனைக் குறிப்பவர். மேஷம், விருச்சிகத்திற்கு அதிபதி; மகரத்தில் உச்சம்; கடகத்தில் நீச்சம்.",
+        "hi": "मंगल / कुज (भूमि एवं भ्रातृ कारक): साहस, ऊर्जा, छोटे भाई, भूमि-भवन और तकनीकी कार्यक्षमता के कारक। मेष व वृश्चिक के स्वामी, मकर में उच्च और कर्क में नीच होते हैं।"
+      },
+      "Budha": {
+        "en": "Budha (Mercury — Vidya & Vak Karaka): Signifies learning, speech, logic, commerce, accounting, software/writing, and adaptability. Rules Mithuna & Kanya, exalted in Kanya (Virgo), debilitated in Meena (Pisces).",
+        "ta": "புதன் (வித்யா மற்றும் வாக்கு காரகன்): கல்வி, நுண்ணறிவு, பேச்சு, கணக்கு, வணிகம் மற்றும் எழுத்துத் திறனைக் குறிப்பவர். மிதுனம், கன்னிக்கு அதிபதி; கன்னியில் உச்சம்; மீனத்தில் நீச்சம்.",
+        "hi": "बुध (विद्या एवं वाणी कारक): शिक्षा, तर्कशक्ति, वाणी, व्यापार, लेखन व गणना के कारक। मिथुन व कन्या के स्वामी, कन्या में उच्च और मीन में नीच होते हैं।"
+      },
+      "Guru": {
+        "en": "Guru (Jupiter — Putra, Dhana & Gnana Karaka): The foremost natural benefic, signifying wisdom, teaching, ethics, children, treasury/wealth, and grace. Rules Dhanu & Meena, exalted in Kataka (Cancer), debilitated in Makara (Capricorn).",
+        "ta": "குரு பகவான் (புத்திர, தன மற்றும் ஞான காரகன்): முதன்மைச் சுபக்கிரகம்; ஞானம், தர்மம், ஆசிரியர், குழந்தை பாக்கியம் மற்றும் நேர்மையான செல்வத்தைக் குறிப்பவர். தனுசு, மீனத்திற்கு அதிபதி; கடகத்தில் உச்சம்; மகரத்தில் நீச்சம்.",
+        "hi": "बृहस्पति / गुरु (ज्ञान, धन एवं संतान कारक): सर्वप्रमुख नैसर्गिक शुभ ग्रह — विवेक, धर्म, गुरुजन, संतान और सात्त्विक समृद्धि के कारक। धनु व मीन के स्वामी, कर्क में उच्च और मकर में नीच होते हैं।"
+      },
+      "Sukra": {
+        "en": "Sukra (Venus — Kalatra & Vahana Karaka): Signifies marriage harmony, affection, arts, comfort, vehicles, hospitality, and refined living. Rules Vrishabha & Tula, exalted in Meena (Pisces), debilitated in Kanya (Virgo).",
+        "ta": "சுக்கிரன் (களத்திர மற்றும் வாகன காரகன்): திருமண நலம், அன்பு, கலை, இசை, வாகனம் மற்றும் சுக வாழ்வைக் குறிப்பவர். ரிஷபம், துலாத்திற்கு அதிபதி; மீனத்தில் உச்சம்; கன்னியில் நீச்சம்.",
+        "hi": "शुक्र (कलत्र एवं वाहन कारक): दांपत्य सामंजस्य, स्नेह, कला, सौंदर्य, वाहन और सुख-सुविधा के कारक। वृषभ व तुला के स्वामी, मीन में उच्च और कन्या में नीच होते हैं।"
+      },
+      "Sani": {
+        "en": "Sani (Saturn — Ayush & Karma Karaka): Signifies perseverance, duty, time, humility, labour, structure, and durable achievement through honest effort. Rules Makara & Kumbha, exalted in Tula (Libra), debilitated in Mesha (Aries).",
+        "ta": "சனி பகவான் (ஆயுள் மற்றும் கர்ம காரகன்): உழைப்பு, பொறுமை, கடமை உணர்வு, நீதி மற்றும் காலத்தால் நிலைக்கும் உயர்வைக் குறிப்பவர். மகரம், கும்பத்திற்கு அதிபதி; துலாத்தில் உச்சம்; மேஷத்தில் நீச்சம்.",
+        "hi": "शनि (कर्म एवं अनुशासन कारक): परिश्रम, धैर्य, न्याय, समय-पालन और स्थायी उपलब्धि के कारक। मकर व कुंभ के स्वामी, तुला में उच्च और मेष में नीच होते हैं।"
+      },
+      "Rahu": {
+        "en": "Rahu (North Lunar Node — Chaya Graha): Signifies unconventional ambition, foreign connections, modern technology, scale, and sudden breakthroughs when channelled with ethics (Uttara Kalamrita).",
+        "ta": "ராகு பகவான் (வடக்கு நிழல் கிரகம்): வெளிநாட்டுத் தொடர்பு, நவீன தொழில்நுட்பம், பெரிய இலக்குகள் மற்றும் புதிய துறை வளர்ச்சியைக் குறிப்பவர் (உத்தர காலாமிருதம்). நேர்மையும் நிதானமும் இணைந்தால் உயர்வு தரும்.",
+        "hi": "राहु (उत्तरी छाया ग्रह): विदेश संबंध, आधुनिक तकनीक, बड़े लक्ष्य और नए क्षेत्रों में विस्तार के कारक (उत्तरकालामृत)। संयम व सत्यनिष्ठा के साथ श्रेष्ठ फल देते हैं।"
+      },
+      "Ketu": {
+        "en": "Ketu (South Lunar Node — Mokshakaraka): Signifies spiritual depth, detachment, research, intuition, traditional learning, and precision skill when balanced with calm daily structure.",
+        "ta": "கேது பகவான் (மோட்ச மற்றும் ஞான காரகன்): ஆன்மிகத் தெளிவு, ஆராய்ச்சி, நுண்ணறிவு, மருத்துவ/பாரம்பரிய அறிவு மற்றும் பற்றற்ற நிதானத்தைக் குறிப்பவர்.",
+        "hi": "केतु (मोक्ष एवं आध्यात्मिक ज्ञान कारक): अंतर्दृष्टि, शोध, अध्यात्म, सूक्ष्म कौशल और वैराग्यपूर्ण विवेक के कारक।"
+      }
+    }
+  }
+}

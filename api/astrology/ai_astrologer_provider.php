@@ -25,6 +25,7 @@ class AstroAiProvider
     const REMEDIES_PATH = '/knowledge/ai-astrologer/rules/remedies.json';
     const SOURCES_PATH = '/knowledge/ai-astrologer/sources.json';
     const GUIDED_PATH = '/knowledge/ai-astrologer/rules/guided-questions.json';
+    const ENCYCLOPEDIA_PATH = '/knowledge/ai-astrologer/rules/astrology-encyclopedia.json';
 
     private static $promptCache = null;
     private static $kbCache = [];
@@ -56,7 +57,7 @@ class AstroAiProvider
         if (!function_exists('mb_strlen')) {
             return false;
         }
-        foreach ([self::LIFE_AREAS_PATH, self::GUARDRAILS_PATH, self::REMEDIES_PATH, self::SOURCES_PATH, self::GUIDED_PATH] as $rel) {
+        foreach ([self::LIFE_AREAS_PATH, self::GUARDRAILS_PATH, self::REMEDIES_PATH, self::SOURCES_PATH, self::GUIDED_PATH, self::ENCYCLOPEDIA_PATH] as $rel) {
             $path = self::kbPath($rel);
             if (!is_file($path)) {
                 return false;
@@ -316,7 +317,7 @@ class AstroAiProvider
                 'id' => $rule['id'],
                 'meaning' => $meaning,
                 'easing' => $rule['easing'] ?? '',
-                'practical' => $rule['practical'] ?? [],
+                'practical' => $rule['practicalI18n'][$language] ?? ($rule['practical'] ?? []),
                 'sources' => $labels,
             ];
             $sources = array_merge($sources, $labels);
@@ -685,6 +686,7 @@ class AstroAiProvider
             'remedies' => self::REMEDIES_PATH,
             'sources' => self::SOURCES_PATH,
             'guided' => self::GUIDED_PATH,
+            'encyclopedia' => self::ENCYCLOPEDIA_PATH,
         ] as $id => $rel) {
             $path = self::kbPath($rel);
             $exists = is_file($path);

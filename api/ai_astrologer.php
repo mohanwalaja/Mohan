@@ -1476,7 +1476,7 @@ function astro_ai_action_options(PDO $pdo, array $user, array $body): void
     // The reports this conversation can be attached to. The service chapters
     // are only useful once the matching report is attached, and the floating
     // launcher opens with no report bound.
-    $orders = $isAdmin ? [] : astro_ai_attachable_orders($pdo, (string) $user['id']);
+    $orders = astro_ai_attachable_orders($pdo, (string) $user['id']);
     foreach ($orders as &$o) {
         $o['title'] = astro_ai_service_title((string) $o['serviceType'], $language);
     }
@@ -1967,7 +1967,51 @@ function astro_ai_service_facts(array $order): ?array
 
     // Some engine fields are strings, others (reasons, doshas) are lists of
     // strings; both flatten to one readable line per language.
-    $tri = static function (array $r, string $base): array {
+    $hiAstroTerm = static function (string $en): string {
+        static $map = [
+            'Mesham (Aries)' => 'मेष', 'Mesham' => 'मेष', 'Mesha' => 'मेष', 'Aries' => 'मेष',
+            'Rishabam (Taurus)' => 'वृषभ', 'Rishabam' => 'वृषभ', 'Vrishabha' => 'वृषभ', 'Taurus' => 'वृषभ',
+            'Mithunam (Gemini)' => 'मिथुन', 'Mithunam' => 'मिथुन', 'Mithuna' => 'मिथुन', 'Gemini' => 'मिथुन',
+            'Kadagam (Cancer)' => 'कर्क', 'Kadagam' => 'कर्क', 'Kataka' => 'कर्क', 'Cancer' => 'कर्क',
+            'Simmam (Leo)' => 'सिंह', 'Simmam' => 'सिंह', 'Simha' => 'सिंह', 'Leo' => 'सिंह',
+            'Kanni (Virgo)' => 'कन्या', 'Kanni' => 'कन्या', 'Kanya' => 'कन्या', 'Virgo' => 'कन्या',
+            'Thulam (Libra)' => 'तुला', 'Thulam' => 'तुला', 'Tula' => 'तुला', 'Libra' => 'तुला',
+            'Viruchigam (Scorpio)' => 'वृश्चिक', 'Viruchigam' => 'वृश्चिक', 'Vrischika' => 'वृश्चिक', 'Scorpio' => 'वृश्चिक',
+            'Dhanusu (Sagittarius)' => 'धनु', 'Dhanusu' => 'धनु', 'Dhanu' => 'धनु', 'Sagittarius' => 'धनु',
+            'Makaram (Capricorn)' => 'मकर', 'Makaram' => 'मकर', 'Makara' => 'मकर', 'Capricorn' => 'मकर',
+            'Kumbam (Aquarius)' => 'कुंभ', 'Kumbam' => 'कुंभ', 'Kumbha' => 'कुंभ', 'Aquarius' => 'कुंभ',
+            'Meenam (Pisces)' => 'मीन', 'Meenam' => 'मीन', 'Meena' => 'मीन', 'Pisces' => 'मीन',
+            'Ashwini' => 'अश्विनी', 'Aswini' => 'अश्विनी',
+            'Bharani' => 'भरणी',
+            'Krittika' => 'कृत्तिका', 'Karthigai' => 'कृत्तिका',
+            'Rohini' => 'रोहिणी',
+            'Mrigashira' => 'मृगशिरा', 'Mrigasira' => 'मृगशिरा', 'Mrigashirsha' => 'मृगशिरा',
+            'Ardra' => 'आर्द्रा', 'Thiruvathirai' => 'आर्द्रा',
+            'Punarvasu' => 'पुनर्वसु', 'Punarpoosam' => 'पुनर्वसु',
+            'Pushya' => 'पुष्य', 'Poosam' => 'पुष्य',
+            'Ashlesha' => 'आश्लेषा', 'Ayilyam' => 'आश्लेषा',
+            'Magha' => 'मघा', 'Makam' => 'मघा',
+            'Purva Phalguni' => 'पूर्वा फाल्गुनी', 'Pooram' => 'पूर्वा फाल्गुनी',
+            'Uttara Phalguni' => 'उत्तरा फाल्गुनी', 'Uthiram' => 'उत्तरा फाल्गुनी',
+            'Hasta' => 'हस्त', 'Hastham' => 'हस्त',
+            'Chitra' => 'चित्रा', 'Chithirai' => 'चित्रा',
+            'Swati' => 'स्वाति', 'Swathi' => 'स्वाति',
+            'Vishakha' => 'विशाखा', 'Visakam' => 'विशाखा',
+            'Anuradha' => 'अनुराधा', 'Anusham' => 'अनुराधा',
+            'Jyeshtha' => 'ज्येष्ठा', 'Kettai' => 'ज्येष्ठा',
+            'Mula' => 'मूल', 'Moolam' => 'मूल',
+            'Purva Ashadha' => 'पूर्वाषाढ़ा', 'Pooradam' => 'पूर्वाषाढ़ा',
+            'Uttara Ashadha' => 'उत्तराषाढ़ा', 'Uthiradam' => 'उत्तराषाढ़ा',
+            'Shravana' => 'श्रवण', 'Thiruvonam' => 'श्रवण',
+            'Dhanishta' => 'धनिष्ठा', 'Dhanishtha' => 'धनिष्ठा', 'Avittam' => 'धनिष्ठा',
+            'Shatabhisha' => 'शतभिषा', 'Sadayam' => 'शतभिषा',
+            'Purva Bhadrapada' => 'पूर्वा भाद्रपद', 'Poorattathi' => 'पूर्वा भाद्रपद',
+            'Uttara Bhadrapada' => 'उत्तरा भाद्रपद', 'Uthirattathi' => 'उत्तरा भाद्रपद',
+            'Revati' => 'रेवती', 'Revathi' => 'रेवती',
+        ];
+        return $map[$en] ?? $en;
+    };
+    $tri = static function (array $r, string $base) use ($hiAstroTerm): array {
         $flat = static function ($value): string {
             if (is_array($value)) {
                 return implode('; ', array_values(array_filter(array_map('strval', $value),
@@ -1976,10 +2020,11 @@ function astro_ai_service_facts(array $order): ?array
             return trim((string) $value);
         };
         $en = $flat($r[$base . 'En'] ?? '');
+        $hiRaw = $flat($r[$base . 'Hi'] ?? '');
         return [
             'en' => $en,
             'ta' => $flat($r[$base . 'Ta'] ?? $en),
-            'hi' => $flat($r[$base . 'Hi'] ?? $en),
+            'hi' => $hiRaw !== '' ? $hiRaw : $hiAstroTerm($en),
         ];
     };
 
@@ -2118,7 +2163,7 @@ function astro_ai_service_facts(array $order): ?array
                 'star' => [
                     'en' => (string) ($result['janmaNakshatraEn'] ?? ''),
                     'ta' => (string) ($result['janmaNakshatraTa'] ?? ($result['janmaNakshatraEn'] ?? '')),
-                    'hi' => (string) ($result['janmaNakshatraEn'] ?? ''),
+                    'hi' => (string) ($result['janmaNakshatraHi'] ?? $hiAstroTerm((string) ($result['janmaNakshatraEn'] ?? ''))),
                 ],
                 'pada' => $pada,
                 'rasi' => $tri($result, 'chandraRasiName'),
@@ -2338,11 +2383,78 @@ function astro_ai_chart_facts(array $order): ?array
         }
     }
 
+    $hiAstroChart = static function (string $en): string {
+        static $map = [
+            'Mesham (Aries)' => 'मेष', 'Mesham' => 'मेष', 'Mesha' => 'मेष', 'Aries' => 'मेष',
+            'Rishabam (Taurus)' => 'वृषभ', 'Rishabam' => 'वृषभ', 'Vrishabha' => 'वृषभ', 'Taurus' => 'वृषभ',
+            'Mithunam (Gemini)' => 'मिथुन', 'Mithunam' => 'मिथुन', 'Mithuna' => 'मिथुन', 'Gemini' => 'मिथुन',
+            'Kadagam (Cancer)' => 'कर्क', 'Kadagam' => 'कर्क', 'Kataka' => 'कर्क', 'Cancer' => 'कर्क',
+            'Simmam (Leo)' => 'सिंह', 'Simmam' => 'सिंह', 'Simha' => 'सिंह', 'Leo' => 'सिंह',
+            'Kanni (Virgo)' => 'कन्या', 'Kanni' => 'कन्या', 'Kanya' => 'कन्या', 'Virgo' => 'कन्या',
+            'Thulam (Libra)' => 'तुला', 'Thulam' => 'तुला', 'Tula' => 'तुला', 'Libra' => 'तुला',
+            'Viruchigam (Scorpio)' => 'वृश्चिक', 'Viruchigam' => 'वृश्चिक', 'Vrischika' => 'वृश्चिक', 'Scorpio' => 'वृश्चिक',
+            'Dhanusu (Sagittarius)' => 'धनु', 'Dhanusu' => 'धनु', 'Dhanu' => 'धनु', 'Sagittarius' => 'धनु',
+            'Makaram (Capricorn)' => 'मकर', 'Makaram' => 'मकर', 'Makara' => 'मकर', 'Capricorn' => 'मकर',
+            'Kumbam (Aquarius)' => 'कुंभ', 'Kumbam' => 'कुंभ', 'Kumbha' => 'कुंभ', 'Aquarius' => 'कुंभ',
+            'Meenam (Pisces)' => 'मीन', 'Meenam' => 'मीन', 'Meena' => 'मीन', 'Pisces' => 'मीन',
+            'Ashwini' => 'अश्विनी', 'Aswini' => 'अश्विनी',
+            'Bharani' => 'भरणी',
+            'Krittika' => 'कृत्तिका', 'Karthigai' => 'कृत्तिका',
+            'Rohini' => 'रोहिणी',
+            'Mrigashira' => 'मृगशिरा', 'Mrigasira' => 'मृगशिरा', 'Mrigashirsha' => 'मृगशिरा',
+            'Ardra' => 'आर्द्रा', 'Thiruvathirai' => 'आर्द्रा',
+            'Punarvasu' => 'पुनर्वसु', 'Punarpoosam' => 'पुनर्वसु',
+            'Pushya' => 'पुष्य', 'Poosam' => 'पुष्य',
+            'Ashlesha' => 'आश्लेषा', 'Ayilyam' => 'आश्लेषा',
+            'Magha' => 'मघा', 'Makam' => 'मघा',
+            'Purva Phalguni' => 'पूर्वा फाल्गुनी', 'Pooram' => 'पूर्वा फाल्गुनी',
+            'Uttara Phalguni' => 'उत्तरा फाल्गुनी', 'Uthiram' => 'उत्तरा फाल्गुनी',
+            'Hasta' => 'हस्त', 'Hastham' => 'हस्त',
+            'Chitra' => 'चित्रा', 'Chithirai' => 'चित्रा',
+            'Swati' => 'स्वाति', 'Swathi' => 'स्वाति',
+            'Vishakha' => 'विशाखा', 'Visakam' => 'विशाखा',
+            'Anuradha' => 'अनुराधा', 'Anusham' => 'अनुराधा',
+            'Jyeshtha' => 'ज्येष्ठा', 'Kettai' => 'ज्येष्ठा',
+            'Mula' => 'मूल', 'Moolam' => 'मूल',
+            'Purva Ashadha' => 'पूर्वाषाढ़ा', 'Pooradam' => 'पूर्वाषाढ़ा',
+            'Uttara Ashadha' => 'उत्तराषाढ़ा', 'Uthiradam' => 'उत्तराषाढ़ा',
+            'Shravana' => 'श्रवण', 'Thiruvonam' => 'श्रवण',
+            'Dhanishta' => 'धनिष्ठा', 'Dhanishtha' => 'धनिष्ठा', 'Avittam' => 'धनिष्ठा',
+            'Shatabhisha' => 'शतभिषा', 'Sadayam' => 'शतभिषा',
+            'Purva Bhadrapada' => 'पूर्वा भाद्रपद', 'Poorattathi' => 'पूर्वा भाद्रपद',
+            'Uttara Bhadrapada' => 'उत्तरा भाद्रपद', 'Uthirattathi' => 'उत्तरा भाद्रपद',
+            'Revati' => 'रेवती', 'Revathi' => 'रेवती',
+        ];
+        return $map[$en] ?? $en;
+    };
+    $nakshatraLords = ['Ketu', 'Sukra', 'Surya', 'Chandra', 'Sevvai', 'Rahu', 'Guru', 'Sani', 'Budha'];
+    $nakIndex = (int) ($result['nakshatram']['index'] ?? ($result['janmaNakshatraIndex'] ?? 0));
+    $nakNameEn = (string) ($result['nakshatram']['name'] ?? ($result['janmaNakshatraEn'] ?? ''));
+    if ($nakIndex >= 1 && $nakIndex <= 27) {
+        $moonNakshatraLord = $nakshatraLords[($nakIndex - 1) % 9];
+    } else {
+        static $nakByName = [
+            'Ashwini' => 1, 'Aswini' => 1, 'Bharani' => 2, 'Krittika' => 3, 'Karthigai' => 3,
+            'Rohini' => 4, 'Mrigashira' => 5, 'Mrigasira' => 5, 'Ardra' => 6, 'Punarvasu' => 7,
+            'Pushya' => 8, 'Ashlesha' => 9, 'Magha' => 10, 'Purva Phalguni' => 11,
+            'Uttara Phalguni' => 12, 'Hasta' => 13, 'Chitra' => 14, 'Swati' => 15,
+            'Vishakha' => 16, 'Anuradha' => 17, 'Jyeshtha' => 18, 'Mula' => 19,
+            'Purva Ashadha' => 20, 'Uttara Ashadha' => 21, 'Shravana' => 22,
+            'Dhanishta' => 23, 'Dhanishtha' => 23, 'Shatabhisha' => 24,
+            'Purva Bhadrapada' => 25, 'Uttara Bhadrapada' => 26, 'Revati' => 27,
+        ];
+        $idx = $nakByName[$nakNameEn] ?? 0;
+        $moonNakshatraLord = $idx >= 1 ? $nakshatraLords[($idx - 1) % 9] : '';
+    }
+
+    $lagnaEn = (string) ($result['lagna']['rasi'] ?? '');
+    $rasiEn = (string) ($result['rasi']['name'] ?? '');
+
     $chart = [
-        'lagna' => (string) ($result['lagna']['rasi'] ?? ''),
-        'moonSign' => (string) ($result['rasi']['name'] ?? ''),
-        'moonNakshatra' => (string) ($result['nakshatram']['name'] ?? ($result['janmaNakshatraEn'] ?? '')),
-        'moonNakshatraLord' => '',
+        'lagna' => $lagnaEn,
+        'moonSign' => $rasiEn,
+        'moonNakshatra' => $nakNameEn,
+        'moonNakshatraLord' => $moonNakshatraLord,
         'currentDasha' => $englishLord[(string) ($dasha['currentLord'] ?? '')] ?? (string) ($dasha['currentLord'] ?? ''),
         'currentAntardasha' => $englishLord[(string) ($dasha['subLord'] ?? '')] ?? (string) ($dasha['subLord'] ?? ''),
         'dashaEndDate' => $dashaEnd,
@@ -2356,9 +2468,9 @@ function astro_ai_chart_facts(array $order): ?array
         // the same text as their PDF. Knowledge-base mode answers from these.
         'summary' => is_array($result['summary'] ?? null) ? $result['summary'] : [],
         'labels' => [
-            'lagna' => ['en' => (string) ($result['lagna']['rasi'] ?? ''), 'ta' => (string) ($result['lagna']['rasiTa'] ?? ''), 'hi' => (string) ($result['lagna']['rasi'] ?? '')],
-            'rasi' => ['en' => (string) ($result['rasi']['name'] ?? ''), 'ta' => (string) ($result['rasi']['nameTa'] ?? ''), 'hi' => (string) ($result['rasi']['name'] ?? '')],
-            'nakshatra' => ['en' => (string) ($result['nakshatram']['name'] ?? ''), 'ta' => (string) ($result['nakshatram']['nameTa'] ?? ''), 'hi' => (string) ($result['nakshatram']['name'] ?? '')],
+            'lagna' => ['en' => $lagnaEn, 'ta' => (string) ($result['lagna']['rasiTa'] ?? ''), 'hi' => $hiAstroChart($lagnaEn)],
+            'rasi' => ['en' => $rasiEn, 'ta' => (string) ($result['rasi']['nameTa'] ?? ''), 'hi' => $hiAstroChart($rasiEn)],
+            'nakshatra' => ['en' => $nakNameEn, 'ta' => (string) ($result['nakshatram']['nameTa'] ?? ''), 'hi' => $hiAstroChart($nakNameEn)],
             'dasha' => ['en' => (string) ($dasha['currentLord'] ?? ''), 'ta' => (string) ($dasha['currentLordTa'] ?? ''), 'hi' => (string) ($dasha['currentLordHi'] ?? '')],
             'bhukti' => ['en' => (string) ($dasha['subLord'] ?? ''), 'ta' => (string) ($dasha['subLordTa'] ?? ''), 'hi' => (string) ($dasha['subLordHi'] ?? '')],
         ],

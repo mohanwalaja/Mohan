@@ -40,7 +40,16 @@
           "tired",
           "surgery",
           "hospital",
-          "doctor"
+          "doctor",
+          "energy",
+          "stamina",
+          "sleep",
+          "recovery",
+          "body",
+          "vitality",
+          "stress",
+          "checkup",
+          "medical"
         ],
         "ta": [
           "உடல்நலம்",
@@ -48,7 +57,13 @@
           "நோய்",
           "வலி",
           "சோர்வு",
-          "மருத்துவமனை"
+          "மருத்துவமனை",
+          "ஆரோக்கியம்",
+          "தூக்கம்",
+          "உறக்கம்",
+          "சக்தி",
+          "குணமாக",
+          "உடல்"
         ],
         "hi": [
           "स्वास्थ्य",
@@ -57,7 +72,12 @@
           "दर्द",
           "थकान",
           "इलाज",
-          "अस्पताल"
+          "अस्पताल",
+          "नींद",
+          "ऊर्जा",
+          "तनाव",
+          "शरीर",
+          "आरोग्य"
         ]
       },
       "medicalSafety": {
@@ -109,7 +129,24 @@
             "fixed sleep time",
             "daily 30-minute walk",
             "regular meals"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "keep a fixed sleep time",
+              "take a daily 30-minute walk",
+              "eat regular balanced meals"
+            ],
+            "ta": [
+              "தினமும் ஒரே நேரத்தில் உறங்கவும்",
+              "தினமும் 30 நிமிட நடைப்பயிற்சி செய்யவும்",
+              "வேளை தவறாமல் சரிவிகித உணவு உண்ணவும்"
+            ],
+            "hi": [
+              "सोने का निश्चित समय रखें",
+              "प्रतिदिन 30 मिनट टहलें",
+              "नियमित समय पर संतुलित भोजन करें"
+            ]
+          }
         },
         {
           "id": "health-house6-lord",
@@ -148,7 +185,21 @@
           "practical": [
             "annual full check-up",
             "keep a symptom diary for the doctor"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "schedule an annual preventive check-up",
+              "keep a clear symptom note for your doctor"
+            ],
+            "ta": [
+              "ஆண்டுதோறும் முன்னெச்சரிக்கை மருத்துவப் பரிசோதனை செய்துகொள்ளவும்",
+              "அறிகுறிகளை குறித்து வைத்து மருத்துவரிடம் காட்டவும்"
+            ],
+            "hi": [
+              "वार्षिक निवारक स्वास्थ्य जाँच कराएँ",
+              "लक्षणों की संक्षिप्त डायरी डॉक्टर के लिए रखें"
+            ]
+          }
         },
         {
           "id": "health-moon-afflicted",
@@ -194,7 +245,24 @@
             "fixed sleep window",
             "reduce late-evening screens",
             "short daily walk outdoors"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "keep a fixed sleep window",
+              "reduce late-evening screen exposure",
+              "take a calm short outdoor walk daily"
+            ],
+            "ta": [
+              "குறிப்பிட்ட நேரத்தில் உறங்கச் செல்லவும்",
+              "இரவில் அலைபேசி/திரை பயன்பாட்டைக் குறைக்கவும்",
+              "தினமும் சிறிது நேரம் வெளியில் நடக்கவும்"
+            ],
+            "hi": [
+              "सोने का समय स्थिर रखें",
+              "देर शाम स्क्रीन का उपयोग कम करें",
+              "प्रतिदिन थोड़ी देर खुली हवा में टहलें"
+            ]
+          }
         },
         {
           "id": "health-sade-sati",
@@ -244,7 +312,24 @@
             "Saturday: feed a worker or a stray animal",
             "keep a strict sleep and food routine",
             "visit Thirunallar if a temple trip is practical"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "on Saturdays feed a worker or stray animal",
+              "maintain a strict sleep and meal schedule",
+              "visit Thirunallar when convenient"
+            ],
+            "ta": [
+              "சனிக்கிழமை உழைப்பாளி அல்லது வாயில்லா உயிருக்கு உணவளிக்கவும்",
+              "உறக்கம் மற்றும் உணவு நேரத்தை ஒழுங்காகக் கடைப்பிடிக்கவும்",
+              "வாய்ப்புள்ளபோது திருநள்ளாறு சென்று வழிபடவும்"
+            ],
+            "hi": [
+              "शनिवार को किसी श्रमिक या बेसहारा पशु को भोजन कराएँ",
+              "नींद और भोजन की अनुशासित दिनचर्या रखें",
+              "सुविधानुसार तिरुनल्लार मंदिर दर्शन करें"
+            ]
+          }
         },
         {
           "id": "health-house8-12",
@@ -289,7 +374,21 @@
           "practical": [
             "do not stop prescribed treatment early",
             "second opinion is reasonable, delay is not"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "do not stop prescribed medical treatment early",
+              "taking a second medical opinion is wise, delaying care is not"
+            ],
+            "ta": [
+              "மருத்துவர் பரிந்துரைத்த சிகிச்சையை பாதியில் நிறுத்த வேண்டாம்",
+              "இரண்டாம் மருத்துவ ஆலோசனை பெறலாம்; சிகிச்சையை தாமதிக்க வேண்டாம்"
+            ],
+            "hi": [
+              "डॉक्टर द्वारा दिया गया उपचार बीच में न छोड़ें",
+              "दूसरी चिकित्सीय राय लेना उचित है, पर इलाज में देरी न करें"
+            ]
+          }
         }
       ],
       "suppressedRules": [
@@ -352,7 +451,16 @@
           "loan",
           "savings",
           "loss",
-          "income"
+          "income",
+          "wealth",
+          "finance",
+          "financial",
+          "rich",
+          "prosperity",
+          "expense",
+          "expenses",
+          "cash",
+          "earning"
         ],
         "ta": [
           "பணம்",
@@ -360,7 +468,12 @@
           "கடன்",
           "சேமிப்பு",
           "நஷ்டம்",
-          "வருமானம்"
+          "வருமானம்",
+          "செல்வம்",
+          "தனம்",
+          "நிதி",
+          "செலவு",
+          "வரவு"
         ],
         "hi": [
           "पैसा",
@@ -368,7 +481,12 @@
           "कर्ज",
           "बचत",
           "नुकसान",
-          "आमदनी"
+          "आमदनी",
+          "धन",
+          "आर्थिक",
+          "खर्च",
+          "कमाई",
+          "समृद्धि"
         ]
       },
       "rules": [
@@ -384,7 +502,7 @@
             ]
           },
           "meaning": {
-            "en": "Jupiter, Saturn and the Sun are conjoined in your 2nd house. சாதக பாரிசாதம் verse 46 reads this as pressure on savings and family resources - money that is held tightly rather than money that is absent.",
+            "en": "Jupiter, Saturn and the Sun are conjoined in your 2nd house. Sadhaka Parisatham verse 46 reads this as pressure on savings and family resources - money that is held tightly rather than money that is absent.",
             "ta": "உங்கள் 2-ஆம் வீட்டில் குரு, சனி, சூரியன் சேர்ந்துள்ளனர். சாதக பாரிசாதம் 46-ஆம் பாடல் இதை சேமிப்பு மற்றும் குடும்ப நிதி மீது அழுத்தம் என்று கூறுகிறது - பணம் இல்லாமை அல்ல, பணம் இறுக்கமாக இருத்தல்.",
             "hi": "आपके दूसरे भाव में गुरु, शनि और सूर्य युति में हैं। साधक पारिजात श्लोक 46 इसे बचत और पारिवारिक संसाधनों पर दबाव बताता है — यह धन की अनुपस्थिति नहीं, बल्कि धन का कसकर बँधा रहना है।"
           },
@@ -414,7 +532,21 @@
           "practical": [
             "automate a fixed monthly saving first",
             "avoid adding new debt in this Bhukti"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "automate a fixed monthly saving first",
+              "avoid adding new debt during this Bhukti"
+            ],
+            "ta": [
+              "மாதத் தொடக்கத்திலேயே குறிப்பிட்ட தொகையை சேமிப்பில் வைக்கவும்",
+              "இந்த புக்தியில் புதிய கடன் வாங்குவதைத் தவிர்க்கவும்"
+            ],
+            "hi": [
+              "महीने की शुरुआत में निश्चित बचत अलग रखें",
+              "इस भुक्ति में नया ऋण लेने से बचें"
+            ]
+          }
         },
         {
           "id": "wealth-2nd-nodes-gulika",
@@ -427,7 +559,7 @@
             ]
           },
           "meaning": {
-            "en": "Rahu or Ketu sits in your 2nd house. சாதக பாரிசாதம் verse 46 reads this as income that arrives and leaves quickly. The practical reading is a cash-flow problem rather than an earning problem.",
+            "en": "Rahu or Ketu sits in your 2nd house. Sadhaka Parisatham verse 46 reads this as income that arrives and leaves quickly. The practical reading is a cash-flow pattern rather than an earning problem.",
             "ta": "உங்கள் 2-ஆம் வீட்டில் ராகு அல்லது கேது உள்ளது. சாதக பாரிசாதம் 46-ஆம் பாடல் இதை விரைவில் வந்து விரைவில் போகும் வருமானம் என்று கூறுகிறது. நடைமுறையில் இது வருவாய் பிரச்சினை அல்ல; பணப்புழக்க பிரச்சினை.",
             "hi": "आपके दूसरे भाव में राहु या केतु है। साधक पारिजात श्लोक 46 इसे जल्दी आकर जल्दी चला जाने वाला धन बताता है। व्यावहारिक रूप से यह कमाई की नहीं, नकदी प्रवाह की समस्या है।"
           },
@@ -453,7 +585,21 @@
           "practical": [
             "separate account for fixed expenses",
             "three-month emergency buffer before discretionary spend"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "keep a separate account for fixed bills",
+              "build a three-month emergency buffer before optional spending"
+            ],
+            "ta": [
+              "மாதாந்திர அத்தியாவசிய செலவுகளுக்கு தனி கணக்கு வைத்திருக்கவும்",
+              "மூன்று மாத அவசர நிதி சேர்த்த பிறகே விருப்பச் செலவு செய்யவும்"
+            ],
+            "hi": [
+              "निश्चित खर्चों के लिए अलग खाता रखें",
+              "तीन माह का आपात कोष बनाकर ही अतिरिक्त खर्च करें"
+            ]
+          }
         },
         {
           "id": "wealth-2-11-parivartana",
@@ -465,7 +611,7 @@
             ]
           },
           "meaning": {
-            "en": "Your 2nd lord sits in the 11th and your 11th lord sits in the 2nd. சாதக பாரிசாதம் verse 47 reads this exchange as a standing, well-regarded person who earns honestly - the classic wealth exchange.",
+            "en": "Your 2nd lord sits in the 11th and your 11th lord sits in the 2nd. Sadhaka Parisatham verse 47 reads this exchange as a standing, well-regarded person who earns honestly - the classic wealth exchange.",
             "ta": "உங்கள் 2-ஆம் வீட்டின் அதிபதி 11-ல் உள்ளார்; 11-ஆம் வீட்டின் அதிபதி 2-ல் உள்ளார். சாதக பாரிசாதம் 47-ஆம் பாடல் இந்த இடமாற்றத்தை நேர்மையாக சம்பாதிக்கும், மதிப்புள்ள வாழ்வு என்று கூறுகிறது.",
             "hi": "आपके दूसरे भाव का स्वामी ग्यारहवें में और ग्यारहवें का स्वामी दूसरे में है। साधक पारिजात श्लोक 47 इस परिवर्तन को प्रतिष्ठित, ईमानदारी से कमाने वाला जीवन बताता है।"
           },
@@ -490,7 +636,18 @@
           ],
           "practical": [
             "this period rewards building reputation over chasing a quick deal"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "this period rewards long-term trust and reputation over chasing a quick deal"
+            ],
+            "ta": [
+              "உடனடி ஆதாயத்தை விட நேர்மையும் நற்பெயரும் இக்காலத்தில் நிலையான வளர்ச்சி தரும்"
+            ],
+            "hi": [
+              "इस काल में त्वरित लाभ से अधिक विश्वसनीयता और प्रतिष्ठा स्थायी फल देती है"
+            ]
+          }
         },
         {
           "id": "wealth-loss-combination",
@@ -524,9 +681,9 @@
             ]
           },
           "meaning": {
-            "en": "One of your money houses is linked to a house of expense or obstruction - the 2nd lord in the 6th or 12th, the 12th lord in the 2nd, or the 11th lord in the 6th, 8th or 12th. சாதக பாரிசாதம் verse 48 reads this as wealth draining away. Say it as a tendency to plan around, never as a certain loss.",
-            "ta": "உங்கள் பண வீடுகளில் ஒன்று செலவு/தடை வீட்டுடன் இணைந்துள்ளது. சாதக பாரிசாதம் 48-ஆம் பாடல் இதை தன நாசம் என்று கூறுகிறது. இதை திட்டமிட்டு சமாளிக்க வேண்டிய போக்கு என்று மட்டுமே சொல்ல வேண்டும்; நிச்சயமான இழப்பு என்று அல்ல.",
-            "hi": "आपका कोई धन भाव व्यय या बाधा के भाव से जुड़ा है। साधक पारिजात श्लोक 48 इसे धन व्यय की प्रवृत्ति बताता है। इसे योजना बनाकर संभालने वाली प्रवृत्ति कहें, निश्चित हानि कभी न मानें।"
+            "en": "One of your money houses is linked to a house of expense or obstruction - the 2nd lord in the 6th or 12th, the 12th lord in the 2nd, or the 11th lord in the 6th, 8th or 12th. Sadhaka Parisatham verse 48 reads this as a tendency for expenses to outpace savings - a pattern to plan around through disciplined budgeting, not an inevitable loss.",
+            "ta": "உங்கள் பண வீடுகளில் ஒன்று செலவு/தடை வீட்டுடன் இணைந்துள்ளது. சாதக பாரிசாதம் 48-ஆம் பாடல் இதை செலவு மிகும் போக்காகக் கூறுகிறது - திட்டமிட்ட சேமிப்பால் சமாளிக்கக்கூடிய போக்கே தவிர தவிர்க்க முடியாத இழப்பு அல்ல.",
+            "hi": "आपका कोई धन भाव व्यय या बाधा के भाव से जुड़ा है। साधक पारिजात श्लोक 48 इसे व्यय बढ़ने की प्रवृत्ति बताता है — यह अनुशासित बजट से संभाली जाने वाली प्रवृत्ति है, कोई निश्चित हानि नहीं।"
           },
           "general": {
             "en": "When the 2nd, 12th or 11th lords link money houses to houses of expense and obstruction, verse 48 reads wealth draining as a tendency - planned spending and clearing old debt reverse it.",
@@ -554,7 +711,21 @@
           "practical": [
             "freeze discretionary spending for this Bhukti",
             "renegotiate terms rather than borrowing more"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "pause non-essential spending during this Bhukti",
+              "renegotiate existing terms instead of taking fresh debt"
+            ],
+            "ta": [
+              "இந்த புக்தியில் அவசியமற்ற செலவுகளை நிறுத்தி வைக்கவும்",
+              "புதிய கடன் வாங்காமல் பழைய கடன் தவணைகளை சீரமைக்கவும்"
+            ],
+            "hi": [
+              "इस भुक्ति में अनावश्यक खर्च रोकें",
+              "नया कर्ज लेने के बजाय पुरानी शर्तों को व्यवस्थित करें"
+            ]
+          }
         },
         {
           "id": "wealth-lagna-2-11-yoga",
@@ -585,9 +756,9 @@
             ]
           },
           "meaning": {
-            "en": "Your Lagna lord is in the 2nd, your 2nd lord in the 11th and your 11th lord in the Lagna. சாதக பாரிசாதம் verse 50 reads this as wealth and the things wealth buys coming to you. Verse 51 adds that when the Lagna, 12th and 9th lords are all exalted or vargottama, the scale is large. Never state this as a guarantee.",
-            "ta": "உங்கள் லக்னாதிபதி 2-ல், 2-ஆம் அதிபதி 11-ல், 11-ஆம் அதிபதி லக்னத்தில் உள்ளனர். சாதக பாரிசாதம் 50-ஆம் பாடல் இதை செல்வம் கைகூடும் யோகம் என்று கூறுகிறது. 51-ஆம் பாடல் - லக்ன, 12, 9 அதிபதிகள் உச்சம்/வர்கோத்தமமாக இருந்தால் அளவு பெரியது. இதை உத்தரவாதமாக சொல்லக்கூடாது.",
-            "hi": "आपका लग्नेश दूसरे में, दूसरे का स्वामी ग्यारहवें में और ग्यारहवें का स्वामी लग्न में है। साधक पारिजात श्लोक 50 इसे धन लाभ का योग बताता है। श्लोक 51 जोड़ता है कि लग्न, बारहवें और नवम के स्वामी उच्च या वर्गोत्तम हों तो इसका परिणाम बड़ा होता है। इसे कभी गारंटी न कहें।"
+            "en": "Your Lagna lord is in the 2nd, your 2nd lord in the 11th and your 11th lord in the Lagna. Sadhaka Parisatham verse 50 reads this as wealth and comfort arriving steadily through sustained effort, and verse 51 adds stronger scale when the Lagna, 12th and 9th lords hold exalted or vargottama dignity.",
+            "ta": "உங்கள் லக்னாதிபதி 2-ல், 2-ஆம் அதிபதி 11-ல், 11-ஆம் அதிபதி லக்னத்தில் உள்ளனர். சாதக பாரிசாதம் 50-ஆம் பாடல் இதை தொடர் முயற்சியால் செல்வமும் நலமும் சேரும் யோகமாகக் கூறுகிறது; 51-ஆம் பாடல் லக்ன, 12, 9 அதிபதிகள் உச்சம்/வர்கோத்தமம் பெற்றால் மேலும் வலுப்பெறும் என்கிறது.",
+            "hi": "आपका लग्नेश दूसरे में, दूसरे का स्वामी ग्यारहवें में और ग्यारहवें का स्वामी लग्न में है। साधक पारिजात श्लोक 50 इसे निरंतर परिश्रम से स्थिर धन-सुख का योग बताता है, तथा श्लोक 51 लग्न, द्वादश व नवम स्वामियों के उच्च/वर्गोत्तम होने पर और बल जोड़ता है।"
           },
           "general": {
             "en": "When the Lagna, 2nd and 11th lords support each other as in verses 50-51, the classics read wealth and the comforts wealth buys arriving steadily through one's own effort.",
@@ -611,7 +782,18 @@
           ],
           "practical": [
             "this is a period to build, not to wait"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "use this supportive window actively to build skills and steady assets rather than waiting"
+            ],
+            "ta": [
+              "காத்திருக்காமல் திறமையையும் நிலையான சேமிப்பையும் உருவாக்க இக்காலத்தைப் பயன்படுத்தவும்"
+            ],
+            "hi": [
+              "प्रतीक्षा करने के बजाय कौशल और स्थिर संचय बढ़ाने में इस समय का उपयोग करें"
+            ]
+          }
         },
         {
           "id": "wealth-speech-success",
@@ -621,7 +803,7 @@
             "andLordIsBenefic": true
           },
           "meaning": {
-            "en": "Benefics sit in your 2nd house and your 2nd lord is itself a benefic. சாதக பாரிசாதம் verse 58 reads this as வாக்கு சித்தி - what you say tends to take effect. Practically: teaching, speaking, negotiating and client-facing work earn more than back-office work for you.",
+            "en": "Benefics sit in your 2nd house and your 2nd lord is itself a benefic. Sadhaka Parisatham verse 58 reads this as Vak Siddhi - what you say tends to carry weight and take effect. Practically: teaching, speaking, negotiating and client-facing work earn strongly for you.",
             "ta": "உங்கள் 2-ஆம் வீட்டில் சுபக்கிரகங்கள் உள்ளன; 2-ஆம் அதிபதியும் சுபக்கிரகமே. சாதக பாரிசாதம் 58-ஆம் பாடல் இதை வாக்கு சித்தி என்று கூறுகிறது - நீங்கள் சொல்வது பலிக்கும். நடைமுறையில்: கற்பித்தல், பேசுதல், பேரம், வாடிக்கையாளர் தொடர்பு வேலை உங்களுக்கு அதிக வருவாய் தரும்.",
             "hi": "आपके दूसरे भाव में शुभ ग्रह हैं और दूसरे का स्वामी भी शुभ है। साधक पारिजात श्लोक 58 इसे वाक सिद्धि बताता है - आपका कथन प्रभावी होता है। व्यावहारिक रूप से: पढ़ाना, बोलना, मोल-भाव और ग्राहक-सम्पर्क का काम आपकी अधिक कमाई कराता है।"
           },
@@ -636,7 +818,18 @@
           ],
           "practical": [
             "prefer roles where you speak for the work"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "favour roles involving teaching, advisory work, presentations or client communication"
+            ],
+            "ta": [
+              "கற்பித்தல், ஆலோசனை, பேச்சுவார்த்தை மற்றும் வாடிக்கையாளர் தொடர்பு பணிகளுக்கு முன்னுரிமை அளிக்கவும்"
+            ],
+            "hi": [
+              "शिक्षण, परामर्श, प्रस्तुति और ग्राहक-संवाद से जुड़े कार्यों को प्राथमिकता दें"
+            ]
+          }
         }
       ]
     },
@@ -675,7 +868,15 @@
           "concentration",
           "memory",
           "scholarship",
-          "higher education"
+          "higher education",
+          "education",
+          "school",
+          "university",
+          "phd",
+          "research",
+          "competitive exam",
+          "student",
+          "learning"
         ],
         "ta": [
           "படிப்பு",
@@ -685,7 +886,12 @@
           "மதிப்பெண்",
           "கவனம்",
           "ஞாபகம்",
-          "உயர்கல்வி"
+          "உயர்கல்வி",
+          "கல்வி",
+          "பள்ளி",
+          "பல்கலைக்கழகம்",
+          "ஆராய்ச்சி",
+          "மாணவர்"
         ],
         "hi": [
           "पढ़ाई",
@@ -695,7 +901,12 @@
           "अंक",
           "ध्यान",
           "स्मरण",
-          "उच्च शिक्षा"
+          "उच्च शिक्षा",
+          "शिक्षा",
+          "विद्यालय",
+          "विश्वविद्यालय",
+          "शोध",
+          "छात्र"
         ]
       },
       "rules": [
@@ -740,7 +951,21 @@
           "practical": [
             "study by explaining the topic aloud",
             "two 45-minute blocks beat one 3-hour block"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "revise by explaining concepts aloud in your own words",
+              "two focused 45-minute study blocks beat one long session"
+            ],
+            "ta": [
+              "படித்த கருத்தை சொந்த நடையில் சத்தமாகச் சொல்லிப் பார்த்து திருப்புதல் செய்யவும்",
+              "தொடர்ச்சியான நீண்ட நேரத்தை விட இரு 45 நிமிட கவனம் மிகுந்த அமர்வுகள் சிறந்தவை"
+            ],
+            "hi": [
+              "पढ़े हुए विषय को अपने शब्दों में बोलकर दोहराएँ",
+              "लंबे एकल सत्र से दो 45-मिनट के एकाग्र सत्र अधिक प्रभावी हैं"
+            ]
+          }
         },
         {
           "id": "edu-budha-afflicted",
@@ -795,7 +1020,24 @@
             "fixed place and fixed time for study",
             "phone in another room",
             "25 minutes on, 5 minutes off"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "study at one fixed desk and time daily",
+              "keep the phone in another room",
+              "use 25-minute focus blocks with 5-minute breaks"
+            ],
+            "ta": [
+              "தினமும் ஒரே இடத்திலும் ஒரே நேரத்திலும் படிக்கவும்",
+              "படிக்கும்போது அலைபேசியை வேறு அறையில் வைக்கவும்",
+              "25 நிமிட படிப்பு, 5 நிமிட இடைவேளை முறையைப் பின்பற்றவும்"
+            ],
+            "hi": [
+              "प्रतिदिन निश्चित स्थान और समय पर पढ़ें",
+              "पढ़ाई के समय फ़ोन दूसरे कमरे में रखें",
+              "25 मिनट पढ़ाई और 5 मिनट विराम की पद्धति अपनाएँ"
+            ]
+          }
         },
         {
           "id": "edu-9th-lord-higher-study",
@@ -832,7 +1074,18 @@
           ],
           "practical": [
             "apply one cycle earlier than you think you need to"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "prepare and apply one admission cycle earlier than the deadline"
+            ],
+            "ta": [
+              "கடைசி தேதிக்கு காத்திருக்காமல் ஒரு சுற்று முன்கூட்டியே விண்ணப்பிக்கத் தயாராகவும்"
+            ],
+            "hi": [
+              "अंतिम समय की प्रतीक्षा किए बिना एक चक्र पहले आवेदन की तैयारी करें"
+            ]
+          }
         },
         {
           "id": "edu-exam-timing",
@@ -875,7 +1128,18 @@
           ],
           "practical": [
             "schedule the hardest subject inside this window"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "tackle your most demanding subject or exam paper inside this supportive period"
+            ],
+            "ta": [
+              "மிகக் கடினமான பாடம் அல்லது தேர்வை இந்த சாதகமான காலத்திற்குள் திட்டமிடவும்"
+            ],
+            "hi": [
+              "सबसे कठिन विषय या परीक्षा की तैयारी इसी अनुकूल अवधि में रखें"
+            ]
+          }
         }
       ]
     },
@@ -915,7 +1179,15 @@
           "boss",
           "partnership",
           "startup",
-          "interview"
+          "interview",
+          "work",
+          "profession",
+          "office",
+          "unemployed",
+          "transfer",
+          "company",
+          "government job",
+          "appraisal"
         ],
         "ta": [
           "வேலை",
@@ -924,7 +1196,12 @@
           "ராஜினாமா",
           "மேலதிகாரி",
           "கூட்டாண்மை",
-          "தொடக்க நிறுவனம்"
+          "தொடக்க நிறுவனம்",
+          "பணி",
+          "உத்தியோகம்",
+          "அலுவலகம்",
+          "அரசு வேலை",
+          "வியாபாரம்"
         ],
         "hi": [
           "नौकरी",
@@ -934,7 +1211,12 @@
           "बॉस",
           "साझेदारी",
           "स्टार्टअप",
-          "इंटरव्यू"
+          "इंटरव्यू",
+          "करियर",
+          "पेशा",
+          "ऑफिस",
+          "सरकारी नौकरी",
+          "व्यापार"
         ]
       },
       "rules": [
@@ -978,7 +1260,18 @@
           ],
           "practical": [
             "keep a written record of what you delivered - it is your evidence at review"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "keep a clear written log of completed outcomes for your appraisal"
+            ],
+            "ta": [
+              "நீங்கள் முடித்த முக்கிய பணிகளின் பதிவை எழுத்துப்பூர்வமாக வைத்திருங்கள்; மதிப்பீட்டில் அது உதவும்"
+            ],
+            "hi": [
+              "अपने पूरे किए गए कार्यों का लिखित विवरण रखें; समीक्षा के समय वही प्रमाण बनेगा"
+            ]
+          }
         },
         {
           "id": "career-friction",
@@ -1001,9 +1294,9 @@
             ]
           },
           "meaning": {
-            "en": "Saturn or Mars sits in your 10th house, or the 10th lord is weak. The classical reading is friction with seniors and delays in decisions about your work - not a failure of the work itself. Phaladeepika places dismissal-from-office among the results of the afflicted houses at XIX-14; read it as 'the relationship needs managing', never as 'you will be dismissed'.",
-            "ta": "உங்கள் 10-ஆம் வீட்டில் சனி அல்லது செவ்வாய் உள்ளது, அல்லது 10-ஆம் அதிபதி பலவீனம். மரபுப்படி மேலதிகாரிகளுடன் உராய்வும், வேலை தொடர்பான முடிவுகளில் தாமதமும் வரும் - வேலையின் தோல்வி அல்ல. பலதீபிகை 19-ஆம் அதிகாரம், 14-ஆம் பாடல் பதவி இழப்பைக் குறிப்பிடுகிறது; அதை 'உறவை கவனமாக கையாள வேண்டும்' என்று மட்டுமே சொல்ல வேண்டும்.",
-            "hi": "आपके दशम भाव में शनि या मंगल है, या दशमेश कमजोर है। परंपरा के अनुसार वरिष्ठों से मतभेद और काम के निर्णयों में देरी होती है - काम की विफलता नहीं। फलदीपिका के 19वें अध्याय के 14वें श्लोक में पद से हटने का उल्लेख है; उसे 'संबंध को संभालना होगा' कहें, 'आप हटाए जाएँगे' कभी नहीं।"
+            "en": "Saturn or Mars sits in your 10th house, or the 10th lord is weak. The classical reading is friction with seniors and delays in decisions about your work - not a failure of the work itself. Phaladeepika XIX-14 notes workplace strain among afflicted 10th-house results, calling for patient, documented communication with seniors.",
+            "ta": "உங்கள் 10-ஆம் வீட்டில் சனி அல்லது செவ்வாய் உள்ளது, அல்லது 10-ஆம் அதிபதி பலவீனம். மரபுப்படி மேலதிகாரிகளுடன் உராய்வும், வேலை தொடர்பான முடிவுகளில் தாமதமும் வரலாம் - இது வேலையின் தோல்வி அல்ல. பலதீபிகை 19-ஆம் அதிகாரம் 14-ஆம் பாடல் பணியிட உறவை நிதானமாகக் கையாள வேண்டியதன் அவசியத்தைக் காட்டுகிறது.",
+            "hi": "आपके दशम भाव में शनि या मंगल है, या दशमेश कमजोर है। परंपरा के अनुसार वरिष्ठों से मतभेद और काम के निर्णयों में देरी हो सकती है — यह आपके कार्य की विफलता नहीं है। फलदीपिका अध्याय 19 श्लोक 14 कार्यस्थल संबंधों को धैर्यपूर्वक संभालने का संकेत देता है।"
           },
           "general": {
             "en": "When Saturn or Mars touches the 10th house or its lord is weak, the classics read friction with seniors and delayed decisions about your work - not a failure of the work itself; Phaladeepika lists such friction among afflicted-10th results.",
@@ -1030,7 +1323,21 @@
           "practical": [
             "put agreements in writing",
             "do not resign inside this Bhukti without a written offer"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "confirm workplace decisions in writing",
+              "do not resign in this Bhukti without a signed written offer"
+            ],
+            "ta": [
+              "பணி தொடர்பான முடிவுகளை எழுத்துப்பூர்வமாக உறுதிப்படுத்தவும்",
+              "கையெழுத்திட்ட பணி ஆணை இன்றி இந்த புக்தியில் வேலையை விட வேண்டாம்"
+            ],
+            "hi": [
+              "कार्यस्थल की सहमतियाँ लिखित रखें",
+              "लिखित नियुक्ति-पत्र के बिना इस भुक्ति में त्यागपत्र न दें"
+            ]
+          }
         },
         {
           "id": "career-business-7th",
@@ -1077,7 +1384,18 @@
           ],
           "practical": [
             "write the partnership terms before the first invoice"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "put partnership roles and profit-sharing in writing before the first invoice"
+            ],
+            "ta": [
+              "முதல் வரவு-செலவுக்கு முன்பே கூட்டாண்மை பொறுப்புகளையும் பங்கு விகிதத்தையும் எழுத்துப்பூர்வமாக எழுதவும்"
+            ],
+            "hi": [
+              "पहले लेन-देन से पूर्व ही साझेदारी की शर्तें और हिस्सेदारी लिखित कर लें"
+            ]
+          }
         },
         {
           "id": "career-job-change-timing",
@@ -1123,7 +1441,21 @@
           "practical": [
             "update the CV now, decide later",
             "get any offer in writing before resigning"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "strengthen skills and resume now, decide calmly",
+              "secure a written offer before leaving current work"
+            ],
+            "ta": [
+              "இப்போது திறமையையும் சுயவிவரத்தையும் மேம்படுத்தி நிதானமாக முடிவெடுக்கவும்",
+              "எழுத்துப்பூர்வ பணி ஆணை பெற்ற பிறகே தற்போதைய வேலையை மாற்றவும்"
+            ],
+            "hi": [
+              "अभी कौशल और सीवी मज़बूत करें तथा सोच-समझकर निर्णय लें",
+              "पक्का लिखित प्रस्ताव मिलने पर ही वर्तमान कार्य छोड़ें"
+            ]
+          }
         },
         {
           "id": "career-startup-timing",
@@ -1165,7 +1497,18 @@
           ],
           "practical": [
             "start small and keep a cash reserve equal to six months of costs"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "begin lean and maintain a cash reserve covering six months of operating costs"
+            ],
+            "ta": [
+              "சிறிய அளவில் தொடங்கி ஆறு மாத நடைமுறைச் செலவுக்குச் சமமான கையிருப்பு வைத்திருக்கவும்"
+            ],
+            "hi": [
+              "छोटे स्तर से आरंभ करें और छह माह के खर्च के बराबर नकद कोष सुरक्षित रखें"
+            ]
+          }
         }
       ]
     },
@@ -1206,7 +1549,16 @@
           "relationship",
           "children",
           "baby",
-          "delay"
+          "delay",
+          "married",
+          "marry",
+          "love marriage",
+          "arranged marriage",
+          "partner",
+          "bride",
+          "groom",
+          "progeny",
+          "childbirth"
         ],
         "ta": [
           "திருமணம்",
@@ -1216,7 +1568,13 @@
           "விவாகரத்து",
           "உறவு",
           "குழந்தை",
-          "தாமதம்"
+          "தாமதம்",
+          "மணமகன்",
+          "மணமகள்",
+          "காதல் திருமணம்",
+          "வரன்",
+          "புத்திர",
+          "மழலை"
         ],
         "hi": [
           "विवाह",
@@ -1226,7 +1584,13 @@
           "तलाक",
           "रिश्ता",
           "बच्चा",
-          "देरी"
+          "देरी",
+          "विवाहित",
+          "प्रेम विवाह",
+          "जीवनसाथी",
+          "वर",
+          "वधू",
+          "संतान"
         ]
       },
       "rules": [
@@ -1266,7 +1630,18 @@
           ],
           "practical": [
             "widen the search beyond the usual circle"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "look constructively beyond your immediate hometown or narrow circle as well"
+            ],
+            "ta": [
+              "வழக்கமான குறுகிய வட்டத்தைத் தாண்டியும் பரந்த அளவில் வரன் பரிசீலிக்கலாம்"
+            ],
+            "hi": [
+              "अपने सीमित दायरे से बाहर भी सकारात्मक रूप से रिश्तों पर विचार करें"
+            ]
+          }
         },
         {
           "id": "marriage-delay",
@@ -1335,7 +1710,21 @@
           "practical": [
             "keep looking without a deadline",
             "do not accept an arrangement out of pressure"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "continue searching steadily without artificial deadlines",
+              "do not agree to a match purely under family or social pressure"
+            ],
+            "ta": [
+              "காலக்கெடு அழுத்தமின்றி நிதானமாகத் தேடவும்",
+              "பிறர் அழுத்தத்திற்காக மட்டும் அவசரமாகச் சம்மதிக்க வேண்டாம்"
+            ],
+            "hi": [
+              "कृत्रिम समय-सीमा के दबाव के बिना धैर्य से प्रयास जारी रखें",
+              "केवल सामाजिक दबाव में आकर निर्णय न लें"
+            ]
+          }
         },
         {
           "id": "marriage-kuja-dosha",
@@ -1345,9 +1734,9 @@
             "present": true
           },
           "meaning": {
-            "en": "Your chart carries Kuja (Mangal) dosha - Mars placed in one of the sensitive houses. In the Tamil tradition this is treated as a matching consideration, not a verdict: the Porutham check weighs it against the other person's chart and it is often balanced out. Say it plainly and calmly, and never as a reason not to marry.",
-            "ta": "உங்கள் ஜாதகத்தில் குஜ (செவ்வாய்) தோஷம் உள்ளது - செவ்வாய் உணர்வுப்பூர்வமான வீடுகளில் ஒன்றில் உள்ளது. தமிழ் மரபில் இது பொருத்தம் பார்க்கும் ஒரு அம்சமே தவிர தீர்ப்பு அல்ல: பொருத்த பரிசோதனையில் மறு நபரின் ஜாதகத்துடன் ஒப்பிடப்பட்டு பெரும்பாலும் சமனாகிவிடும். அமைதியாக சொல்ல வேண்டும்; திருமணம் வேண்டாம் என்று சொல்லக்கூடாது.",
-            "hi": "आपकी कुंडली में कुज (मांगलिक) दोष है — मंगल संवेदनशील भावों में किसी एक में स्थित है। तमिल परंपरा में इसे मिलान का एक पहलू माना जाता है, निर्णय नहीं: पोरुत्तम जाँच में इसे दूसरे व्यक्ति की कुंडली से तौला जाता है और प्रायः यह संतुलित हो जाता है। इसे शांति से समझें, विवाह न करने का कारण कभी न मानें।"
+            "en": "Your chart carries Kuja (Mangal) dosha - Mars placed in one of the sensitive houses. In the Tamil tradition this is treated purely as a matching consideration rather than a verdict: the Porutham check weighs it calmly against the partner chart, where it is very often balanced out.",
+            "ta": "உங்கள் ஜாதகத்தில் குஜ (செவ்வாய்) தோஷம் உள்ளது - செவ்வாய் உணர்வுப்பூர்வமான வீடுகளில் ஒன்றில் உள்ளது. தமிழ் மரபில் இது பொருத்தம் பார்க்கும் ஒரு அம்சமே தவிர தீர்ப்பு அல்ல: பொருத்த பரிசோதனையில் மறு நபரின் ஜாதகத்துடன் ஒப்பிடப்பட்டு பெரும்பாலும் சமனாகிவிடும்.",
+            "hi": "आपकी कुंडली में कुज (मांगलिक) दोष है — मंगल संवेदनशील भावों में किसी एक में स्थित है। तमिल परंपरा में इसे मिलान का एक पहलू माना जाता है, निर्णय नहीं: पोरुत्तम जाँच में इसे दूसरे व्यक्ति की कुंडली से तौला जाता है और प्रायः यह संतुलित हो जाता है।"
           },
           "general": {
             "en": "Where Mars occupies a sensitive house (Kuja dosha), the Tamil tradition treats it as a matching consideration, not a verdict: the Porutham check weighs it against the other chart and it is often balanced out.",
@@ -1372,7 +1761,18 @@
           ],
           "practical": [
             "run the Marriage Compatibility report on both charts rather than judging one"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "compare both horoscopes together using Marriage Compatibility rather than judging one chart alone"
+            ],
+            "ta": [
+              "ஒரு ஜாதகத்தை மட்டும் வைத்து முடிவு செய்யாமல் இரு ஜாதகங்களையும் சேர்த்துத் திருமணப் பொருத்தம் பார்க்கவும்"
+            ],
+            "hi": [
+              "एक कुंडली से निष्कर्ष निकालने के बजाय दोनों कुंडलियों का विवाह मिलान साथ में देखें"
+            ]
+          }
         },
         {
           "id": "marriage-children-5th",
@@ -1476,7 +1876,21 @@
           "practical": [
             "one unhurried conversation a week",
             "never decide anything in an argument"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "set aside one calm, unhurried conversation each week",
+              "never take major decisions in the middle of an argument"
+            ],
+            "ta": [
+              "வாரத்திற்கு ஒருமுறை அவசரமின்றி மனம் விட்டுப் பேச நேரம் ஒதுக்கவும்",
+              "வாக்குவாதத்தின் நடுவே எந்த முக்கிய முடிவும் எடுக்க வேண்டாம்"
+            ],
+            "hi": [
+              "सप्ताह में एक बार शांत और स्नेहपूर्ण संवाद का समय रखें",
+              "बहस के बीच कभी कोई बड़ा निर्णय न लें"
+            ]
+          }
         }
       ]
     },
@@ -1511,7 +1925,15 @@
           "construction",
           "move",
           "rent",
-          "home loan"
+          "home loan",
+          "home",
+          "apartment",
+          "plot",
+          "villa",
+          "vehicle",
+          "car",
+          "real estate",
+          "own house"
         ],
         "ta": [
           "வீடு",
@@ -1520,7 +1942,12 @@
           "சொத்து",
           "கட்டுமானம்",
           "வாடகை",
-          "கடன்"
+          "கடன்",
+          "வீட்டுமனை",
+          "வாகனம்",
+          "கார்",
+          "சொந்த வீடு",
+          "கிரையம்"
         ],
         "hi": [
           "घर",
@@ -1529,7 +1956,12 @@
           "संपत्ति",
           "निर्माण",
           "किराया",
-          "होम लोन"
+          "होम लोन",
+          "मकान",
+          "भूखंड",
+          "वाहन",
+          "गाड़ी",
+          "प्रॉपर्टी"
         ]
       },
       "rules": [
@@ -1573,7 +2005,18 @@
           ],
           "practical": [
             "get the documents verified before the advance, not after"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "have title deeds and legal approvals checked before paying an advance"
+            ],
+            "ta": [
+              "முன்பணம் கொடுப்பதற்கு முன்பே பத்திரம் மற்றும் ஆவணங்களைச் சரிபார்க்கவும்"
+            ],
+            "hi": [
+              "अग्रिम राशि देने से पहले ही कागज़ात और स्वामित्व की जाँच कराएँ"
+            ]
+          }
         },
         {
           "id": "property-weak-moon-or-4th",
@@ -1625,7 +2068,21 @@
           "practical": [
             "keep the deposit safe and the lease in writing",
             "avoid a long loan in this Bhukti"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "keep rental agreements in writing and protect your deposit",
+              "avoid over-stretching on a long loan in this Bhukti"
+            ],
+            "ta": [
+              "வாடகை ஒப்பந்தத்தை எழுத்துப்பூர்வமாக வைத்து முன்பணத்தைப் பாதுகாக்கவும்",
+              "இந்த புக்தியில் சக்திக்கு மீறிய நீண்டகாலக் கடனைத் தவிர்க்கவும்"
+            ],
+            "hi": [
+              "किराया अनुबंध लिखित रखें और जमा राशि सुरक्षित रखें",
+              "इस भुक्ति में क्षमता से बड़ा गृह-ऋण न लें"
+            ]
+          }
         },
         {
           "id": "property-loan",
@@ -1679,7 +2136,24 @@
             "keep the instalment within income",
             "compare loan terms before signing",
             "time the purchase to a favourable Bhukti"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "keep monthly EMI comfortably within stable income",
+              "compare bank terms carefully before signing",
+              "time registration inside a supportive Bhukti"
+            ],
+            "ta": [
+              "மாதத் தவணை நிலையான வருமானத்திற்குள் இருக்குமாறு பார்த்துக்கொள்ளவும்",
+              "கையெழுத்திடும் முன் வங்கி விதிகளை ஒப்பிடவும்",
+              "சாதகமான புக்தியில் பதிவை அமைத்துக்கொள்ளவும்"
+            ],
+            "hi": [
+              "मासिक किस्त स्थिर आय की सीमा में रखें",
+              "हस्ताक्षर से पहले ऋण शर्तों की तुलना करें",
+              "अनुकूल भुक्ति में ही पंजीकरण का समय चुनें"
+            ]
+          }
         }
       ]
     },
@@ -1717,7 +2191,19 @@
           "study abroad",
           "overseas job",
           "travel",
-          "green card"
+          "green card",
+          "overseas",
+          "passport",
+          "pr",
+          "work permit",
+          "onsite",
+          "australia",
+          "canada",
+          "uk",
+          "usa",
+          "europe",
+          "gulf",
+          "singapore"
         ],
         "ta": [
           "வெளிநாடு",
@@ -1725,7 +2211,10 @@
           "குடியேற்றம்",
           "வெளிநாட்டு வேலை",
           "வெளிநாட்டு படிப்பு",
-          "பயணம்"
+          "பயணம்",
+          "பாஸ்போர்ட்",
+          "அயல்நாடு",
+          "வெளியூர் பயணம்"
         ],
         "hi": [
           "विदेश",
@@ -1733,7 +2222,10 @@
           "आप्रवासन",
           "विदेश में नौकरी",
           "विदेश में पढ़ाई",
-          "यात्रा"
+          "यात्रा",
+          "पासपोर्ट",
+          "विदेश यात्रा",
+          "बाहर बसना"
         ]
       },
       "rules": [
@@ -1772,7 +2264,18 @@
           ],
           "practical": [
             "start the paperwork one cycle earlier than the deadline"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "begin documentation and attestations one cycle ahead of deadlines"
+            ],
+            "ta": [
+              "கடைசி நேர நெருக்கடியைத் தவிர்க்க ஆவணப் பணிகளை முன்கூட்டியே தொடங்கவும்"
+            ],
+            "hi": [
+              "अंतिम समय की भागदौड़ से बचने के लिए दस्तावेज़ी प्रक्रिया पहले शुरू करें"
+            ]
+          }
         },
         {
           "id": "foreign-rahu-9-12",
@@ -1825,7 +2328,18 @@
           ],
           "practical": [
             "check visa rules directly with the embassy - astrology is not an immigration opinion"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "verify current visa rules directly with the official embassy source"
+            ],
+            "ta": [
+              "விசா விதிகளை அதிகாரப்பூர்வ தூதரகத் தளத்தில் நேரடியாகச் சரிபார்க்கவும்"
+            ],
+            "hi": [
+              "वीज़ा नियमों की पुष्टि सीधे आधिकारिक दूतावास स्रोत से करें"
+            ]
+          }
         },
         {
           "id": "foreign-9th-lord-strong",
@@ -1875,9 +2389,9 @@
             "placement": "weak"
           },
           "meaning": {
-            "en": "Your 12th lord is weak. The classical reading is that a move abroad comes with more paperwork, more waiting and more expense than the average case - achievable, but not easy. Say it that way; never say it will not happen.",
-            "ta": "உங்கள் 12-ஆம் வீட்டின் அதிபதி பலவீனம். மரபுப்படி வெளிநாட்டு நகர்வு சராசரியை விட அதிக ஆவண வேலை, காத்திருப்பு, செலவுடன் வரும் - சாத்தியம் தான், ஆனால் எளிது அல்ல. அப்படியே சொல்ல வேண்டும்; நடக்காது என்று சொல்லக்கூடாது.",
-            "hi": "आपका बारहवाँ स्वामी कमजोर है। परंपरा के अनुसार विदेश जाने में औसत से अधिक कागजी कार्य, प्रतीक्षा और खर्च आता है - सम्भव है, आसान नहीं। बस इतना कहें; कभी 'नहीं होगा' न कहें।"
+            "en": "Your 12th lord is weak. The classical reading is that a move abroad comes with extra paperwork, waiting and expense compared with the average case - achievable with preparation, just not effortless.",
+            "ta": "உங்கள் 12-ஆம் வீட்டின் அதிபதி பலவீனம். மரபுப்படி வெளிநாட்டு நகர்வு சராசரியை விட அதிக ஆவண வேலை, காத்திருப்பு மற்றும் செலவுடன் வரும் - முறையான தயாரிப்புடன் சாத்தியமே, ஆனால் சற்று பொறுமை தேவை.",
+            "hi": "आपका बारहवाँ स्वामी कमजोर है। परंपरा के अनुसार विदेश जाने में औसत से अधिक कागजी कार्य, प्रतीक्षा और खर्च आता है — पूर्व तैयारी से यह पूर्णतः सम्भव है, बस धैर्य आवश्यक है।"
           },
           "general": {
             "en": "When the 12th lord is weak, the classics read a move abroad with more paperwork, waiting and expense than average - achievable, but not easy.",
@@ -1899,7 +2413,18 @@
           "practical": [
             "budget for the process, not only the move",
             "keep a local option open"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "budget time and money for paperwork delays, and keep a strong local backup plan ready"
+            ],
+            "ta": [
+              "ஆவணச் செலவுக்கும் காத்திருப்புக்கும் திட்டமிட்டு, உள்ளூர் மாற்று வாய்ப்பையும் தயாராக வைத்திருக்கவும்"
+            ],
+            "hi": [
+              "कागज़ी प्रक्रिया के समय व खर्च का बजट रखें और स्थानीय विकल्प भी खुला रखें"
+            ]
+          }
         }
       ]
     },
@@ -1933,7 +2458,13 @@
           "bhukti",
           "peyarchi",
           "sani peyarchi",
-          "guru peyarchi"
+          "guru peyarchi",
+          "dasha",
+          "mahadasha",
+          "antardasha",
+          "running period",
+          "coming months",
+          "next year"
         ],
         "ta": [
           "இப்போது",
@@ -1944,7 +2475,11 @@
           "புக்தி",
           "பெயர்ச்சி",
           "சனி பெயர்ச்சி",
-          "குரு பெயர்ச்சி"
+          "குரு பெயர்ச்சி",
+          "மகாதசை",
+          "அந்தர்தசை",
+          "நடப்பு தசை",
+          "வரும் மாதங்கள்"
         ],
         "hi": [
           "अभी",
@@ -1955,7 +2490,11 @@
           "भुक्ति",
           "गोचर",
           "शनि गोचर",
-          "गुरु गोचर"
+          "गुरु गोचर",
+          "महादशा",
+          "अंतर्दशा",
+          "चल रही दशा",
+          "आने वाले महीने"
         ]
       },
       "rules": [
@@ -2038,7 +2577,7 @@
             ]
           },
           "meaning": {
-            "en": "If a customer says the chart differs from their temple panchangam, explain the two Tamil systems rather than defending ours. திருக்கணிதம் (Drik) computes planetary positions by direct astronomical observation; வாக்கியம் (Vakya) uses the traditional mnemonic tables inherited from the classical texts. சிந்தாமணி ரகுநாத சாரி (1822-1880), who worked at the Madras Observatory from 1861 to 1891, began publishing the Thirukkanitha panchangam in 1869 precisely to correct the astronomical discrepancies of the Vakya method, and it was accepted after a scholars' meeting at the Kumbakonam Sankara Mutt. A difference of a few minutes in a planet's position, or of a day in a festival date, is the expected result of choosing one system - not an error in either.",
+            "en": "Two classical Tamil calendar systems exist side by side. Thirukkanitham (Drik) computes planetary positions by direct astronomical observation; Vakyam (Vakya) uses the traditional mnemonic tables inherited from the classical texts. Chinthamani Ragoonatha Chary (1822-1880), who worked at the Madras Observatory from 1861, began publishing the Thirukkanitha panchangam in 1869 to align tables with astronomical observation, which was later accepted at the Kumbakonam Sankara Mutt scholars assembly. A difference of a few minutes in a planet position, or a day in a festival date, is the normal result of choosing one system - not an error in either.",
             "ta": "வாடிக்கையாளர் ஜாதகம் தங்கள் கோயில் பஞ்சாங்கத்துடன் வேறுபடுகிறது என்றால், நம்முடையதை நியாயப்படுத்துவதற்கு பதிலாக இரண்டு தமிழ் முறைகளையும் விளக்க வேண்டும். திருக்கணிதம் (Drik) கோள்களின் நிலையை நேரடி வானியல் கணக்கீட்டால் கணிக்கிறது; வாக்கியம் (Vakya) மரபு சூத்திர அட்டவணைகளை பயன்படுத்துகிறது. சிந்தாமணி ரகுநாத சாரி (1822-1880) 1861-1891 வரை சென்னை வானாய்வு மையத்தில் பணியாற்றியவர்; வாக்கிய முறையின் வானியல் முரண்பாடுகளை சரிசெய்ய 1869 முதல் திருக்கணித பஞ்சாங்கத்தை வெளியிடத் தொடங்கினார்; கும்பகோணம் சங்கர மட அறிஞர் கூட்டத்திற்குப் பிறகு இது அங்கீகரிக்கப்பட்டது. கோள் நிலையில் சில நிமிட வித்தியாசம் அல்லது திருவிழா தேதியில் ஒரு நாள் வேறுபாடு என்பது ஒரு முறையை தேர்வு செய்ததின் இயல்பான விளைவு - எதிலும் தவறு அல்ல.",
             "hi": "यदि ग्राहक कहे कि कुंडली उनके मंदिर के पंचांग से अलग है, तो अपना पक्ष सही ठहराने के बजाय दोनों तमिल पद्धतियाँ समझाएँ। तिरुक्कणितम् (Drik) ग्रह स्थिति सीधी खगोलीय गणना से निकालता है; वाक्यम् (Vakya) पारंपरिक सूत्र-सारणियाँ उपयोग करता है। चिंतामणि रघुनाथ शास्त्री (1822-1880), जो 1861-1891 तक मद्रास वेधशाला में रहे, ने वाक्य पद्धति की खगोलीय विसंगतियाँ सुधारने के लिए 1869 से तिरुक्कणित पंचांग प्रकाशित करना शुरू किया; कुम्भकोणम् शंकर मठ की विद्वान सभा के बाद इसे स्वीकृति मिली। ग्रह स्थिति में कुछ मिनट या उत्सव तिथि में एक दिन का अंतर एक पद्धति चुनने का स्वाभाविक परिणाम है — किसी में त्रुटि नहीं है।"
           },
@@ -2052,7 +2591,18 @@
           ],
           "practical": [
             "tell the customer which system their temple follows before comparing dates"
-          ]
+          ],
+          "practicalI18n": {
+            "en": [
+              "check whether your family or temple follows Thirukkanitham or Vakya before comparing dates"
+            ],
+            "ta": [
+              "தேதிகளை ஒப்பிடும் முன் உங்கள் கோயில் திருக்கணிதமா அல்லது வாக்கிய பஞ்சாங்கமா என்பதைச் சரிபார்க்கவும்"
+            ],
+            "hi": [
+              "तिथियों की तुलना करने से पहले देख लें कि आपका मंदिर तिरुक्कणितम् मानता है या वाक्य पंचांग"
+            ]
+          }
         },
         {
           "id": "current-year",
