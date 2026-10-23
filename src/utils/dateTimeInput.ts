@@ -29,6 +29,38 @@ export const MONTH_LONG_NAMES = [
 
 export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+export const WEEKDAY_FULL_NAMES = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday'
+];
+
+/** Exact calendar day-of-week name ('Wednesday') without local timezone drift. */
+export const formatBirthWeekday = (iso: string): string => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  if (!match) return '';
+  const utc = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return WEEKDAY_FULL_NAMES[utc.getUTCDay()] || '';
+};
+
+/** Clear human period label so midnight (12 AM) vs noon (12 PM) is unmistakable. */
+export const describeBirthTimePeriod = (tob24: string): string => {
+  const match = /^(\d{2}):(\d{2})$/.exec((tob24 || '').trim());
+  if (!match) return '';
+  const hour = Number(match[1]);
+  if (hour === 0) return 'Midnight (12 AM hr)';
+  if (hour < 5) return 'Early Morning';
+  if (hour < 12) return 'Morning';
+  if (hour === 12) return 'Noon / Afternoon';
+  if (hour < 17) return 'Afternoon';
+  if (hour < 21) return 'Evening';
+  return 'Night';
+};
+
 export type TobPeriod = 'AM' | 'PM';
 
 export interface ParsedTob {
@@ -339,7 +371,8 @@ export const parseFlexibleTob = (
  * and 12 stay typeable, and an explicit colon is always respected.
  */
 export const formatTobInputWhileTyping = (raw: string): string => {
-  const cleaned = (raw || '').replace(/[^\d:]/g, '');
+  const normalizedDots = (raw || '').replace(/\./g, ':');
+  const cleaned = normalizedDots.replace(/[^\d:]/g, '');
   if (!cleaned) return '';
 
   if (cleaned.includes(':')) {

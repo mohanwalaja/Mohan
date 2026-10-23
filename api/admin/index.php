@@ -9,6 +9,7 @@ require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../branding.php';
 require_once __DIR__ . '/../chat_alerts.php';
 require_once __DIR__ . '/../birthday_wishes.php';
+require_once __DIR__ . '/../geocoding_and_birth_details.php';
 require_once __DIR__ . '/../rate_limit.php';
 // Review moderation + the "Rate your report" block of the delivery emails.
 require_once __DIR__ . '/../reviews.php';
@@ -243,6 +244,20 @@ if (strpos($path, 'admin/orders') !== false && $method === 'GET' && !preg_match(
     $orders = astro_attach_order_items($pdo, $orders);
 
     jsonResponse(['success' => true, 'orders' => $orders]);
+}
+
+// 1a-edit. POST /api/admin/orders/:id/birth-details — Admin edits submitted birth details & recalculates chart
+if (preg_match('/admin\/orders\/([^\/]+)\/birth-details/', $path, $matches) && $method === 'POST') {
+    $orderId = (string)$matches[1];
+    $body = getJsonBody();
+    $outcome = astro_update_order_birth_details(
+        $pdo,
+        $orderId,
+        is_array($body) ? $body : [],
+        true,
+        (string)($admin['id'] ?? '')
+    );
+    jsonResponse($outcome['body'], $outcome['httpStatus']);
 }
 
 // 1a. POST /api/admin/orders/:id/verify-payment

@@ -34,7 +34,7 @@
 </IfModule>
 
 # Block direct access to internal include-only PHP library files
-<FilesMatch "^(config|db|client_ip|rate_limit|request_body|mailer|payments|refunds|reviews|birth_profiles|branding|chat_alerts|birthday_wishes)\.php$">
+<FilesMatch "^(config|db|client_ip|rate_limit|request_body|mailer|payments|refunds|reviews|birth_profiles|branding|chat_alerts|birthday_wishes|geocoding_and_birth_details)\.php$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, FileText, CheckCircle2, ShieldCheck, Mail, Sparkles, AlertTriangle, Calendar, Star, Compass, Receipt, Languages, Eye, Send, RefreshCw, AlertCircle, Loader2, RotateCcw } from 'lucide-react';
+import { X, Download, FileText, CheckCircle2, ShieldCheck, Mail, Sparkles, AlertTriangle, Calendar, Star, Compass, Receipt, Languages, Eye, Send, RefreshCw, AlertCircle, Loader2, RotateCcw, Edit2, MapPin } from 'lucide-react';
 import { Order, OrderItem, AppLanguage } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { OrderBirthDetailsEditorModal } from './OrderBirthDetailsEditorModal';
 import { orderChartServiceType } from '../../services/multiPersonOrder';
 import { RasiChartSvg } from './RasiChartSvg';
 import { LivePdfPreviewModal } from './LivePdfPreviewModal';
@@ -68,16 +70,28 @@ interface OrderReportModalProps {
   onItemSent?: (itemId: number) => void;
 }
 
-export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClose, onOrderUpdated, familyOrders, orderItemSend, onItemSent }) => {
+export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order: initialOrder, onClose, onOrderUpdated, familyOrders, orderItemSend, onItemSent }) => {
+  const { isAdmin } = useAuth();
+  const [order, setOrder] = useState<Order>(initialOrder);
   const [activeTab, setActiveTab] = useState<'overview' | 'chart' | 'predictions' | 'poruthams' | 'babynames' | 'muhurtham'>('overview');
-  const [selectedLang, setSelectedLang] = useState<AppLanguage>(() => normalizeReportLanguage(order.language));
+  const [selectedLang, setSelectedLang] = useState<AppLanguage>(() => normalizeReportLanguage(initialOrder.language));
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailStatusMsg, setEmailStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isLivePdfModalOpen, setIsLivePdfModalOpen] = useState(false);
+  const [isEditBirthModalOpen, setIsEditBirthModalOpen] = useState(false);
   const [dynamicResult, setDynamicResult] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+
+  useEffect(() => {
+    setOrder(initialOrder);
+  }, [initialOrder]);
+
+  const canEditOrderBirthDetails =
+    isAdmin ||
+    ((order.status === 'PENDING' || order.status === 'PENDING_APPROVAL') &&
+      String(order.emailStatus || '').toUpperCase() !== 'SENT');
 
   // Family-order members are stored before approval without a calculated
   // result. Compute it on the fly (same calculate-preview engine the live PDF
@@ -465,6 +479,18 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
               <Eye className="w-3.5 h-3.5" />
               <span>Preview PDF</span>
             </button>
+
+            {canEditOrderBirthDetails && (
+              <button
+                type="button"
+                onClick={() => setIsEditBirthModalOpen(true)}
+                className="px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold text-xs flex items-center gap-1.5 border border-sky-500/40 shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="Correct birth date, exact time, or birthplace coordinates and recalculate report"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+                <span>Edit Birth Details</span>
+              </button>
+            )}
 
             {/* Direct Send to User Button (Only when pending approval OR if completed and email delivery failed) */}
             {(order.status !== 'COMPLETED' || ((order.emailStatus || '').toUpperCase() === 'FAILED' || (order.emailStatus || '').toUpperCase() === 'ERROR')) && (
@@ -1193,6 +1219,29 @@ export const OrderReportModal: React.FC<OrderReportModalProps> = ({ order, onClo
           title={`ORDER #${order.orderNumber} LIVE PDF PREVIEW (${order.userName})`}
           sourceContext="order_inspection"
           onOrderUpdated={onOrderUpdated}
+        />
+      )}
+
+      {isEditBirthModalOpen && (
+        <OrderBirthDetailsEditorModal
+          order={order}
+          isAdmin={isAdmin}
+          itemId={orderItemSend?.itemId}
+          onClose={() => setIsEditBirthModalOpen(false)}
+          onSaved={({ order: savedOrder, inputPayload, calculatedResult }) => {
+            const nextOrder: Order = {
+              ...(savedOrder || order),
+              inputPayload,
+              calculatedResult
+            };
+            setOrder(nextOrder);
+            setDynamicResult(calculatedResult);
+            setEmailStatusMsg({
+              type: 'success',
+              text: 'Birth details saved & astrological chart recalculated. Preview PDF now reflects the updated chart.'
+            });
+            if (onOrderUpdated) onOrderUpdated(nextOrder);
+          }}
         />
       )}
     </div>

@@ -1183,6 +1183,89 @@ export const api = {
     return safeJson(res);
   },
 
+  async searchLocations(
+    query: string,
+    signal?: AbortSignal
+  ): Promise<{ success: boolean; results?: any[] }> {
+    const clean = query.trim();
+    if (clean.length < 2) return { success: true, results: [] };
+    try {
+      const apiBase = getApiBase();
+      const res = await apiFetch(
+        `${apiBase}/services/geocode?q=${encodeURIComponent(clean)}&limit=8`,
+        signal ? { signal } : undefined
+      );
+      if (!res.ok) return { success: false, results: [] };
+      return safeJson(res);
+    } catch {
+      return { success: false, results: [] };
+    }
+  },
+
+  async reverseGeocode(
+    latitude: number,
+    longitude: number,
+    signal?: AbortSignal
+  ): Promise<{ success: boolean; location?: any }> {
+    try {
+      const apiBase = getApiBase();
+      const res = await apiFetch(
+        `${apiBase}/services/reverse-geocode?lat=${encodeURIComponent(String(latitude))}&lng=${encodeURIComponent(String(longitude))}`,
+        signal ? { signal } : undefined
+      );
+      if (!res.ok) return { success: false };
+      return safeJson(res);
+    } catch {
+      return { success: false };
+    }
+  },
+
+  async updateMyOrderBirthDetails(
+    orderId: string,
+    inputPayload: Record<string, any>,
+    itemId?: number
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    order?: Order;
+    inputPayload?: Record<string, any>;
+    calculatedResult?: any;
+  }> {
+    const apiBase = getApiBase();
+    const res = await apiFetch(
+      `${apiBase}/services/orders/${encodeURIComponent(orderId)}/birth-details`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inputPayload, ...(itemId ? { itemId } : {}) })
+      }
+    );
+    return safeJson(res);
+  },
+
+  async adminUpdateOrderBirthDetails(
+    orderId: string,
+    inputPayload: Record<string, any>,
+    itemId?: number
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    order?: Order;
+    inputPayload?: Record<string, any>;
+    calculatedResult?: any;
+  }> {
+    const apiBase = getApiBase();
+    const res = await apiFetch(
+      `${apiBase}/admin/orders/${encodeURIComponent(orderId)}/birth-details`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inputPayload, ...(itemId ? { itemId } : {}) })
+      }
+    );
+    return safeJson(res);
+  },
+
   async requestCustomerEmailResend(
     id: string,
     targetEmail?: string,

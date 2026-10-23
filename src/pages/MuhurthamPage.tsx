@@ -35,6 +35,7 @@ import {
 } from '../lib/muhurtham/scanner';
 import { AppLanguage, PaymentMethod } from '../types';
 import { BirthDateField, BirthTimeField, BirthTimeZoneNotice, MonthField } from '../components/common/BirthDateTimeFields';
+import { BirthDetailsSummaryCard } from '../components/common/BirthDetailsSummaryCard';
 import { isoToDisplayDob, parseFlexibleDob, parseFlexibleTob } from '../utils/dateTimeInput';
 import { resolveLocationTimezone } from '../lib/timezone';
 import {
@@ -897,11 +898,21 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
                         manuallyEditedFields.current.birthPlace = true;
                         setBirthPlace(selectedLocation);
                       }}
-                      label="User Birth Place (Google Maps Location)"
+                      label="User Birth Place (Worldwide Location)"
                       required
                     />
                     <p className="mt-1 text-[11px] text-slate-400">Used with your date &amp; time of birth to compute your Janma Nakshatra and Rasi.</p>
                     <BirthTimeZoneNotice resolution={modalTimezone} date={modalDob} time={modalTob} theme="dark" className="mt-1.5" />
+                    <BirthDetailsSummaryCard
+                      name={name}
+                      dob={modalDob}
+                      tob={modalTob}
+                      location={birthPlace}
+                      timezoneResolution={modalTimezone}
+                      subjectLabel="Primary Chart Readiness"
+                      theme="dark"
+                      className="mt-2.5"
+                    />
                   </div>
 
                   <div>
@@ -989,12 +1000,39 @@ export const MuhurthamPage: React.FC<{ onNavigate?: (route: string) => void }> =
                     </div>
 
                     <div>
+                      {birthPlace && (
+                        <div className="mb-1 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setPartnerBirthPlace({ ...birthPlace })}
+                            className="rounded-xl border border-rose-400/30 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 text-[11px] font-bold text-rose-200 transition cursor-pointer"
+                          >
+                            Same Birth Place as Person 1
+                          </button>
+                        </div>
+                      )}
                       <GooglePlacesPicker
                         value={partnerBirthPlace || undefined}
                         onChange={setPartnerBirthPlace}
-                        label="Bride Birth Place (Google Maps Location)"
+                        label="Bride Birth Place (Worldwide Location)"
                       />
                       <p className="mt-1 text-[11px] text-slate-400">Used with the bride's date &amp; time of birth to compute her Janma Nakshatra, Rasi and Lagna.</p>
+                      {partnerBirthPlace && (
+                        <BirthTimeZoneNotice
+                          resolution={resolveLocationTimezone(
+                            partnerDob || parseFlexibleDob(partnerDobText, true) || '',
+                            partnerTob || parseFlexibleTob(partnerTobText, partnerTobPeriod, { allowHourOnly: true })?.tob24 || '',
+                            partnerBirthPlace.latitude,
+                            partnerBirthPlace.longitude,
+                            partnerBirthPlace.timezoneOffsetHours,
+                            partnerBirthPlace.timeZoneId
+                          )}
+                          date={partnerDob || parseFlexibleDob(partnerDobText, true) || ''}
+                          time={partnerTob || parseFlexibleTob(partnerTobText, partnerTobPeriod, { allowHourOnly: true })?.tob24 || ''}
+                          theme="dark"
+                          className="mt-1.5"
+                        />
+                      )}
                     </div>
                   </div>
                 </section>

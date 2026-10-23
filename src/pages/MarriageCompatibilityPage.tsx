@@ -25,6 +25,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
 import { BirthDateField, BirthTimeField, BirthTimeZoneNotice } from '../components/common/BirthDateTimeFields';
+import { BirthDetailsSummaryCard } from '../components/common/BirthDetailsSummaryCard';
 import { PersonNameField } from '../components/common/PersonNameField';
 import { ServicePageHeader } from '../components/common/ServicePageHeader';
 import { AuthModal } from '../components/common/AuthModal';
@@ -704,10 +705,48 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
                     manuallyEditedPerson1.current.location = true;
                     setP1Location(selectedLocation);
                   }}
-                  label={`${p1Role === 'bride' ? "Bride's" : "Groom's"} Birth Place (Google Maps)`}
+                  label={`${p1Role === 'bride' ? "Bride's" : "Groom's"} Birth Place (Worldwide Location)`}
                   required
                 />
                 <BirthTimeZoneNotice resolution={p1TimezonePreview} date={p1Dob} time={p1Tob} theme="dark" />
+                <BirthDetailsSummaryCard
+                  name={p1Name}
+                  dob={p1Dob}
+                  tob={p1Tob}
+                  location={p1Location}
+                  timezoneResolution={p1TimezonePreview}
+                  subjectLabel={`${person1Label} Readiness`}
+                  theme="dark"
+                />
+              </div>
+
+              {/* 1-Tap Swap Bar between Person 1 and Person 2 */}
+              <div className="flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tmpName = p1Name;
+                    const tmpDob = p1Dob;
+                    const tmpTob = p1Tob;
+                    const tmpLoc = p1Location;
+                    const tmpKey = p1PickedKey;
+                    setP1Name(p2Name);
+                    setP1Dob(p2Dob);
+                    setP1Tob(p2Tob);
+                    setP1Location(p2Location);
+                    setP1PickedKey(p2PickedKey);
+                    setP2Name(tmpName);
+                    setP2Dob(tmpDob);
+                    setP2Tob(tmpTob);
+                    setP2Location(tmpLoc);
+                    setP2PickedKey(tmpKey);
+                    setP1Role(prev => (prev === 'groom' ? 'bride' : 'groom'));
+                  }}
+                  className="px-3.5 py-1.5 rounded-full border border-white/15 bg-slate-900/90 hover:border-amber-400/60 hover:text-amber-300 text-slate-300 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                  title="Swap all entered details between Person 1 and Person 2"
+                >
+                  ⇄ Swap Person 1 &amp; Person 2 Details
+                </button>
               </div>
 
               {/* PERSON 2: Partner Birth Particulars (also pickable). */}
@@ -752,13 +791,35 @@ export const MarriageCompatibilityPage: React.FC<MarriageCompatibilityPageProps>
                   />
                 </div>
 
-                <GooglePlacesPicker
-                  value={p2Location || undefined}
-                  onChange={setP2Location}
-                  label={`${p1Role === 'bride' ? "Groom's" : "Bride's"} Birth Place (Google Maps)`}
-                  required
-                />
+                <div className="space-y-1.5">
+                  {p1Location && (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setP2Location({ ...p1Location })}
+                        className="rounded-xl border border-pink-500/30 bg-pink-500/10 hover:bg-pink-500/20 px-2.5 py-1 text-[11px] font-bold text-pink-200 transition cursor-pointer"
+                      >
+                        Same Birth Place as {person1Label}
+                      </button>
+                    </div>
+                  )}
+                  <GooglePlacesPicker
+                    value={p2Location || undefined}
+                    onChange={setP2Location}
+                    label={`${p1Role === 'bride' ? "Groom's" : "Bride's"} Birth Place (Worldwide Location)`}
+                    required
+                  />
+                </div>
                 <BirthTimeZoneNotice resolution={p2TimezonePreview} date={p2Dob} time={p2Tob} theme="dark" />
+                <BirthDetailsSummaryCard
+                  name={p2Name}
+                  dob={p2Dob}
+                  tob={p2Tob}
+                  location={p2Location}
+                  timezoneResolution={p2TimezonePreview}
+                  subjectLabel={`${person2Label} Readiness`}
+                  theme="dark"
+                />
               </div>
 
               {/* 3. Language Selection: English, Tamil, Hindi */}

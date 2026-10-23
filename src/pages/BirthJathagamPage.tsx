@@ -25,6 +25,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
 import { GooglePlacesPicker, LocationData } from '../components/common/GooglePlacesPicker';
 import { BirthDateField, BirthTimeField, BirthTimeZoneNotice } from '../components/common/BirthDateTimeFields';
+import { BirthDetailsSummaryCard } from '../components/common/BirthDetailsSummaryCard';
 import { PersonNameField } from '../components/common/PersonNameField';
 import { ServicePageHeader } from '../components/common/ServicePageHeader';
 import { AuthModal } from '../components/common/AuthModal';
@@ -580,10 +581,19 @@ export const BirthJathagamPage: React.FC<BirthJathagamPageProps> = ({ onNavigate
                     manuallyEditedFields.current.location = true;
                     setLocation(selectedLocation);
                   }}
-                  label="Birth Place (Google Maps Location)"
+                  label="Birth Place (Worldwide Location)"
                   required
                 />
                 <BirthTimeZoneNotice resolution={locationTimezone} date={dob} time={tob} theme="dark" />
+                <BirthDetailsSummaryCard
+                  name={name}
+                  dob={dob}
+                  tob={tob}
+                  location={location}
+                  timezoneResolution={locationTimezone}
+                  subjectLabel="Birth Chart Readiness"
+                  theme="dark"
+                />
               </div>
 
               {/* 2. Language Selection: English, Tamil, Hindi */}

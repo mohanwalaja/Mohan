@@ -654,3 +654,393 @@ export function estimateTimezoneOffset(lat: number, lng: number, country: string
   const rawOffset = lng / 15.0;
   return Math.round(rawOffset * 2) / 2;
 }
+
+/* ------------------------------------------------------------------------ */
+/* Instant Offline & Hybrid Worldwide Birthplace Search + Coordinate Engine  */
+/* ------------------------------------------------------------------------ */
+
+interface FlatAtlasEntry {
+  location: LocationData;
+  searchTokens: string;
+  primaryLower: string;
+  cityLower: string;
+  stateLower: string;
+  countryLower: string;
+  isArea: boolean;
+}
+
+const CITY_ALIASES: Record<string, string[]> = {
+  chennai: ['madras', 'maa'],
+  coimbatore: ['kovai', 'cbe'],
+  madurai: ['mdu', 'temple city'],
+  'tiruchirappalli (trichy)': ['trichy', 'tiruchirapalli', 'tiruchi'],
+  'thanjavur (tanjore)': ['tanjore', 'tanjavur'],
+  'thoothukudi (tuticorin)': ['tuticorin', 'thoothukkudi'],
+  'nagercoil (kanyakumari)': ['kanyakumari', 'cape comorin', 'nagerkovil'],
+  'the nilgiris (ooty)': ['ooty', 'udhagamandalam', 'ootacamund'],
+  'ranipet & walajapet': ['walaja', 'walajapet', 'ranipet'],
+  'puducherry town': ['pondicherry', 'pondy', 'puducheri'],
+  'bengaluru (bangalore)': ['bangalore', 'blr'],
+  'mysuru (mysore)': ['mysore'],
+  'mangaluru (mangalore)': ['mangalore'],
+  'visakhapatnam (vizag)': ['vizag', 'waltair'],
+  'rajahmundry (rajamahendravaram)': ['rajahmundry', 'rajamahendravaram'],
+  'thiruvananthapuram (trivandrum)': ['trivandrum', 'tvm'],
+  'kochi (cochin)': ['cochin', 'ernakulam'],
+  'kozhikode (calicut)': ['calicut'],
+  'alappuzha (alleppey)': ['alleppey'],
+  'kollam (quilon)': ['quilon'],
+  'palakkad (palghat)': ['palghat'],
+  'kannur (cannanore)': ['cannanore'],
+  mumbai: ['bombay', 'bom'],
+  pune: ['poona'],
+  'vadodara (baroda)': ['baroda'],
+  'varanasi (kashi / banaras)': ['banaras', 'benares', 'kashi', 'varanasi'],
+  'prayagraj (allahabad)': ['allahabad', 'prayag'],
+  'kolkata (calcutta)': ['calcutta', 'ccu'],
+  'chhatrapati sambhajinagar (aurangabad)': ['aurangabad'],
+  'new delhi & central delhi': ['delhi', 'new delhi', 'ncr', 'ndls'],
+  'gurugram (gurgaon)': ['gurgaon'],
+  'kuala lumpur': ['kl', 'klcc'],
+  'johor bahru': ['jb', 'johor'],
+  'george town & penang island': ['penang', 'pulau pinang', 'georgetown'],
+  'central region': ['singapore', 'sg', 'sin'],
+  'san francisco bay area & silicon valley': ['sf', 'bay area', 'silicon valley', 'san jose'],
+  'greater los angeles & orange county': ['la', 'los angeles'],
+  'dallas - fort worth (dfw metroplex)': ['dfw', 'dallas'],
+  'new york city metro': ['nyc', 'new york', 'manhattan', 'queens'],
+  'washington dc metro (va & md)': ['dc', 'washington dc', 'dmv', 'northern virginia'],
+  'greater london': ['london', 'uk'],
+  'greater toronto area (gta)': ['toronto', 'gta', 'yyz'],
+  'metro vancouver': ['vancouver', 'lower mainland'],
+  'sydney & greater western sydney': ['sydney', 'nsw'],
+  'melbourne metro': ['melbourne', 'vic'],
+  dubai: ['dxb', 'uae']
+};
+
+let cachedAtlasEntries: FlatAtlasEntry[] | null = null;
+
+function buildAtlasIndex(): FlatAtlasEntry[] {
+  if (cachedAtlasEntries) return cachedAtlasEntries;
+  const entries: FlatAtlasEntry[] = [];
+
+  for (const country of WORLDWIDE_LOCATIONS) {
+    for (const state of country.states) {
+      for (const city of state.cities) {
+        const tzId = getTimeZoneIdForCoordinates(city.latitude, city.longitude) ?? undefined;
+        const offset = estimateTimezoneOffset(city.latitude, city.longitude, country.name);
+        const cityKey = city.name.toLowerCase();
+        const extraAliases = CITY_ALIASES[cityKey] || [];
+        const basePlaceName = `${city.name}, ${state.name}, ${country.name}`;
+
+        entries.push({
+          location: {
+            placeName: basePlaceName,
+            country: country.name,
+            latitude: Number(city.latitude.toFixed(4)),
+            longitude: Number(city.longitude.toFixed(4)),
+            timezoneOffsetHours: offset,
+            timeZoneId: tzId,
+            state: state.name,
+            city: city.name
+          },
+          searchTokens: [
+            city.name,
+            state.name,
+            country.name,
+            country.code,
+            ...extraAliases,
+            ...(city.popularAreas || [])
+          ].join(' ').toLowerCase(),
+          primaryLower: cityKey,
+          cityLower: cityKey,
+          stateLower: state.name.toLowerCase(),
+          countryLower: country.name.toLowerCase(),
+          isArea: false
+        });
+
+        for (const area of city.popularAreas || []) {
+          entries.push({
+            location: {
+              placeName: `${area}, ${city.name}, ${state.name}, ${country.name}`,
+              country: country.name,
+              latitude: Number(city.latitude.toFixed(4)),
+              longitude: Number(city.longitude.toFixed(4)),
+              timezoneOffsetHours: offset,
+              timeZoneId: tzId,
+              state: state.name,
+              city: city.name,
+              area
+            },
+            searchTokens: [area, city.name, state.name, country.name, country.code, ...extraAliases]
+              .join(' ')
+              .toLowerCase(),
+            primaryLower: area.toLowerCase(),
+            cityLower: cityKey,
+            stateLower: state.name.toLowerCase(),
+            countryLower: country.name.toLowerCase(),
+            isArea: true
+          });
+        }
+      }
+    }
+  }
+
+  cachedAtlasEntries = entries;
+  return entries;
+}
+
+/**
+ * Find the closest known city in WORLDWIDE_LOCATIONS using Haversine distance.
+ * Provides instant offline city/country context for coordinates or map pins.
+ */
+export function findNearestWorldwideLocation(
+  latitude: number,
+  longitude: number
+): { placeName: string; country: string; state?: string; city?: string; distanceKm: number } | null {
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  let best: { entry: FlatAtlasEntry; km: number } | null = null;
+
+  for (const entry of buildAtlasIndex()) {
+    if (entry.isArea) continue;
+    const dLat = toRad(entry.location.latitude - latitude);
+    const dLng = toRad(entry.location.longitude - longitude);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(latitude)) * Math.cos(toRad(entry.location.latitude)) * Math.sin(dLng / 2) ** 2;
+    const km = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
+    if (!best || km < best.km) {
+      best = { entry, km };
+    }
+  }
+
+  if (!best) return null;
+  const { location } = best.entry;
+  return {
+    placeName: best.km <= 8
+      ? location.placeName
+      : `Near ${location.city || location.placeName}, ${location.country}`,
+    country: location.country,
+    state: location.state,
+    city: location.city,
+    distanceKm: Math.round(best.km * 10) / 10
+  };
+}
+
+/**
+ * Parse decimal coordinates, DMS notation, or Google Maps URLs directly pasted
+ * into the Birth Place search input.
+ */
+export function parseCoordinatesFromInput(raw: string): LocationData | null {
+  const trimmed = (raw || '').trim();
+  if (!trimmed) return null;
+
+  let lat: number | null = null;
+  let lng: number | null = null;
+
+  // 1. Google Maps URLs: /@12.9281,79.3331,15z or ?q=12.9281,79.3331 or !3d12.9281!4d79.3331
+  const urlBangMatch = trimmed.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  const urlAtMatch = trimmed.match(/(?:@|[?&](?:q|ll|query|center)=)(-?\d{1,2}\.\d+)\s*[,+%2C\s]+\s*(-?\d{1,3}\.\d+)/i);
+  if (urlBangMatch) {
+    lat = Number(urlBangMatch[1]);
+    lng = Number(urlBangMatch[2]);
+  } else if (urlAtMatch) {
+    lat = Number(urlAtMatch[1]);
+    lng = Number(urlAtMatch[2]);
+  }
+
+  // 2. Degrees / Minutes / Seconds: e.g. 13°04'58"N 80°16'15"E
+  if (lat === null || lng === null) {
+    const dmsRegex = /(\d{1,3})\s*[°d]\s*(\d{1,2})?\s*['′m]?\s*(\d{1,2}(?:\.\d+)?)?\s*["″s]?\s*([NSnsEWew])/g;
+    const parts = [...trimmed.matchAll(dmsRegex)];
+    if (parts.length === 2) {
+      const toDecimal = (m: RegExpExecArray) => {
+        const deg = Number(m[1] || 0);
+        const min = Number(m[2] || 0);
+        const sec = Number(m[3] || 0);
+        const dir = m[4].toUpperCase();
+        const val = deg + min / 60 + sec / 3600;
+        return dir === 'S' || dir === 'W' ? -val : val;
+      };
+      const firstDir = parts[0][4].toUpperCase();
+      const secondDir = parts[1][4].toUpperCase();
+      if ((firstDir === 'N' || firstDir === 'S') && (secondDir === 'E' || secondDir === 'W')) {
+        lat = toDecimal(parts[0]);
+        lng = toDecimal(parts[1]);
+      } else if ((secondDir === 'N' || secondDir === 'S') && (firstDir === 'E' || firstDir === 'W')) {
+        lat = toDecimal(parts[1]);
+        lng = toDecimal(parts[0]);
+      }
+    }
+  }
+
+  // 3. Plain signed / N-S-E-W decimal pair: e.g. "13.0827, 80.2707" or "13.0827 N, 80.2707 E"
+  if (lat === null || lng === null) {
+    const decMatch = trimmed.match(
+      /^(-?\d{1,2}(?:\.\d+)?)\s*°?\s*([NSns])?\s*[,;/\s]+\s*(-?\d{1,3}(?:\.\d+)?)\s*°?\s*([EWew])?$/
+    );
+    if (decMatch && (decMatch[1].includes('.') || decMatch[3].includes('.') || decMatch[2] || decMatch[4])) {
+      let parsedLat = Number(decMatch[1]);
+      let parsedLng = Number(decMatch[3]);
+      if (decMatch[2]?.toUpperCase() === 'S' && parsedLat > 0) parsedLat = -parsedLat;
+      if (decMatch[4]?.toUpperCase() === 'W' && parsedLng > 0) parsedLng = -parsedLng;
+      lat = parsedLat;
+      lng = parsedLng;
+    }
+  }
+
+  if (lat === null || lng === null || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+
+  const roundedLat = Number(lat.toFixed(4));
+  const roundedLng = Number(lng.toFixed(4));
+  const nearest = findNearestWorldwideLocation(roundedLat, roundedLng);
+  const country = nearest && nearest.distanceKm <= 250 ? nearest.country : 'Global';
+  const tzId = getTimeZoneIdForCoordinates(roundedLat, roundedLng) ?? undefined;
+  const tzOffset = estimateTimezoneOffset(roundedLat, roundedLng, country);
+  const label = nearest && nearest.distanceKm <= 60
+    ? `${nearest.placeName} (${roundedLat}°, ${roundedLng}°)`
+    : `Pinned Coordinates (${roundedLat}°, ${roundedLng}°)`;
+
+  return {
+    placeName: label,
+    country,
+    latitude: roundedLat,
+    longitude: roundedLng,
+    timezoneOffsetHours: tzOffset,
+    timeZoneId: tzId,
+    state: nearest?.state,
+    city: nearest?.city
+  };
+}
+
+/**
+ * Instant (<1ms) ranked search across the entire built-in worldwide atlas
+ * (cities, taluks, temples, suburbs, states, countries, and common aliases),
+ * plus direct coordinate / Google Maps URL parsing.
+ */
+export function searchWorldwideLocations(rawQuery: string, limit = 10): LocationData[] {
+  const cleaned = (rawQuery || '').trim();
+  if (!cleaned) return [];
+
+  const results: LocationData[] = [];
+  const coordLocation = parseCoordinatesFromInput(cleaned);
+  if (coordLocation) {
+    results.push(coordLocation);
+  }
+
+  const normalized = cleaned
+    .toLowerCase()
+    .replace(/[(),.;]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!normalized) return results.slice(0, limit);
+
+  const tokens = normalized.split(' ').filter(Boolean);
+  const scored: Array<{ score: number; entry: FlatAtlasEntry }> = [];
+
+  for (const entry of buildAtlasIndex()) {
+    let allMatched = true;
+    for (const token of tokens) {
+      if (!entry.searchTokens.includes(token)) {
+        allMatched = false;
+        break;
+      }
+    }
+    if (!allMatched) continue;
+
+    let score = 0;
+    if (entry.primaryLower === normalized) score += 200;
+    else if (entry.primaryLower.startsWith(normalized)) score += 140;
+    else if (entry.cityLower === normalized) score += 130;
+    else if (entry.cityLower.startsWith(normalized)) score += 105;
+    else if (entry.primaryLower.includes(` ${normalized}`) || entry.primaryLower.includes(`(${normalized}`)) score += 90;
+    else if (entry.primaryLower.includes(normalized)) score += 75;
+    else if (entry.stateLower.startsWith(normalized) || entry.countryLower.startsWith(normalized)) score += 55;
+    else score += 35;
+
+    // Slight preference to main city records on broad country/state queries so
+    // typing "Tamil Nadu" or "Malaysia" shows major cities cleanly first.
+    if (!entry.isArea) score += 12;
+
+    scored.push({ score, entry });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+
+  const seenNames = new Set(results.map(item => item.placeName.toLowerCase()));
+  for (const candidate of scored) {
+    const key = candidate.entry.location.placeName.toLowerCase();
+    if (seenNames.has(key)) continue;
+    seenNames.add(key);
+    results.push(candidate.entry.location);
+    if (results.length >= limit) break;
+  }
+
+  return results;
+}
+
+/** Curated 1-tap quick-pick cities shown before typing. */
+export const POPULAR_QUICK_PLACES: LocationData[] = [
+  'Chennai',
+  'Coimbatore',
+  'Madurai',
+  'Bengaluru',
+  'Hyderabad',
+  'Mumbai',
+  'New Delhi',
+  'Colombo',
+  'Jaffna',
+  'Kuala Lumpur',
+  'Singapore',
+  'Dubai',
+  'Greater London',
+  'Greater Toronto Area',
+  'Sydney',
+  'New York City'
+]
+  .map(name => searchWorldwideLocations(name, 1)[0])
+  .filter((item): item is LocationData => Boolean(item));
+
+const RECENT_PLACES_SESSION_KEY = 'astrosivam.recentPlaces';
+
+/** Per-tab recent birth/event places so multi-person forms take 1 tap to reuse. */
+export function readRecentPlaces(max = 5): LocationData[] {
+  try {
+    if (typeof sessionStorage === 'undefined') return [];
+    const raw = sessionStorage.getItem(RECENT_PLACES_SESSION_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (item: any) =>
+          item &&
+          typeof item.placeName === 'string' &&
+          item.placeName.trim() &&
+          Number.isFinite(item.latitude) &&
+          Number.isFinite(item.longitude) &&
+          Number.isFinite(item.timezoneOffsetHours)
+      )
+      .slice(0, max);
+  } catch {
+    return [];
+  }
+}
+
+export function rememberRecentPlace(location: LocationData | null | undefined): void {
+  if (!location || !location.placeName?.trim()) return;
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    const current = readRecentPlaces(6);
+    const targetKey = location.placeName.trim().toLowerCase();
+    const deduped = [
+      location,
+      ...current.filter(item => item.placeName.trim().toLowerCase() !== targetKey)
+    ].slice(0, 5);
+    sessionStorage.setItem(RECENT_PLACES_SESSION_KEY, JSON.stringify(deduped));
+  } catch {
+    /* private browsing or disabled storage: ignore cleanly */
+  }
+}

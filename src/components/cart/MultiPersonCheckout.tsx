@@ -431,6 +431,31 @@ export const MultiPersonCheckout: React.FC<MultiPersonCheckoutProps> = ({
                     id={`multi-person-partner-tob-${person.key}`}
                   />
                   <div className="sm:col-span-2">
+                    {toLocationData(person) && (
+                      <div className="mb-1 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const srcLoc = toLocationData(person);
+                            if (!srcLoc || !person.partner) return;
+                            updatePerson(person.key, {
+                              partner: {
+                                ...person.partner,
+                                place: srcLoc.placeName,
+                                country: srcLoc.country || '',
+                                latitude: srcLoc.latitude,
+                                longitude: srcLoc.longitude,
+                                timezoneOffsetHours: srcLoc.timezoneOffsetHours,
+                                timeZoneId: srcLoc.timeZoneId || ''
+                              }
+                            });
+                          }}
+                          className="rounded-lg border border-rose-400/30 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 text-[10.5px] font-bold text-rose-200 transition cursor-pointer"
+                        >
+                          Same Birth Place as {person.name.trim() || `${labels.person} ${index + 1}`}
+                        </button>
+                      </div>
+                    )}
                     <GooglePlacesPicker
                       value={person.partner.place && person.partner.latitude !== null ? {
                         placeName: person.partner.place,
@@ -460,6 +485,22 @@ export const MultiPersonCheckout: React.FC<MultiPersonCheckoutProps> = ({
                       label={labels.place}
                       required
                     />
+                    {person.partner.latitude !== null && person.partner.longitude !== null && (
+                      <BirthTimeZoneNotice
+                        theme="dark"
+                        className="mt-1.5"
+                        date={person.partner.dob}
+                        time={person.partner.tob}
+                        resolution={resolveLocationTimezone(
+                          person.partner.dob,
+                          person.partner.tob,
+                          person.partner.latitude,
+                          person.partner.longitude,
+                          person.partner.timezoneOffsetHours ?? Number.NaN,
+                          person.partner.timeZoneId
+                        )}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -468,9 +509,34 @@ export const MultiPersonCheckout: React.FC<MultiPersonCheckoutProps> = ({
             {/* Subha Muhurtham needs the ceremony location + report month */}
             {person.services.includes('MUHURTHAM') && person.muhurtham && (
               <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-3 space-y-3">
-                <div className="text-[11px] font-bold text-amber-200 flex items-center gap-1.5">
-                  <CalendarDays className="w-3.5 h-3.5" />
-                  <span>{labels.muhurthamHeading}</span>
+                <div className="text-[11px] font-bold text-amber-200 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    <span>{labels.muhurthamHeading}</span>
+                  </span>
+                  {toLocationData(person) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const srcLoc = toLocationData(person);
+                        if (!srcLoc || !person.muhurtham) return;
+                        updatePerson(person.key, {
+                          muhurtham: {
+                            ...person.muhurtham,
+                            place: srcLoc.placeName,
+                            country: srcLoc.country || '',
+                            latitude: srcLoc.latitude,
+                            longitude: srcLoc.longitude,
+                            timezoneOffsetHours: srcLoc.timezoneOffsetHours,
+                            timeZoneId: srcLoc.timeZoneId || ''
+                          }
+                        });
+                      }}
+                      className="rounded-lg border border-amber-400/30 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-200 transition cursor-pointer"
+                    >
+                      Copy Birth Place
+                    </button>
+                  )}
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div>
