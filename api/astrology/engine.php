@@ -3103,9 +3103,9 @@ class AstroEngine {
         ];
 
         $enumToLegacyStatus = [
-            'UTTHAMAM' => 'Uthama (Excellent)',
-            'MADHYAMAM' => 'Madhyama (Good)',
-            'PORUNDHADHU' => 'Porundhadhu (Not Compatible)'
+            'UTTHAMAM' => 'Very Good',
+            'MADHYAMAM' => 'Good',
+            'PORUNDHADHU' => 'Not Compatible'
         ];
 
         // --- Real calculation FIRST: fill $poruthamDefs with actual results ---
@@ -3341,7 +3341,7 @@ class AstroEngine {
         $failedEn = implode(' and ', array_filter([$rajjuOk ? null : 'Rajju', $vedhaOk ? null : 'Vedha']));
         $failedTa = implode(' மற்றும் ', array_filter([$rajjuOk ? null : 'ரஜ்ஜு', $vedhaOk ? null : 'வேதை']));
         $failedHi = implode(' और ', array_filter([$rajjuOk ? null : 'रज्जु', $vedhaOk ? null : 'वेध']));
-        $verdictLabel = !$criticalPoruthamsOk ? "Not Recommended - {$failedEn} mismatch" : ($verdictStatus === 'UTTHAMAM' ? 'Highly Recommended (உத்தம பொருத்தம்)' : ($verdictStatus === 'MADHYAMAM' ? 'Acceptable with Remedies (மத்திம பொருத்தம்)' : 'Not Recommended (பொருந்தாது)'));
+        $verdictLabel = !$criticalPoruthamsOk ? "Not Compatible - {$failedEn} mismatch" : ($verdictStatus === 'UTTHAMAM' ? 'Very Good' : ($verdictStatus === 'MADHYAMAM' ? 'Good (Acceptable with Remedies)' : 'Not Compatible'));
 
         // Kuja remedies concern Kuja alone; they do not remove a failed
         // Rajju/Vedha check or amount to approval of the overall marriage.
@@ -3354,21 +3354,21 @@ class AstroEngine {
         $sevvayDosham['recommendationHi'] .= ' यह केवल मंगल दोष का मार्गदर्शन है, समग्र विवाह अनुशंसा नहीं है।';
 
         if ($anyCrucialFailed) {
-            $overallVerdictEn = "Not Recommended - {$failedEn} mismatch. Requires detailed astrological assessment.";
-            $overallVerdictTa = "{$failedTa} பொருத்தமின்மை உள்ளது. விரிவான ஜாதக ஆய்வின்றி திருமணம் பரிந்துரைக்கப்படவில்லை.";
-            $overallVerdictHi = "{$failedHi} की बाधा है। विस्तृत ज्योतिषीय समीक्षा के बिना विवाह अनुशंसित नहीं है।";
+            $overallVerdictEn = "Not Compatible - {$failedEn} mismatch. Requires detailed astrological assessment.";
+            $overallVerdictTa = "பொருத்தம் இல்லை - {$failedTa} பொருத்தமின்மை உள்ளது. விரிவான ஜாதக ஆய்வின்றி திருமணம் பரிந்துரைக்கப்படவில்லை.";
+            $overallVerdictHi = "मेल नहीं - {$failedHi} की बाधा है। विस्तृत ज्योतिषीय समीक्षा के बिना विवाह अनुशंसित नहीं है।";
         } elseif ($verdictStatus === 'UTTHAMAM') {
-            $overallVerdictEn = 'Highly Recommended - Utthama Porutham';
-            $overallVerdictTa = 'மிகவும் பரிந்துரைக்கப்படுகிறது - உத்தம பொருத்தம்';
-            $overallVerdictHi = 'अत्यधिक अनुशंसित - यह उत्तम विवाह संबंध है।';
+            $overallVerdictEn = 'Very Good - Highly favourable match for marriage';
+            $overallVerdictTa = 'மிக நன்று - திருமணத்திற்கு மிகவும் ஏற்ற நல்ல பொருத்தம்';
+            $overallVerdictHi = 'बहुत अच्छा - विवाह के लिए अत्यंत अनुकूल मिलान।';
         } elseif ($verdictStatus === 'MADHYAMAM') {
-            $overallVerdictEn = 'Acceptable with Remedies - Madhyama Porutham';
-            $overallVerdictTa = 'மத்திமப் பொருத்தம் - பரிகாரங்களுடன் ஏற்றது';
-            $overallVerdictHi = 'मध्यम मिलान - उपायों के साथ विवाह विचारणीय है।';
+            $overallVerdictEn = 'Good - Acceptable with Remedies';
+            $overallVerdictTa = 'நன்று - பரிகாரங்களுடன் ஏற்றுக்கொள்ளத்தக்க பொருத்தம்';
+            $overallVerdictHi = 'अच्छा - उपायों के साथ विवाह उपयुक्त है।';
         } else {
-            $overallVerdictEn = 'Not Recommended - Porutham does not meet the recommended standard';
-            $overallVerdictTa = 'திருமணத்திற்கு பரிந்துரைக்கப்படவில்லை';
-            $overallVerdictHi = 'पर्याप्त पोरुथम के अभाव में यह विवाह अनुशंसित नहीं है।';
+            $overallVerdictEn = 'Not Compatible - Does not meet recommended compatibility';
+            $overallVerdictTa = 'பொருத்தம் இல்லை - திருமணத்திற்கு பரிந்துரைக்கப்படவில்லை';
+            $overallVerdictHi = 'मेल नहीं - पर्याप्त पोरुथम के अभाव में यह विवाह अनुशंसित नहीं है।';
         }
 
         $formatBirthPlaceLabel = static function ($place, $country): string {

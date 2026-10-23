@@ -10,9 +10,9 @@ import { AppLanguage, PoruthamStatus } from '../lib/astrology/types';
  * from a different table. Every tier is now a plain grading word in the order's
  * own language:
  *
- *   UTTHAMAM    -> Very Good / மிக நன்று / बहुत अच्छा
- *   MADHYAMAM   -> Good      / நன்று     / अच्छा
- *   PORUNDHADHU -> Incompatible / பொருந்தாது / मेल नहीं
+ *   UTTHAMAM    -> Very Good      / மிக நன்று        / बहुत अच्छा
+ *   MADHYAMAM   -> Good           / நன்று            / अच्छा
+ *   PORUNDHADHU -> Not Compatible / பொருத்தம் இல்லை / मेल नहीं
  *
  * The Sanskrit names are not lost: they are explained once on the report's
  * glossary page ("Porutham", "Gana", ...), which is where the technical words
@@ -27,7 +27,7 @@ type TierCopy = Record<AppLanguage, string>;
 export const VERDICT_TIER_LABEL: Record<VerdictTier, TierCopy> = {
   UTTHAMAM: { en: 'Very Good', ta: 'மிக நன்று', hi: 'बहुत अच्छा' },
   MADHYAMAM: { en: 'Good', ta: 'நன்று', hi: 'अच्छा' },
-  PORUNDHADHU: { en: 'Incompatible', ta: 'பொருந்தாது', hi: 'मेल नहीं' }
+  PORUNDHADHU: { en: 'Not Compatible', ta: 'பொருத்தம் இல்லை', hi: 'मेल नहीं' }
 };
 
 /**
@@ -38,7 +38,7 @@ export const VERDICT_TIER_LABEL: Record<VerdictTier, TierCopy> = {
 export const VERDICT_TIER_HINT: Record<VerdictTier, TierCopy> = {
   UTTHAMAM: { en: 'Very Good (highly favourable)', ta: 'மிக நன்று (மிகச் சாதகம்)', hi: 'बहुत अच्छा (अत्यंत अनुकूल)' },
   MADHYAMAM: { en: 'Good (remedies may help)', ta: 'நன்று (பரிகாரங்கள் உதவும்)', hi: 'अच्छा (उपाय सहायक)' },
-  PORUNDHADHU: { en: 'Incompatible', ta: 'பொருந்தாது', hi: 'मेल नहीं' }
+  PORUNDHADHU: { en: 'Not Compatible', ta: 'பொருத்தம் இல்லை', hi: 'मेल नहीं' }
 };
 
 /** True when the value is one of the three known tiers. */
@@ -66,9 +66,9 @@ export function verdictTierFrom(value: unknown): VerdictTier | null {
   if (!raw) return null;
   if (isVerdictTier(raw.toUpperCase())) return raw.toUpperCase() as VerdictTier;
   const lower = raw.toLowerCase();
-  if (/very good|utthama|uthama|uttama|excellent|highly/.test(lower)) return 'UTTHAMAM';
-  if (/^good\b|madhyam|mathimam|moderate|acceptable|partial/.test(lower)) return 'MADHYAMAM';
-  if (/incompatible|porundh|not compatible|not recommended|adhamam/.test(lower)) return 'PORUNDHADHU';
+  if (/very good|utthama|uthama|uttama|excellent|highly|மிக நன்று|बहुत अच्छा/.test(lower)) return 'UTTHAMAM';
+  if (/^good\b|madhyam|mathimam|moderate|acceptable|partial|^நன்று\b|^अच्छा\b/.test(lower)) return 'MADHYAMAM';
+  if (/incompatible|porundh|not compatible|not recommended|adhamam|பொருத்தம் இல்லை|பொருந்தாது|मेल नहीं/.test(lower)) return 'PORUNDHADHU';
   return null;
 }
 

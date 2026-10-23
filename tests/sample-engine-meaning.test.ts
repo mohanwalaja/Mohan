@@ -59,7 +59,7 @@ assert.equal(marriage.poruthams.find(row => row.id === 'rajju')?.maxPoints, 1.0)
 assert.equal(marriage.poruthams.find(row => row.id === 'yoni')?.status, PoruthamStatus.MADHYAMAM);
 assert.equal(marriage.poruthams.find(row => row.id === 'vedhai')?.status, PoruthamStatus.UTTHAMAM);
 assert.equal(marriage.verdictStatus, PoruthamStatus.MADHYAMAM);
-assert.match(marriage.overallVerdictEn, /Moderate match:/i);
+assert.match(marriage.overallVerdictEn, /^Good:/i);
 assert.doesNotMatch(marriage.overallVerdictEn, /Critical/);
 assert.equal(marriage.totalScore, 6.5);
 assert.equal(marriage.totalPoruthamsMatched, 7);
