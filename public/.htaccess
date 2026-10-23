@@ -158,6 +158,12 @@ RewriteRule ^(vendor|knowledge|src|scripts|docs)(/|$) - [F,L]
   RewriteRule ^(admin-portal|admin\.php)/?$ /admin [R=301,L]
   RewriteRule ^(logos|brand-logos|logo-concepts)/?$ / [R=301,L]
 
+  # Legacy media/icon root paths consolidated under /assets/* to keep cPanel
+  # public_html root minimal without breaking historic bookmarks or email URLs.
+  RewriteRule ^audio/(.*)$ /assets/audio/$1 [R=301,L]
+  RewriteRule ^video-scenes/(.*)$ /assets/video-scenes/$1 [R=301,L]
+  RewriteRule ^(astrosivam_logo\.png|astrosivam_full_logo\.png|astrosivam_og_image\.jpg|favicon-(?:16x16|32x32|48x48)\.png|apple-touch-icon\.png|android-chrome-(?:192x192|512x512)\.png)$ /assets/images/$1 [R=301,L]
+
   # (d) Pass backend PHP API requests directly to PHP router (do not rewrite to index.html)
   RewriteRule ^api/ - [L,NC]
   RewriteRule ^api$ - [L,NC]

@@ -3,18 +3,19 @@ import os
 import zipfile
 import shutil
 
+
 def create_dist_zip():
     dist_dir = 'dist'
     api_dir = 'api'
     zip_name = 'dist.zip'
-    
+
     # Clean up any existing zip
     if os.path.exists(zip_name):
         try:
             os.remove(zip_name)
         except Exception:
             pass
-    
+
     # Ensure public/.htaccess is copied to dist/ if not already there
     if os.path.exists('public/.htaccess') and os.path.exists(dist_dir):
         shutil.copy2('public/.htaccess', os.path.join(dist_dir, '.htaccess'))
@@ -25,10 +26,18 @@ def create_dist_zip():
         shutil.copy2('public/404.html', os.path.join(dist_dir, '404.html'))
 
     print(f"Creating compact {zip_name} (target: ~7MB)...")
-    
+
     # Excluded files and directories to keep the shared-host deployment lightweight.
     excluded_files = {'.DS_Store', 'Thumbs.db'}
     excluded_dirs = {'__pycache__', '.git', 'node_modules', 'vendor', '.github', 'tests'}
+    seen_arcnames = set()
+
+    def write_unique(zipf, file_path, arcname):
+        normalized_arc = arcname.replace(os.sep, '/')
+        if normalized_arc in seen_arcnames:
+            return
+        seen_arcnames.add(normalized_arc)
+        zipf.write(file_path, normalized_arc)
 
     def is_runtime_artifact(file_path):
         """api/storage holds transient, admin-staged preview PDFs (customer
@@ -63,9 +72,9 @@ def create_dist_zip():
                     if file.endswith('.cjs'):
                         raise RuntimeError(f'Unexpected executable server bundle in static cPanel deployment: {file_path}')
                     arcname = os.path.relpath(file_path, dist_dir)
-                    zipf.write(file_path, arcname)
-                    
-        # 2. Add complete PHP backend API
+                    write_unique(zipf, file_path, arcname)
+
+        # 2. Add complete PHP backend API (including api/astrology/rules.json)
         if os.path.exists(api_dir):
             for root, dirs, files in os.walk(api_dir):
                 dirs[:] = [d for d in dirs if d not in excluded_dirs]
@@ -78,18 +87,11 @@ def create_dist_zip():
                     if is_runtime_artifact(file_path):
                         continue
                     arcname = os.path.relpath(file_path, '.')
-                    zipf.write(file_path, arcname)
+                    write_unique(zipf, file_path, arcname)
 
-        # The PHP report needs the same ceremony-specific weekday / season
-        # rules as the browser, including when deployed from this zip alone.
-        rules_path = 'src/lib/muhurtham/rules.json'
-        if os.path.exists(rules_path):
-            zipf.write(rules_path, rules_path)
-
-        # Local source-based astrologer knowledge base (guided questions,
-        # life-area rules, remedies, guardrails, report sections, and Tamil
-        # source registry). Shipped at root knowledge/ for full dist.zip
-        # extraction (and mirrored in api/knowledge/ for api/-only uploads).
+        # Ensure the authoritative knowledge base is always present inside
+        # api/knowledge/ (without adding a duplicate top-level knowledge/ folder
+        # to cPanel's public_html File Manager).
         knowledge_dir = 'knowledge'
         if os.path.exists(knowledge_dir):
             for root, dirs, files in os.walk(knowledge_dir):
@@ -98,16 +100,15 @@ def create_dist_zip():
                     file_path = os.path.join(root, file)
                     if file in excluded_files or file.endswith(('.map', '.cjs', '.py')):
                         continue
-                    arcname = os.path.relpath(file_path, '.')
-                    zipf.write(file_path, arcname)
+                    arcname = os.path.join('api', os.path.relpath(file_path, '.'))
+                    write_unique(zipf, file_path, arcname)
 
         # 3. Add root .htaccess if dist didn't contain it
-        if os.path.exists('public/.htaccess') and '.htaccess' not in zipf.namelist():
-            zipf.write('public/.htaccess', '.htaccess')
+        if os.path.exists('public/.htaccess'):
+            write_unique(zipf, 'public/.htaccess', '.htaccess')
 
-        # 4. Add the operator documentation referenced by the deployment guide.
-        #    The runbooks live under docs/ in the repository and now ship under
-        #    docs/ in the zip too, keeping the deploy root clean.
+        # 4. Tuck essential operator runbooks inside api/docs/ (blocked from
+        #    direct HTTP access by api/.htaccess) so public_html root stays clean.
         for doc in (
             'BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md',
             'RATE_LIMITING_AND_PAYMENT_RECOVERY.md',
@@ -117,14 +118,11 @@ def create_dist_zip():
         ):
             source = os.path.join('docs', doc)
             if os.path.exists(source):
-                zipf.write(source, os.path.join('docs', doc))
+                write_unique(zipf, source, os.path.join('api', 'docs', doc))
 
-        # 5. Ops scripts the runbook schedules from cron (weekly backup, weekly
-        #    log rotation). They must ship with the release: a host that is
-        #    deployed by extracting this zip has no git checkout to copy them
-        #    from, and the cron entries in HEALTH_MONITORING_AND_BACKUP_VERIFICATION.md
-        #    point at these paths. Both are .sh / .md, which public/.htaccess
-        #    already refuses to serve over HTTP.
+        # 5. Tuck cron ops scripts inside api/scripts/ (protected by api/.htaccess)
+        #    so zip-only hosts get weekly backup & log rotation without adding a
+        #    top-level scripts/ directory to cPanel's File Manager root.
         for ops_dir in ('scripts/backup', 'scripts/ops'):
             if not os.path.isdir(ops_dir):
                 continue
@@ -134,26 +132,24 @@ def create_dist_zip():
                     if file in excluded_files or file.endswith(('.map', '.cjs', '.pyc')):
                         continue
                     file_path = os.path.join(root, file)
-                    zipf.write(file_path, os.path.relpath(file_path, '.'))
+                    write_unique(zipf, file_path, os.path.join('api', os.path.relpath(file_path, '.')))
 
     size_mb = os.path.getsize(zip_name) / (1024 * 1024)
     print(f"Successfully generated {zip_name} - Size: {size_mb:.2f} MB")
 
+
 # ---------------------------------------------------------------------------
-# Deployment shape contract (audit S1): the cPanel file manager must keep
-# showing a limited folder list at the site root — never one folder per route
-# or per asset class. These lists are deliberately explicit: if a build change
-# grows them, the packer FAILS instead of silently shipping a sprawled tree.
-# Enforced by tests/dist-shape.test.ts and asserted again in CI's zip check.
+# Deployment shape contract (audit S1 + cPanel root hygiene): cPanel File Manager
+# at public_html must show ONLY the minimal essential folders (`api`, `assets`,
+# `pages`, plus hidden `.well-known`) — never one folder per route, asset type,
+# script tree, or source directory.
 # ---------------------------------------------------------------------------
-EXPECTED_DIST_TOP_DIRS = {'assets', 'audio', 'pages', 'video-scenes'}
-EXPECTED_ZIP_TOP_DIRS = {'.well-known', 'api', 'assets', 'audio', 'docs', 'knowledge', 'pages', 'scripts', 'src', 'video-scenes'}
+EXPECTED_DIST_TOP_DIRS = {'assets', 'pages'}
+EXPECTED_ZIP_TOP_DIRS = {'.well-known', 'api', 'assets', 'pages'}
 
 
 def assert_deploy_shape(dist_dir='dist', zip_name='dist.zip'):
     if os.path.isdir(dist_dir):
-        # Vite 6+ creates a .vite/ cache directory inside dist/ — filter it out
-        # since it is a build artifact, not a deployment folder.
         dist_dirs = {e for e in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, e)) and not e.startswith('.')}
         if dist_dirs != EXPECTED_DIST_TOP_DIRS:
             raise RuntimeError(
@@ -166,6 +162,7 @@ def assert_deploy_shape(dist_dir='dist', zip_name='dist.zip'):
             f'dist.zip top-level folders changed: {sorted(zip_dirs)} (expected {sorted(EXPECTED_ZIP_TOP_DIRS)})'
         )
     print(f'Deploy shape OK — zip root folders: {", ".join(sorted(zip_dirs))}')
+
 
 if __name__ == '__main__':
     create_dist_zip()

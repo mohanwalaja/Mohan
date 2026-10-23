@@ -31,6 +31,7 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteRule ^(vendor|knowledge|storage|migrations|astrology)(/.*)?$ - [F,L]
+    RewriteRule ^(docs|scripts)(/.*)?$ - [F,L]
 </IfModule>
 
 # Block direct access to internal include-only PHP library files

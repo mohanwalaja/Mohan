@@ -143,20 +143,20 @@ check('Vite navbar emblem matches the published website emblem',
   && readFileSync(resolve(root, 'src/assets/astrosivam_logo.png')).equals(publishedEmblem));
 check('Official full logo is present in public/assets/images/',
   has('public/assets/images/astrosivam_full_logo.png') && statSync(resolve(root, 'public/assets/images/astrosivam_full_logo.png')).size > 1024);
-check('Favicon 16x16 is present in public/',
-  has('public/favicon-16x16.png') && statSync(resolve(root, 'public/favicon-16x16.png')).size > 0);
-check('Favicon 32x32 is present in public/',
-  has('public/favicon-32x32.png') && statSync(resolve(root, 'public/favicon-32x32.png')).size > 0);
-check('Favicon 48x48 is present in public/',
-  has('public/favicon-48x48.png') && statSync(resolve(root, 'public/favicon-48x48.png')).size > 0);
+check('Favicon 16x16 is present in public/assets/images/',
+  has('public/assets/images/favicon-16x16.png') && statSync(resolve(root, 'public/assets/images/favicon-16x16.png')).size > 0);
+check('Favicon 32x32 is present in public/assets/images/',
+  has('public/assets/images/favicon-32x32.png') && statSync(resolve(root, 'public/assets/images/favicon-32x32.png')).size > 0);
+check('Favicon 48x48 is present in public/assets/images/',
+  has('public/assets/images/favicon-48x48.png') && statSync(resolve(root, 'public/assets/images/favicon-48x48.png')).size > 0);
 check('Favicon ICO is present in public/',
   has('public/favicon.ico') && statSync(resolve(root, 'public/favicon.ico')).size > 0);
-check('Apple touch icon is present in public/',
-  has('public/apple-touch-icon.png') && statSync(resolve(root, 'public/apple-touch-icon.png')).size > 0);
-check('Android Chrome 192 icon is present in public/',
-  has('public/android-chrome-192x192.png') && statSync(resolve(root, 'public/android-chrome-192x192.png')).size > 0);
-check('Android Chrome 512 icon is present in public/',
-  has('public/android-chrome-512x512.png') && statSync(resolve(root, 'public/android-chrome-512x512.png')).size > 0);
+check('Apple touch icon is present in public/assets/images/',
+  has('public/assets/images/apple-touch-icon.png') && statSync(resolve(root, 'public/assets/images/apple-touch-icon.png')).size > 0);
+check('Android Chrome 192 icon is present in public/assets/images/',
+  has('public/assets/images/android-chrome-192x192.png') && statSync(resolve(root, 'public/assets/images/android-chrome-192x192.png')).size > 0);
+check('Android Chrome 512 icon is present in public/assets/images/',
+  has('public/assets/images/android-chrome-512x512.png') && statSync(resolve(root, 'public/assets/images/android-chrome-512x512.png')).size > 0);
 check('PHP API keeps its own bundled logo',
   has('api/assets/astrosivam_logo.png') && statSync(resolve(root, 'api/assets/astrosivam_logo.png')).size < 80 * 1024);
 check('Social share card is a 1200x630 JPEG (served, not PNG)',

@@ -66,7 +66,7 @@ const APPROVED_PATTERNS = [
  * the same character codes so this guard still contains no reference of its
  * own. Everything else — code, tests, scripts, CI, docs — must stay clean.
  */
-const REMOVAL_RECORD_FILE = `CODE_AUDIT_AND_${RETIRED_BRAND.toUpperCase()}_REMOVAL_2026_10_12.md`;
+const REMOVAL_RECORD_FILE = `docs/CODE_AUDIT_AND_${RETIRED_BRAND.toUpperCase()}_REMOVAL_2026_10_12.md`;
 
 interface Offence {
   file: string;

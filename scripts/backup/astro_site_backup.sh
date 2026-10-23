@@ -43,7 +43,11 @@ umask 077
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-API_DIR="$REPO_DIR/api"
+if [ -d "$REPO_DIR/api" ]; then
+  API_DIR="$REPO_DIR/api"
+else
+  API_DIR="$REPO_DIR"
+fi
 
 BACKUP_DIR="${BACKUP_DIR:-$API_DIR/storage/backups}"
 RETENTION="${RETENTION:-5}"

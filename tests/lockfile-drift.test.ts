@@ -136,13 +136,11 @@ check('composer.json carries no PDF renderer; composer.lock matches it', () => {
     'mpdf/mpdf must stay out of composer.json: PDFs are rendered in the browser');
   assert.ok(required.includes('smalot/pdfparser'), 'the AI report importer still parses uploaded PDFs');
 
-  // A lockfile that still pins the deleted renderer would install it again.
+  // composer.lock must be present and synchronized with composer.json (audit S2).
   const lockPath = path.join(projectRoot, 'composer.lock');
-  if (!fs.existsSync(lockPath)) {
-    console.log('    (composer.lock absent — nothing to compare)');
-    return;
-  }
+  assert.ok(fs.existsSync(lockPath), 'composer.lock must exist in the repository root');
   const lock = readJson('composer.lock');
+  assert.match(String(lock['content-hash'] ?? ''), /^[0-9a-f]{32}$/, 'composer.lock must carry a valid MD5 content-hash');
   const names = (lock.packages ?? []).map((p: any) => p.name);
   assert.ok(!names.includes('mpdf/mpdf'), 'composer.lock must not pin the removed mpdf/mpdf');
   for (const name of required.filter((r: string) => r !== 'php')) {

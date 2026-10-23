@@ -352,9 +352,12 @@ def build(variant: str, target_pub: str, live: bool, report: list,
     lockup = src["lockup"]
     og = src["og"]
 
+    images_dir = os.path.join(target_pub, "assets", "images")
+    os.makedirs(images_dir, exist_ok=True)
+
     # ---- 1. emblem, browser + vite import -------------------------------- #
     logo = _down(emblem, 854)
-    pub_logo = os.path.join(target_pub, "astrosivam_logo.png")
+    pub_logo = os.path.join(images_dir, "astrosivam_logo.png")
     report.append((os.path.relpath(pub_logo, ROOT), 854, _write_png(logo, pub_logo)))
     if live:
         p = os.path.join(ROOT, "src", "assets", "astrosivam_logo.png")
@@ -363,7 +366,7 @@ def build(variant: str, target_pub: str, live: bool, report: list,
     # ---- 2. horizontal lockup -------------------------------------------- #
     tw = 1220
     lock = lockup.resize((tw, max(1, round(lockup.height * tw / lockup.width))), Image.LANCZOS)
-    pub_lock = os.path.join(target_pub, "astrosivam_full_logo.png")
+    pub_lock = os.path.join(images_dir, "astrosivam_full_logo.png")
     report.append((os.path.relpath(pub_lock, ROOT), tw, _write_png(lock, pub_lock)))
     if live:
         p = os.path.join(ROOT, "src", "assets", "astrosivam_full_logo.png")
@@ -375,7 +378,7 @@ def build(variant: str, target_pub: str, live: bool, report: list,
         p = os.path.join(ROOT, "src", "assets", "astrosivam_appicon.png")
         report.append((os.path.relpath(p, ROOT), 256, _write_png(app, p)))
     else:
-        p = os.path.join(target_pub, "astrosivam_appicon.png")
+        p = os.path.join(images_dir, "astrosivam_appicon.png")
         report.append((os.path.relpath(p, ROOT), 256, _write_png(app, p)))
 
     # ---- 4. social share card, exact 1200x630 ---------------------------- #
@@ -388,7 +391,7 @@ def build(variant: str, target_pub: str, live: bool, report: list,
         nh = int(round(w / ratio))
         og = og.crop((0, (h - nh) // 2, w, (h - nh) // 2 + nh))
     og = og.convert("RGB").resize((1200, 630), Image.LANCZOS)
-    pub_og = os.path.join(target_pub, "astrosivam_og_image.jpg")
+    pub_og = os.path.join(images_dir, "astrosivam_og_image.jpg")
     os.makedirs(os.path.dirname(pub_og), exist_ok=True)
     og.save(pub_og, "JPEG", quality=LOGO_OG_QUALITY, subsampling=0,
             optimize=True, progressive=True)
@@ -445,12 +448,12 @@ def build(variant: str, target_pub: str, live: bool, report: list,
             return _down(app_src, size)
 
     for size in (16, 32, 48):
-        p = os.path.join(target_pub, f"favicon-{size}x{size}.png")
+        p = os.path.join(images_dir, f"favicon-{size}x{size}.png")
         report.append((os.path.relpath(p, ROOT), size, _write_png(icon(size), p)))
-    p = os.path.join(target_pub, "apple-touch-icon.png")
+    p = os.path.join(images_dir, "apple-touch-icon.png")
     report.append((os.path.relpath(p, ROOT), 180, _write_png(icon(180), p)))
     for size in (192, 512):
-        p = os.path.join(target_pub, f"android-chrome-{size}x{size}.png")
+        p = os.path.join(images_dir, f"android-chrome-{size}x{size}.png")
         report.append((os.path.relpath(p, ROOT), size, _write_png(icon(size), p)))
 
     ico = os.path.join(target_pub, "favicon.ico")

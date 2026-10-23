@@ -127,13 +127,13 @@ if (!fs.existsSync(distDir)) {
   process.exit(0);
 }
 
-check('dist/ has exactly the four approved top-level folders', () => {
+check('dist/ has only the minimal approved top-level folders (assets, pages)', () => {
   // Vite 6+ creates a .vite/ cache directory inside dist/ — filter it out
   // since it is a build artifact, not a deployment folder.
   const top = fs.readdirSync(distDir, { withFileTypes: true })
     .filter((e) => e.isDirectory() && !e.name.startsWith('.'))
     .map((e) => e.name).sort();
-  assert.deepEqual(top, ['assets', 'audio', 'pages', 'video-scenes'], `dist/ top-level folders changed: ${top.join(', ')}`);
+  assert.deepEqual(top, ['assets', 'pages'], `dist/ top-level folders changed: ${top.join(', ')}`);
 });
 
 check('dist/ ships no source maps or server bundles', () => {

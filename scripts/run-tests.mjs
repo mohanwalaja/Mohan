@@ -285,7 +285,9 @@ const testFiles = [
   // 100% Live-Preview High-Quality Email PDF System (zero server PDF system).
   'tests/high-quality-email-pdf-system.test.ts',
   // Upgraded Admin 1-Click Batch Approve, Multi-Select, Payment Verification & Retry System.
-  'tests/admin-batch-approval.test.ts'
+  'tests/admin-batch-approval.test.ts',
+  // Audit S1/S2/S5, metadata.json cleanup & minimal 3-folder cPanel File Manager root hygiene.
+  'tests/advisories-and-cpanel-root-hygiene.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 

@@ -1,5 +1,4 @@
 {
   "name": "ASTRO SIVAM",
-  "description": "Understand Your Life Through Vedic Astrology. Official Vedic astrology portal at astrosivam.com providing authentic Birth Jathagam, Marriage Compatibility (Porutham), and Baby Naming reports.",
-  "requestFramePermissions": ["geolocation"]
+  "description": "Official Vedic astrology portal at astrosivam.com providing authentic Birth Jathagam, Marriage Compatibility (Porutham), Subha Muhurtham, and Baby Naming reports."
 }

@@ -77,22 +77,21 @@ if [ -d "api" ]; then
   done < <(find api -type f -print0)
 fi
 
-# PHP reports use the same ceremony rules as the browser's date scanner.
+# PHP reports read ceremony rules from api/astrology/rules.json inside api/.
 if [ -f "src/lib/muhurtham/rules.json" ]; then
-  mkdir -p "$TARGET_DIR/src/lib/muhurtham"
-  cp -f src/lib/muhurtham/rules.json "$TARGET_DIR/src/lib/muhurtham/rules.json"
+  mkdir -p "$TARGET_DIR/api/astrology"
+  cp -f src/lib/muhurtham/rules.json "$TARGET_DIR/api/astrology/rules.json"
 fi
 
 # Local source-based astrologer data: reviewed rules, remedies, source registry
-# and guardrails are required application files. Copy tracked source only; this
-# does not touch api/config.php or live credentials. Both deploy paths include it.
+# and guardrails are packaged neatly inside api/knowledge/ so public_html root stays clean.
 if [ -d "knowledge" ]; then
   while IFS= read -r -d '' file; do
-    target="$TARGET_DIR/$file"
+    target="$TARGET_DIR/api/$file"
     mkdir -p "$(dirname "$target")"
     cp -f "$file" "$target"
   done < <(find knowledge -type f -print0)
-  echo "Copied local astrologer knowledge files to $TARGET_DIR/knowledge/"
+  echo "Copied local astrologer knowledge files to $TARGET_DIR/api/knowledge/"
 else
   echo "WARNING: no knowledge/ directory in this checkout - the source-based astrologer cannot answer." >&2
 fi
@@ -118,10 +117,6 @@ rm -f "$TARGET_DIR"/sitemap.xml.gz "$TARGET_DIR"/sitemap.xml.br \
       "$TARGET_DIR"/robots.txt.gz "$TARGET_DIR"/robots.txt.br 2>/dev/null || true
 if [ -f "api/.htaccess" ]; then
   cp -f "api/.htaccess" "$TARGET_DIR/api/.htaccess"
-fi
-if [ -f "knowledge/.htaccess" ]; then
-  mkdir -p "$TARGET_DIR/knowledge"
-  cp -f "knowledge/.htaccess" "$TARGET_DIR/knowledge/.htaccess"
 fi
 if [ -f "api/knowledge/.htaccess" ]; then
   mkdir -p "$TARGET_DIR/api/knowledge"
