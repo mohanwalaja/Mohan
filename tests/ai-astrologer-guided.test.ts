@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * ASTRO SIVAM AI Astrologer — GUIDED MODE contracts.
  *
@@ -21,7 +22,7 @@ import {
 } from '../src/services/aiAstrologerRetrieval';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8');
+const read = (p: string) => readRepoSource(p);
 const readJson = (p: string) => JSON.parse(read(p));
 
 const guided = readJson('knowledge/ai-astrologer/rules/guided-questions.json');

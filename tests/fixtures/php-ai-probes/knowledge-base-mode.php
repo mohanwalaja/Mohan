@@ -12,17 +12,11 @@ file_put_contents('/repo/api/config.php', "<?php\n// probe stub\n");
 require_once '/repo/api/astrology/ai_astrologer_provider.php';
 require_once '/repo/api/astrology/engine.php';
 
-// Load only astro_ai_chart_facts() from the endpoint; including the full endpoint
-// would start its normal session/CORS/database dispatch in this isolated probe.
-// astro_ai_chart_facts() reads the shared, memoised rebuild helper, so that
-// helper has to be loaded with it.
-$endpoint = file_get_contents('/repo/api/ai_astrologer.php');
 if (!function_exists('astro_normalize_report_language')) {
     function astro_normalize_report_language($l) { return in_array($l, ['en', 'ta', 'hi'], true) ? $l : 'ta'; }
 }
-$start = strpos($endpoint, 'function astro_ai_report_result(');
-$end = strpos($endpoint, '/* ================================================================== */', $start);
-eval(str_replace('__DIR__', "'/repo/api'", substr($endpoint, $start, $end - $start)));
+require_once '/repo/api/astrology/ai_astrologer/guided_and_binding.php';
+require_once '/repo/api/astrology/ai_astrologer/chart_and_report_facts.php';
 
 $diagnostics = AstroAiProvider::diagnostics(false);
 $liveDiagnostics = AstroAiProvider::diagnostics(true);

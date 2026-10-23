@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -174,7 +175,7 @@ function makeOrder(overrides: Partial<Order> = {}): Order {
 // 4. Architectural contracts on AdminPortal.tsx & api.ts
 {
   const repoRoot = path.resolve(import.meta.dirname, '..');
-  const adminPortalSrc = fs.readFileSync(path.join(repoRoot, 'src/pages/AdminPortal.tsx'), 'utf8');
+  const adminPortalSrc = readRepoSource(path.join(repoRoot, 'src/pages/AdminPortal.tsx'));
   const apiSrc = fs.readFileSync(path.join(repoRoot, 'src/services/api.ts'), 'utf8');
 
   assert.match(

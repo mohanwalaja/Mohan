@@ -45,6 +45,12 @@ const MOUNT_FILES = [
   'tests/fixtures/jathagam-summary-parity.json'
 ];
 
+/** Whole chapter directories mounted alongside MOUNT_FILES. */
+const MOUNT_DIRS = [
+  'api/astrology/engine',
+  'api/astrology/report_views'
+];
+
 // A process id must be assigned before the wasm runtime initialises.
 const php = new PHP(await loadNodeRuntime('8.4', { emscriptenOptions: { processId: 42 } }));
 

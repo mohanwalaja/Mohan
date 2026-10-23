@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * Regression suite for:
  *  1. Tamil / Hindi / English AI Astrologer report switching (no stale English
@@ -87,7 +88,7 @@ check('AiAstrologerPanel re-localizes menu, report labels, greetings, customer b
 check('server HTML view builder contains zero Devanagari inside Tamil invocations and low-quality server mPDF is gone', () => {
   assert.ok(!fs.existsSync(path.join(root, 'api/astrology/pdf_mpdf_reports.php')),
     'api/astrology/pdf_mpdf_reports.php must remain deleted');
-  const content = fs.readFileSync(path.join(root, 'api/astrology/report_views.php'), 'utf8');
+  const content = readRepoSource(path.join(root, 'api/astrology/report_views.php'));
   assert.match(content, /\|\| ஓம் விநாயகாய நமஃ \|\|/, 'api/astrology/report_views.php must use pure Tamil Om invocation');
   assert.doesNotMatch(content, /\|\| ॐ விநாயகாய/, 'api/astrology/report_views.php must not embed Devanagari ॐ in Tamil text');
 });

@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { calculatePrecisionHoroscope } from '../src/lib/astrology/astronomy.js';
@@ -126,7 +127,7 @@ for (const lang of ['en', 'ta', 'hi'] as const) {
 }
 
 // 6. PHP parity: same tags, same key, no stale abbreviations
-const php = readFileSync(new URL('../api/astrology/report_views.php', import.meta.url), 'utf8');
+const php = readRepoSource(new URL('../api/astrology/report_views.php', import.meta.url));
 for (const lang of ['en', 'ta', 'hi'] as const) {
   for (const graha of GRahasInOrder) {
     const tag = LANG_TAGS[lang][LANG_KEY[graha]];

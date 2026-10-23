@@ -21,6 +21,7 @@
  * exporter statically again, or if the built entry preloads `vendor-pdf`.
  */
 export type PdfEngine = typeof import('./jathagamPdfExporter');
+export type { FamilyRenderProgress, FamilyStagingResult } from './jathagamPdfExporter';
 
 let enginePromise: Promise<PdfEngine> | null = null;
 

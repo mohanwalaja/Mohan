@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * NO DEAD ENDS (owner request, Oct 2026)
  *
@@ -31,7 +32,7 @@ import { calculateSampleResult } from '../src/services/sampleReports.js';
 import type { AppLanguage } from '../src/lib/astrology/types.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const rendererPhp = fs.readFileSync(path.join(root, 'api/astrology/report_views.php'), 'utf8');
+const rendererPhp = readRepoSource(path.join(root, 'api/astrology/report_views.php'));
 const phpNotes = fs.readFileSync(path.join(root, 'api/astrology/muhurtham_report_notes.php'), 'utf8');
 const phpNotesJson = fs.readFileSync(path.join(root, 'api/astrology/muhurtham_report_notes.json'), 'utf8');
 const LANGS: AppLanguage[] = ['en', 'ta', 'hi'];

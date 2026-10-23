@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * Verified customer reviews (SEO audit 2026-10-15, finding 3).
  *
@@ -54,7 +55,7 @@ import type { DisplayReview, PublishedReview } from '../src/types';
 import { buildPreviewPdfBase64 } from './helpers/previewPdfFixtures';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');
+const read = (p: string) => readRepoSource(p);
 
 let passed = 0;
 async function check(name: string, fn: () => void | Promise<void>) {

@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * ONE NUMBER ON PAGE 1 (owner request, Oct 2026)
  *
@@ -25,7 +26,7 @@ import { calculateSampleResult } from '../src/services/sampleReports.js';
 import type { AppLanguage } from '../src/lib/astrology/types.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const rendererPhp = fs.readFileSync(path.join(root, 'api/astrology/report_views.php'), 'utf8');
+const rendererPhp = readRepoSource(path.join(root, 'api/astrology/report_views.php'));
 const LANGS: AppLanguage[] = ['en', 'ta', 'hi'];
 const MATCHED_LABEL: Record<AppLanguage, string> = {
   en: 'Poruthams matched',

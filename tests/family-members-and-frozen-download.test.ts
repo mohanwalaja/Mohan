@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * Saved family members + frozen report download (customer request, 2026-10).
  *
@@ -36,7 +37,7 @@ import { MAX_FAMILY_MEMBERS } from '../src/types';
 import type { BirthProfile, FamilyMember } from '../src/types';
 
 const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
-const read = (rel: string) => fs.readFileSync(path.join(root, rel), 'utf8');
+const read = (p: string) => readRepoSource(p);
 const checks: Array<[string, () => void]> = [];
 const check = (name: string, fn: () => void) => checks.push([name, fn]);
 

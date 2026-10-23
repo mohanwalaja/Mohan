@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * AI astrologer family (multi-person) chat: all member names in the chat,
  * and the customer picks whose answers they want.
@@ -20,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { sliceText } from './helpers/sourceSlice';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8');
+const read = (p: string) => readRepoSource(p);
 
 const endpoint = read('api/ai_astrologer.php');
 const offline = read('api/astrology/ai_astrologer_offline.php');

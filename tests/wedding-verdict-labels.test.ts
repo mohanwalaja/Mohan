@@ -1,3 +1,4 @@
+import { readRepoSource } from './helpers/module-sources.js';
 /**
  * ONE VERDICT LADDER (owner request, Oct 2026)
  *
@@ -40,7 +41,7 @@ import {
 import type { AppLanguage } from '../src/lib/astrology/types.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');
+const read = (p: string) => readRepoSource(p);
 const rendererPhp = read('api/astrology/report_views.php');
 const LANGS: AppLanguage[] = ['en', 'ta', 'hi'];
 

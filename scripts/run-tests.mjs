@@ -287,7 +287,9 @@ const testFiles = [
   // Upgraded Admin 1-Click Batch Approve, Multi-Select, Payment Verification & Retry System.
   'tests/admin-batch-approval.test.ts',
   // Audit S1/S2/S5, metadata.json cleanup & minimal 3-folder cPanel File Manager root hygiene.
-  'tests/advisories-and-cpanel-root-hygiene.test.ts'
+  'tests/advisories-and-cpanel-root-hygiene.test.ts',
+  // Audit S8: modular chapter decomposition across all 4 oversized source files + lazy AdminPortal split.
+  'tests/s8-modular-architecture.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 

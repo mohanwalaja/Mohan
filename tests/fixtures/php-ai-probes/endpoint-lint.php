@@ -13,6 +13,10 @@ error_reporting(E_ALL);
 $files = [
     '/repo/api/ai_astrologer.php',
     '/repo/api/astrology/ai_astrologer_offline.php',
+    '/repo/api/astrology/ai_astrologer/storage.php',
+    '/repo/api/astrology/ai_astrologer/actions.php',
+    '/repo/api/astrology/ai_astrologer/guided_and_binding.php',
+    '/repo/api/astrology/ai_astrologer/chart_and_report_facts.php',
 ];
 
 $errors = [];
