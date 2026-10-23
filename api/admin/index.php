@@ -2588,7 +2588,7 @@ if (strpos($path, 'admin/ai-handoffs') !== false) {
     }
 
     // POST — update status / admin notes for one escalation.
-    $body = json_decode(file_get_contents('php://input'), true) ?: [];
+    $body = getJsonInput();
     $id = (int) ($body['id'] ?? ($_GET['id'] ?? 0));
     if ($id <= 0) {
         jsonResponse(['success' => false, 'message' => 'Missing handoff id.'], 400);
@@ -2603,7 +2603,7 @@ if (strpos($path, 'admin/ai-handoffs') !== false) {
         "UPDATE ai_chat_handoffs
             SET status = ?,
                 admin_notes = COALESCE(?, admin_notes),
-                resolved_at = CASE WHEN ? = 'RESOLVED' THEN NOW() ELSE resolved_at END
+                resolved_at = CASE WHEN ? = 'RESOLVED' THEN CURRENT_TIMESTAMP ELSE resolved_at END
           WHERE id = ?"
     );
     $stmt->execute([$status, $notes, $status, $id]);

@@ -17,7 +17,7 @@
  * Replies come only from ASTRO SIVAM's local chart calculations and curated
  * source-based knowledge base; the panel never claims to be a person.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, ChevronDown, ChevronLeft, RefreshCw, Send, ShieldCheck, Sparkles, UserRound, X } from 'lucide-react';
 import {
   aiAstrologer,
@@ -30,6 +30,20 @@ import {
   type GuidedQuestion,
 } from '../../services/aiAstrologerApi';
 import guidedQuestionsData from '../../../knowledge/ai-astrologer/rules/guided-questions.json' with { type: 'json' };
+
+/** Maps service-gated category IDs (`wedding-match`, `baby-naming`, `muhurtham`) to required service codes. */
+const CATEGORY_SERVICES_MAP: Record<string, string[]> = (() => {
+  const map: Record<string, string[]> = {};
+  for (const category of (guidedQuestionsData as any).categories ?? []) {
+    const needs: string[] = Array.isArray(category.services)
+      ? category.services.map((s: unknown) => String(s).trim().toUpperCase()).filter(Boolean)
+      : [];
+    if (category.id && needs.length > 0) {
+      map[String(category.id)] = needs;
+    }
+  }
+  return map;
+})();
 
 function buildLocalGuidedMenu(
   language: ChatLanguage,
@@ -97,6 +111,15 @@ const SERVICE_TITLE: Record<string, Record<ChatLanguage, string>> = {
   MARRIAGE_COMPATIBILITY: { en: 'Marriage Compatibility', ta: 'திருமண பொருத்த', hi: 'विवाह मिलान' },
   BABY_NAMING: { en: 'Baby Naming', ta: 'குழந்தை பெயர்', hi: 'नामकरण' },
   MUHURTHAM: { en: 'Muhurtham', ta: 'முகூர்த்த', hi: 'मुहूर्त' },
+  MULTI_PERSON: { en: 'Family Report', ta: 'குடும்ப', hi: 'पारिवारिक' },
+};
+
+const SERVICE_PICKER_TITLE: Record<string, Record<ChatLanguage, string>> = {
+  BIRTH_JATHAGAM: { en: 'Birth Jathagam', ta: 'ஜன்ம ஜாதகம்', hi: 'जन्म कुंडली' },
+  MARRIAGE_COMPATIBILITY: { en: 'Wedding Matching', ta: 'திருமணப் பொருத்தம்', hi: 'विवाह मिलान' },
+  BABY_NAMING: { en: 'Baby Naming', ta: 'குழந்தைப் பெயர்', hi: 'नामकरण' },
+  MUHURTHAM: { en: 'Subha Muhurtham', ta: 'சுப முகூர்த்தம்', hi: 'शुभ मुहूर्त' },
+  MULTI_PERSON: { en: 'Family Report', ta: 'குடும்ப அறிக்கை', hi: 'पारिवारिक रिपोर्ट' },
 };
 
 /**
@@ -107,6 +130,18 @@ const ORDER_GREETING: Record<ChatLanguage, (name: string, service: string, order
   en: (n, s, o) => `Hello ${n} — your ${s} report (#${o}) has been delivered. Pick a topic below and I will answer from your chart using our own astrology rules and references.`,
   ta: (n, s, o) => `வணக்கம் ${n} — உங்கள் ${s} அறிக்கை (#${o}) அனுப்பப்பட்டுள்ளது. கீழே ஒரு தலைப்பை தேர்வு செய்யுங்கள்; உங்கள் ஜாதகத்தை வைத்து எங்கள் சொந்த ஜோதிட விதிகளால் பதிலளிக்கிறேன்.`,
   hi: (n, s, o) => `नमस्ते ${n} — आपकी ${s} रिपोर्ट (#${o}) भेज दी गई है। नीचे कोई विषय चुनें; मैं आपकी कुंडली से हमारे अपने ज्योतिष नियमों द्वारा उत्तर दूँगा।`,
+};
+
+const HEADER_SUBTITLE_ADMIN: Record<ChatLanguage, string> = {
+  en: 'Administrator access · unlimited questions',
+  ta: 'நிர்வாகி அணுகல் · வரம்பில்லா கேள்விகள்',
+  hi: 'एडमिन एक्सेस · असीमित प्रश्न',
+};
+
+const HEADER_SUBTITLE_USER: Record<ChatLanguage, string> = {
+  en: 'Unlimited questions',
+  ta: 'வரம்பில்லா கேள்விகள்',
+  hi: 'असीमित प्रश्न',
 };
 
 const RETRY_TEXT: Record<ChatLanguage, string> = {
@@ -162,6 +197,10 @@ const REPORT_LABEL: Record<ChatLanguage, string> = {
   ta: 'அறிக்கை',
   hi: 'रिपोर्ट',
 };
+
+function formatOrderLabel(lang: ChatLanguage, orderNumber?: string | null): string | undefined {
+  return orderNumber ? `${REPORT_LABEL[lang]} #${orderNumber}` : undefined;
+}
 
 /** Label of the family-member picker: whose answers the chat gives. */
 const PERSON_LABEL: Record<ChatLanguage, string> = {
@@ -245,7 +284,6 @@ interface Props {
   onClose?: () => void;
 }
 
-/** Routing for the next send: a curated option id, or nothing for admin free text. */
 interface PendingAsk {
   questionId: string | null;
   complaintDetails: string;
@@ -289,6 +327,8 @@ export default function AiAstrologerPanel({
    */
   const [orders, setOrders] = useState<AttachableOrder[]>([]);
   const [boundOrderNumber, setBoundOrderNumber] = useState<string | null>(null);
+  const [boundServiceType, setBoundServiceType] = useState<string | null>(null);
+  const [entitledServices, setEntitledServices] = useState<string[]>([]);
   const [binding, setBinding] = useState(false);
   /**
    * Family report: every member's name and the one this conversation answers
@@ -302,6 +342,7 @@ export default function AiAstrologerPanel({
   const failedAsk = useRef<PendingAsk | null>(null);
   const timers = useRef<number[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const menuRequestSeq = useRef(0);
 
   const push = useCallback((m: Omit<ChatMessage, 'id' | 'createdAt'>) => {
     setMessages((prev) => [...prev, { ...m, id: Date.now() + Math.random(), createdAt: new Date().toISOString() } as ChatMessage]);
@@ -312,6 +353,68 @@ export default function AiAstrologerPanel({
     timers.current = [];
   };
 
+  /**
+   * Re-synchronizes both `categories` and attachable `orders` into `targetLang`
+   * immediately (zero-flash local catalogue first, then server `options()` refresh).
+   */
+  const syncMenuForLanguage = useCallback(async (targetLang: ChatLanguage, fallbackEntitled?: string[]) => {
+    const seq = ++menuRequestSeq.current;
+    const knownEntitled = fallbackEntitled ?? entitledServices;
+    const instant = buildLocalGuidedMenu(targetLang, knownEntitled, isAdmin);
+    if (instant.length > 0) {
+      setCategories(instant);
+      setMenuFailed(false);
+    }
+    setOrders((prev) => prev.map((o) => ({
+      ...o,
+      title: SERVICE_PICKER_TITLE[o.serviceType]?.[targetLang]
+        ?? SERVICE_PICKER_TITLE[o.serviceType]?.en
+        ?? o.title,
+    })));
+    try {
+      const menu = await aiAstrologer.options(targetLang);
+      if (seq !== menuRequestSeq.current) return;
+      if (menu.categories?.length) {
+        setCategories(menu.categories);
+      }
+      setEntitledServices(menu.entitledServices ?? knownEntitled);
+      setOrders(menu.orders ?? []);
+      setMenuFailed(false);
+    } catch {
+      if (seq !== menuRequestSeq.current) return;
+      if (instant.length > 0) setMenuFailed(false);
+    }
+  }, [entitledServices, isAdmin]);
+
+  /**
+   * When a single-service report is attached (`MARRIAGE_COMPATIBILITY`,
+   * `BABY_NAMING`, `MUHURTHAM`, `BIRTH_JATHAGAM`), hide unrelated single-service
+   * chapters and promote the matching report chapter directly to Card #1.
+   */
+  const visibleCategories = useMemo(() => {
+    if (!categories) return null;
+    const normalizedBound = boundServiceType?.trim().toUpperCase() || null;
+    const isSingleServiceBound = Boolean(normalizedBound && normalizedBound !== 'MULTI_PERSON');
+    const filtered = isSingleServiceBound && normalizedBound
+      ? categories.filter((cat) => {
+          const reqServices = CATEGORY_SERVICES_MAP[cat.id];
+          return !reqServices || reqServices.includes(normalizedBound);
+        })
+      : categories;
+    if (!normalizedBound) return filtered;
+    const matching: GuidedCategory[] = [];
+    const rest: GuidedCategory[] = [];
+    for (const cat of filtered) {
+      const reqServices = CATEGORY_SERVICES_MAP[cat.id];
+      if (reqServices && reqServices.includes(normalizedBound)) {
+        matching.push(cat);
+      } else {
+        rest.push(cat);
+      }
+    }
+    return matching.length > 0 ? [...matching, ...rest] : filtered;
+  }, [categories, boundServiceType]);
+
   // Open (or rejoin) a session, then load history and the guided menu. A
   // failed session open is not recoverable in the UI, so it is surfaced
   // plainly rather than silently.
@@ -320,6 +423,7 @@ export default function AiAstrologerPanel({
     // A panel reused for another account or report must not carry the previous
     // conversation's language or member list into the new session.
     setSessionLanguage(null);
+    setBoundServiceType(null);
     setPersons([]);
     setSelectedPersonId(null);
     (async () => {
@@ -332,7 +436,8 @@ export default function AiAstrologerPanel({
         // this panel renders from here on.
         setSessionLanguage(s.language);
         setBoundOrderNumber(s.orderNumber ?? null);
-        setSessionOrderLabel(orderLabel || (s.orderNumber ? `Report #${s.orderNumber}` : undefined));
+        setBoundServiceType(s.serviceType ?? null);
+        setSessionOrderLabel(s.orderNumber ? formatOrderLabel(s.language, s.orderNumber) : orderLabel);
         // Family report: all member names arrive with the session, with the
         // first member preselected.
         const sessionPersons = s.persons ?? [];
@@ -370,6 +475,7 @@ export default function AiAstrologerPanel({
           try {
             const menu = await aiAstrologer.options(language);
             if (cancelled) return;
+            setEntitledServices(menu.entitledServices ?? (s.serviceType ? [s.serviceType] : []));
             if (menu.categories?.length) {
               setCategories(menu.categories);
             } else {
@@ -400,6 +506,33 @@ export default function AiAstrologerPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId, orderId]);
 
+  // If no report is bound and the site language picker changes, re-sync the unbound session language.
+  const prevInitialLangRef = useRef(initialLanguage);
+  useEffect(() => {
+    if (prevInitialLangRef.current !== initialLanguage) {
+      prevInitialLangRef.current = initialLanguage;
+      if (!boundOrderNumber) {
+        setSessionLanguage(initialLanguage);
+        void syncMenuForLanguage(initialLanguage);
+      }
+    }
+  }, [initialLanguage, boundOrderNumber, syncMenuForLanguage]);
+
+  // Re-localize the opening system greeting bubble if language shifts before any Q&A turns occur.
+  useEffect(() => {
+    setMessages((prev) => {
+      const hasCustomerTurn = prev.some((m) => m.role === 'customer');
+      if (hasCustomerTurn || prev.length === 0) return prev;
+      const first = prev[0];
+      if (first.role !== 'system' || first.language === language) return prev;
+      const serviceTitle = boundServiceType ? (SERVICE_TITLE[boundServiceType]?.[language] ?? boundServiceType) : null;
+      const updatedGreeting = boundOrderNumber && serviceTitle
+        ? ORDER_GREETING[language](customerName, serviceTitle, boundOrderNumber)
+        : GREETING[language](customerName);
+      return [{ ...first, language, content: updatedGreeting }, ...prev.slice(1)];
+    });
+  }, [language, customerName, boundOrderNumber, boundServiceType]);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, phase]);
@@ -415,7 +548,11 @@ export default function AiAstrologerPanel({
     setError(null);
     setFailedQuestion(null);
     failedAsk.current = null;
-    push({ role: 'customer', language, content: question });
+    const customerBubbleId = Date.now() + Math.random();
+    setMessages((prev) => [
+      ...prev,
+      { id: customerBubbleId, role: 'customer', language, content: question, createdAt: new Date().toISOString() },
+    ]);
     setPhase('status');
 
     const startedAt = Date.now();
@@ -438,6 +575,19 @@ export default function AiAstrologerPanel({
       );
       clearTimers();
 
+      const replyLang = reply.language ?? language;
+      if (replyLang !== language) {
+        setSessionLanguage(replyLang);
+        void syncMenuForLanguage(replyLang);
+      }
+      if (reply.customerMessage) {
+        setMessages((prev) => prev.map((msg) => (
+          msg.id === customerBubbleId
+            ? { ...msg, content: reply.customerMessage ?? msg.content, language: replyLang }
+            : msg
+        )));
+      }
+
       const bubbles = reply.bubbles?.length ? reply.bubbles : [reply.content];
       // Show the bubbles one at a time, but stop waiting as soon as the cap is
       // reached - the remaining bubbles render immediately rather than never.
@@ -447,7 +597,7 @@ export default function AiAstrologerPanel({
           window.setTimeout(() => {
             push({
               role: 'assistant',
-              language,
+              language: replyLang,
               content: b,
               areaId: reply.areaId,
               sources: i === bubbles.length - 1 ? reply.sources : null,
@@ -541,11 +691,20 @@ export default function AiAstrologerPanel({
       // answers about it arrive in the same language as the report itself.
       setSessionLanguage(res.language);
       setBoundOrderNumber(res.orderNumber);
-      setSessionOrderLabel(res.orderNumber ? `Report #${res.orderNumber}` : undefined);
+      setBoundServiceType(res.serviceType ?? null);
+      setSessionOrderLabel(formatOrderLabel(res.language, res.orderNumber));
+      setActiveCategory(null);
+      setPendingOption(null);
       // A family report starts on its first member; a single-person report
       // shows no picker at all.
       setPersons(res.persons ?? []);
       setSelectedPersonId(res.selectedPersonId ?? null);
+      await syncMenuForLanguage(
+        res.language,
+        res.serviceType && !entitledServices.includes(res.serviceType)
+          ? [...entitledServices, res.serviceType]
+          : entitledServices,
+      );
       push({
         role: 'system',
         language: res.language,
@@ -609,11 +768,14 @@ export default function AiAstrologerPanel({
     void send(input);
   };
 
-  const openCategory = activeCategory ? (categories ?? []).find((c) => c.id === activeCategory) ?? null : null;
+  const openCategory = activeCategory ? (visibleCategories ?? categories ?? []).find((c) => c.id === activeCategory) ?? null : null;
   const menuBusy = phase !== 'idle' || !sessionId;
   /** Whose answers these are: the selected family member, shown in the header. */
   const selectedPerson = persons.find((p) => p.id === selectedPersonId) ?? null;
   const personTag = persons.length > 1 && selectedPerson ? ` · ${selectedPerson.name}` : '';
+  const headerSubtitle = boundOrderNumber
+    ? formatOrderLabel(language, boundOrderNumber)
+    : sessionOrderLabel || (isAdmin ? HEADER_SUBTITLE_ADMIN[language] : HEADER_SUBTITLE_USER[language]);
 
   const bubbleClass = (role: string) =>
     role === 'customer'
@@ -623,11 +785,11 @@ export default function AiAstrologerPanel({
         : 'bg-white dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 rounded-2xl rounded-bl-sm border border-slate-200/70 dark:border-slate-700/70 shadow-sm';
 
   const selectClass =
-    'min-w-0 flex-1 appearance-none rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-7 py-1.5 text-[12px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-amber-400/70 focus:outline-none focus:ring-2 focus:ring-amber-500/40 disabled:opacity-40 cursor-pointer';
+    'min-w-0 flex-1 appearance-none rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-7 py-1.5 text-[12px] leading-normal font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:border-amber-400/70 focus:outline-none focus:ring-2 focus:ring-amber-500/40 disabled:opacity-40 cursor-pointer';
 
   const pickerRow = (label: string, control: React.ReactNode) => (
     <div className="flex items-center gap-2">
-      <span className="shrink-0 w-[68px] text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+      <span className="shrink-0 w-[68px] text-[10px] leading-relaxed font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
         {label}
       </span>
       {control}
@@ -649,11 +811,9 @@ export default function AiAstrologerPanel({
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[15px] font-bold tracking-tight">ASTRO SIVAM Astrologer</div>
-            <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-slate-300/80">
+            <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] leading-normal text-slate-300/80">
               <span className="truncate">
-                {sessionOrderLabel || (isAdmin
-                  ? 'Administrator access · unlimited questions'
-                  : 'Unlimited questions')}
+                {headerSubtitle}
                 {personTag}
               </span>
             </div>
@@ -673,7 +833,7 @@ export default function AiAstrologerPanel({
       {/* Conversation */}
       <div
         ref={scrollRef}
-        className="ai-astrologer-conversation flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-slate-50 to-white px-4 py-5 dark:from-slate-950 dark:to-slate-900"
+        className="ai-astrologer-conversation flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-slate-50 to-white px-4 py-4 dark:from-slate-950 dark:to-slate-900"
       >
         {messages.map((m) => {
           const isCustomer = m.role === 'customer';
@@ -720,7 +880,7 @@ export default function AiAstrologerPanel({
       </div>
 
       {error && (
-        <div className="mx-3 mb-2 flex items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+        <div className="mx-3 mb-2 flex items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-relaxed text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
           <span>{error}</span>
           <button
             onClick={retry}
@@ -731,187 +891,202 @@ export default function AiAstrologerPanel({
         </div>
       )}
 
-      <div className="flex shrink-0 items-center justify-center gap-1.5 border-t border-slate-100 px-3 py-1.5 text-[10px] leading-snug text-slate-400 dark:border-slate-800">
+      <div className="flex shrink-0 items-center justify-center gap-1.5 border-t border-slate-100 px-3 py-1.5 text-[10px] leading-relaxed text-slate-400 dark:border-slate-800">
         <ShieldCheck className="h-3 w-3 shrink-0" />
         <span className="text-center">{DISCLAIMER[language]}</span>
       </div>
 
-      {/* Guided menu: topics, then the options of the open topic. Customers
-          never get a free question box; complaint options get one short
-          detail line for the human team. */}
-      <div className="ai-astrologer-controls max-h-[42%] shrink-0 space-y-2.5 overflow-y-auto border-t border-slate-200/80 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-        {/* The report this conversation is reading. The service chapters
-            (Wedding Matching, Baby Naming, Subha Muhurtham) are answered from
-            the attached report, and the floating launcher starts with none. */}
-        {orders.length > 0 &&
-          pickerRow(
-            REPORT_LABEL[language],
-            <div className="relative min-w-0 flex-1">
-              <select
-                value={boundOrderNumber ?? ''}
-                onChange={(e) => void attachReport(e.target.value)}
-                disabled={binding || menuBusy}
-                aria-label={REPORT_LABEL[language]}
-                className={selectClass}
-              >
-                <option value="">{NO_REPORT[language]}</option>
-                {orders.map((o) => (
-                  <option key={o.orderNumber} value={o.orderNumber}>
-                    {o.title} · #{o.orderNumber}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-            </div>,
-          )}
-        {/* Family report: every member's name, so the customer picks whose
-            answers these are. Hidden for single-person reports. */}
-        {persons.length > 1 &&
-          pickerRow(
-            PERSON_LABEL[language],
-            <div className="relative min-w-0 flex-1">
-              <select
-                value={selectedPersonId ?? ''}
-                onChange={(e) => void selectPerson(Number(e.target.value))}
-                disabled={menuBusy || binding}
-                aria-label={PERSON_LABEL[language]}
-                className={selectClass}
-              >
-                {persons.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-            </div>,
-          )}
-
-        {pendingOption ? (
-          <div className="space-y-2.5 rounded-2xl border border-amber-200/70 bg-amber-50/60 p-3 dark:border-amber-500/20 dark:bg-amber-500/5">
-            <div className="text-xs font-semibold leading-snug text-slate-700 dark:text-slate-200">{pendingOption.text}</div>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              rows={2}
-              maxLength={500}
-              placeholder={DETAILS_PLACEHOLDER[language]}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-800"
-            />
-            <div className="flex items-center gap-2">
-              <button
-                onClick={sendPendingOption}
-                disabled={menuBusy}
-                className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-2 text-sm font-bold text-slate-950 shadow-md shadow-amber-500/25 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40"
-              >
-                <Send className="h-4 w-4" /> {DETAILS_SEND[language]}
-              </button>
-              <button
-                onClick={() => { setPendingOption(null); setInput(''); }}
-                disabled={menuBusy}
-                className="cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 dark:hover:bg-slate-800"
-              >
-                {CANCEL_TEXT[language]}
-              </button>
-            </div>
-          </div>
-        ) : openCategory ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <button
-                onClick={() => setActiveCategory(null)}
-                className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-amber-100 hover:text-amber-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-amber-500/15"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" /> {ALL_TOPICS[language]}
-              </button>
-              <div className="truncate text-xs font-bold text-slate-700 dark:text-slate-200">
-                <span className="mr-1">{openCategory.icon}</span>
-                {openCategory.title}
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              {openCategory.questions.map((q) => (
-                <button
-                  key={q.id}
-                  onClick={() => tapOption(q)}
-                  disabled={menuBusy}
-                  className="group flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[13px] font-medium text-slate-800 shadow-sm transition hover:-translate-y-px hover:border-amber-400/70 hover:shadow-md disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                >
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 transition group-hover:scale-125" />
-                  <span className="flex-1 leading-snug">{q.text}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : categories ? (
-          <div className="space-y-2">
-            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-              {MENU_TITLE[language]}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {categories.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveCategory(c.id)}
-                  disabled={menuBusy}
-                  title={c.hint}
-                  className="group flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 px-2 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400/70 hover:shadow-md disabled:opacity-40 dark:border-slate-700 dark:from-slate-800 dark:to-slate-900"
-                >
-                  <span className="text-xl leading-none transition group-hover:scale-110">{c.icon}</span>
-                  <span className="text-center text-[11px] font-bold leading-tight text-slate-700 dark:text-slate-200">
-                    {c.title}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : menuFailed ? (
-          <div className="py-2 text-center text-xs text-rose-600 dark:text-rose-300">{MENU_FAILED[language]}</div>
-        ) : (
-          <div className="flex items-center justify-center gap-2 py-3 text-xs italic text-slate-500 dark:text-slate-400">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-            {MENU_LOADING[language]}
+      {/* Guided menu: pinned Report/Person bar on top so it never scrolls out of
+          reach or clips in half, followed by the unclipped scrollable menu. */}
+      <div className="ai-astrologer-controls max-h-[46%] shrink-0 flex flex-col overflow-hidden border-t border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
+        {(orders.length > 0 || persons.length > 1) && (
+          <div className="shrink-0 space-y-2 border-b border-slate-100 px-3 py-2 dark:border-slate-800/80">
+            {/* The report this conversation is reading. The service chapters
+                (Wedding Matching, Baby Naming, Subha Muhurtham) are answered from
+                the attached report, and the floating launcher starts with none. */}
+            {orders.length > 0 &&
+              pickerRow(
+                REPORT_LABEL[language],
+                <div className="relative min-w-0 flex-1">
+                  <select
+                    value={boundOrderNumber ?? ''}
+                    onChange={(e) => void attachReport(e.target.value)}
+                    disabled={binding || menuBusy}
+                    aria-label={REPORT_LABEL[language]}
+                    className={selectClass}
+                  >
+                    <option value="">{NO_REPORT[language]}</option>
+                    {orders.map((o) => (
+                      <option key={o.orderNumber} value={o.orderNumber}>
+                        {o.title} · #{o.orderNumber}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                </div>,
+              )}
+            {/* Family report: every member's name, so the customer picks whose
+                answers these are. Hidden for single-person reports. */}
+            {persons.length > 1 &&
+              pickerRow(
+                PERSON_LABEL[language],
+                <div className="relative min-w-0 flex-1">
+                  <select
+                    value={selectedPersonId ?? ''}
+                    onChange={(e) => void selectPerson(Number(e.target.value))}
+                    disabled={menuBusy || binding}
+                    aria-label={PERSON_LABEL[language]}
+                    className={selectClass}
+                  >
+                    {persons.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                </div>,
+              )}
           </div>
         )}
 
-        {isAdmin && !pendingOption && (
-          <div className="space-y-1.5 border-t border-dashed border-slate-200 pt-2.5 dark:border-slate-700">
-            <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
-              {ADMIN_TEST_LABEL[language]}
-            </div>
-            <div className="flex items-end gap-2">
+        <div className="flex-1 min-h-0 space-y-2.5 overflow-y-auto px-3 py-2.5">
+          {pendingOption ? (
+            <div className="space-y-2.5 rounded-2xl border border-amber-200/70 bg-amber-50/60 p-3 dark:border-amber-500/20 dark:bg-amber-500/5">
+              <div className="text-xs font-semibold leading-relaxed text-slate-700 dark:text-slate-200">{pendingOption.text}</div>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendAdminTest();
-                  }
-                }}
-                rows={1}
-                maxLength={2000}
-                placeholder={ADMIN_TEST_PLACEHOLDER[language]}
-                className="flex-1 resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-800"
+                rows={2}
+                maxLength={500}
+                placeholder={DETAILS_PLACEHOLDER[language]}
+                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-800"
               />
-              <button
-                onClick={sendAdminTest}
-                disabled={menuBusy || !input.trim() || !sessionId}
-                className="cursor-pointer rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 p-2.5 text-slate-950 shadow-md shadow-amber-500/25 disabled:opacity-40"
-              >
-                <Send className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={sendPendingOption}
+                  disabled={menuBusy}
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-2 text-sm font-bold text-slate-950 shadow-md shadow-amber-500/25 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40"
+                >
+                  <Send className="h-4 w-4" /> {DETAILS_SEND[language]}
+                </button>
+                <button
+                  onClick={() => { setPendingOption(null); setInput(''); }}
+                  disabled={menuBusy}
+                  className="cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 dark:hover:bg-slate-800"
+                >
+                  {CANCEL_TEXT[language]}
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          ) : openCategory ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  onClick={() => setActiveCategory(null)}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold leading-normal text-slate-600 hover:bg-amber-100 hover:text-amber-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-amber-500/15"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" /> {ALL_TOPICS[language]}
+                </button>
+                <div className="truncate text-xs font-bold leading-relaxed text-slate-700 dark:text-slate-200">
+                  <span className="mr-1">{openCategory.icon}</span>
+                  {openCategory.title}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {openCategory.questions.map((q) => (
+                  <button
+                    key={q.id}
+                    onClick={() => tapOption(q)}
+                    disabled={menuBusy}
+                    className="group flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-[13px] font-medium text-slate-800 shadow-sm transition hover:-translate-y-px hover:border-amber-400/70 hover:shadow-md disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  >
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 transition group-hover:scale-125" />
+                    <span className="flex-1 leading-relaxed">{q.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : visibleCategories ? (
+            <div className="space-y-2">
+              <div className="text-[10px] leading-relaxed font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+                {MENU_TITLE[language]}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {visibleCategories.map((c) => {
+                  const reqServices = CATEGORY_SERVICES_MAP[c.id];
+                  const isBoundServiceCard = Boolean(
+                    boundServiceType && reqServices && reqServices.includes(boundServiceType.trim().toUpperCase()),
+                  );
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => setActiveCategory(c.id)}
+                      disabled={menuBusy}
+                      title={c.hint}
+                      className={`group flex cursor-pointer items-center gap-1.5 rounded-2xl border px-2 py-2.5 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400/70 hover:shadow-md disabled:opacity-40 ${
+                        isBoundServiceCard
+                          ? 'col-span-3 flex-row justify-center border-amber-400/90 bg-gradient-to-r from-amber-50 to-white ring-1 ring-amber-400/35 dark:from-amber-950/30 dark:to-slate-900'
+                          : 'flex-col border-slate-200 bg-gradient-to-b from-white to-slate-50 dark:border-slate-700 dark:from-slate-800 dark:to-slate-900'
+                      }`}
+                    >
+                      <span className="text-xl leading-none transition group-hover:scale-110">{c.icon}</span>
+                      <span className="text-center text-[11px] font-bold leading-relaxed text-slate-700 dark:text-slate-200">
+                        {c.title}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : menuFailed ? (
+            <div className="py-2 text-center text-xs leading-relaxed text-rose-600 dark:text-rose-300">{MENU_FAILED[language]}</div>
+          ) : (
+            <div className="flex items-center justify-center gap-2 py-3 text-xs italic text-slate-500 dark:text-slate-400">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+              {MENU_LOADING[language]}
+            </div>
+          )}
 
-        <div className="flex justify-center pt-0.5">
-          <button
-            onClick={handoff}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-slate-500 transition hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-500/10"
-          >
-            <UserRound className="h-3.5 w-3.5" /> {HANDOFF_LABEL[language]}
-          </button>
+          {isAdmin && !pendingOption && (
+            <div className="space-y-1.5 border-t border-dashed border-slate-200 pt-2.5 dark:border-slate-700">
+              <div className="text-[10px] leading-relaxed font-bold uppercase tracking-[0.12em] text-slate-400">
+                {ADMIN_TEST_LABEL[language]}
+              </div>
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendAdminTest();
+                    }
+                  }}
+                  rows={1}
+                  maxLength={2000}
+                  placeholder={ADMIN_TEST_PLACEHOLDER[language]}
+                  className="flex-1 resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-800"
+                />
+                <button
+                  onClick={sendAdminTest}
+                  disabled={menuBusy || !input.trim() || !sessionId}
+                  className="cursor-pointer rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 p-2.5 text-slate-950 shadow-md shadow-amber-500/25 disabled:opacity-40"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-center pt-0.5">
+            <button
+              onClick={handoff}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold leading-normal text-slate-500 transition hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-500/10"
+            >
+              <UserRound className="h-3.5 w-3.5" /> {HANDOFF_LABEL[language]}
+            </button>
+          </div>
         </div>
       </div>
     </div>

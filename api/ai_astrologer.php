@@ -774,6 +774,7 @@ function astro_ai_action_ask(PDO $pdo, array $user, array $body): void
             'sessionId' => $sessionId,
             'questionId' => $questionId,
             'guidedId' => $guidedId !== '' ? $guidedId : null,
+            'customerMessage' => $storedQuestion,
             'messageId' => $replyId,
             'language' => $language,
             'content' => $reply['content'],

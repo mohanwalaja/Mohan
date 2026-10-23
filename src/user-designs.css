@@ -288,8 +288,8 @@
 }
 [data-user-design="ivory"] .ai-astrologer-launcher button { opacity:1!important; }
 @media (max-width: 640px) {
-  [data-user-design="ivory"] .ai-astrologer-panel { max-height:78vh; border-radius:20px; }
-  [data-user-design="ivory"] .ai-astrologer-panel-shell { right:12px; width:calc(100vw - 24px); }
+  [data-user-design="ivory"] .ai-astrologer-panel { height:min(84dvh, 720px); max-height:calc(100dvh - 80px); border-radius:20px; }
+  [data-user-design="ivory"] .ai-astrologer-panel-shell { bottom:12px; right:12px; width:calc(100vw - 24px); }
 }
 
 /* ── Dark-only blocks that the ivory canvas used to inherit ────────────────

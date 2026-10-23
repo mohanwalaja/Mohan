@@ -4400,7 +4400,7 @@ HTML;
         $namesSection = $nameRows === '' ? '' : '<div class="sec-head"><span class="sec-no">06</span>' . ($isTa ? 'பரிந்துரைக்கப்பட்ட பெயர்கள்' : ($isHi ? 'सुझावित नाम' : 'SUGGESTED SACRED NAMES')) . '</div><table class="data-table names-table"><thead><tr><th width="30%">' . ($isTa ? 'பரிந்துரை பெயர்' : ($isHi ? 'सुझावित नाम' : 'SUGGESTED NAME')) . '</th><th width="22%">' . ($isTa ? 'ஒலி' : ($isHi ? 'ध्वनि' : 'SOUND')) . '</th><th>' . ($isTa ? 'பொருள்' : ($isHi ? 'अर्थ' : 'MEANING')) . '</th></tr></thead><tbody>' . $nameRows . '</tbody></table>';
 
         // ── Localized labels ──
-        $invocation = $isTa ? '|| ॐ விநாயகாய நமஃ ||' : ($isHi ? '|| ॐ श्री गणेशाय नमः ||' : '|| Om Sri Ganeshaya Namah ||');
+        $invocation = $isTa ? '|| ஓம் விநாயகாய நமஃ ||' : ($isHi ? '|| ॐ श्री गणेशाय नमः ||' : '|| Om Sri Ganeshaya Namah ||');
         $brandTagline = $isTa ? 'வேத ஜோதிடம் • பஞ்சாங்கம் • நாமகரண சேவைகள்' : ($isHi ? 'वैदिक ज्योतिष • पंचांग • नामकरण सेवाएं' : 'VEDIC ASTROLOGY &bull; PANCHANGAM &bull; NAMAKARAN SERVICES');
         $docTitle = $isTa ? 'வேத நாமகரண அறிக்கை' : ($isHi ? 'वैदिक नामकरण रिपोर्ट' : 'Vedic Namakaran Report');
         $docSubtitle = $isTa ? 'குழந்தை பெயர் சூட்டு சான்றிதழ் — ஜன்ம நட்சத்திரம் & சுப அக்ஷரங்கள்' : ($isHi ? 'शिशु नामकरण प्रमाणपत्र — जन्म नक्षत्र एवं शुभ अक्षर' : 'Certified Baby Naming Dossier &mdash; Janma Nakshatra &amp; Auspicious Syllables');

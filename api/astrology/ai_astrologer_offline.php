@@ -599,7 +599,7 @@ class AstroAiOffline
                 'en' => $who . 'your chart was calculated from these details:',
                 'ta' => $who . 'உங்கள் ஜாதகம் இந்த விவரங்களிலிருந்து கணிக்கப்பட்டது:',
                 'hi' => $who . 'आपकी कुंडली इन्हीं विवरणों से बनाई गई:',
-            ]) . "\n" . $birth];
+            ]) . "\n" . self::localizeOrderLine($birth, $lang)];
         }
 
         if ($topic === 'correction') {
@@ -615,11 +615,83 @@ class AstroAiOffline
             'en' => $who . 'here is the delivery status of your report:',
             'ta' => $who . 'உங்கள் அறிக்கையின் விநியோக நிலை:',
             'hi' => $who . 'आपकी रिपोर्ट की डिलीवरी स्थिति:',
-        ]) . "\n" . $details . "\n" . self::t($lang, [
+        ]) . "\n" . self::localizeOrderLine($details, $lang) . "\n" . self::t($lang, [
             'en' => 'If the email is not in your inbox, please check the spam folder for mail from admin@astrosivam.com.',
             'ta' => 'மின்னஞ்சல் உங்கள் இன்பாக்ஸில் இல்லையென்றால், admin@astrosivam.com-லிருந்து வந்த மெயிலுக்காக ஸ்பேம் கோப்புறையை பார்க்கவும்.',
             'hi' => 'यदि ईमेल इनबॉक्स में नहीं है, तो admin@astrosivam.com के मेल के लिए स्पैम फ़ोल्डर देखें।',
         ])];
+    }
+
+    /**
+     * Translates internal English field headers inside `$context['orderDetails']`
+     * into Tamil or Hindi while keeping order numbers, dates, prices and customer
+     * names untouched and keeping `'en'` 100% unchanged.
+     */
+    private static function localizeOrderLine(string $text, string $lang): string
+    {
+        if ($lang === 'ta') {
+            return strtr($text, [
+                'Order number:' => 'ஆர்டர் எண்:',
+                'Service: BIRTH_JATHAGAM' => 'சேவை: ஜன்ம ஜாதகம்',
+                'Service: MARRIAGE_COMPATIBILITY' => 'சேவை: திருமணப் பொருத்தம்',
+                'Service: BABY_NAMING' => 'சேவை: குழந்தைப் பெயர்',
+                'Service: MUHURTHAM' => 'சேவை: சுப முகூர்த்தம்',
+                'Service: MULTI_PERSON' => 'சேவை: குடும்ப அறிக்கை',
+                'Service:' => 'சேவை:',
+                'Payment: confirmed' => 'கட்டணம்: உறுதி செய்யப்பட்டது',
+                'Payment: pending' => 'கட்டணம்: நிலுவையில்',
+                'Amount paid:' => 'செலுத்திய தொகை:',
+                'Placed on:' => 'பதிவு தேதி:',
+                'Report emailed on:' => 'அறிக்கை மின்னஞ்சல் அனுப்பப்பட்ட தேதி:',
+                'Order status: COMPLETED' => 'ஆர்டர் நிலை: முடிந்தது',
+                'Order status: PROCESSING' => 'ஆர்டர் நிலை: செயலாக்கத்தில்',
+                'Order status:' => 'ஆர்டர் நிலை:',
+                'Answering for:' => 'யாருக்கான பதில்:',
+                'Birth details used:' => 'பயன்படுத்தப்பட்ட பிறப்பு விவரங்கள்:',
+                'Report language: ta' => 'அறிக்கை மொழி: தமிழ்',
+                'Report language: en' => 'அறிக்கை மொழி: ஆங்கிலம்',
+                'Report language: hi' => 'அறிக்கை மொழி: இந்தி',
+                'Report language:' => 'அறிக்கை மொழி:',
+                'Name:' => 'பெயர்:',
+                'Date of birth:' => 'பிறந்த தேதி:',
+                'Time of birth:' => 'பிறந்த நேரம்:',
+                'Birth place:' => 'பிறந்த இடம்:',
+                'Groom ' => 'வரன் ',
+                'Bride ' => 'மணமகள் ',
+            ]);
+        }
+        if ($lang === 'hi') {
+            return strtr($text, [
+                'Order number:' => 'ऑर्डर संख्या:',
+                'Service: BIRTH_JATHAGAM' => 'सेवा: जन्म कुंडली',
+                'Service: MARRIAGE_COMPATIBILITY' => 'सेवा: विवाह मिलान',
+                'Service: BABY_NAMING' => 'सेवा: नामकरण',
+                'Service: MUHURTHAM' => 'सेवा: शुभ मुहूर्त',
+                'Service: MULTI_PERSON' => 'सेवा: पारिवारिक रिपोर्ट',
+                'Service:' => 'सेवा:',
+                'Payment: confirmed' => 'भुगतान: पुष्ट',
+                'Payment: pending' => 'भुगतान: लंबित',
+                'Amount paid:' => 'भुगतान राशि:',
+                'Placed on:' => 'ऑर्डर तिथि:',
+                'Report emailed on:' => 'रिपोर्ट ईमेल तिथि:',
+                'Order status: COMPLETED' => 'ऑर्डर स्थिति: पूर्ण',
+                'Order status: PROCESSING' => 'ऑर्डर स्थिति: प्रक्रिया में',
+                'Order status:' => 'ऑर्डर स्थिति:',
+                'Answering for:' => 'किसके लिए उत्तर:',
+                'Birth details used:' => 'प्रयुक्त जन्म विवरण:',
+                'Report language: hi' => 'रिपोर्ट भाषा: हिन्दी',
+                'Report language: ta' => 'रिपोर्ट भाषा: तमिल',
+                'Report language: en' => 'रिपोर्ट भाषा: अंग्रेज़ी',
+                'Report language:' => 'रिपोर्ट भाषा:',
+                'Name:' => 'नाम:',
+                'Date of birth:' => 'जन्म तिथि:',
+                'Time of birth:' => 'जन्म समय:',
+                'Birth place:' => 'जन्म स्थान:',
+                'Groom ' => 'वर ',
+                'Bride ' => 'वधू ',
+            ]);
+        }
+        return $text;
     }
 
     /**

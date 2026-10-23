@@ -35,13 +35,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
 $action = $_GET['action'] ?? $_GET['provider'] ?? '';
-$rawBody = file_get_contents('php://input');
+$rawBody = file_get_contents('php://input', false, null, 0, 1048577);
 if ($rawBody === false) $rawBody = '';
 
 function astroWebhookRespond($payload, $statusCode = 200) {
     http_response_code($statusCode);
     echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+if (strlen($rawBody) > 1048576) {
+    astroWebhookRespond(['success' => false, 'code' => 'PAYLOAD_TOO_LARGE', 'message' => 'Webhook payload exceeds maximum allowed size.'], 413);
 }
 
 function astroWebhookProvider($path, $action) {

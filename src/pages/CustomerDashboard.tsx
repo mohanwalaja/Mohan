@@ -1072,7 +1072,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onNavigate
               customerName={displayName || 'User'}
               language={aiLanguage}
               orderId={aiChatOrder?.id}
-              orderLabel={aiChatOrder ? `Report #${aiChatOrder.orderNumber}` : undefined}
+              orderLabel={aiChatOrder ? (aiLanguage === 'ta' ? `அறிக்கை #${aiChatOrder.orderNumber}` : aiLanguage === 'hi' ? `रिपोर्ट #${aiChatOrder.orderNumber}` : `Report #${aiChatOrder.orderNumber}`) : undefined}
               isAdmin={isAdmin}
               onClose={() => setAiChatOpen(false)}
             />

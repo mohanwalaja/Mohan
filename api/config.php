@@ -461,7 +461,7 @@ function getJsonBody() {
     if ($contentLength > 1048576) {
         return [];
     }
-    $input = file_get_contents('php://input');
+    $input = file_get_contents('php://input', false, null, 0, 1048577);
     if (empty($input)) {
         return [];
     }
@@ -476,7 +476,16 @@ function getJsonBody() {
 function astro_normalize_report_language($value) {
     if (!is_string($value)) return 'en';
     $language = strtolower(trim($value));
-    return in_array($language, ['en', 'ta', 'hi'], true) ? $language : 'en';
+    if (in_array($language, ['en', 'ta', 'hi'], true)) {
+        return $language;
+    }
+    if ($language === 'tamil' || $language === 'tam' || $value === 'தமிழ்' || strncmp($language, 'ta-', 3) === 0 || strncmp($language, 'ta_', 3) === 0) {
+        return 'ta';
+    }
+    if ($language === 'hindi' || $language === 'hin' || $value === 'हिन्दी' || $value === 'हिंदी' || strncmp($language, 'hi-', 3) === 0 || strncmp($language, 'hi_', 3) === 0) {
+        return 'hi';
+    }
+    return 'en';
 }
 
 /**
