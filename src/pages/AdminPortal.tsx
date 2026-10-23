@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Shield,
   CheckCircle2,
@@ -81,6 +81,15 @@ import {
   prepareOrderItemPdfs,
   prepareOrderItemsSendPayload
 } from '../services/orderItems';
+import {
+  buildBatchProcessingPlan,
+  canSelectUnitForBatch,
+  explainOrderApprovalBlockReason,
+  getBatchKeyForUnit,
+  isUnitActionableForBatch,
+  type BatchFailureRecord,
+  type BatchRunSummary
+} from '../services/adminBatchApproval';
 import { orderChartServiceType } from '../services/multiPersonOrder';
 import {
   DEFAULT_CURRENCY,
@@ -275,6 +284,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     failCount: number;
     isProcessing: boolean;
   } | null>(null);
+  const [batchStopping, setBatchStopping] = useState(false);
+  const batchStopRequestedRef = useRef(false);
+  const [selectedBatchKeys, setSelectedBatchKeys] = useState<Set<string>>(() => new Set());
+  const [lastBatchSummary, setLastBatchSummary] = useState<BatchRunSummary | null>(null);
 
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -689,39 +702,69 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     }
   };
 
-  const handleBatchApproveAndSendAllPending = async () => {
-    const pendingList = orders.filter(o => {
-      const s = (o.status || '').toUpperCase();
-      return s === 'PENDING' || s === 'PENDING_APPROVAL';
-    });
-
-    if (pendingList.length === 0) {
-      alert('No pending orders found to process.');
-      return;
-    }
-
-    if (!window.confirm(`Found ${pendingList.length} pending horoscope calculations across individual and family orders. Do you want to process and email all customers now?`)) {
-      return;
-    }
-
-    // De-duplicate family groups so family orders receive 1 consolidated email per group
-    const processedGroupIds = new Set<string>();
-    const processingUnits: Array<{ type: 'family'; groupId: string; orders: Order[] } | { type: 'single'; order: Order }> = [];
-
-    for (const order of pendingList) {
-      if (order.groupId) {
-        if (!processedGroupIds.has(order.groupId)) {
-          processedGroupIds.add(order.groupId);
-          const groupOrders = orders.filter(o => o.groupId === order.groupId);
-          processingUnits.push({ type: 'family', groupId: order.groupId, orders: groupOrders });
-        }
+  const toggleBatchUnitSelection = (batchKey: string) => {
+    setSelectedBatchKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(batchKey)) {
+        next.delete(batchKey);
       } else {
-        processingUnits.push({ type: 'single', order });
+        next.add(batchKey);
       }
+      return next;
+    });
+  };
+
+  const handleStopBatchRun = () => {
+    batchStopRequestedRef.current = true;
+    setBatchStopping(true);
+  };
+
+  const runBatchDelivery = async (targetKeys?: ReadonlySet<string>) => {
+    const plan = buildBatchProcessingPlan(
+      orders,
+      targetKeys ? { selectedKeys: targetKeys } : {}
+    );
+
+    if (plan.units.length === 0) {
+      if (plan.skipped.length > 0) {
+        const previewReasons = plan.skipped
+          .slice(0, 3)
+          .map(s => `${s.label}: ${s.reason}`)
+          .join(' • ');
+        setErrorMessage(
+          `No eligible paid orders to send (${plan.skipped.length} skipped — ${previewReasons}).`
+        );
+      } else {
+        setErrorMessage('No eligible orders found to approve and email.');
+      }
+      return;
     }
+
+    const skippedNote =
+      plan.skipped.length > 0
+        ? `\n\nNote: ${plan.skipped.length} unpaid/cancelled/refunded item(s) will be safely skipped.`
+        : '';
+
+    const modeDescription = targetKeys
+      ? `selected ${plan.units.length} package(s) (${plan.totalOrderCount} horoscope chart(s))`
+      : `all ${plan.units.length} verified pending/retry package(s) (${plan.totalOrderCount} horoscope chart(s))`;
+
+    if (
+      !window.confirm(
+        `Ready to generate live-preview 200 DPI PDFs and email ${modeDescription}?${skippedNote}`
+      )
+    ) {
+      return;
+    }
+
+    batchStopRequestedRef.current = false;
+    setBatchStopping(false);
+    setLastBatchSummary(null);
+    setErrorMessage('');
+    setSuccessMessage('');
 
     setBatchProgress({
-      total: processingUnits.length,
+      total: plan.units.length,
       current: 0,
       currentOrderNum: '',
       successCount: 0,
@@ -731,64 +774,138 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
     let succeeded = 0;
     let failed = 0;
+    let stoppedEarly = false;
+    const failedRecords: BatchFailureRecord[] = [];
+    const succeededKeys = new Set<string>();
 
-    for (let i = 0; i < processingUnits.length; i++) {
-      const unit = processingUnits[i];
-      const identifier = unit.type === 'family' ? unit.groupId : (unit.order.orderNumber || unit.order.id);
+    for (let i = 0; i < plan.units.length; i++) {
+      const unit = plan.units[i];
+      const identifier = unit.label;
 
-      setBatchProgress(prev => prev ? {
-        ...prev,
-        current: i + 1,
-        currentOrderNum: identifier
-      } : null);
+      setBatchProgress(prev =>
+        prev
+          ? {
+              ...prev,
+              current: i + 1,
+              currentOrderNum: identifier
+            }
+          : null
+      );
 
       if (unit.type === 'family') {
         startProcessing(`family-approve-${unit.groupId}`);
         try {
-          // All reports and the invoice must be rendered/staged before approval.
           const prepared = await buildFamilyPreviewPayload(unit.orders, unit.groupId);
-          const res = await api.approveFamilyOrder(unit.groupId, prepared.payload);
+          const res =
+            unit.actionMode === 'resend'
+              ? await api.resendFamilyEmail(unit.groupId, prepared.payload)
+              : await api.approveFamilyOrder(unit.groupId, prepared.payload);
           if (res && res.success) {
             succeeded++;
-            setOrders(prev => prev.map(o => o.groupId === unit.groupId ? { ...o, status: 'COMPLETED', emailStatus: 'SENT' } : o));
+            succeededKeys.add(unit.batchKey);
+            setOrders(prev =>
+              prev.map(o =>
+                o.groupId === unit.groupId
+                  ? { ...o, status: 'COMPLETED', emailStatus: 'SENT' }
+                  : o
+              )
+            );
           } else {
             failed++;
+            failedRecords.push({
+              batchKey: unit.batchKey,
+              label: unit.label,
+              userEmail: unit.orders[0]?.userEmail || '',
+              error: res?.message || 'Server declined family order approval/delivery.'
+            });
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error(`Error processing family group #${unit.groupId}:`, e);
           failed++;
+          failedRecords.push({
+            batchKey: unit.batchKey,
+            label: unit.label,
+            userEmail: unit.orders[0]?.userEmail || '',
+            error: e?.message || 'Unexpected error while rendering or staging family PDFs.'
+          });
         } finally {
           stopProcessing(`family-approve-${unit.groupId}`);
-          setBatchProgress(prev => prev ? {
-            ...prev,
-            successCount: succeeded,
-            failCount: failed
-          } : null);
+          setBatchProgress(prev =>
+            prev
+              ? {
+                  ...prev,
+                  successCount: succeeded,
+                  failCount: failed
+                }
+              : null
+          );
         }
       } else if (isMultiPersonUnit(unit.order)) {
         const order = unit.order;
         startProcessing(`email-${order.id}`);
         try {
-          const payload = await prepareOrderItemsSendPayload(order, order.items || [], message =>
-            setBatchProgress(prev => prev ? { ...prev, currentOrderNum: `${identifier} • ${message}` } : null)
+          const rendered = await prepareOrderItemsSendPayload(
+            order,
+            order.items || [],
+            message =>
+              setBatchProgress(prev =>
+                prev ? { ...prev, currentOrderNum: `${identifier} • ${message}` } : null
+              )
           );
-          const res: any = await api.sendAllOrderItems(order.id, payload);
+          // Stage high-res 200 DPI PDFs one file at a time so multi-person bundles
+          // never exceed server post_max_size / client_max_body_size limits.
+          const payload = await deliverOrderItemsPdfPayload(order, rendered, 'admin');
+          const res: any =
+            unit.actionMode === 'resend'
+              ? await api.resendEmail(order.id, payload as any)
+              : await api.sendAllOrderItems(order.id, payload);
           if (res && res.success) {
             succeeded++;
-            setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'COMPLETED', emailStatus: 'SENT' } : o));
+            succeededKeys.add(unit.batchKey);
+            setOrders(prev =>
+              prev.map(o =>
+                o.id === order.id
+                  ? {
+                      ...o,
+                      status: 'COMPLETED',
+                      emailStatus: 'SENT',
+                      items: (o.items || []).map(item => ({
+                        ...item,
+                        reportStatus: 'SENT'
+                      }))
+                    }
+                  : o
+              )
+            );
           } else {
             failed++;
+            failedRecords.push({
+              batchKey: unit.batchKey,
+              label: unit.label,
+              userEmail: order.userEmail || '',
+              error: res?.message || 'Server declined multi-person report delivery.'
+            });
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error(`Error processing multi-person order #${order.orderNumber}:`, e);
           failed++;
+          failedRecords.push({
+            batchKey: unit.batchKey,
+            label: unit.label,
+            userEmail: order.userEmail || '',
+            error: e?.message || 'Unexpected error while rendering or staging multi-person PDFs.'
+          });
         } finally {
           stopProcessing(`email-${order.id}`);
-          setBatchProgress(prev => prev ? {
-            ...prev,
-            successCount: succeeded,
-            failCount: failed
-          } : null);
+          setBatchProgress(prev =>
+            prev
+              ? {
+                  ...prev,
+                  successCount: succeeded,
+                  failCount: failed
+                }
+              : null
+          );
         }
       } else {
         const order = unit.order;
@@ -799,31 +916,101 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
           const { generateOrderPdfsBase64, deliverOrderPdfPayload } = await loadPdfEngine();
           const pdfs = await generateOrderPdfsBase64(order, language);
           const payload = await deliverOrderPdfPayload(order, { ...pdfs, language });
-          const res = await api.approveOrder(order.id, payload);
+          const res =
+            unit.actionMode === 'resend'
+              ? await api.resendEmail(order.id, payload)
+              : await api.approveOrder(order.id, payload);
           if (res && res.success) {
             succeeded++;
-            setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'COMPLETED', emailStatus: 'SENT' } : o));
+            succeededKeys.add(unit.batchKey);
+            setOrders(prev =>
+              prev.map(o =>
+                o.id === order.id ? { ...o, status: 'COMPLETED', emailStatus: 'SENT' } : o
+              )
+            );
           } else {
             failed++;
+            failedRecords.push({
+              batchKey: unit.batchKey,
+              label: unit.label,
+              userEmail: order.userEmail || '',
+              error: res?.message || 'Server declined order approval/delivery.'
+            });
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error(`Error processing batch order #${order.orderNumber}:`, e);
           failed++;
+          failedRecords.push({
+            batchKey: unit.batchKey,
+            label: unit.label,
+            userEmail: order.userEmail || '',
+            error: e?.message || 'Unexpected error while rendering or staging order PDFs.'
+          });
         } finally {
           stopProcessing(`email-${order.id}`);
-          setBatchProgress(prev => prev ? {
-            ...prev,
-            successCount: succeeded,
-            failCount: failed
-          } : null);
+          setBatchProgress(prev =>
+            prev
+              ? {
+                  ...prev,
+                  successCount: succeeded,
+                  failCount: failed
+                }
+              : null
+          );
         }
+      }
+
+      if (batchStopRequestedRef.current && i < plan.units.length - 1) {
+        stoppedEarly = true;
+        break;
       }
     }
 
     setBatchProgress(null);
-    setSuccessMessage(`🎉 Batch complete! Successfully processed & emailed ${succeeded} package(s).${failed > 0 ? ` (${failed} failed)` : ''}`);
-    setTimeout(() => setSuccessMessage(''), 8000);
+    setBatchStopping(false);
+    batchStopRequestedRef.current = false;
+
+    setSelectedBatchKeys(prev => {
+      const next = new Set(prev);
+      succeededKeys.forEach(k => next.delete(k));
+      failedRecords.forEach(f => next.add(f.batchKey));
+      return next;
+    });
+
+    const summary: BatchRunSummary = {
+      succeeded,
+      failed: failedRecords,
+      skipped: plan.skipped,
+      stoppedEarly,
+      finishedAt: new Date().toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+    };
+    setLastBatchSummary(summary);
+
+    if (failedRecords.length > 0) {
+      setErrorMessage(
+        `Batch finished with ${failedRecords.length} failure(s) (${succeeded} sent). Review details below or click Retry Failed.`
+      );
+    } else if (stoppedEarly) {
+      setSuccessMessage(
+        `Batch stopped safely after completing ${succeeded} package(s). Remaining orders stay untouched in queue.`
+      );
+      setTimeout(() => setSuccessMessage(''), 8000);
+    } else {
+      setSuccessMessage(
+        `🎉 Batch complete! Successfully processed & emailed ${succeeded} package(s) at 200 DPI live-preview quality.`
+      );
+      setTimeout(() => setSuccessMessage(''), 8000);
+    }
+
     fetchAdminData();
+  };
+
+  const handleBatchApproveAndSendAllPending = async () => {
+    await runBatchDelivery();
   };
 
   /**
@@ -1458,15 +1645,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         const s = (item.status || '').toUpperCase();
         return s === 'PENDING' || s === 'PENDING_APPROVAL';
       });
+      const anyProcessing = gOrders.some(item => (item.status || '').toUpperCase() === 'PROCESSING');
 
       let combinedStatus = 'PENDING';
       if (allRefunded) combinedStatus = 'REFUNDED';
       else if (allCompleted) combinedStatus = 'COMPLETED';
       else if (allCancelled) combinedStatus = 'CANCELLED';
       else if (anyPending) combinedStatus = 'PENDING';
+      else if (anyProcessing) combinedStatus = 'PROCESSING';
       else combinedStatus = main.status;
 
-      const emailStatus = gOrders.some(item => item.emailStatus === 'SENT')
+      const emailStatus = gOrders.every(item => (item.emailStatus || '').toUpperCase() === 'SENT')
         ? 'SENT'
         : gOrders.some(item => (item.emailStatus || '').toUpperCase() === 'FAILED' || (item.emailStatus || '').toUpperCase() === 'ERROR')
         ? 'FAILED'
@@ -2182,77 +2371,146 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
           </div>
 
           {/* Filters & Search & Batch Actions */}
-          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-            {/* Filter Tabs with Live Counts */}
-            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
-              {[
-                { id: 'ALL', label: 'All Orders', count: orders.length },
-                { id: 'PENDING', label: 'Pending', count: orders.filter(o => { const s = (o.status || '').toUpperCase(); return s === 'PENDING' || s === 'PENDING_APPROVAL'; }).length },
-                { id: 'GENERATED', label: 'Generated', count: orders.filter(o => (o.status || '').toUpperCase() === 'GENERATED').length },
-                { id: 'COMPLETED', label: 'Completed', count: orders.filter(o => (o.status || '').toUpperCase() === 'COMPLETED').length },
-                { id: 'CANCELLED', label: 'Cancelled', count: orders.filter(o => (o.status || '').toUpperCase() === 'CANCELLED').length },
-                { id: 'REFUNDED', label: 'Refunded', count: orders.filter(o => { const s = (o.status || '').toUpperCase(); return s === 'REFUNDED' || (o.refundStatus || '').toUpperCase() === 'REFUNDED'; }).length }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setFilterStatus(tab.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    filterStatus === tab.id
-                      ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-slate-950 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                    filterStatus === tab.id
-                      ? 'bg-white/20 text-white dark:bg-slate-950/20 dark:text-slate-950'
-                      : 'bg-slate-200/80 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                  }`}>
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </div>
+          {(() => {
+            const actionableBatchPlan = buildBatchProcessingPlan(orders);
+            const processingCount = orders.filter(o => (o.status || '').toUpperCase() === 'PROCESSING').length;
+            const visibleActionableKeys = groupedOrderUnits
+              .filter((u: any) => isUnitActionableForBatch(u))
+              .map((u: any) => getBatchKeyForUnit(u));
+            const allVisibleActionableSelected =
+              visibleActionableKeys.length > 0 &&
+              visibleActionableKeys.every((k: string) => selectedBatchKeys.has(k));
 
-            <div className="flex flex-col sm:flex-row items-center gap-2.5">
-              {/* Batch Approve & Send All Button */}
-              {orders.some(o => { const s = (o.status || '').toUpperCase(); return s === 'PENDING' || s === 'PENDING_APPROVAL'; }) && (
-                <button
-                  type="button"
-                  onClick={handleBatchApproveAndSendAllPending}
-                  disabled={!!batchProgress?.isProcessing}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer whitespace-nowrap"
-                  title="Automatically generate PDFs and send emails for all pending orders without waiting on each one manually"
-                >
-                  <Send className={`w-3.5 h-3.5 ${batchProgress?.isProcessing ? 'animate-spin' : ''}`} />
-                  <span>
-                    {batchProgress?.isProcessing
-                      ? `Processing ${batchProgress.current}/${batchProgress.total}...`
-                      : `⚡ Send All Pending (${orders.filter(o => { const s = (o.status || '').toUpperCase(); return s === 'PENDING' || s === 'PENDING_APPROVAL'; }).length})`}
-                  </span>
-                </button>
-              )}
+            return (
+              <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+                {/* Filter Tabs with Live Counts */}
+                <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100/80 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-2xs">
+                  {[
+                    { id: 'ALL', label: 'All Orders', count: orders.length },
+                    { id: 'PENDING', label: 'Pending', count: orders.filter(o => { const s = (o.status || '').toUpperCase(); return s === 'PENDING' || s === 'PENDING_APPROVAL'; }).length },
+                    ...(processingCount > 0 || filterStatus === 'PROCESSING'
+                      ? [{ id: 'PROCESSING', label: 'Processing', count: processingCount }]
+                      : []),
+                    { id: 'GENERATED', label: 'Generated', count: orders.filter(o => (o.status || '').toUpperCase() === 'GENERATED').length },
+                    { id: 'COMPLETED', label: 'Completed', count: orders.filter(o => (o.status || '').toUpperCase() === 'COMPLETED').length },
+                    { id: 'CANCELLED', label: 'Cancelled', count: orders.filter(o => (o.status || '').toUpperCase() === 'CANCELLED').length },
+                    { id: 'REFUNDED', label: 'Refunded', count: orders.filter(o => { const s = (o.status || '').toUpperCase(); return s === 'REFUNDED' || (o.refundStatus || '').toUpperCase() === 'REFUNDED'; }).length }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setFilterStatus(tab.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        filterStatus === tab.id
+                          ? 'bg-slate-900 text-white dark:bg-amber-500 dark:text-slate-950 shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                        filterStatus === tab.id
+                          ? 'bg-white/20 text-white dark:bg-slate-950/20 dark:text-slate-950'
+                          : 'bg-slate-200/80 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                      }`}>
+                        {tab.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
 
-              <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search orders..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none shadow-2xs"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
-                  >
-                    ✕
-                  </button>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Quick Select Actionable Toggle (Desktop + Mobile) */}
+                  {visibleActionableKeys.length > 0 && (
+                    <button
+                      type="button"
+                      disabled={!!batchProgress?.isProcessing}
+                      onClick={() => {
+                        setSelectedBatchKeys(prev => {
+                          const next = new Set(prev);
+                          if (allVisibleActionableSelected) {
+                            visibleActionableKeys.forEach((k: string) => next.delete(k));
+                          } else {
+                            visibleActionableKeys.forEach((k: string) => next.add(k));
+                          }
+                          return next;
+                        });
+                      }}
+                      className="px-3 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                      title="Select or deselect all actionable paid orders in the current view"
+                    >
+                      <Check className="w-3.5 h-3.5 text-amber-500" />
+                      <span>
+                        {allVisibleActionableSelected
+                          ? 'Deselect Queue'
+                          : `Select Actionable (${visibleActionableKeys.length})`}
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Multi-Select Batch Approve / Resend Button */}
+                  {selectedBatchKeys.size > 0 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => runBatchDelivery(selectedBatchKeys)}
+                        disabled={!!batchProgress?.isProcessing}
+                        className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-2xl flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                        title="Approve & email all selected paid orders at live-preview 200 DPI quality"
+                      >
+                        <Send className={`w-3.5 h-3.5 ${batchProgress?.isProcessing ? 'animate-spin' : ''}`} />
+                        <span>Approve Selected ({selectedBatchKeys.size})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBatchKeys(new Set())}
+                        disabled={!!batchProgress?.isProcessing}
+                        className="px-2.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
+                        title="Clear selection"
+                      >
+                        Clear
+                      </button>
+                    </>
+                  )}
+
+                  {/* Batch Approve & Send All Verified Actionable Button */}
+                  {actionableBatchPlan.units.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleBatchApproveAndSendAllPending}
+                      disabled={!!batchProgress?.isProcessing}
+                      className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                      title="Automatically generate 200 DPI live-preview PDFs and email all verified pending/retry orders"
+                    >
+                      <Send className={`w-3.5 h-3.5 ${batchProgress?.isProcessing ? 'animate-spin' : ''}`} />
+                      <span>
+                        {batchProgress?.isProcessing
+                          ? `Processing ${batchProgress.current}/${batchProgress.total}...`
+                          : `⚡ Send All Pending (${actionableBatchPlan.units.length})`}
+                      </span>
+                    </button>
+                  )}
+
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search orders..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-amber-400 focus:outline-none shadow-2xs"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Family (group order) render progress banner: one report at a time */}
           {familyRenderProgress && (
@@ -2289,20 +2547,113 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
 
           {/* Batch Progress Banner */}
           {batchProgress?.isProcessing && (
-            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-2xl space-y-2 shadow-sm animate-pulse">
-              <div className="flex items-center justify-between text-xs font-bold text-emerald-900 dark:text-emerald-200">
+            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-2xl space-y-2.5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-emerald-900 dark:text-emerald-200">
                 <span className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                  Processing Order #{batchProgress.currentOrderNum} ({batchProgress.current} of {batchProgress.total})...
+                  <span>
+                    {batchStopping ? 'Stopping cleanly after current order: ' : 'Processing '}
+                    {batchProgress.currentOrderNum} ({batchProgress.current} of {batchProgress.total})
+                  </span>
                 </span>
-                <span>{Math.round((batchProgress.current / batchProgress.total) * 100)}%</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-semibold">
+                    Sent: <strong>{batchProgress.successCount}</strong> • Failed: <strong>{batchProgress.failCount}</strong> • {Math.round((batchProgress.current / Math.max(1, batchProgress.total)) * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleStopBatchRun}
+                    disabled={batchStopping}
+                    className="px-3 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-black transition-all cursor-pointer disabled:opacity-60"
+                    title="Finish the current PDF upload & email cleanly, then pause remaining orders"
+                  >
+                    {batchStopping ? 'Stopping After Current…' : 'Stop After Current'}
+                  </button>
+                </div>
               </div>
               <div className="w-full h-2 bg-emerald-200 dark:bg-emerald-900 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-emerald-600 transition-all duration-300 rounded-full"
-                  style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                  style={{ width: `${(batchProgress.current / Math.max(1, batchProgress.total)) * 100}%` }}
                 />
               </div>
+            </div>
+          )}
+
+          {/* Last Batch Run Summary & Retry Failed Panel */}
+          {lastBatchSummary && !batchProgress?.isProcessing && (
+            <div
+              className={`p-4 rounded-2xl border space-y-2.5 shadow-xs text-xs ${
+                lastBatchSummary.failed.length > 0
+                  ? 'bg-rose-50/90 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800/80 text-rose-950 dark:text-rose-200'
+                  : 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-200'
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-extrabold flex items-center gap-2 flex-wrap">
+                  <span>
+                    Batch Report ({lastBatchSummary.finishedAt})
+                    {lastBatchSummary.stoppedEarly ? ' • Paused cleanly by admin' : ''}:
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-black">
+                    {lastBatchSummary.succeeded} Sent
+                  </span>
+                  {lastBatchSummary.failed.length > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-800 dark:text-rose-300 font-black">
+                      {lastBatchSummary.failed.length} Failed
+                    </span>
+                  )}
+                  {lastBatchSummary.skipped.length > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-black">
+                      {lastBatchSummary.skipped.length} Skipped (Unpaid/Blocked)
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {lastBatchSummary.failed.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        runBatchDelivery(new Set(lastBatchSummary.failed.map(f => f.batchKey)))
+                      }
+                      className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Retry Failed ({lastBatchSummary.failed.length})</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setLastBatchSummary(null)}
+                    className="px-2.5 py-1.5 rounded-xl bg-white/70 dark:bg-slate-900/70 hover:bg-white dark:hover:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+
+              {lastBatchSummary.failed.length > 0 && (
+                <div className="space-y-1 pt-1 border-t border-rose-200/80 dark:border-rose-800/60">
+                  {lastBatchSummary.failed.map(item => (
+                    <div key={item.batchKey} className="font-medium flex flex-wrap items-center gap-1.5">
+                      <span className="font-mono font-black">{item.label}</span>
+                      {item.userEmail && <span className="opacity-75">({item.userEmail})</span>}
+                      <span>—</span>
+                      <span className="font-bold">{item.error}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {lastBatchSummary.skipped.length > 0 && (
+                <div className="space-y-1 pt-1 border-t border-amber-200/70 dark:border-amber-800/50 text-[11px] opacity-90">
+                  {lastBatchSummary.skipped.map(item => (
+                    <div key={item.batchKey}>
+                      <strong className="font-mono">{item.label}</strong>: {item.reason}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -2337,10 +2688,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                     const normalizedStatus = (unit.status || '').toString().trim().toUpperCase();
                     const isCompleted = normalizedStatus === 'COMPLETED';
                     const isCancelled = normalizedStatus === 'CANCELLED';
-                    const isPending = normalizedStatus === 'PENDING' || normalizedStatus === 'PENDING_APPROVAL';
+                    const isPending =
+                      normalizedStatus === 'PENDING' ||
+                      normalizedStatus === 'PENDING_APPROVAL' ||
+                      normalizedStatus === 'PROCESSING';
                     const isGroup = unit.isGroup;
                     const groupId = unit.groupId || '';
                     const isExpanded = !!expandedGroupIds[groupId];
+                    const unitBatchKey = getBatchKeyForUnit(unit);
+                    const unitSelectable = canSelectUnitForBatch(unit);
+                    const unitChecked = selectedBatchKeys.has(unitBatchKey);
+                    const unitBlockReason = explainOrderApprovalBlockReason(unit.mainOrder);
 
                     const getLanguageBadge = (lang?: string) => {
                       const l = (lang || 'ta').toLowerCase();
@@ -2372,6 +2730,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             <span>Completed</span>
+                          </span>
+                        );
+                      }
+                      if (s === 'PROCESSING') {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30">
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping"></span>
+                            <span>Processing / Retry</span>
                           </span>
                         );
                       }
@@ -2425,6 +2791,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                           {/* 1. Header: Family Group Badge & Status */}
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={unitChecked}
+                                disabled={!unitSelectable || !!batchProgress?.isProcessing}
+                                onChange={() => toggleBatchUnitSelection(unitBatchKey)}
+                                aria-label={`Select family order ${groupId} for batch send`}
+                                title={unitSelectable ? 'Select family order for batch send' : (unitBlockReason || 'Not eligible for batch send')}
+                                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-amber-500 focus:ring-amber-500 cursor-pointer disabled:opacity-40"
+                              />
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-xs">
                                 <Users className="w-3.5 h-3.5" />
                                 <span>Family Order ({unit.orders.length} People)</span>
@@ -2686,6 +3061,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                         {/* 1. Header: Order #, Language, Status */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={unitChecked}
+                              disabled={!unitSelectable || !!batchProgress?.isProcessing}
+                              onChange={() => toggleBatchUnitSelection(unitBatchKey)}
+                              aria-label={`Select order ${order.orderNumber || order.id} for batch send`}
+                              title={unitSelectable ? 'Select order for batch send' : (unitBlockReason || 'Not eligible for batch send')}
+                              className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-amber-500 focus:ring-amber-500 cursor-pointer disabled:opacity-40"
+                            />
                             <span className="font-mono font-bold text-xs text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
                               #{order.orderNumber || order.id}
                             </span>
@@ -2904,8 +3288,46 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                 {/* 2. DESKTOP COMPUTER VIEW (Redesigned Modern Dashboard Order List for screens >= md) */}
                 <div className="hidden md:block">
                   {/* Table Header Bar */}
-                  <div className="grid grid-cols-12 gap-4 px-6 py-3.5 bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-bold border-b border-slate-200 dark:border-slate-800 tracking-wider">
-                    <div className="col-span-3">Order & Language</div>
+                  <div className="grid grid-cols-12 gap-4 px-6 py-3.5 bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-bold border-b border-slate-200 dark:border-slate-800 tracking-wider items-center">
+                    <div className="col-span-3 flex items-center gap-2.5">
+                      {(() => {
+                        const visibleSelectableKeys = groupedOrderUnits
+                          .filter((u: any) => canSelectUnitForBatch(u))
+                          .map((u: any) => getBatchKeyForUnit(u));
+                        const selectedVisibleCount = visibleSelectableKeys.filter((k: string) =>
+                          selectedBatchKeys.has(k)
+                        ).length;
+                        const allChecked =
+                          visibleSelectableKeys.length > 0 &&
+                          selectedVisibleCount === visibleSelectableKeys.length;
+                        const someChecked = selectedVisibleCount > 0 && !allChecked;
+                        return (
+                          <input
+                            type="checkbox"
+                            checked={allChecked}
+                            ref={el => {
+                              if (el) el.indeterminate = someChecked;
+                            }}
+                            disabled={visibleSelectableKeys.length === 0 || !!batchProgress?.isProcessing}
+                            onChange={() => {
+                              setSelectedBatchKeys(prev => {
+                                const next = new Set(prev);
+                                if (allChecked) {
+                                  visibleSelectableKeys.forEach((k: string) => next.delete(k));
+                                } else {
+                                  visibleSelectableKeys.forEach((k: string) => next.add(k));
+                                }
+                                return next;
+                              });
+                            }}
+                            aria-label="Select all visible eligible orders"
+                            title="Select or deselect all eligible paid orders in this view"
+                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-amber-500 focus:ring-amber-500 cursor-pointer disabled:opacity-40"
+                          />
+                        );
+                      })()}
+                      <span>Order & Language</span>
+                    </div>
                     <div className="col-span-3">User & Astro Service</div>
                     <div className="col-span-2">Contact & Origin</div>
                     <div className="col-span-2">Payment & Status</div>
@@ -2918,11 +3340,18 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                       const normalizedStatus = (unit.status || '').toString().trim().toUpperCase();
                       const isCompleted = normalizedStatus === 'COMPLETED';
                       const isCancelled = normalizedStatus === 'CANCELLED';
-                      const isPending = normalizedStatus === 'PENDING' || normalizedStatus === 'PENDING_APPROVAL';
+                      const isPending =
+                        normalizedStatus === 'PENDING' ||
+                        normalizedStatus === 'PENDING_APPROVAL' ||
+                        normalizedStatus === 'PROCESSING';
                       const isGroup = unit.isGroup;
                       const groupId = unit.groupId || '';
                       const isExpanded = !!expandedGroupIds[groupId];
                       const isEmailFailed = (unit.emailStatus || '').toUpperCase() === 'FAILED' || (unit.emailStatus || '').toUpperCase() === 'ERROR';
+                      const unitBatchKey = getBatchKeyForUnit(unit);
+                      const unitSelectable = canSelectUnitForBatch(unit);
+                      const unitChecked = selectedBatchKeys.has(unitBatchKey);
+                      const unitBlockReason = explainOrderApprovalBlockReason(unit.mainOrder);
 
                       const getLanguageDisplay = (lang?: string) => {
                         const l = (lang || 'ta').toLowerCase();
@@ -2954,6 +3383,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                               <span>Completed</span>
+                            </span>
+                          );
+                        }
+                        if (s === 'PROCESSING') {
+                          return (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/30">
+                              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping"></span>
+                              <span>Processing / Retry</span>
                             </span>
                           );
                         }
@@ -3008,6 +3445,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                               {/* 1. Order & Language */}
                               <div className="col-span-3 space-y-1.5">
                                 <div className="flex items-center gap-2 flex-wrap">
+                                  <input
+                                    type="checkbox"
+                                    checked={unitChecked}
+                                    disabled={!unitSelectable || !!batchProgress?.isProcessing}
+                                    onChange={() => toggleBatchUnitSelection(unitBatchKey)}
+                                    aria-label={`Select family order ${groupId} for batch send`}
+                                    title={unitSelectable ? 'Select family order for batch send' : (unitBlockReason || 'Not eligible for batch send')}
+                                    className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-amber-500 focus:ring-amber-500 cursor-pointer disabled:opacity-40"
+                                  />
                                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-black text-xs bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-2xs">
                                     <Users className="w-3.5 h-3.5" />
                                     <span>Family ({unit.orders.length})</span>
@@ -3275,6 +3721,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
                             {/* 1. Order & Language */}
                             <div className="col-span-3 space-y-1.5">
                               <div className="flex items-center gap-2 flex-wrap">
+                                <input
+                                  type="checkbox"
+                                  checked={unitChecked}
+                                  disabled={!unitSelectable || !!batchProgress?.isProcessing}
+                                  onChange={() => toggleBatchUnitSelection(unitBatchKey)}
+                                  aria-label={`Select order ${order.orderNumber || order.id} for batch send`}
+                                  title={unitSelectable ? 'Select order for batch send' : (unitBlockReason || 'Not eligible for batch send')}
+                                  className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-amber-500 focus:ring-amber-500 cursor-pointer disabled:opacity-40"
+                                />
                                 <span className="font-mono font-extrabold text-xs text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md shadow-2xs">
                                   #{order.orderNumber || order.id}
                                 </span>

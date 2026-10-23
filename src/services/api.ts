@@ -1697,11 +1697,13 @@ export const api = {
     payload?: {
       reportPdfBase64?: string;
       invoicePdfBase64?: string;
+      reportPdfStageRef?: string;
+      invoicePdfStageRef?: string;
       itemId?: number;
       language?: string;
     }
   ): Promise<OrderItemsSendResponse> {
-    const res = await fetch(
+    const res = await apiFetch(
       `${API_BASE}/admin/orders/${encodeURIComponent(orderId)}/items/${encodeURIComponent(String(itemId))}/send`,
       {
         method: 'POST',
@@ -1716,11 +1718,12 @@ export const api = {
   async sendAllOrderItems(
     orderId: string,
     payload?: {
-      reportPdfs?: Array<{ itemId: number; fileName?: string; pdfBase64: string }>;
+      reportPdfs?: Array<{ itemId: number; fileName?: string; pdfBase64?: string; stageRef?: string }>;
       invoicePdfBase64?: string;
+      invoicePdfStageRef?: string;
     }
   ): Promise<OrderItemsSendResponse> {
-    const res = await fetch(`${API_BASE}/admin/orders/${encodeURIComponent(orderId)}/items/send-all`, {
+    const res = await apiFetch(`${API_BASE}/admin/orders/${encodeURIComponent(orderId)}/items/send-all`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(payload || {})

@@ -600,7 +600,8 @@ export interface Order {
   paymentMethod: PaymentMethod;
   paymentReference?: string;
   paymentIntentId?: string;
-  paymentStatus?: 'NOT_REQUIRED' | 'CREATED' | 'CAPTURED' | 'PENDING_MANUAL' | 'PENDING_ADMIN' | 'VERIFIED_MANUAL' | 'FAILED' | 'CONSUMED' | 'EXPIRED';
+  paymentConfirmed?: boolean;
+  paymentStatus?: 'NOT_REQUIRED' | 'CREATED' | 'CAPTURED' | 'PAID' | 'PENDING_MANUAL' | 'PENDING_ADMIN' | 'VERIFIED_MANUAL' | 'FAILED' | 'CONSUMED' | 'EXPIRED';
   status: OrderStatus;
   emailStatus: EmailStatus;
   emailDeliveryAttempts: number;

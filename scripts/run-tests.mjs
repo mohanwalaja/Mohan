@@ -283,7 +283,9 @@ const testFiles = [
   // AI Astrologer order-language sync & full security/UX audit contracts.
   'tests/ai-astrologer-tamil-order-and-audit.test.ts',
   // 100% Live-Preview High-Quality Email PDF System (zero server PDF system).
-  'tests/high-quality-email-pdf-system.test.ts'
+  'tests/high-quality-email-pdf-system.test.ts',
+  // Upgraded Admin 1-Click Batch Approve, Multi-Select, Payment Verification & Retry System.
+  'tests/admin-batch-approval.test.ts'
 ];
 const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 
