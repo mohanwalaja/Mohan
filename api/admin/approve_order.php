@@ -125,8 +125,11 @@ $serviceDisplayNames = [
 ];
 
 $currencySymbolMap = ['INR' => '₹', 'USD' => 'US$'];
-$groupCurrency = $firstOrder['currency'] ?? (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD');
-$groupCurrencySymbol = $currencySymbolMap[$groupCurrency] ?? 'FJ$';
+$groupCurrency = strtoupper(trim((string)($firstOrder['currency'] ?? (defined('DEFAULT_CURRENCY') ? DEFAULT_CURRENCY : 'USD'))));
+if (!isset($currencySymbolMap[$groupCurrency])) {
+    $groupCurrency = 'USD';
+}
+$groupCurrencySymbol = $currencySymbolMap[$groupCurrency];
 
 // =========================================================================
 // PHASE 1: COMPUTE ASTROLOGICAL DATA & SAVE RESULTS
@@ -243,7 +246,7 @@ $htmlBody = "
             <td style='padding:3px 0; text-align:right; font-weight:700;'>" . htmlspecialchars($groupId) . "</td>
           </tr>" : "") . "
           <tr>
-            <td style='padding:3px 0; color:#8a7a55;'>Family Members</td>
+            <td style='padding:3px 0; color:#8a7a55;'>" . ($isFamilyPackage ? 'Family Members' : 'Applicant') . "</td>
             <td style='padding:3px 0; text-align:right; font-weight:700;'>" . htmlspecialchars($membersSummaryString) . "</td>
           </tr>
           <tr>
@@ -265,7 +268,7 @@ $htmlBody = "
         <div style='color:#7a1f1f; font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;'>Attached Documents (" . count($attachments) . " Files)</div>
         <div style='font-size:13px; color:#3d3222; line-height:1.8;'>
           " . $memberRowsHtml . "
-          <div>&#10003;&nbsp; <strong>" . htmlspecialchars($invoiceFileName) . "</strong> &mdash; Consolidated Official Tax Invoice</div>
+          <div>&#10003;&nbsp; <strong>" . htmlspecialchars($invoiceFileName) . "</strong> &mdash; " . ($isFamilyPackage ? 'Consolidated Official Tax Invoice' : 'Official Tax Invoice') . "</div>
         </div>
       </div>
 

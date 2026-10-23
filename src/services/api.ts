@@ -877,6 +877,29 @@ export const api = {
     return safeJson(res);
   },
 
+  async saveEmailBirthdayWishPreference(
+    enabled: boolean,
+    language?: AppLanguage
+  ): Promise<{ success: boolean; birthdayWishes?: BirthdayWishState; message?: string }> {
+    const apiBase = getApiBase();
+    const body = JSON.stringify({ channel: 'email', enabled, ...(language ? { language } : {}) });
+    try {
+      const res = await apiFetch(`${apiBase}/services/birthday-wishes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      const resData = await safeJson(res);
+      if (resData.success || res.status !== 404) return resData;
+    } catch (e) {}
+    const res = await apiFetch(`${apiBase}/services/index.php?action=birthday-wishes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body
+    });
+    return safeJson(res);
+  },
+
   // Calculations Preview
   async calculatePreview(serviceType: ServiceType, payload: Record<string, any>): Promise<{ success: boolean; result?: any; message?: string }> {
     const apiBase = getApiBase();

@@ -64,7 +64,9 @@ header('Content-Type: application/json; charset=utf-8');
 // under /api has no capabilities at all.
 header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
 header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
 header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: geolocation=(self), camera=(), microphone=()');
 // CACHE SAFETY — with a CDN in front (Cloudflare), one mis-scoped cache rule is
 // enough to serve a customer's JSON to someone else: /api/services/my-orders and
 // ?action=settings return session-scoped data and carry no cache directive, so
@@ -90,6 +92,92 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     http_response_code(200);
     exit;
+}
+
+/**
+ * Verify that browser-initiated state-changing requests (POST/PUT/PATCH/DELETE)
+ * originate from an allowed first-party origin or same-host preview surface.
+ *
+ * Payment provider webhooks (/payment/webhook/*, payment_webhook.php) are
+ * excluded because Razorpay/PayPal authenticate via cryptographic signatures.
+ * Non-browser server/CLI clients without Origin/Referer headers are permitted.
+ *
+ * @return array{ok: bool, reason?: string}
+ */
+function astro_verify_request_origin(?string $origin, ?string $referer, string $method, string $requestUri, array $allowedOrigins, ?string $hostHeader = null): array {
+    $verb = strtoupper(trim($method));
+    if ($verb === '' || in_array($verb, ['GET', 'HEAD', 'OPTIONS'], true)) {
+        return ['ok' => true];
+    }
+
+    $cleanPath = strtolower((string)(parse_url($requestUri, PHP_URL_PATH) ?: $requestUri));
+    if (
+        strpos($cleanPath, '/payment/webhook') !== false ||
+        strpos($cleanPath, 'payment_webhook.php') !== false
+    ) {
+        return ['ok' => true];
+    }
+
+    $candidate = trim((string)$origin);
+    if ($candidate === '' && trim((string)$referer) !== '') {
+        $refParts = @parse_url(trim((string)$referer));
+        if (!is_array($refParts) || empty($refParts['scheme']) || empty($refParts['host'])) {
+            return ['ok' => false, 'reason' => 'malformed_referer'];
+        }
+        $candidate = strtolower($refParts['scheme']) . '://' . strtolower($refParts['host'])
+            . (!empty($refParts['port']) ? ':' . (int)$refParts['port'] : '');
+    }
+
+    if ($candidate === '') {
+        return ['ok' => true];
+    }
+    if (strtolower($candidate) === 'null') {
+        return ['ok' => false, 'reason' => 'null_origin'];
+    }
+
+    $parts = @parse_url($candidate);
+    if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+        return ['ok' => false, 'reason' => 'malformed_origin'];
+    }
+    $normalized = strtolower($parts['scheme']) . '://' . strtolower($parts['host'])
+        . (!empty($parts['port']) ? ':' . (int)$parts['port'] : '');
+
+    foreach ($allowedOrigins as $allowed) {
+        if ($normalized === strtolower(rtrim(trim((string)$allowed), '/'))) {
+            return ['ok' => true];
+        }
+    }
+
+    // Same-host check covers local dev servers (localhost:3000/5173) and staging hosts.
+    $rawHost = strtolower(trim((string)$hostHeader));
+    if ($rawHost !== '') {
+        $candidateHostPort = strtolower($parts['host']) . (!empty($parts['port']) ? ':' . (int)$parts['port'] : '');
+        if ($candidateHostPort === $rawHost || strtolower($parts['host']) === preg_replace('/:\d+$/', '', $rawHost)) {
+            return ['ok' => true];
+        }
+    }
+
+    return ['ok' => false, 'reason' => 'cross_origin_blocked'];
+}
+
+if (PHP_SAPI !== 'cli') {
+    $csrfCheck = astro_verify_request_origin(
+        $_SERVER['HTTP_ORIGIN'] ?? null,
+        $_SERVER['HTTP_REFERER'] ?? null,
+        $_SERVER['REQUEST_METHOD'] ?? 'GET',
+        $_SERVER['REQUEST_URI'] ?? '',
+        $allowedOrigins,
+        $_SERVER['HTTP_HOST'] ?? null
+    );
+    if (!$csrfCheck['ok']) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'code' => 'CSRF_ORIGIN_REJECTED',
+            'message' => 'Cross-origin state-changing request rejected.'
+        ]);
+        exit;
+    }
 }
 
 // 3. MySQL Database Credentials (BigRock cPanel MySQL Database)

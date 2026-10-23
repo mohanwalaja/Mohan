@@ -128,8 +128,80 @@ function astro_resolve_contact_recipient($envValue, $adminNotificationEmail, $co
     return '';
 }
 
+/**
+ * Wrap inner HTML inside ASTRO SIVAM's Royal Maroon & Gold parchment card so
+ * auth OTP codes, password resets, admin tests, and birthday wishes share the
+ * exact same trustworthy, mobile-responsive layout across Gmail, Apple Mail,
+ * and Outlook.
+ */
+function astro_wrap_branded_email_html($subtitle, $innerBodyHtml, $footerLine = '') {
+    $safeSubtitle = htmlspecialchars((string)$subtitle, ENT_QUOTES, 'UTF-8');
+    $year = date('Y');
+    $extraFooter = $footerLine !== ''
+        ? '<p style="margin:6px 0 0;color:#8a7d65;font-size:11px;line-height:1.5;">' . $footerLine . '</p>'
+        : '';
+
+    return "<!DOCTYPE html>\r\n"
+        . "<html lang=\"en\">\r\n"
+        . "<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\"></head>\r\n"
+        . "<body style=\"margin:0;padding:0;background-color:#f6f1e6;font-family:Georgia,'Times New Roman',Arial,sans-serif;color:#2b1d12;\">\r\n"
+        . "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#f6f1e6;padding:20px 10px;\">\r\n"
+        . "<tr><td align=\"center\">\r\n"
+        . "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background-color:#fffdf9;border:2px solid #c9962c;border-radius:14px;overflow:hidden;\">\r\n"
+        . "<tr><td align=\"center\" style=\"background:linear-gradient(135deg,#7a1f1f 0%,#4a1010 100%);background-color:#7a1f1f;padding:24px 20px;border-bottom:3px solid #c9962c;\">\r\n"
+        . astro_email_logo_tag(54) . "\r\n"
+        . "<h1 style=\"margin:10px 0 0;font-size:21px;letter-spacing:1.5px;color:#f7d788;font-family:Georgia,serif;\">ASTRO SIVAM</h1>\r\n"
+        . "<p style=\"margin:5px 0 0;font-size:12px;letter-spacing:0.6px;color:#fde68a;font-family:Arial,sans-serif;\">{$safeSubtitle}</p>\r\n"
+        . "</td></tr>\r\n"
+        . "<tr><td style=\"padding:26px 24px;font-family:Arial,sans-serif;font-size:14px;line-height:1.65;color:#33261b;\">\r\n"
+        . $innerBodyHtml . "\r\n"
+        . "</td></tr>\r\n"
+        . "<tr><td align=\"center\" style=\"background-color:#f9f4ea;border-top:1px solid #eadcc2;padding:14px 20px;font-family:Arial,sans-serif;\">\r\n"
+        . "<p style=\"margin:0;color:#7a6a52;font-size:11px;\">&copy; {$year} ASTRO SIVAM &middot; Traditional Vedic Astrology</p>\r\n"
+        . $extraFooter . "\r\n"
+        . "</td></tr>\r\n"
+        . "</table>\r\n"
+        . "</td></tr>\r\n"
+        . "</table>\r\n"
+        . "</body></html>";
+}
+
 class AstroMailer
 {
+    /** Strip header CR/LF characters so display names and subjects are injection-safe. */
+    private static function cleanHeaderText($value)
+    {
+        return trim((string)preg_replace('/[\r\n]+/', ' ', (string)$value));
+    }
+
+    /** Generate a unique RFC 5322 Message-ID matched to the sender domain. */
+    private static function makeMessageId($fromEmail)
+    {
+        $domain = 'astrosivam.com';
+        $atPos = strrpos((string)$fromEmail, '@');
+        if ($atPos !== false) {
+            $candidate = preg_replace('/[^a-zA-Z0-9.-]/', '', substr((string)$fromEmail, $atPos + 1));
+            if ($candidate !== '' && strpos($candidate, '.') !== false) {
+                $domain = strtolower($candidate);
+            }
+        }
+        return '<' . gmdate('YmdHis') . '.' . bin2hex(random_bytes(8)) . '@' . $domain . '>';
+    }
+
+    /** Convert HTML body into clean readable plain text for multipart/alternative. */
+    public static function htmlToPlainText($html)
+    {
+        $clean = preg_replace('/<(style|script)\b[^>]*>.*?<\/\1>/is', '', (string)$html);
+        $clean = preg_replace('/<\s*br\s*\/?>/i', "\n", (string)$clean);
+        $clean = preg_replace('/<\/(p|div|h1|h2|h3|h4|li|tr)>/i', "\n", (string)$clean);
+        $clean = html_entity_decode(strip_tags((string)$clean), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $lines = array_map(static function ($line) {
+            return trim((string)preg_replace('/[ \t]+/', ' ', $line));
+        }, explode("\n", (string)$clean));
+        $collapsed = preg_replace("/\n{3,}/", "\n\n", implode("\n", $lines));
+        $result = trim((string)$collapsed);
+        return $result !== '' ? $result : 'ASTRO SIVAM notification';
+    }
     /**
      * @param array $attachments  Regular (downloadable) attachments.
      * @param array|null $smtpConfig SMTP settings array.
@@ -233,21 +305,40 @@ class AstroMailer
      * Structure:
      *   multipart/mixed
      *     +- multipart/related
-     *     |    +- text/html
+     *     |    +- multipart/alternative
+     *     |    |    +- text/plain (UTF-8)
+     *     |    |    +- text/html  (UTF-8, RFC 5322 line-length safe)
      *     |    +- image/* (inline, Content-ID)
      *     +- application/pdf (attachments)
      */
     private static function buildMimeBody($htmlContent, $attachments, $inlineImages, $outerBoundary, $innerBoundary)
     {
+        $altBoundary = "==Alt_Boundary_x" . bin2hex(random_bytes(16)) . "x";
+        $plainText = self::htmlToPlainText($htmlContent);
+        // Keep every HTML line comfortably under RFC 5322's 998-byte ceiling so
+        // MTAs never split mid-attribute in single-line templates.
+        $lineSafeHtml = preg_replace('/>\s*</', ">\r\n<", (string)$htmlContent);
+
         $body = "--{$outerBoundary}\r\n";
         $body .= "Content-Type: multipart/related; boundary=\"{$innerBoundary}\"\r\n";
         $body .= "\r\n";
 
-        // --- HTML part ---
         $body .= "--{$innerBoundary}\r\n";
+        $body .= "Content-Type: multipart/alternative; boundary=\"{$altBoundary}\"\r\n\r\n";
+
+        // --- Plain-text part (prevents MIME_HTML_ONLY spam score penalties) ---
+        $body .= "--{$altBoundary}\r\n";
+        $body .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $body .= "Content-Transfer-Encoding: base64\r\n\r\n";
+        $body .= chunk_split(base64_encode($plainText)) . "\r\n\r\n";
+
+        // --- HTML part ---
+        $body .= "--{$altBoundary}\r\n";
         $body .= "Content-Type: text/html; charset=UTF-8\r\n";
         $body .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
-        $body .= $htmlContent . "\r\n\r\n";
+        $body .= $lineSafeHtml . "\r\n\r\n";
+
+        $body .= "--{$altBoundary}--\r\n\r\n";
 
         // --- Inline images (cid:) ---
         foreach ((array) $inlineImages as $img) {
@@ -291,14 +382,19 @@ class AstroMailer
 
     private static function sendViaNativeMail($toEmail, $toName, $subject, $htmlContent, $attachments, $fromEmail, $fromName, $replyTo, $inlineImages = [])
     {
+        $fromName = self::cleanHeaderText($fromName);
+        $toName = self::cleanHeaderText($toName);
+        $subject = self::cleanHeaderText($subject);
+
         $outerBoundary = "==Multipart_Boundary_x" . bin2hex(random_bytes(16)) . "x";
         $innerBoundary = "==Related_Boundary_x" . bin2hex(random_bytes(16)) . "x";
 
-        $headers = "From: =?UTF-8?B?" . base64_encode($fromName) . "?= <{$fromEmail}>\r\n";
+        $headers = "Date: " . date('r') . "\r\n";
+        $headers .= "Message-ID: " . self::makeMessageId($fromEmail) . "\r\n";
+        $headers .= "From: =?UTF-8?B?" . base64_encode($fromName) . "?= <{$fromEmail}>\r\n";
         $headers .= "Reply-To: {$replyTo}\r\n";
         $headers .= "Return-Path: {$fromEmail}\r\n";
         $headers .= "X-Mailer: ASTRO-SIVAM-VedicEngine/1.0\r\n";
-        $headers .= "X-Priority: 1 (Highest)\r\n";
         $headers .= "MIME-Version: 1.0\r\n";
         $headers .= "Content-Type: multipart/mixed; boundary=\"{$outerBoundary}\"\r\n";
 
@@ -322,8 +418,10 @@ class AstroMailer
         $pass = (string) ($config['smtpPass'] ?? '');
         $secure = strtolower(trim((string) ($config['smtpSecure'] ?? 'ssl')));
         $fromEmail = trim((string) (!empty($config['fromEmail']) ? $config['fromEmail'] : $user));
-        $fromName = trim((string) (!empty($config['fromName']) ? $config['fromName'] : 'ASTRO SIVAM'));
+        $fromName = self::cleanHeaderText(!empty($config['fromName']) ? $config['fromName'] : 'ASTRO SIVAM');
         $replyTo = trim((string) (!empty($config['replyToEmail']) ? $config['replyToEmail'] : $fromEmail));
+        $toName = self::cleanHeaderText($toName);
+        $subject = self::cleanHeaderText($subject);
 
         if ($host === '' || $port < 1 || $port > 65535 || !filter_var($toEmail, FILTER_VALIDATE_EMAIL) ||
             !filter_var($fromEmail, FILTER_VALIDATE_EMAIL) || !filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
@@ -357,8 +455,15 @@ class AstroMailer
             stream_set_timeout($socket, 15);
             self::readSmtpResponse($socket, [220], 'server greeting');
 
-            $heloName = preg_replace('/[^a-zA-Z0-9.-]/', '', (string) ($_SERVER['SERVER_NAME'] ?? 'astrosivam.local'));
-            if ($heloName === '') $heloName = 'astrosivam.local';
+            $senderDomain = '';
+            $atIdx = strrpos($fromEmail, '@');
+            if ($atIdx !== false) {
+                $senderDomain = preg_replace('/[^a-zA-Z0-9.-]/', '', substr($fromEmail, $atIdx + 1));
+            }
+            $heloName = preg_replace('/[^a-zA-Z0-9.-]/', '', (string) ($_SERVER['SERVER_NAME'] ?? ''));
+            if ($heloName === '' || strpos($heloName, '.') === false) {
+                $heloName = ($senderDomain !== '' && strpos($senderDomain, '.') !== false) ? $senderDomain : 'astrosivam.com';
+            }
             self::writeSmtpData($socket, "EHLO {$heloName}\r\n", 'EHLO');
             self::readSmtpResponse($socket, [250], 'EHLO');
 
@@ -389,7 +494,9 @@ class AstroMailer
 
             $outerBoundary = "==Multipart_Boundary_x" . bin2hex(random_bytes(16)) . "x";
             $innerBoundary = "==Related_Boundary_x" . bin2hex(random_bytes(16)) . "x";
-            $headers = "From: =?UTF-8?B?" . base64_encode($fromName) . "?= <{$fromEmail}>\r\n";
+            $headers = "Date: " . date('r') . "\r\n";
+            $headers .= "Message-ID: " . self::makeMessageId($fromEmail) . "\r\n";
+            $headers .= "From: =?UTF-8?B?" . base64_encode($fromName) . "?= <{$fromEmail}>\r\n";
             $headers .= "To: " . (!empty($toName) ? "=?UTF-8?B?" . base64_encode($toName) . "?= <{$toEmail}>" : $toEmail) . "\r\n";
             $headers .= "Reply-To: {$replyTo}\r\n";
             $headers .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";

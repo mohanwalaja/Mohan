@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../../services/api';
-import { Mail, Lock, KeyRound, AlertCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, KeyRound, AlertCircle, ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 interface ForgotPasswordFormProps {
   initialEmail?: string;
@@ -22,6 +22,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ initialE
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -156,14 +157,22 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ initialE
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 autoComplete="new-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
-                className={inputClass}
+                placeholder="At least 10 characters"
+                className={`${inputClass} pr-10`}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
           <div>
@@ -173,7 +182,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ initialE
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 autoComplete="new-password"
                 value={confirm}

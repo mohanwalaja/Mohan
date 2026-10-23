@@ -876,7 +876,10 @@ if (preg_match('#/services/birthday-wishes/?$#', $path) || $action === 'birthday
 
     $enabled = filter_var($body['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
     $language = isset($body['language']) ? (string)$body['language'] : null;
-    $result = AstroBirthdayWishes::savePreference($pdo, $userId, $enabled, $language);
+    $channel = strtolower(trim((string)($body['channel'] ?? '')));
+    $result = $channel === 'email'
+        ? AstroBirthdayWishes::saveEmailPreference($pdo, $userId, $enabled, $language)
+        : AstroBirthdayWishes::savePreference($pdo, $userId, $enabled, $language);
     jsonResponse([
         'success' => (bool)($result['success'] ?? false),
         'message' => (string)($result['message'] ?? ''),

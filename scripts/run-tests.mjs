@@ -255,6 +255,9 @@ const testFiles = [
   // the admin button messages nobody twice. Includes real PHP execution under
   // PHP-WASM (date rules, dedupe, dry run, per-run cap, gateway failure).
   'tests/birthday-wishes.test.ts',
+  // Full security/CSRF, login/Google/Admin auth flows, multipart email delivery,
+  // Ivory button contrast, and 1-click Email Birthday Wishes end-to-end suite.
+  'tests/security-auth-email-birthday-audit.test.ts',
   // My Orders cards use the admin-style order/name/payment/action summary,
   // but keep per-order/per-person expansion and the customer-only download
   // icons beside report names. Delivery recovery stays visible even when closed.

@@ -205,6 +205,15 @@ export interface ChatDeliveryState {
  * whether switching it on can actually deliver anything; `savedPeople` counts
  * the birth profiles the wishes would cover (the account holder + saved family).
  */
+export interface UpcomingSavedBirthday {
+  personKey: string;
+  name: string;
+  relation: string;
+  dob: string;
+  nextDate: string;
+  daysUntil: number;
+}
+
 export interface BirthdayWishState {
   enabled: boolean;
   language: AppLanguage;
@@ -215,6 +224,13 @@ export interface BirthdayWishState {
   numberVerified: boolean;
   channels: Array<'whatsapp' | 'viber'>;
   savedPeople: number;
+  /** One-click Email Birthday Wishes (no WhatsApp/Viber verification required). */
+  emailEnabled?: boolean;
+  emailLanguage?: AppLanguage;
+  emailEnabledAt?: string | null;
+  emailAvailable?: boolean;
+  userEmail?: string;
+  upcomingBirthdays?: UpcomingSavedBirthday[];
 }
 
 /** One run of the birthday dispatcher (the cron and the admin button share it). */
@@ -318,6 +334,8 @@ export interface ChatAlertConfig {
    */
   birthdayWishes?: {
     enabled: boolean;
+    /** Allow 1-click Email Birthday Wishes via SMTP without needing WhatsApp/Viber APIs. */
+    emailEnabled?: boolean;
     /** The zone whose calendar day decides whose birthday it is. */
     timezone: string;
     includeFamilyMembers: boolean;
