@@ -8,16 +8,50 @@
       "category": "dosha",
       "doshaKey": "kuja",
       "triggers": {
-        "en": ["kuja dosha", "kuja dosham", "sevvai dosha", "sevvai dosham", "chevvai dosha", "chevvai dosham", "mangal dosha", "manglik", "angaraka dosha"],
-        "ta": ["செவ்வாய் தோஷம்", "குஜ தோஷம்", "அங்காரக தோஷம்"],
-        "hi": ["कुज दोष", "मंगल दोष", "मांगलिक दोष", "मांगलिक"]
+        "en": [
+          "kuja dosha",
+          "kuja dosham",
+          "sevvai dosha",
+          "sevvai dosham",
+          "chevvai dosha",
+          "chevvai dosham",
+          "mangal dosha",
+          "manglik",
+          "angaraka dosha"
+        ],
+        "ta": [
+          "செவ்வாய் தோஷம்",
+          "குஜ தோஷம்",
+          "அங்காரக தோஷம்"
+        ],
+        "hi": [
+          "कुज दोष",
+          "मंगल दोष",
+          "मांगलिक दोष",
+          "मांगलिक"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "EN-09", "level": "book" },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-07", "level": "book" },
-        { "id": "TP-06", "level": "content" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "EN-09",
+          "level": "book"
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-07",
+          "level": "book"
+        },
+        {
+          "id": "TP-06",
+          "level": "content"
+        }
       ],
       "body": {
         "en": "Kuja (Sevvai / Mangal) Dosha occurs when Mars occupies the 2nd, 4th, 7th, 8th, or 12th house counted from Lagna, the natal Moon, or Venus (with classical South Indian practice also noting the 1st house in specific texts). In Brihat Parashara Hora Shastra, Poorva Parasariyam, and Uttara Kalamrita, it is treated strictly as a marriage-matching balance factor rather than a personal misfortune: many charts have automatic cancellation (Mars in own sign Aries/Scorpio or exaltation Capricorn, aspected/conjoined by Jupiter, or specific Lagna placements), or mutual balance (Dosha Samyam) with the partner. Traditional observance: Tuesday prayers to Lord Murugan / Subramaniya and visiting Vaitheeswaran Kovil.",
@@ -30,16 +64,50 @@
       "category": "dosha",
       "doshaKey": "kalasarpa",
       "triggers": {
-        "en": ["kala sarpa", "kalasarpa", "kaal sarp", "rahu ketu dosha", "sarpa dosha", "naga dosha"],
-        "ta": ["கால சர்ப்ப", "காலசர்ப்ப", "சர்ப்ப தோஷம்", "நாக தோஷம்", "ராகு கேது தோஷம்"],
-        "hi": ["काल सर्प", "कालसर्प", "सर्प दोष", "नाग दोष"]
+        "en": [
+          "kala sarpa",
+          "kalasarpa",
+          "kaal sarp",
+          "rahu ketu dosha",
+          "sarpa dosha",
+          "naga dosha"
+        ],
+        "ta": [
+          "கால சர்ப்ப",
+          "காலசர்ப்ப",
+          "சர்ப்ப தோஷம்",
+          "நாக தோஷம்",
+          "ராகு கேது தோஷம்"
+        ],
+        "hi": [
+          "काल सर्प",
+          "कालसर्प",
+          "सर्प दोष",
+          "नाग दोष"
+        ]
       },
       "source": [
-        { "id": "EN-09", "level": "book" },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-07", "level": "passage", "page": "17" },
-        { "id": "TP-10", "level": "content" },
-        { "id": "TP-11", "level": "content" }
+        {
+          "id": "EN-09",
+          "level": "book"
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-07",
+          "level": "passage",
+          "page": "17"
+        },
+        {
+          "id": "TP-10",
+          "level": "content"
+        },
+        {
+          "id": "TP-11",
+          "level": "content"
+        }
       ],
       "body": {
         "en": "Kala Sarpa Yoga / Dosha forms when all seven planets (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn) sit on one side of the Rahu-Ketu axis with no planet outside it. Classical Parashari texts give greater weight to Lagna strength, Kendra lords, and running Dasha than to the axis alone: if even one planet sits outside or strong benefics hold Kendras, its pressure softens markedly and often channels into intense focus and self-made rise after early effort. Simple traditional remedies: Durga lamp worship for Rahu, Lord Vinayagar prayer with durva grass for Ketu, and visiting Thirunageswaram (Rahu Sthalam) or Keezhaperumpallam (Ketu Sthalam).",
@@ -52,15 +120,38 @@
       "category": "dosha",
       "doshaKey": "pitru",
       "triggers": {
-        "en": ["pitru dosha", "pitra dosha", "ancestral dosha"],
-        "ta": ["பித்ரு தோஷம்", "பிதுர் தோஷம்", "முன்னோர் தோஷம்"],
-        "hi": ["पितृ दोष", "पितर दोष"]
+        "en": [
+          "pitru dosha",
+          "pitra dosha",
+          "ancestral dosha"
+        ],
+        "ta": [
+          "பித்ரு தோஷம்",
+          "பிதுர் தோஷம்",
+          "முன்னோர் தோஷம்"
+        ],
+        "hi": [
+          "पितृ दोष",
+          "पितर दोष"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-07", "level": "book" },
-        { "id": "TP-04", "level": "content" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-07",
+          "level": "book"
+        },
+        {
+          "id": "TP-04",
+          "level": "content"
+        }
       ],
       "body": {
         "en": "Pitru Dosha is read when the 9th house (house of dharma and ancestors), the 9th lord, or the Sun (karaka of father and lineage) stands afflicted by Rahu, Ketu, or Saturn. Tradition reads this calmly as an invitation to honour family elders and lineage duties rather than as fear: offering sesame-water tarpanam on Amavasya, feeding the hungry (annadhanam) in elders memory, caring respectfully for parents, and praying to Surya at Suryanar Kovil.",
@@ -73,16 +164,45 @@
       "category": "dosha",
       "doshaKey": "guruchandala",
       "triggers": {
-        "en": ["guru chandala", "guru chandal", "chandala yoga", "chandala dosha"],
-        "ta": ["குரு சண்டால", "சண்டால யோகம்", "சண்டால தோஷம்"],
-        "hi": ["गुरु चांडाल", "चांडाल दोष", "चांडाल योग"]
+        "en": [
+          "guru chandala",
+          "guru chandal",
+          "chandala yoga",
+          "chandala dosha"
+        ],
+        "ta": [
+          "குரு சண்டால",
+          "சண்டால யோகம்",
+          "சண்டால தோஷம்"
+        ],
+        "hi": [
+          "गुरु चांडाल",
+          "चांडाल दोष",
+          "चांडाल योग"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "EN-04", "level": "book" },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-07", "level": "passage", "page": "15-16" },
-        { "id": "TP-08", "level": "content" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "EN-04",
+          "level": "book"
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-07",
+          "level": "passage",
+          "page": "15-16"
+        },
+        {
+          "id": "TP-08",
+          "level": "content"
+        }
       ],
       "body": {
         "en": "Guru Chandala Yoga / Dosha forms when Jupiter (Guru) shares a sign with Rahu (or Ketu). Saravali and Parashari classics read this as questioning convention or facing mixed advice from mentors during Guru/Rahu Bhuktis; when Jupiter holds own/exalted dignity or benefic aspect, it produces sharp, independent analytical ability. Simple remedies: Thursday Dakshinamurthy / Guru prayer at Alangudi, Durga/Vinayagar worship, and checking major decisions calmly before acting.",
@@ -95,16 +215,58 @@
       "category": "dosha",
       "doshaKey": "all",
       "triggers": {
-        "en": ["kalathra dosha", "kalatra dosha", "putra dosha", "santhana dosha", "kemadruma", "sakata yoga", "grahan dosha", "papa kartari", "punarphoo"],
-        "ta": ["களத்திர தோஷம்", "புத்திர தோஷம்", "கேமத்ரும", "சகட யோகம்", "கிரகண தோஷம்", "பாப கர்த்தரி", "புனர்பூ"],
-        "hi": ["कलत्र दोष", "पुत्र दोष", "केमद्रुम", "शकट योग", "ग्रहण दोष", "पाप कर्तरी", "पुनर्फू"]
+        "en": [
+          "kalathra dosha",
+          "kalatra dosha",
+          "putra dosha",
+          "santhana dosha",
+          "kemadruma",
+          "sakata yoga",
+          "grahan dosha",
+          "papa kartari",
+          "punarphoo"
+        ],
+        "ta": [
+          "களத்திர தோஷம்",
+          "புத்திர தோஷம்",
+          "கேமத்ரும",
+          "சகட யோகம்",
+          "கிரகண தோஷம்",
+          "பாப கர்த்தரி",
+          "புனர்பூ"
+        ],
+        "hi": [
+          "कलत्र दोष",
+          "पुत्र दोष",
+          "केमद्रुम",
+          "शकट योग",
+          "ग्रहण दोष",
+          "पाप कर्तरी",
+          "पुनर्फू"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI - VI-8 papa kartari, kemadruma and sakata." },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-02", "level": "book" },
-        { "id": "TA-07", "level": "book" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "EN-02",
+          "level": "chapter",
+          "note": "Adhyaya VI - VI-8 papa kartari, kemadruma and sakata."
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-02",
+          "level": "book"
+        },
+        {
+          "id": "TA-07",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "Classical Jyotisha evaluates minor combinations alongside their built-in cancellations (Bhanga): Kalathra Dosha (affliction to the 7th house/Sukra) and Putra Dosha (affliction to the 5th house/Guru) soften whenever Jupiter or the house lord is strong; Kemadruma (no planets flanking Moon in 2nd/12th from Moon) cancels as soon as any planet occupies a Kendra from Lagna or Moon; Sakata (Moon 6th/8th/12th from Guru) softens when Moon sits in a Kendra from Lagna; Papa Kartari (Phaladeepika VI-8, malefics hemming a house) eases in benefic transits/Dashas; and Grahan / Punarphoo (luminary with nodes or Moon-Saturn) asks for calm mindfulness, routine, and simple weekday lamp prayer.",
@@ -117,16 +279,39 @@
       "category": "yoga",
       "yogaKey": "gajakesari",
       "triggers": {
-        "en": ["gajakesari", "gaja kesari"],
-        "ta": ["கஜகேசரி"],
-        "hi": ["गजकेसरी"]
+        "en": [
+          "gajakesari",
+          "gaja kesari"
+        ],
+        "ta": [
+          "கஜகேசரி"
+        ],
+        "hi": [
+          "गजकेसरी"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI - auspicious yogas." },
-        { "id": "EN-04", "level": "book" },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-02", "level": "book" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "EN-02",
+          "level": "chapter",
+          "note": "Adhyaya VI - auspicious yogas."
+        },
+        {
+          "id": "EN-04",
+          "level": "book"
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-02",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "Gajakesari Yoga forms when Jupiter (Guru) stands in a Kendra — the 1st, 4th, 7th, or 10th house — counted from the natal Moon. Brihat Parashara Hora Shastra, Phaladeepika, Saravali, and Sadhaka Parisatham praise it for steady wisdom, good counsel, public respect, and resilience during difficulty, delivering most strongly during Jupiter or Moon Mahadasha/Bhukti when neither planet is severely debilitated.",
@@ -139,15 +324,39 @@
       "category": "yoga",
       "yogaKey": "budhaditya",
       "triggers": {
-        "en": ["budhaditya", "budha aditya", "nipuna yoga"],
-        "ta": ["புதாதித்ய", "புத ஆதித்ய", "நிபுண யோகம்"],
-        "hi": ["बुधादित्य", "निपुण योग"]
+        "en": [
+          "budhaditya",
+          "budha aditya",
+          "nipuna yoga"
+        ],
+        "ta": [
+          "புதாதித்ய",
+          "புத ஆதித்ய",
+          "நிபுண யோகம்"
+        ],
+        "hi": [
+          "बुधादित्य",
+          "निपुण योग"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI - yogas." },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-03", "level": "book" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "EN-02",
+          "level": "chapter",
+          "note": "Adhyaya VI - yogas."
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-03",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "Budhaditya (Nipuna) Yoga forms when the Sun (Surya) and Mercury (Budha) occupy the same sign. Classical texts read it as analytical sharpness, skill in writing/calculation/administration, and quick learning — working best when placed in Kendra or Trikona houses (1, 4, 5, 7, 9, 10) and especially in the 2nd, 5th, 10th, or 11th.",
@@ -160,15 +369,41 @@
       "category": "yoga",
       "yogaKey": "rajayoga",
       "triggers": {
-        "en": ["raja yoga", "rajyoga", "raj yoga", "dharma karmadhipati"],
-        "ta": ["ராஜ யோகம்", "இராஜ யோகம்", "தர்ம கர்மாதிபதி"],
-        "hi": ["राजयोग", "राज योग", "धर्म कर्माधिपति"]
+        "en": [
+          "raja yoga",
+          "rajyoga",
+          "raj yoga",
+          "dharma karmadhipati"
+        ],
+        "ta": [
+          "ராஜ யோகம்",
+          "இராஜ யோகம்",
+          "தர்ம கர்மாதிபதி"
+        ],
+        "hi": [
+          "राजयोग",
+          "राज योग",
+          "धर्म कर्माधिपति"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI & VII - raja yogas." },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-02", "level": "book" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "EN-02",
+          "level": "chapter",
+          "note": "Adhyaya VI & VII - raja yogas."
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-02",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "Raja Yoga in Parashari astrology arises when a Kendra lord (1st, 4th, 7th, 10th — pillars of action) joins, aspects, or exchanges houses with a Trikona lord (1st, 5th, 9th — pillars of merit and fortune). The supreme form is Dharma-Karmadhipati Yoga linking the 9th and 10th lords, supporting earned leadership, responsibility, and public trust primarily during the Mahadasha or Bhukti of those two planets.",
@@ -181,15 +416,43 @@
       "category": "yoga",
       "yogaKey": "dhanayoga",
       "triggers": {
-        "en": ["dhana yoga", "dhan yoga", "lakshmi yoga", "wealth yoga"],
-        "ta": ["தன யோகம்", "லட்சுமி யோகம்", "செல்வ யோகம்"],
-        "hi": ["धन योग", "लक्ष्मी योग"]
+        "en": [
+          "dhana yoga",
+          "dhan yoga",
+          "lakshmi yoga",
+          "wealth yoga"
+        ],
+        "ta": [
+          "தன யோகம்",
+          "லட்சுமி யோகம்",
+          "செல்வ யோகம்"
+        ],
+        "hi": [
+          "धन योग",
+          "लक्ष्मी योग"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-02", "level": "passage", "verse": 47, "page": "20" },
-        { "id": "TA-02", "level": "passage", "verse": 50, "page": "23" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-02",
+          "level": "passage",
+          "verse": 47,
+          "page": "20"
+        },
+        {
+          "id": "TA-02",
+          "level": "passage",
+          "verse": 50,
+          "page": "23"
+        }
       ],
       "body": {
         "en": "Dhana Yoga links the houses of resources and gains — the 2nd (accumulated wealth), 11th (income), 5th (merit), and 9th (fortune), together with Lagna lord, Guru, and Sukra. Sadhaka Parisatham verses 47 and 50 single out the mutual exchange or linkage of the 1st, 2nd, and 11th lords as steady, honest prosperity that matures during the Dasha/Bhukti of those lords.",
@@ -202,15 +465,53 @@
       "category": "yoga",
       "yogaKey": "mahapurusha",
       "triggers": {
-        "en": ["mahapurusha", "pancha mahapurusha", "ruchaka", "bhadra yoga", "hamsa yoga", "malavya", "sasa yoga", "shasha yoga"],
-        "ta": ["பஞ்ச மகாபுருஷ", "மகாபுருஷ", "ருசக", "பத்ர யோகம்", "ஹம்ச யோகம்", "மாளவ்ய", "சச யோகம்"],
-        "hi": ["पंच महापुरुष", "महापुरुष योग", "रुचक", "भद्र योग", "हंस योग", "मालव्य", "शश योग"]
+        "en": [
+          "mahapurusha",
+          "pancha mahapurusha",
+          "ruchaka",
+          "bhadra yoga",
+          "hamsa yoga",
+          "malavya",
+          "sasa yoga",
+          "shasha yoga"
+        ],
+        "ta": [
+          "பஞ்ச மகாபுருஷ",
+          "மகாபுருஷ",
+          "ருசக",
+          "பத்ர யோகம்",
+          "ஹம்ச யோகம்",
+          "மாளவ்ய",
+          "சச யோகம்"
+        ],
+        "hi": [
+          "पंच महापुरुष",
+          "महापुरुष योग",
+          "रुचक",
+          "भद्र योग",
+          "हंस योग",
+          "मालव्य",
+          "शश योग"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI - pancha mahapurusha yogas." },
-        { "id": "TA-02", "level": "book" },
-        { "id": "TA-03", "level": "book" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "EN-02",
+          "level": "chapter",
+          "note": "Adhyaya VI - pancha mahapurusha yogas."
+        },
+        {
+          "id": "TA-02",
+          "level": "book"
+        },
+        {
+          "id": "TA-03",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "The five Pancha Mahapurusha Yogas arise when one of the five non-luminary planets stands in its own or exaltation sign inside a Kendra (1, 4, 7, 10) from Lagna: Ruchaka (Mars — courage and execution), Bhadra (Mercury — intellect and speech), Hamsa (Jupiter — ethics and teaching), Malavya (Venus — grace, comfort and art), and Sasa (Saturn — discipline, organization and endurance).",
@@ -223,16 +524,63 @@
       "category": "yoga",
       "yogaKey": "special",
       "triggers": {
-        "en": ["neecha bhanga", "neechabhanga", "vipareeta", "viparita", "harsha yoga", "sarala yoga", "vimala yoga", "parivartana", "chandra mangala", "amala yoga"],
-        "ta": ["நீச்சபங்க", "நீச்ச பங்க", "விபரீத ராஜ", "ஹர்ஷ யோகம்", "சரள யோகம்", "விமல யோகம்", "பரிவர்த்தனை", "சந்திர மங்கள", "அமல யோகம்"],
-        "hi": ["नीचभंग", "नीच भंग", "विपरीत राजयोग", "हर्ष योग", "सरल योग", "विमल योग", "परिवर्तन योग", "चंद्र मंगल", "अमला योग"]
+        "en": [
+          "neecha bhanga",
+          "neechabhanga",
+          "vipareeta",
+          "viparita",
+          "harsha yoga",
+          "sarala yoga",
+          "vimala yoga",
+          "parivartana",
+          "chandra mangala",
+          "amala yoga"
+        ],
+        "ta": [
+          "நீச்சபங்க",
+          "நீச்ச பங்க",
+          "விபரீத ராஜ",
+          "ஹர்ஷ யோகம்",
+          "சரள யோகம்",
+          "விமல யோகம்",
+          "பரிவர்த்தனை",
+          "சந்திர மங்கள",
+          "அமல யோகம்"
+        ],
+        "hi": [
+          "नीचभंग",
+          "नीच भंग",
+          "विपरीत राजयोग",
+          "हर्ष योग",
+          "सरल योग",
+          "विमल योग",
+          "परिवर्तन योग",
+          "चंद्र मंगल",
+          "अमला योग"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "EN-02", "level": "chapter", "note": "Adhyaya VI - parivartana at VI-32, vipareeta and neecha bhanga." },
-        { "id": "EN-09", "level": "book" },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-02", "level": "book" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "EN-02",
+          "level": "chapter",
+          "note": "Adhyaya VI - parivartana at VI-32, vipareeta and neecha bhanga."
+        },
+        {
+          "id": "EN-09",
+          "level": "book"
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-02",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "Three classic turnaround combinations in Phaladeepika (Adhyaya VI), Uttara Kalamrita, and Sadhaka Parisatham: (1) Neecha Bhanga Raja Yoga cancels a planet debilitation when its sign lord or exaltation lord sits in a Kendra from Lagna/Moon or aspects it — turning early struggle into hard-won mastery; (2) Vipareeta Raja Yoga (Harsha, Sarala, Vimala) places the 6th, 8th, or 12th lord in another dusthana (6/8/12), helping you rise through crisis resolution; (3) Parivartana Yoga (VI-32) joins two houses powerfully when their lords exchange signs.",
@@ -245,15 +593,54 @@
       "category": "transit",
       "transitKey": "sani",
       "triggers": {
-        "en": ["ashtama sani", "ashtamasani", "ardhastama", "kantaka sani", "kandaka sani", "sani peyarchi", "saturn transit", "sade sati", "ezharai sani", "elzhara sani"],
-        "ta": ["அஷ்டம சனி", "அர்த்தாஷ்டம சனி", "கண்டக சனி", "சனி பெயர்ச்சி", "ஏழரைச் சனி", "ஏழரை சனி"],
-        "hi": ["अष्टम शनि", "अर्धाष्टम शनि", "कंटक शनि", "शनि गोचर", "साढ़ेसाती", "शनि ढैय्या", "ढैय्या"]
+        "en": [
+          "ashtama sani",
+          "ashtamasani",
+          "ardhastama",
+          "kantaka sani",
+          "kandaka sani",
+          "sani peyarchi",
+          "saturn transit",
+          "sade sati",
+          "ezharai sani",
+          "elzhara sani"
+        ],
+        "ta": [
+          "அஷ்டம சனி",
+          "அர்த்தாஷ்டம சனி",
+          "கண்டக சனி",
+          "சனி பெயர்ச்சி",
+          "ஏழரைச் சனி",
+          "ஏழரை சனி"
+        ],
+        "hi": [
+          "अष्टम शनि",
+          "अर्धाष्टम शनि",
+          "कंटक शनि",
+          "शनि गोचर",
+          "साढ़ेसाती",
+          "शनि ढैय्या",
+          "ढैय्या"
+        ]
       },
       "source": [
-        { "id": "EN-02", "level": "chapter", "note": "Adhyaya XXVI - Saturn transits from natal Moon." },
-        { "id": "TA-04", "level": "book" },
-        { "id": "TA-15", "level": "book" },
-        { "id": "TP-03", "level": "content" }
+        {
+          "id": "EN-02",
+          "level": "chapter",
+          "note": "Adhyaya XXVI - Saturn transits from natal Moon."
+        },
+        {
+          "id": "TA-04",
+          "level": "book"
+        },
+        {
+          "id": "TA-15",
+          "level": "book"
+        },
+        {
+          "id": "TP-03",
+          "level": "content"
+        }
       ],
       "body": {
         "en": "Saturn (Sani) spends roughly 2.5 years in each sign counted from your natal Moon (Phaladeepika Adhyaya XXVI & Dhinachari Kosara Bodhini): (1) Ezharai Sani / Sade Sati (7.5 years) covers the 12th sign (Viraya Sani), 1st sign (Janma Sani), and 2nd sign (Patha/Kutumba Sani); (2) Ardhastama / Kantaka Sani occurs in the 4th, 7th, and 10th signs from Moon; (3) Ashtama Sani occurs in the 8th sign from Moon (~2.5 years). Saturn sits positively in the 3rd, 6th, and 11th from Moon. Demanding Sani phases reward patience, punctuality, honest effort, regular rest, Saturday sesame-oil lamp worship, feeding workers/stray animals, and visiting Thirunallar.",
@@ -266,16 +653,52 @@
       "category": "transit",
       "transitKey": "other",
       "triggers": {
-        "en": ["guru peyarchi", "jupiter transit", "rahu ketu peyarchi", "rahu transit", "ketu transit", "chandrashtamam", "chandrashtama"],
-        "ta": ["குரு பெயர்ச்சி", "ராகு கேது பெயர்ச்சி", "ராகு பெயர்ச்சி", "கேது பெயர்ச்சி", "சந்திராஷ்டமம்", "சந்திராஷ்டம"],
-        "hi": ["गुरु गोचर", "बृहस्पति गोचर", "राहु केतु गोचर", "चंद्राष्टम"]
+        "en": [
+          "guru peyarchi",
+          "jupiter transit",
+          "rahu ketu peyarchi",
+          "rahu transit",
+          "ketu transit",
+          "chandrashtamam",
+          "chandrashtama"
+        ],
+        "ta": [
+          "குரு பெயர்ச்சி",
+          "ராகு கேது பெயர்ச்சி",
+          "ராகு பெயர்ச்சி",
+          "கேது பெயர்ச்சி",
+          "சந்திராஷ்டமம்",
+          "சந்திராஷ்டம"
+        ],
+        "hi": [
+          "गुरु गोचर",
+          "बृहस्पति गोचर",
+          "राहु केतु गोचर",
+          "चंद्राष्टम"
+        ]
       },
       "source": [
-        { "id": "EN-02", "level": "chapter", "note": "Adhyaya XXVI - gochara rules from Moon." },
-        { "id": "TA-04", "level": "book" },
-        { "id": "TA-12", "level": "book" },
-        { "id": "TA-14", "level": "book" },
-        { "id": "TA-15", "level": "book" }
+        {
+          "id": "EN-02",
+          "level": "chapter",
+          "note": "Adhyaya XXVI - gochara rules from Moon."
+        },
+        {
+          "id": "TA-04",
+          "level": "book"
+        },
+        {
+          "id": "TA-12",
+          "level": "book"
+        },
+        {
+          "id": "TA-14",
+          "level": "book"
+        },
+        {
+          "id": "TA-15",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "Key Tamil Gochara (transit) checks from your Janma Rasi: (1) Guru Peyarchi (annual ~12-month sign shift) brings classic Guru Balam when Jupiter transits the 2nd, 5th, 7th, 9th, or 11th sign from your Moon — traditionally used to time marriage, study, and auspicious milestones (Alangudi Thursday worship steadies the other houses); (2) Rahu-Ketu Peyarchi shifts backward every ~18 months, reading strongest in the 3rd, 6th, and 11th from Moon; (3) Chandrashtamam occurs for ~2.25 days every month when the Moon transits the 8th Rasi (17th Nakshatra) from your birth star — keep calm routine, drive patiently, avoid heated arguments, and postpone brand-new ventures by two days.",
@@ -287,14 +710,76 @@
       "id": "panchangam-rahukalam-yamagandam-gulikai",
       "category": "panchangam",
       "triggers": {
-        "en": ["rahu kalam", "rahukalam", "rahu kaal", "yamagandam", "yamaganda", "emagandam", "gulikai", "kuligai", "gulika kalam", "nalla neram", "gowri panchangam", "abhijit muhurtham", "brahma muhurtham", "subha hora", "amirtha yoga", "siddha yoga", "marana yoga", "kari naal"],
-        "ta": ["ராகு காலம்", "இராகு காலம்", "எமகண்டம்", "யமகண்டம்", "குளிகை", "நல்ல நேரம்", "கௌரி பஞ்சாங்கம்", "அபிஜித்", "பிரம்ம முகூர்த்தம்", "சுப ஓரை", "அமிர்த யோகம்", "சித்த யோகம்", "மரண யோகம்", "கரிநாள்"],
-        "hi": ["राहु काल", "राहुकाल", "यमगण्ड", "यमगंड", "गुलिक काल", "गुलिक", "नल्ला नेरम", "चौघड़िया", "अभिजित मुहूर्त", "ब्रह्म मुहूर्त", "शुभ होरा", "अमृत योग", "सिद्ध योग", "मरण योग"]
+        "en": [
+          "rahu kalam",
+          "rahukalam",
+          "rahu kaal",
+          "yamagandam",
+          "yamaganda",
+          "emagandam",
+          "gulikai",
+          "kuligai",
+          "gulika kalam",
+          "nalla neram",
+          "gowri panchangam",
+          "abhijit muhurtham",
+          "brahma muhurtham",
+          "subha hora",
+          "amirtha yoga",
+          "siddha yoga",
+          "marana yoga",
+          "kari naal"
+        ],
+        "ta": [
+          "ராகு காலம்",
+          "இராகு காலம்",
+          "எமகண்டம்",
+          "யமகண்டம்",
+          "குளிகை",
+          "நல்ல நேரம்",
+          "கௌரி பஞ்சாங்கம்",
+          "அபிஜித்",
+          "பிரம்ம முகூர்த்தம்",
+          "சுப ஓரை",
+          "அமிர்த யோகம்",
+          "சித்த யோகம்",
+          "மரண யோகம்",
+          "கரிநாள்"
+        ],
+        "hi": [
+          "राहु काल",
+          "राहुकाल",
+          "यमगण्ड",
+          "यमगंड",
+          "गुलिक काल",
+          "गुलिक",
+          "नल्ला नेरम",
+          "चौघड़िया",
+          "अभिजित मुहूर्त",
+          "ब्रह्म मुहूर्त",
+          "शुभ होरा",
+          "अमृत योग",
+          "सिद्ध योग",
+          "मरण योग"
+        ]
       },
       "source": [
-        { "id": "TA-12", "level": "book" },
-        { "id": "TA-14", "level": "book" },
-        { "id": "TA-25", "level": "content" }
+        {
+          "id": "REF-01",
+          "level": "content"
+        },
+        {
+          "id": "TA-12",
+          "level": "book"
+        },
+        {
+          "id": "TA-14",
+          "level": "book"
+        },
+        {
+          "id": "TA-25",
+          "level": "content"
+        }
       ],
       "body": {
         "en": "Daily Tamil Panchangam time windows (for standard 6:00 AM sunrise to 6:00 PM sunset; shift slightly by local sunrise): • Rahu Kalam: Mon 7:30-9:00 AM, Sat 9:00-10:30 AM, Fri 10:30 AM-12:00 PM, Wed 12:00-1:30 PM, Thu 1:30-3:00 PM, Tue 3:00-4:30 PM, Sun 4:30-6:00 PM. • Yamagandam: Thu 6:00-7:30 AM, Wed 7:30-9:00 AM, Tue 9:00-10:30 AM, Mon 10:30 AM-12:00 PM, Sun 12:00-1:30 PM, Sat 1:30-3:00 PM, Fri 3:00-4:30 PM. • Gulikai Kalam: Sat 6:00-7:30 AM, Fri 7:30-9:00 AM, Thu 9:00-10:30 AM, Wed 10:30 AM-12:00 PM, Tue 12:00-1:30 PM, Mon 1:30-3:00 PM, Sun 3:00-4:30 PM (actions in Gulikai tend to repeat, so savings/purchases are welcomed while loans are avoided). • Auspicious starts use Nalla Neram, Gowri Nalla Neram, Abhijit Muhurtham (midday ~24 min before/after solar noon), Brahma Muhurtham (~1h36m before sunrise), and Siddha/Amirtha Yoga days while avoiding Marana Yoga and Kari Naal for fresh ceremonies.",
@@ -306,15 +791,57 @@
       "id": "panchangam-muhurtham-selection",
       "category": "panchangam",
       "triggers": {
-        "en": ["subha muhurtham", "shubh muhurat", "grihapravesam", "griha pravesh", "housewarming", "seemantham", "aksharabhyasam", "vivaha muhurtham", "how is muhurtham chosen", "muhurtham chosen"],
-        "ta": ["சுப முகூர்த்தம்", "சுப முஹூர்த்தம்", "கிரகப்பிரவேசம்", "புதுமனை புகுவிழா", "சீமந்தம்", "அட்சராப்யாசம்", "முகூர்த்தம் எப்படி"],
-        "hi": ["शुभ मुहूर्त", "गृह प्रवेश", "सीमंतम", "अक्षराभ्यास", "विवाह मुहूर्त", "मुहूर्त कैसे"]
+        "en": [
+          "subha muhurtham",
+          "shubh muhurat",
+          "grihapravesam",
+          "griha pravesh",
+          "housewarming",
+          "seemantham",
+          "aksharabhyasam",
+          "vivaha muhurtham",
+          "how is muhurtham chosen",
+          "muhurtham chosen"
+        ],
+        "ta": [
+          "சுப முகூர்த்தம்",
+          "சுப முஹூர்த்தம்",
+          "கிரகப்பிரவேசம்",
+          "புதுமனை புகுவிழா",
+          "சீமந்தம்",
+          "அட்சராப்யாசம்",
+          "முகூர்த்தம் எப்படி"
+        ],
+        "hi": [
+          "शुभ मुहूर्त",
+          "गृह प्रवेश",
+          "सीमंतम",
+          "अक्षराभ्यास",
+          "विवाह मुहूर्त",
+          "मुहूर्त कैसे"
+        ]
       },
       "source": [
-        { "id": "EN-09", "level": "book" },
-        { "id": "TA-12", "level": "book" },
-        { "id": "TA-14", "level": "book" },
-        { "id": "TA-25", "level": "content" }
+        {
+          "id": "REF-01",
+          "level": "content"
+        },
+        {
+          "id": "EN-09",
+          "level": "book"
+        },
+        {
+          "id": "TA-12",
+          "level": "book"
+        },
+        {
+          "id": "TA-14",
+          "level": "book"
+        },
+        {
+          "id": "TA-25",
+          "level": "content"
+        }
       ],
       "body": {
         "en": "According to Kalaprakasikai, Jothida Kalanchiyam, and Uttara Kalamrita, selecting a Subha Muhurtham (for wedding, Grihapravesam, naming, or starting a venture) filters five Panchanga limbs plus personal chart harmony: (1) clean Shukla/bright Tithi (avoiding Amavasya and Rikta/Ashtami-Navami Tithis for ceremonies); (2) supportive weekday (Mon, Wed, Thu, Fri); (3) auspicious Nakshatra matching the ceremony (Rohini, Mrigasira, Uttara Phalguni, Hasta, Swati, Anuradha, Uttara Ashadha, Shravana, Uttara Bhadrapada, Revati, etc.) with Siddha/Amirtha Yoga; (4) personal Tara Balam & Chandra Balam strictly avoiding Chandrashtama for both individuals; and (5) a clean Lagna window inside Nalla Neram outside Rahu Kalam and Yamagandam.",
@@ -326,14 +853,55 @@
       "id": "panchangam-vratam-observances",
       "category": "panchangam",
       "triggers": {
-        "en": ["ekadashi", "ekadasi", "pradosham", "pradosh", "sankatahara", "chaturthi", "skanda sashti", "kanda sashti", "sashti", "amavasya", "amavasai", "pournami", "purnima"],
-        "ta": ["ஏகாதசி", "பிரதோஷம்", "சங்கடஹர சதுர்த்தி", "சதுர்த்தி", "சஷ்டி", "கந்த சஷ்டி", "அமாவாசை", "பௌர்ணமி"],
-        "hi": ["एकादशी", "प्रदोष", "संकष्टी चतुर्थी", "चतुर्थी", "षष्ठी", "स्कंद षष्ठी", "अमावस्या", "पूर्णिमा"]
+        "en": [
+          "ekadashi",
+          "ekadasi",
+          "pradosham",
+          "pradosh",
+          "sankatahara",
+          "chaturthi",
+          "skanda sashti",
+          "kanda sashti",
+          "sashti",
+          "amavasya",
+          "amavasai",
+          "pournami",
+          "purnima"
+        ],
+        "ta": [
+          "ஏகாதசி",
+          "பிரதோஷம்",
+          "சங்கடஹர சதுர்த்தி",
+          "சதுர்த்தி",
+          "சஷ்டி",
+          "கந்த சஷ்டி",
+          "அமாவாசை",
+          "பௌர்ணமி"
+        ],
+        "hi": [
+          "एकादशी",
+          "प्रदोष",
+          "संकष्टी चतुर्थी",
+          "चतुर्थी",
+          "षष्ठी",
+          "स्कंद षष्ठी",
+          "अमावस्या",
+          "पूर्णिमा"
+        ]
       },
       "source": [
-        { "id": "TA-07", "level": "book" },
-        { "id": "TA-12", "level": "book" },
-        { "id": "TA-14", "level": "book" }
+        {
+          "id": "TA-07",
+          "level": "book"
+        },
+        {
+          "id": "TA-12",
+          "level": "book"
+        },
+        {
+          "id": "TA-14",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "Traditional lunar tithi observances (Vratams) in Tamil & Vedic practice (observe fasting only as health comfortably allows): • Ekadashi (11th tithi): Maha Vishnu prayer, mental clarity, and disciplined habits; • Pradosham (13th tithi twilight, ~4:30-6:00 PM): Lord Shiva & Nandi worship to quiet karmic turbulence and Saturn/Moon strain; • Sankatahara Chaturthi (waning 4th tithi moonrise): Lord Vinayagar prayer for clearing obstacles and Ketu steadiness; • Sashti (6th tithi): Lord Murugan prayer for courage and Mars balance; • Amavasya (New Moon): ancestral tarpanam and annadhanam; • Pournami (Full Moon): Goddess Amman / Satyanarayana lamp worship for family harmony.",
@@ -346,16 +914,85 @@
       "category": "matching",
       "poruthamKey": "all",
       "triggers": {
-        "en": ["10 porutham", "ten porutham", "poruthams", "porutham", "rajju", "dina porutham", "gana porutham", "mahendra porutham", "stree deergha", "yoni porutham", "rasi porutham", "rasiyathipathi", "rasiyadhipathi", "vasya porutham", "vasiya porutham", "vedha porutham", "nadi koota", "ashtakoota", "guna milan"],
-        "ta": ["10 பொருத்தம்", "பத்து பொருத்தம்", "பொருத்தங்கள்", "ரஜ்ஜு", "தினப் பொருத்தம்", "தின பொருத்தம்", "கணப் பொருத்தம்", "கண பொருத்தம்", "மகேந்திர", "ஸ்திரீ தீர்க்க", "யோனி பொருத்தம்", "ராசி பொருத்தம்", "ராசியாதிபதி", "வசிய பொருத்தம்", "வேதை", "நாடி பொருத்தம்"],
-        "hi": ["दस पोरुत्तम", "10 पोरुत्तम", "पोरुत्तम", "रज्जु", "दिन पोरुत्तम", "गण मिलान", "महेंद्र पोरुत्तम", "स्त्री दीर्घ", "योनि मिलान", "राशि मिलान", "राशिपति", "वश्य", "वेध", "नाड़ी दोष", "अष्टकूट", "गुण मिलान"]
+        "en": [
+          "10 porutham",
+          "ten porutham",
+          "poruthams",
+          "porutham",
+          "rajju",
+          "dina porutham",
+          "gana porutham",
+          "mahendra porutham",
+          "stree deergha",
+          "yoni porutham",
+          "rasi porutham",
+          "rasiyathipathi",
+          "rasiyadhipathi",
+          "vasya porutham",
+          "vasiya porutham",
+          "vedha porutham",
+          "nadi koota",
+          "ashtakoota",
+          "guna milan"
+        ],
+        "ta": [
+          "10 பொருத்தம்",
+          "பத்து பொருத்தம்",
+          "பொருத்தங்கள்",
+          "ரஜ்ஜு",
+          "தினப் பொருத்தம்",
+          "தின பொருத்தம்",
+          "கணப் பொருத்தம்",
+          "கண பொருத்தம்",
+          "மகேந்திர",
+          "ஸ்திரீ தீர்க்க",
+          "யோனி பொருத்தம்",
+          "ராசி பொருத்தம்",
+          "ராசியாதிபதி",
+          "வசிய பொருத்தம்",
+          "வேதை",
+          "நாடி பொருத்தம்"
+        ],
+        "hi": [
+          "दस पोरुत्तम",
+          "10 पोरुत्तम",
+          "पोरुत्तम",
+          "रज्जु",
+          "दिन पोरुत्तम",
+          "गण मिलान",
+          "महेंद्र पोरुत्तम",
+          "स्त्री दीर्घ",
+          "योनि मिलान",
+          "राशि मिलान",
+          "राशिपति",
+          "वश्य",
+          "वेध",
+          "नाड़ी दोष",
+          "अष्टकूट",
+          "गुण मिलान"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "TA-06", "level": "book" },
-        { "id": "TA-13", "level": "book" },
-        { "id": "TA-14", "level": "book" },
-        { "id": "TA-19", "level": "book" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-06",
+          "level": "book"
+        },
+        {
+          "id": "TA-13",
+          "level": "book"
+        },
+        {
+          "id": "TA-14",
+          "level": "book"
+        },
+        {
+          "id": "TA-19",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "Tamil Marriage Compatibility evaluates the Ten Poruthams (plus Sevvai Dosha balance & Dasha Sandhi) alongside the 36-point Koota score: (1) Dina (health & daily vitality), (2) Gana — Deva/Manushya/Rakshasa temperament harmony, (3) Mahendra (progeny & family growth), (4) Stree Deergha (long-term wellbeing & prosperity), (5) Yoni (mutual closeness & compatibility), (6) Rasi (Moon-sign distance between couple, 7th-to-7th Saptama being prime), (7) Rasiyathipathi (friendship of the two Rasi lords), (8) Vasya (natural affection), (9) Rajju — the paramount longevity/mangalya check ensuring both stars do not collide on the same body-group cord (Pada, Kati, Nabhi, Kanta, Siro, with Arohana-Avarohana distinction), and (10) Vedha — verifying the two birth stars do not mutually afflict each other (and Nadi in the 36-point system checks physiological balance). Attach your Wedding Matching report above to read your exact pair score and table.",
@@ -368,39 +1005,138 @@
       "category": "fundamentals",
       "fundamentalKey": "chart",
       "triggers": {
-        "en": ["what is lagna", "ascendant", "12 rasis", "twelve rasis", "12 zodiac", "27 nakshatras", "twenty seven nakshatras", "birth stars", "navamsa", "navamsha", "d9 chart", "vargottama", "vimshottari", "mahadasha years", "baby name starting", "starting letter", "janma pada", "namakaranam", "namakaran"],
-        "ta": ["லக்னம் என்றால்", "12 ராசி", "பன்னிரண்டு ராசி", "27 நட்சத்திர", "இருபத்தேழு நட்சத்திர", "நவாம்சம்", "வர்கோத்தமம்", "விம்சோத்தரி", "தசா வருட", "குழந்தை பெயர் எழுத்து", "நாமகரணம்", "நட்சத்திர பாதம்"],
-        "hi": ["लग्न क्या", "12 राशि", "बारह राशि", "27 नक्षत्र", "सत्ताईस नक्षत्र", "नवांश", "वर्गोत्तम", "विंशोत्तरी", "महादशा वर्ष", "नाम का पहला अक्षर", "नामकरण", "जन्म पाद"]
+        "en": [
+          "what is lagna",
+          "ascendant",
+          "12 rasis",
+          "twelve rasis",
+          "12 zodiac",
+          "27 nakshatras",
+          "twenty seven nakshatras",
+          "birth stars",
+          "navamsa",
+          "navamsha",
+          "d9 chart",
+          "vargottama",
+          "vimshottari",
+          "mahadasha years",
+          "baby name starting",
+          "starting letter",
+          "janma pada",
+          "namakaranam",
+          "namakaran"
+        ],
+        "ta": [
+          "லக்னம் என்றால்",
+          "12 ராசி",
+          "பன்னிரண்டு ராசி",
+          "27 நட்சத்திர",
+          "இருபத்தேழு நட்சத்திர",
+          "நவாம்சம்",
+          "வர்கோத்தமம்",
+          "விம்சோத்தரி",
+          "தசா வருட",
+          "குழந்தை பெயர் எழுத்து",
+          "நாமகரணம்",
+          "நட்சத்திர பாதம்"
+        ],
+        "hi": [
+          "लग्न क्या",
+          "12 राशि",
+          "बारह राशि",
+          "27 नक्षत्र",
+          "सत्ताईस नक्षत्र",
+          "नवांश",
+          "वर्गोत्तम",
+          "विंशोत्तरी",
+          "महादशा वर्ष",
+          "नाम का पहला अक्षर",
+          "नामकरण",
+          "जन्म पाद"
+        ]
       },
       "source": [
-        { "id": "EN-01", "level": "book" },
-        { "id": "EN-02", "level": "chapter", "note": "Adhyaya I & III - rasi, lagna and navamsa basics." },
-        { "id": "TA-01", "level": "book" },
-        { "id": "TA-06", "level": "book" },
-        { "id": "TA-11", "level": "book" },
-        { "id": "TA-13", "level": "book" }
+        {
+          "id": "EN-01",
+          "level": "book"
+        },
+        {
+          "id": "EN-02",
+          "level": "chapter",
+          "note": "Adhyaya I & III - rasi, lagna and navamsa basics."
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        },
+        {
+          "id": "TA-06",
+          "level": "book"
+        },
+        {
+          "id": "TA-11",
+          "level": "book"
+        },
+        {
+          "id": "TA-13",
+          "level": "book"
+        }
       ],
       "body": {
-        "en": "Core structure of your Vedic & Tamil horoscope: • Lagna (Ascendant) is the sign rising on the eastern horizon at your exact birth minute and place — setting all 12 houses of life; • Janma Rasi (12 signs: Mesha/Mars, Vrishabha/Venus, Mithuna/Mercury, Kataka/Moon, Simha/Sun, Kanya/Mercury, Tula/Venus, Vrischika/Mars, Dhanu/Jupiter, Makara/Saturn, Kumbha/Saturn, Meena/Jupiter) is your Moon sign; • Janma Nakshatra divides the zodiac into 27 stars × 4 Padas = 108 syllables (used directly for Namakaranam baby naming sounds in Nakshatra Chinthamani); • Navamsa (D9) splits each 30° sign into nine 3°20' parts (= 1 Nakshatra Pada each!) to reveal inner planetary fruitfulness, marriage harmony, and Vargottama strength (same sign in Rasi & Navamsa); • Vimshottari Mahadasha runs a 120-year sequence from your birth star lord: Ketu (7y), Venus/Sukra (20y), Sun/Surya (6y), Moon/Chandra (10y), Mars/Sevvai (7y), Rahu (18y), Jupiter/Guru (16y), Saturn/Sani (19y), Mercury/Budha (17y).",
-        "ta": "வேத மற்றும் தமிழ் ஜாதகத்தின் அடிப்படைக் கட்டமைப்பு: • லக்னம் (உதய ராசி): நீங்கள் பிறந்த துல்லிய நிமிடம் மற்றும் ஊரில் கிழக்குத் தொடுவானில் உதித்த ராசி — இதுவே 12 பாவங்களையும் தீர்மானிக்கிறது; • ஜன்ம ராசி (12 ராசிகள்: மேஷம்-செவ்வாய், ரிஷபம்-சுக்கிரன், மிதுனம்-புதன், கடகம்-சந்திரன், சிம்மம்-சூரியன், கன்னி-புதன், துலாம்-சுக்கிரன், விருச்சிகம்-செவ்வாய், தனுசு-குரு, மகரம்-சனி, கும்பம்-சனி, மீனம்-குரு): சந்திரன் நின்ற ராசி; • ஜன்ம நட்சத்திரம்: 27 நட்சத்திரங்கள் × தலா 4 பாதங்கள் = 108 பாத எழுத்துகள் (நட்சத்திர சிந்தாமணி முறைப்படி குழந்தை பெயர் முதல் எழுத்தைத் தீர்மானிக்கிறது); • நவாம்சம் (D9): ஒவ்வொரு ராசியையும் 9 கூறுகளாகப் பிரித்து (ஒரு நட்சத்திர பாதத்திற்கு ஒரு நவாம்சம்) கிரகத்தின் உண்மை பலம், திருமண நலம் மற்றும் வர்கோத்தம பலத்தைக் (ராசி-நவாம்சம் ஒரே வீடு) காட்டுகிறது; • விம்சோத்தரி மகாதசை (120 ஆண்டு வரிசை): கேது (7), சுக்கிரன் (20), சூரியன் (6), சந்திரன் (10), செவ்வாய் (7), ராகு (18), குரு (16), சனி (19), புதன் (17) ஆண்டுகள்.",
-        "hi": "वैदिक एवं तमिल जन्म कुंडली की मूल संरचना: • लग्न: जन्म के सटीक समय व स्थान पर पूर्वी क्षितिज में उदित राशि, जिससे जीवन के सभी 12 भाव तय होते हैं; • जन्म राशि (12 राशियाँ: मेष-मंगल, वृषभ-शुक्र, मिथुन-बुध, कर्क-चंद्र, सिंह-सूर्य, कन्या-बुध, तुला-शुक्र, वृश्चिक-मंगल, धनु-गुरु, मकर-शनि, कुंभ-शनि, मीन-गुरु): चंद्रमा की राशि; • जन्म नक्षत्र: 27 नक्षत्र × 4 पाद = 108 अक्षर-पाद, जिनसे नामकरण के पारंपरिक प्रारंभिक अक्षर निकलते हैं; • नवांश कुंडली (D9): प्रत्येक राशि का नवम विभाजन (3°20' = एक नक्षत्र पाद), जो ग्रहों की भीतरी फल-क्षमता, वैवाहिक सामंजस्य और वर्गोत्तम बल (राशि व नवांश में एक ही राशि) दिखाता है; • विंशोत्तरी महादशा (120 वर्ष क्रम): केतु (7), शुक्र (20), सूर्य (6), चंद्र (10), मंगल (7), राहु (18), गुरु (16), शनि (19), बुध (17) वर्ष।"
+        "en": "Core structure of your Vedic & Tamil horoscope: • Lagna (Ascendant) is the sign rising on the eastern horizon at your exact birth minute and place — setting all 12 houses of life; • Janma Rasi (12 signs: Mesha/Mars, Vrishabha/Venus, Mithuna/Mercury, Kataka/Moon, Simha/Sun, Kanya/Mercury, Tula/Venus, Vrischika/Mars, Dhanu/Jupiter, Makara/Saturn, Kumbha/Saturn, Meena/Jupiter) is your Moon sign; • Janma Nakshatra divides the zodiac into 27 stars x 4 Padas = 108 syllables (used directly for Namakaranam baby naming sounds in Nakshatra Chinthamani); • Navamsa (D9) splits each 30° sign into nine 3°20' parts (= 1 Nakshatra Pada each!) to reveal inner planetary fruitfulness, marriage harmony, and Vargottama strength (same sign in Rasi & Navamsa); • Vimshottari Mahadasha runs a 120-year sequence from your birth star lord: Ketu (7y), Venus/Sukra (20y), Sun/Surya (6y), Moon/Chandra (10y), Mars/Sevvai (7y), Rahu (18y), Jupiter/Guru (16y), Saturn/Sani (19y), Mercury/Budha (17y).",
+        "ta": "வேத மற்றும் தமிழ் ஜாதகத்தின் அடிப்படைக் கட்டமைப்பு: • லக்னம் (உதய ராசி): நீங்கள் பிறந்த துல்லிய நிமிடம் மற்றும் ஊரில் கிழக்குத் தொடுவானில் உதித்த ராசி — இதுவே 12 பாவங்களையும் தீர்மானிக்கிறது; • ஜன்ம ராசி (12 ராசிகள்: மேஷம்-செவ்வாய், ரிஷபம்-சுக்கிரன், மிதுனம்-புதன், கடகம்-சந்திரன், சிம்மம்-சூரியன், கன்னி-புதன், துலாம்-சுக்கிரன், விருச்சிகம்-செவ்வாய், தனுசு-குரு, மகரம்-சனி, கும்பம்-சனி, மீனம்-குரு): சந்திரன் நின்ற ராசி; • ஜன்ம நட்சத்திரம்: 27 நட்சத்திரங்கள் x தலா 4 பாதங்கள் = 108 பாத எழுத்துகள் (நட்சத்திர சிந்தாமணி முறைப்படி குழந்தை பெயர் முதல் எழுத்தைத் தீர்மானிக்கிறது); • நவாம்சம் (D9): ஒவ்வொரு ராசியையும் 9 கூறுகளாகப் பிரித்து (ஒரு நட்சத்திர பாதத்திற்கு ஒரு நவாம்சம்) கிரகத்தின் உண்மை பலம், திருமண நலம் மற்றும் வர்கோத்தம பலத்தைக் (ராசி-நவாம்சம் ஒரே வீடு) காட்டுகிறது; • விம்சோத்தரி மகாதசை (120 ஆண்டு வரிசை): கேது (7), சுக்கிரன் (20), சூரியன் (6), சந்திரன் (10), செவ்வாய் (7), ராகு (18), குரு (16), சனி (19), புதன் (17) ஆண்டுகள்.",
+        "hi": "वैदिक एवं तमिल जन्म कुंडली की मूल संरचना: • लग्न: जन्म के सटीक समय व स्थान पर पूर्वी क्षितिज में उदित राशि, जिससे जीवन के सभी 12 भाव तय होते हैं; • जन्म राशि (12 राशियाँ: मेष-मंगल, वृषभ-शुक्र, मिथुन-बुध, कर्क-चंद्र, सिंह-सूर्य, कन्या-बुध, तुला-शुक्र, वृश्चिक-मंगल, धनु-गुरु, मकर-शनि, कुंभ-शनि, मीन-गुरु): चंद्रमा की राशि; • जन्म नक्षत्र: 27 नक्षत्र x 4 पाद = 108 अक्षर-पाद, जिनसे नामकरण के पारंपरिक प्रारंभिक अक्षर निकलते हैं; • नवांश कुंडली (D9): प्रत्येक राशि का नवम विभाजन (3°20' = एक नक्षत्र पाद), जो ग्रहों की भीतरी फल-क्षमता, वैवाहिक सामंजस्य और वर्गोत्तम बल (राशि व नवांश में एक ही राशि) दिखाता है; • विंशोत्तरी महादशा (120 वर्ष क्रम): केतु (7), शुक्र (20), सूर्य (6), चंद्र (10), मंगल (7), राहु (18), गुरु (16), शनि (19), बुध (17) वर्ष।"
       }
     },
     {
       "id": "fundamentals-navagraha-temples",
       "category": "temples",
       "triggers": {
-        "en": ["9 navagraha", "nine navagraha", "navagraha temples", "navagraha sthalams", "navagraha sthalam", "all navagraha"],
-        "ta": ["நவக்கிரக ஸ்தல", "நவக்கிரக கோயில்", "ஒன்பது நவக்கிரக", "9 நவக்கிரக"],
-        "hi": ["नवग्रह मंदिर", "नवग्रह स्थल", "नौ नवग्रह"]
+        "en": [
+          "9 navagraha",
+          "nine navagraha",
+          "navagraha temples",
+          "navagraha sthalams",
+          "navagraha sthalam",
+          "all navagraha"
+        ],
+        "ta": [
+          "நவக்கிரக ஸ்தல",
+          "நவக்கிரக கோயில்",
+          "ஒன்பது நவக்கிரக",
+          "9 நவக்கிரக"
+        ],
+        "hi": [
+          "नवग्रह मंदिर",
+          "नवग्रह स्थल",
+          "नौ नवग्रह"
+        ]
       },
       "source": [
-        { "id": "TP-01", "level": "content" },
-        { "id": "TP-03", "level": "content" },
-        { "id": "TP-04", "level": "content" },
-        { "id": "TP-08", "level": "content" },
-        { "id": "TA-07", "level": "book" },
-        { "id": "TA-08", "level": "book" }
+        {
+          "id": "TP-01",
+          "level": "content"
+        },
+        {
+          "id": "TP-03",
+          "level": "content"
+        },
+        {
+          "id": "TP-04",
+          "level": "content"
+        },
+        {
+          "id": "TP-08",
+          "level": "content"
+        },
+        {
+          "id": "TA-07",
+          "level": "book"
+        },
+        {
+          "id": "TA-08",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "The classical Nine Kaveri Delta Navagraha Parihara Sthalams of Tamil Nadu: (1) Surya (Sun): Suryanar Kovil, Aduthurai (also houses all 9 shrines together); (2) Chandra (Moon): Kailasanathar Temple, Thingalur; (3) Sevvai / Angaraka (Mars): Vaitheeswaran Kovil; (4) Budha (Mercury): Swetharanyeswarar Temple, Thiruvenkadu; (5) Guru (Jupiter): Apatsahayeswarar Temple, Alangudi; (6) Sukra (Venus): Agneeswarar Temple, Kanjanur; (7) Sani (Saturn): Dharbaranyeswarar Temple, Thirunallar; (8) Rahu: Naganathaswamy Temple, Thirunageswaram; (9) Ketu: Naganathaswamy Temple, Keezhaperumpallam.",
@@ -412,15 +1148,45 @@
       "id": "fundamentals-panchapakshi-nadi",
       "category": "traditions",
       "triggers": {
-        "en": ["panchapakshi", "pancha pakshi", "nadi astrology", "nadi jothidam", "saptarishi nadi", "sukra nadi"],
-        "ta": ["பஞ்சபட்சி", "பஞ்ச பட்சி", "நாடி ஜோதிடம்", "சப்தரிஷி நாடி", "சுக்ர நாடி"],
-        "hi": ["पंचपक्षी", "नाड़ी ज्योतिष", "सप्तर्षि नाड़ी", "शुक्र नाड़ी"]
+        "en": [
+          "panchapakshi",
+          "pancha pakshi",
+          "nadi astrology",
+          "nadi jothidam",
+          "saptarishi nadi",
+          "sukra nadi"
+        ],
+        "ta": [
+          "பஞ்சபட்சி",
+          "பஞ்ச பட்சி",
+          "நாடி ஜோதிடம்",
+          "சப்தரிஷி நாடி",
+          "சுக்ர நாடி"
+        ],
+        "hi": [
+          "पंचपक्षी",
+          "नाड़ी ज्योतिष",
+          "सप्तर्षि नाड़ी",
+          "शुक्र नाड़ी"
+        ]
       },
       "source": [
-        { "id": "TA-16", "level": "book" },
-        { "id": "TA-18", "level": "book" },
-        { "id": "TA-19", "level": "book" },
-        { "id": "TA-01", "level": "book" }
+        {
+          "id": "TA-16",
+          "level": "book"
+        },
+        {
+          "id": "TA-18",
+          "level": "book"
+        },
+        {
+          "id": "TA-19",
+          "level": "book"
+        },
+        {
+          "id": "TA-01",
+          "level": "book"
+        }
       ],
       "body": {
         "en": "Tamil Jyotisha preserves parallel streams alongside Parashari calculation: Bogar Munivar Panchapakshi Sastram assigns five sacred birds (Vulture, Owl, Crow, Cock, Peacock) by birth star and lunar paksha across five daily states (Rule, Eat, Walk, Sleep, Decline), while Saptarishi Anubhoga Jathaka Rahasyam and Sukranadi interpret planetary combinations through experiential Tamil nadi sutras. Note clearly that ASTRO SIVAM reports calculate charts strictly from astronomical sidereal Lahiri (Chitra Paksha) Parashari rules rather than Panchapakshi or palm-leaf nadi bundles.",
@@ -431,11 +1197,27 @@
   ],
   "bhavas": {
     "source": [
-      { "id": "EN-01", "level": "book" },
-      { "id": "EN-02", "level": "chapter", "note": "Adhyaya I & V - twelve bhavas and their results." },
-      { "id": "EN-06", "level": "book" },
-      { "id": "TA-01", "level": "book" },
-      { "id": "TA-02", "level": "book" }
+      {
+        "id": "EN-01",
+        "level": "book"
+      },
+      {
+        "id": "EN-02",
+        "level": "chapter",
+        "note": "Adhyaya I & V - twelve bhavas and their results."
+      },
+      {
+        "id": "EN-06",
+        "level": "book"
+      },
+      {
+        "id": "TA-01",
+        "level": "book"
+      },
+      {
+        "id": "TA-02",
+        "level": "book"
+      }
     ],
     "overview": {
       "en": "The 12 Bhavas (astrological houses) map every sphere of life starting from your Lagna: 1st Tanu (self, vitality, constitution), 2nd Dhana/Kutumba/Vak (savings, family, speech), 3rd Sahaja (courage, siblings, effort), 4th Sukha/Bandhu (mother, home, land, vehicles, peace), 5th Putra/Vidya (intellect, children, past merit), 6th Ripu/Roga/Rina (daily service, competition, debts, recovery — consult a qualified doctor for medical concerns), 7th Kalatra (marriage, spouse, partnerships), 8th Randhra (longevity factors, sudden shifts, deep research), 9th Dharma/Bhagya (fortune, father, mentors, higher learning), 10th Karma (career, authority, public duty), 11th Labha (gains, income, elder siblings), and 12th Vyaya/Moksha (expenses, sleep, charity, foreign residence). Houses 1,4,7,10 are Kendras; 1,5,9 are Trikonas; 3,6,10,11 are Upachayas; and 6,8,12 are Dusthanas.",
@@ -507,11 +1289,27 @@
   },
   "grahas": {
     "source": [
-      { "id": "EN-01", "level": "book" },
-      { "id": "EN-02", "level": "chapter", "note": "Adhyaya II - graha characteristics and significations." },
-      { "id": "TA-01", "level": "book" },
-      { "id": "TA-05", "level": "book" },
-      { "id": "TA-08", "level": "book" }
+      {
+        "id": "EN-01",
+        "level": "book"
+      },
+      {
+        "id": "EN-02",
+        "level": "chapter",
+        "note": "Adhyaya II - graha characteristics and significations."
+      },
+      {
+        "id": "TA-01",
+        "level": "book"
+      },
+      {
+        "id": "TA-05",
+        "level": "book"
+      },
+      {
+        "id": "TA-08",
+        "level": "book"
+      }
     ],
     "profiles": {
       "Surya": {

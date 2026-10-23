@@ -254,8 +254,8 @@ export const aiAstrologer = {
     ping: { attempted: boolean; ok: boolean; httpStatus: number; latencyMs: number; error: string };
     sourceRegistry?: {
       total: number;
-      excluded: number;
       citableTamil: number;
+      byLanguage?: Record<string, number>;
       byVerification: Record<string, number>;
     };
     recentMessages: {
@@ -265,28 +265,6 @@ export const aiAstrologer = {
     generatedAt: string;
   }> {
     return call('diagnose', {}, 'GET', 40000);
-  },
-
-  /** Attaches an ASTRO SIVAM report PDF. The server proves ownership. */
-  async uploadReport(sessionId: string, file: File): Promise<{
-    orderNumber: string; serviceType: string | null; reportType: string | null;
-    sections: { id: string; title: string; page: number }[];
-  }> {
-    const form = new FormData();
-    form.append('sessionId', sessionId);
-    form.append('report', file);
-
-    const res = await fetch(`${ENDPOINT}?action=upload`, {
-      method: 'POST',
-      credentials: 'include',
-      // No Content-Type header: the browser must set the multipart boundary.
-      body: form,
-    });
-    const data = await safeJson<any>(res);
-    if (!res.ok || data?.success === false) {
-      throw new AiAstrologerError(res.status, data);
-    }
-    return data;
   },
 
   async requestHandoff(sessionId: string | null, question: string, language: ChatLanguage, reason = 'requested') {

@@ -33,11 +33,8 @@ const kb = JSON.parse(fs.readFileSync(KB('rules/report-sections.json'), 'utf8'))
 setReportSections(kb);
 
 const registry = JSON.parse(fs.readFileSync(KB('sources.json'), 'utf8'));
-const knownIds = new Set<string>([
-  ...registry.sources.map((s: any) => s.id),
-  ...registry.excludedSources.map((s: any) => s.id),
-]);
-const excludedIds = new Set<string>(registry.excludedSources.map((s: any) => s.id));
+const knownIds = new Set<string>(registry.sources.map((s: any) => s.id));
+const excludedIds = new Set<string>((registry.excludedSources ?? []).map((s: any) => s.id));
 
 const MAX = 8 * 1024 * 1024;
 

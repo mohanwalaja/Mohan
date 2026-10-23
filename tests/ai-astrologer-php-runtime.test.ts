@@ -71,9 +71,10 @@ check('the runtime reports local-only mode with no blocking setup issue', () => 
   assert.match(out.externalCompletionError, /disabled/i);
 });
 
-check('runtime diagnostics expose the current catalogue size without implying full-text search', () => {
-  assert.equal(out.sourceRegistry.total, 224);
-  assert.equal(out.sourceRegistry.excluded, 13);
+check('runtime diagnostics expose the cleaned 39-source registry with zero Hindi books', () => {
+  assert.equal(out.sourceRegistry.total, 39);
+  assert.equal('excluded' in out.sourceRegistry, false);
+  assert.equal(out.sourceRegistry.citableTamil, 31);
   assert.equal(out.sourceRegistry.byVerification['content-read'], 11);
 });
 
@@ -136,8 +137,8 @@ check('a personal answer includes the customer\'s rebuilt report reading', () =>
 check('reviewed rule cards that fire carry an eligible Tamil reference', () => {
   assert.ok(coverage.cardsFired >= 8, `expected the coverage probe to fire all cards, got ${coverage.cardsFired}`);
   assert.equal(coverage.cardsCited, coverage.cardsFired);
-  assert.ok(coverage.citableCount > 100, `only ${coverage.citableCount} Tamil catalogue records are citation-eligible`);
-  assert.ok(coverage.registryCount === 224);
+  assert.equal(coverage.citableCount, 31, `expected 31 verified Tamil citations, got ${coverage.citableCount}`);
+  assert.equal(coverage.registryCount, 39);
 });
 
 check('English-only source editions are not emitted as Tamil customer citations', () => {

@@ -47,11 +47,11 @@ export const AiAstrologerConfigPanel: React.FC = () => {
         </div>
 
         <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
-          <strong>About the 224-source library:</strong> the current registry contains 224 source records, but it is a
-          catalogue, not 224 complete books. Only 11 records are marked content-read; many entries contain verified
-          bibliographic metadata rather than full text, and linked-not-opened items are not used as authorities. Replies
-          use the local curated rule and remedy content and cite eligible sources. To search every book&apos;s actual text,
-          the full rights-cleared PDF/EPUB/TXT files must first be added to a local index.
+          <strong>Verified 39-source library (0 Hindi books · 0 unverified links):</strong> every record in the active
+          registry is cited directly by our curated chart rules or astronomical engine — 31 Tamil classical &amp;
+          Navagraha Sthalam references plus 8 foundational Sanskrit/English calculation &amp; structural works (11
+          marked content-read, 27 metadata-verified, 1 catalogue-verified). Catalogue records are bibliographic
+          authorities rather than full-text book dumps, and customer-facing source footers cite verified Tamil references only.
         </div>
 
         <button
@@ -83,14 +83,14 @@ export const AiAstrologerConfigPanel: React.FC = () => {
           {registry && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                ['Catalogue records', registry.total],
+                ['Verified sources', registry.total],
                 ['Eligible Tamil references', registry.citableTamil],
                 ['Text-read records', verification?.['content-read'] ?? 0],
-                ['Excluded from catalogue', registry.excluded],
+                ['Metadata-verified', (verification?.['metadata-verified'] ?? 0) + (verification?.['catalogue-verified'] ?? 0)],
               ].map(([label, value]) => (
                 <div key={String(label)} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-700">
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                    {label === 'Catalogue records' ? <Database className="h-3 w-3" /> : null}
+                    {label === 'Verified sources' ? <Database className="h-3 w-3" /> : null}
                     {label}
                   </div>
                   <div className="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">{value}</div>

@@ -83,14 +83,12 @@ check('the output guard rejects any non-Tamil or unverified source id', () => {
   assert.match(guard, /isCitableId\(\$cited\)/, 'guard must check each id against the citable set');
 });
 
-check('the old prompt is archived and not part of the active local reply path', () => {
-  const md = read('knowledge/ai-astrologer/prompt/system-prompt.md');
+check('the archived prompt draft and prompt helpers are completely removed', () => {
+  assert.equal(fs.existsSync(path.join(projectRoot, 'knowledge/ai-astrologer/prompt/system-prompt.md')), false);
+  assert.equal(fs.existsSync(path.join(projectRoot, 'api/knowledge/ai-astrologer/prompt/system-prompt.md')), false);
   const provider = read('api/astrology/ai_astrologer_provider.php');
   const endpoint = read('api/ai_astrologer.php');
-  assert.match(md, /Archived prompt draft — not used by the current reply path/);
-  assert.match(md, /not sent to an AI model/);
-  const answer = provider.slice(provider.indexOf('public static function answer('), provider.indexOf('/** At most three affordable remedies'));
-  assert.doesNotMatch(answer, /systemPrompt|fillPrompt|complete\(/);
+  assert.doesNotMatch(provider, /PROMPT_PATH|systemPrompt|fillPrompt/);
   assert.match(endpoint, /AstroAiProvider::answerFromKnowledgeBase\(/);
 });
 

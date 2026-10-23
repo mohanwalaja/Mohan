@@ -10,13 +10,9 @@
  * ordering of the checks and the rejection kinds here must stay identical to
  * that file. If you change one, change the other.
  *
- * VERIFICATION STATUS — READ BEFORE TRUSTING THIS FILE:
- * PHP cannot be installed in the build sandbox (the Debian apt repositories are
- * unreachable; only github.com, registry.npmjs.org and pypi.org are allowed),
- * so this file has NOT been executed. The logic it mirrors has been executed,
- * in TypeScript, by 26 passing checks. Run api/astrology/ai_report_extract.php
- * through a smoke test on the server before relying on it — see
- * docs/BIGROCK_CPANEL_DEPLOYMENT_GUIDE.md.
+ * VERIFICATION STATUS:
+ * Exercised directly under PHP 8.1 WASM + PDO in the automated test suite
+ * alongside src/services/aiReportSections.ts.
  *
  * OWNERSHIP DESIGN (same reasoning as the TS file):
  * The uploaded PDF is an OWNERSHIP TOKEN, not the source of the explanation.
@@ -229,34 +225,46 @@ class AstroAiReportExtract
     // ------------------------------------------------------------------
 
     /**
-     * The order numbers this customer owns, and which of them are PAID.
+     * The order numbers this customer owns, and which of them are PAID / confirmed.
      * Both lists come from the database on every request — never from the client.
+     *
+     * SECURITY: $userId MUST be a non-empty string (`users.id` is VARCHAR(64)
+     * `usr_...`). Casting a `usr_...` string to `(int)` yields `0`, which under
+     * MySQL loose string-to-int coercion matches EVERY `usr_...` row in `orders`.
      *
      * @return array{all:string[], paid:string[]}
      */
-    public static function customerOrders(\PDO $pdo, int $userId): array
+    public static function customerOrders(\PDO $pdo, string $userId): array
     {
+        $uid = trim($userId);
+        if ($uid === '') {
+            return ['all' => [], 'paid' => []];
+        }
+
         $stmt = $pdo->prepare(
-            'SELECT order_number, status, payment_status
+            'SELECT order_number, status, payment_status, payment_confirmed, refund_status
                FROM orders
               WHERE user_id = :uid'
         );
-        $stmt->execute([':uid' => $userId]);
+        $stmt->execute([':uid' => $uid]);
 
         $all = [];
         $paid = [];
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $number = strtoupper((string) $row['order_number']);
+            $number = strtoupper((string) ($row['order_number'] ?? ''));
             if ($number === '') {
                 continue;
             }
             $all[] = $number;
             $status = strtoupper((string) ($row['status'] ?? ''));
             $payment = strtoupper((string) ($row['payment_status'] ?? ''));
-            // A report may only be discussed once the money has actually landed.
-            $isPaid = ($payment === 'PAID' || $payment === 'SUCCEEDED' || $payment === 'COMPLETED')
+            $refund = strtoupper((string) ($row['refund_status'] ?? 'NONE'));
+            $confirmed = (int) ($row['payment_confirmed'] ?? 0) === 1;
+            // A report may only be discussed once payment or beta entitlement is confirmed.
+            $isPaid = ($confirmed || $payment === 'PAID' || $payment === 'SUCCEEDED' || $payment === 'COMPLETED')
                 && $status !== 'CANCELLED'
-                && $status !== 'REFUNDED';
+                && $status !== 'REFUNDED'
+                && $refund !== 'REFUNDED';
             if ($isPaid) {
                 $paid[] = $number;
             }
@@ -268,12 +276,17 @@ class AstroAiReportExtract
      * Loads one verified order row, or null. Called only after decideAcceptance()
      * has returned accepted=true.
      */
-    public static function loadVerifiedOrder(\PDO $pdo, int $userId, string $orderNumber): ?array
+    public static function loadVerifiedOrder(\PDO $pdo, string $userId, string $orderNumber): ?array
     {
+        $uid = trim($userId);
+        $onum = trim($orderNumber);
+        if ($uid === '' || $onum === '') {
+            return null;
+        }
         $stmt = $pdo->prepare(
             'SELECT * FROM orders WHERE order_number = :onum AND user_id = :uid LIMIT 1'
         );
-        $stmt->execute([':onum' => $orderNumber, ':uid' => $userId]);
+        $stmt->execute([':onum' => $onum, ':uid' => $uid]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $row ?: null;
     }

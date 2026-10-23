@@ -422,4 +422,72 @@ VALUES
 ('tm_03', 'Jyothida Rathna K. Ramachandran', 'Vedic Ephemeris & Astronomical Systems Specialist', 'பஞ்சாங்க கணித ஜோதிட ரத்னா', 'Expert in Nirayana Surya Siddhanta ephemeris models, planetary latitudes, and precise Nakshatra Pada computations for global diaspora coordinates.', 'Chennai, Tamil Nadu, India', 24, '["Ephemeris Calculations", "Kundali Generation", "Baby Naming Syllables", "Panchangam"]', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop', 1, 3, '+91 98840 54321', 'ramachandran@astrosivam.com')
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 
+-- ============================================================================
+-- Local Source-Based Astrologer Chat Tables (007 + 014 consolidated)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS `ai_chat_sessions` (
+  `id` VARCHAR(64) NOT NULL PRIMARY KEY,
+  `user_id` VARCHAR(64) NOT NULL,
+  `title` VARCHAR(191) NOT NULL DEFAULT 'Chat with ASTRO SIVAM Astrologer',
+  `language` VARCHAR(8) NOT NULL DEFAULT 'en',
+  `order_id` VARCHAR(64) NULL,
+  `order_number` VARCHAR(32) NULL,
+  `service_type` VARCHAR(64) NULL,
+  `person_id` INT NULL,
+  `message_count` INT UNSIGNED NOT NULL DEFAULT 0,
+  `status` ENUM('ACTIVE', 'CLOSED') NOT NULL DEFAULT 'ACTIVE',
+  `last_message_at` DATETIME NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_ai_chat_sessions_user` (`user_id`, `status`),
+  INDEX `idx_ai_chat_sessions_order` (`order_id`),
+  INDEX `idx_ai_chat_sessions_last` (`last_message_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `ai_chat_messages` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `session_id` VARCHAR(64) NOT NULL,
+  `user_id` VARCHAR(64) NOT NULL,
+  `role` ENUM('customer', 'assistant', 'system', 'handoff') NOT NULL,
+  `language` VARCHAR(8) NOT NULL DEFAULT 'en',
+  `content` MEDIUMTEXT NOT NULL,
+  `area_id` VARCHAR(64) NULL,
+  `section_id` VARCHAR(64) NULL,
+  `sources` VARCHAR(255) NULL,
+  `status` ENUM('SAVED', 'SENT', 'FAILED', 'RETRIED') NOT NULL DEFAULT 'SAVED',
+  `attempt` TINYINT UNSIGNED NOT NULL DEFAULT 1,
+  `latency_ms` INT UNSIGNED NULL,
+  `error_message` VARCHAR(500) NULL,
+  `attachment_kind` VARCHAR(32) NULL,
+  `attachment_filename` VARCHAR(255) NULL,
+  `attachment_bytes` INT UNSIGNED NULL,
+  `attachment_order_number` VARCHAR(32) NULL,
+  `attachment_rejection` VARCHAR(32) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_ai_chat_messages_session` (`session_id`, `id`),
+  INDEX `idx_ai_chat_messages_user_time` (`user_id`, `created_at`),
+  INDEX `idx_ai_chat_messages_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `ai_chat_handoffs` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `session_id` VARCHAR(64) NULL,
+  `message_id` BIGINT UNSIGNED NULL,
+  `user_id` VARCHAR(64) NOT NULL,
+  `user_name` VARCHAR(191) NOT NULL,
+  `user_email` VARCHAR(191) NULL,
+  `user_mobile` VARCHAR(64) NULL,
+  `language` VARCHAR(8) NOT NULL DEFAULT 'en',
+  `question` TEXT NOT NULL,
+  `reason` VARCHAR(32) NOT NULL DEFAULT 'requested',
+  `order_number` VARCHAR(32) NULL,
+  `status` ENUM('NEW', 'ACKNOWLEDGED', 'RESOLVED') NOT NULL DEFAULT 'NEW',
+  `admin_notes` TEXT NULL,
+  `resolved_at` DATETIME NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_ai_chat_handoffs_status` (`status`, `created_at`),
+  INDEX `idx_ai_chat_handoffs_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

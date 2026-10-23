@@ -341,7 +341,6 @@ check('the panel can attach one of the customer reports, so the service chapters
 
 check('api/knowledge/ mirrors the runtime knowledge base and the panel falls back to bundled guided options', () => {
   const runtimeFiles = [
-    'ai-astrologer/prompt/system-prompt.md',
     'ai-astrologer/rules/astrology-encyclopedia.json',
     'ai-astrologer/rules/guardrails.json',
     'ai-astrologer/rules/guided-questions.json',

@@ -6,7 +6,7 @@
 # Security: Block direct web access to sensitive files (SQL, ENV, LOGS, LOCKS, INI, TMP, JSON).
 # NOTE: `json` is load-bearing here — without it, api/astrology/*.json rule
 # tables are fetchable directly (existing files bypass the RewriteConds below).
-<FilesMatch "\.(sql|env|log|lock|ini|conf|bak|sh|md|git|key|txt|map|cjs|json)$">
+<FilesMatch "\.(sql|env|log|lock|ini|conf|bak|sh|md|git|key|txt|map|cjs|py|pyc|json)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -27,10 +27,10 @@
     </IfModule>
 </FilesMatch>
 
-# Block direct web access to vendor, knowledge, staging storage, and migrations
+# Block direct web access to vendor, knowledge, staging storage, migrations, and internal astrology libraries
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^(vendor|knowledge|storage|migrations)(/.*)?$ - [F,L]
+    RewriteRule ^(vendor|knowledge|storage|migrations|astrology)(/.*)?$ - [F,L]
 </IfModule>
 
 # Block direct access to internal include-only PHP library files
@@ -117,10 +117,6 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^admin/(.*)$ admin/index.php [L,QSA]
-
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^astrology/(.*)$ astrology/index.php [L,QSA]
 
     # Payment provider webhooks (Razorpay / PayPal) — dedicated router. Provider
     # events must reach this handler even though it is not a "module" folder.

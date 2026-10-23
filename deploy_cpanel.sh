@@ -119,6 +119,14 @@ rm -f "$TARGET_DIR"/sitemap.xml.gz "$TARGET_DIR"/sitemap.xml.br \
 if [ -f "api/.htaccess" ]; then
   cp -f "api/.htaccess" "$TARGET_DIR/api/.htaccess"
 fi
+if [ -f "knowledge/.htaccess" ]; then
+  mkdir -p "$TARGET_DIR/knowledge"
+  cp -f "knowledge/.htaccess" "$TARGET_DIR/knowledge/.htaccess"
+fi
+if [ -f "api/knowledge/.htaccess" ]; then
+  mkdir -p "$TARGET_DIR/api/knowledge"
+  cp -f "api/knowledge/.htaccess" "$TARGET_DIR/api/knowledge/.htaccess"
+fi
 if [ -f "api/astrology/tmp/.htaccess" ]; then
   mkdir -p "$TARGET_DIR/api/astrology/tmp"
   cp -f "api/astrology/tmp/.htaccess" "$TARGET_DIR/api/astrology/tmp/.htaccess"
