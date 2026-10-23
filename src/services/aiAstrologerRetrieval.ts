@@ -397,17 +397,17 @@ export function formatCitation(src: RuleSource, lang: Lang): string {
  * sourced ones only; anything in neverOffer is not reachable from here because
  * it is not in the grahas list at all.
  */
-export function remediesFor(grahas: string[], max = 3) {
-  const all = getRemedies().grahas;
+export function remediesFor(grahas: string[], max = 3, lang: Lang = 'en') {
+  const all = getRemedies().grahas as any[];
   const picked = grahas.map((g) => all.find((x) => x.graha === g)).filter((x): x is NonNullable<typeof x> => !!x);
   return picked.slice(0, max).map((r) => ({
     graha: r.graha,
-    weekday: r.weekday,
-    mantra: r.mantra.simple,
-    temple: r.temple.name,
-    charity: r.charity,
+    weekday: r.weekdayI18n?.[lang] ?? r.weekday,
+    mantra: r.mantra?.simpleI18n?.[lang] ?? r.mantra.simple,
+    temple: r.temple?.nameI18n?.[lang] ?? r.temple.name,
+    charity: r.charityI18n?.[lang] ?? r.charity,
     lifestyle: r.lifestyle,
-    source: r.source.map((s) => formatCitation(s, 'en')),
+    source: r.source.map((s: RuleSource) => formatCitation(s, lang)),
   }));
 }
 
@@ -471,7 +471,7 @@ export function retrieve(question: string, chart: ChartFacts): Retrieval {
   }
 
   const grahas = area ? grahasImplicated(chart, area.houseAnchors) : [];
-  const remedies = remediesFor(grahas);
+  const remedies = remediesFor(grahas, 3, lang);
 
   const cited = [...new Set(rules.flatMap((r) => r.sources.map((s) => s.label)))];
   const sourceLine = cited.length ? `Source: ${cited.slice(0, 3).join(' · ')}` : '';
