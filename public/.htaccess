@@ -35,8 +35,12 @@ RewriteRule ^(vendor|knowledge|src|scripts|docs)(/|$) - [F,L]
 # 2. HTTP Security Headers
 # ------------------------------------------------------------------------------
 <IfModule mod_headers.c>
-  # Enforce HTTPS across domain & subdomains for 1 year
-  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
+  # Enforce HTTPS across domain & subdomains for 1 year. Send this on every
+  # response: browsers ignore HSTS received over plain HTTP, while an
+  # unconditional header also survives TLS-offloading proxies where the origin
+  # itself may not have an HTTPS environment flag. `preload` is retained for
+  # the stable astrosivam.com domain; all subdomains must remain HTTPS-ready.
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 
   # Protect against clickjacking
   Header always set X-Frame-Options "SAMEORIGIN"
@@ -67,6 +71,14 @@ RewriteRule ^(vendor|knowledge|src|scripts|docs)(/|$) - [F,L]
   # script-src. Keep this policy in sync with the deployment notes in
   # AUTH_SECURITY_HARDENING.md when adding new third-party origins.
   Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' https://accounts.google.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com https://nominatim.openstreetmap.org https://photon.komoot.io; frame-src 'self' blob: https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests"
+</IfModule>
+
+# PWA update safety: the worker, manifest and offline fallback must revalidate
+# instead of inheriting the one-year JavaScript/static-object browser TTL.
+<IfModule mod_headers.c>
+  <FilesMatch "^(manifest\.json|site\.webmanifest|sw\.js|offline\.html)(\.br|\.gz)?$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
 </IfModule>
 
 # ------------------------------------------------------------------------------
@@ -137,7 +149,14 @@ RewriteRule ^(vendor|knowledge|src|scripts|docs)(/|$) - [F,L]
   RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
   RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
 
-  # (b) Force HTTP to HTTPS (301 Permanent Redirect)
+  # (b-api) Force every API request to HTTPS with 308, preserving POST/PUT
+  # bodies and methods (checkout, uploads and webhooks must never become GETs).
+  # This runs before the page redirect and before the API pass-through rule.
+  RewriteCond %{HTTPS} !on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^api(?:/|$) https://%{HTTP_HOST}%{REQUEST_URI} [R=308,L,NC]
+
+  # (b) Force HTTP page requests to HTTPS (301 Permanent Redirect)
   RewriteCond %{HTTPS} !on
   RewriteCond %{HTTP:X-Forwarded-Proto} !https
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
@@ -335,6 +354,19 @@ ErrorDocument 404 /404.html
     Header set Content-Type application/manifest+json
   </FilesMatch>
   <FilesMatch "\.webmanifest\.gz$">
+    Header set Content-Encoding gzip
+    Header set Content-Type application/manifest+json
+  </FilesMatch>
+  # manifest.json is the canonical PWA manifest; keep its JSON-specific MIME
+  # type correct for both the plain file and negotiated compressed siblings.
+  <FilesMatch "^manifest\.json$">
+    Header set Content-Type application/manifest+json
+  </FilesMatch>
+  <FilesMatch "^manifest\.json\.br$">
+    Header set Content-Encoding br
+    Header set Content-Type application/manifest+json
+  </FilesMatch>
+  <FilesMatch "^manifest\.json\.gz$">
     Header set Content-Encoding gzip
     Header set Content-Type application/manifest+json
   </FilesMatch>

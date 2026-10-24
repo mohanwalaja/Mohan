@@ -140,9 +140,10 @@ if (!runtimeInstalled) {
   });
   check('the focused options answer with their own question', () => {
     const out = JSON.parse(fs.readFileSync(OUT, 'utf8'));
-    // Current-guidance options answer through their own reading; every other
-    // focused option leads with its question, or says plainly that nothing fires.
-    for (const r of out.replies.filter((r: any) => r.category !== 'current-guidance' && Array.isArray(r.focus) && r.focus.length > 0)) {
+    // Current-guidance options answer through their own reading, even when a
+    // different chapter (such as Transits) reuses that area. Every other
+    // focused option leads with its question or says plainly that nothing fires.
+    for (const r of out.replies.filter((r: any) => r.area !== 'current-guidance' && Array.isArray(r.focus) && r.focus.length > 0)) {
       assert.match(r.content, /on your question|does not carry this combination/, `${r.id} does not lead with its question`);
     }
   });

@@ -21,7 +21,7 @@ export type MessageRole = 'customer' | 'assistant' | 'system' | 'handoff';
  * they never type a question. Only complaint options with `needsDetails`
  * accept a short detail line, which is queued to the human team.
  */
-export type GuidedKind = 'area' | 'service' | 'dosha' | 'remedy' | 'order' | 'complaint';
+export type GuidedKind = 'area' | 'service' | 'knowledge' | 'dosha' | 'remedy' | 'order' | 'complaint';
 
 export interface GuidedQuestion {
   id: string;

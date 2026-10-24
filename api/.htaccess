@@ -86,6 +86,11 @@
 </IfModule>
 
 <IfModule mod_headers.c>
+    # HSTS on every API response (including JSON errors and file downloads).
+    # Browsers ignore this over HTTP; sending it unconditionally also covers
+    # TLS-offloading proxies where the origin sees only the forwarded scheme.
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
     # SECURITY: Do NOT set Access-Control-Allow-Origin here with a wildcard.
     # config.php now echoes only the site's own origins (with credentials enabled),
     # so the wildcard header here would conflict/override that protection.
@@ -96,6 +101,14 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /api/
+
+    # Enforce HTTPS before any API router or legacy endpoint alias. A 308 keeps
+    # the original method and request body for checkout, uploads and webhooks.
+    # Honour the visitor scheme supplied by the TLS-terminating edge so a
+    # Full (strict) / Flexible proxy deployment does not enter a redirect loop.
+    RewriteCond %{HTTPS} !on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=308,L]
 
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
     RewriteRule .* - [E=HTTP_X_AUTH_TOKEN:%{HTTP:X-Auth-Token}]

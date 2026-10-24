@@ -29,6 +29,7 @@ const guided = readJson('knowledge/ai-astrologer/rules/guided-questions.json');
 const lifeAreas = readJson('knowledge/ai-astrologer/rules/life-areas.json');
 const remedies = readJson('knowledge/ai-astrologer/rules/remedies.json');
 const guardrails = readJson('knowledge/ai-astrologer/rules/guardrails.json');
+const encyclopedia = readJson('knowledge/ai-astrologer/rules/astrology-encyclopedia.json');
 setKnowledgeBase(lifeAreas, remedies, guardrails);
 
 const endpoint = read('api/ai_astrologer.php');
@@ -56,12 +57,14 @@ const allQuestions = (): any[] =>
     (c.questions as any[]).map((q) => ({ ...q, _category: c.id }))
   );
 
-check('the menu has the eight page-2 life topics, the three service reports, and dosha, remedy, order and complaint topics', () => {
+check('the menu has the eight life topics, three service reports, five source-library categories, and support topics', () => {
   const ids = (guided.categories as any[]).map((c) => c.id);
   assert.deepEqual(ids, [
     'health', 'wealth', 'education', 'career', 'marriage', 'property',
     'travel-foreign', 'current-guidance',
     'wedding-match', 'baby-naming', 'muhurtham',
+    'planets-navagraha', 'houses-bhavas', 'yogas-combinations',
+    'transits-gochara', 'panchangam-timings',
     'doshas', 'remedies', 'order', 'support',
   ]);
 });
@@ -128,7 +131,7 @@ check('every option routes to exactly one supported answer path', () => {
   const grahas = new Set((remedies.grahas as any[]).map((g) => g.graha));
   for (const q of allQuestions()) {
     assert.ok(
-      ['area', 'service', 'dosha', 'remedy', 'order', 'complaint'].includes(q.kind),
+      ['area', 'service', 'knowledge', 'dosha', 'remedy', 'order', 'complaint'].includes(q.kind),
       `option ${q.id} has an unknown kind ${q.kind}`
     );
     if (q.kind === 'area') {
@@ -138,6 +141,28 @@ check('every option routes to exactly one supported answer path', () => {
       const topics = SERVICE_TOPICS[q.service] ?? [];
       assert.ok(topics.length > 0, `option ${q.id} names an unknown service ${q.service}`);
       assert.ok(topics.includes(q.topic), `option ${q.id} names an unknown ${q.service} topic ${q.topic}`);
+    }
+    if (q.kind === 'knowledge') {
+      const routeCount = [q.topic !== undefined, q.bhava !== undefined, q.planet !== undefined]
+        .filter(Boolean).length;
+      assert.equal(routeCount, 1, `${q.id} must name exactly one source-library route`);
+      if (q.topic !== undefined) {
+        assert.ok(
+          (encyclopedia.topics as any[]).some((topic) => topic.id === q.topic),
+          `${q.id} names unknown encyclopedia topic ${q.topic}`,
+        );
+      }
+      if (q.bhava !== undefined) {
+        assert.ok(Number.isInteger(q.bhava) && q.bhava >= 0 && q.bhava <= 12, `${q.id} has an invalid Bhava`);
+        if (q.bhava > 0) {
+          assert.ok(encyclopedia.bhavas.houses[String(q.bhava)], `${q.id} names a missing Bhava reading`);
+        } else {
+          assert.ok(encyclopedia.bhavas.overview.en, `${q.id} names the missing twelve-Bhava overview`);
+        }
+      }
+      if (q.planet !== undefined) {
+        assert.ok(encyclopedia.grahas.profiles[q.planet], `${q.id} names unknown Graha ${q.planet}`);
+      }
     }
     if (q.kind === 'dosha') {
       assert.ok(
@@ -228,7 +253,7 @@ check('the chart facts carry the full dosha block for guided dosha answers', () 
 
 check('the local reply builder routes every guided kind without re-matching', () => {
   assert.match(offline, /\$context\['guided'\]/);
-  for (const kind of ['order', 'complaint', 'dosha', 'remedy', 'service']) {
+  for (const kind of ['order', 'complaint', 'dosha', 'remedy', 'service', 'knowledge']) {
     assert.match(offline, new RegExp(`\\$guidedKind === '${kind}'`));
   }
   assert.match(offline, /private static function orderBubbles\(/);
@@ -240,6 +265,11 @@ check('the local reply builder routes every guided kind without re-matching', ()
     assert.match(offline, new RegExp(`private static function ${fn}\\(`));
   }
   assert.match(offline, /\$context\['serviceFacts'\]/);
+  // Source-library options route by exact topic/Bhava/Graha metadata, never by
+  // whichever translated words happen to appear in the visible label.
+  assert.match(offline, /private static function guidedKnowledgeAnswer\(/);
+  assert.match(offline, /\?string \$topicId = null, \?int \$bhavaOverride = null/);
+  assert.match(offline, /self::grahaProfileLine\(\$planet, \$lang, \$chart\)/);
   // A service question about a report that is not attached asks for it.
   assert.match(offline, /serviceAttachBubbles\(\$service, \$bound, \$lang, \$name\)/);
   // Forced-card path: a guided area option names its card directly.

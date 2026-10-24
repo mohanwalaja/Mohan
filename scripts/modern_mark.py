@@ -51,7 +51,7 @@ from modern_mark_geometry import (  # noqa: F401  (re-exported for callers)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONT_DIR = os.path.join(ROOT, "api", "astrology", "fonts")
 
-# Brand colours - kept in sync with index.html theme-color and site.webmanifest
+# Brand colours - kept in sync with index.html theme-color and manifest.json
 NAVY = (13, 27, 62)
 GOLD = (201, 150, 44)
 GOLD_LIGHT = (222, 178, 82)

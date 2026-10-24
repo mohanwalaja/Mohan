@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#fffaf2" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>You're Offline | ASTRO SIVAM</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #fffaf2;
+        color: #1a1233;
+      }
+      * { box-sizing: border-box; }
+      body {
+        min-height: 100vh;
+        min-height: 100svh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: radial-gradient(circle at 50% 0%, #fffdf9 0%, #fffaf2 62%, #f7ecdc 100%);
+      }
+      main {
+        width: min(100%, 540px);
+        padding: clamp(28px, 7vw, 48px);
+        text-align: center;
+        border: 1px solid rgba(156, 76, 29, 0.16);
+        border-radius: 28px;
+        background: rgba(255, 253, 249, 0.94);
+        box-shadow: 0 24px 70px rgba(64, 39, 20, 0.10);
+      }
+      .mark {
+        width: 84px;
+        height: 84px;
+        margin: 0 auto 24px;
+      }
+      .eyebrow {
+        margin: 0 0 10px;
+        color: #9c4c1d;
+        font-size: 0.72rem;
+        font-weight: 750;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(2rem, 8vw, 3rem);
+        font-weight: 600;
+        line-height: 1.1;
+      }
+      p {
+        margin: 20px auto 0;
+        max-width: 42ch;
+        color: #6e6052;
+        font-size: 1rem;
+        line-height: 1.7;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 30px;
+      }
+      a {
+        min-height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 22px;
+        border: 1px solid #9c4c1d;
+        border-radius: 999px;
+        color: #9c4c1d;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      a.primary {
+        background: #9c4c1d;
+        color: #fffdf9;
+      }
+      a:focus-visible {
+        outline: 3px solid rgba(156, 76, 29, 0.35);
+        outline-offset: 4px;
+      }
+      small {
+        display: block;
+        margin-top: 24px;
+        color: #7b6c5d;
+        line-height: 1.6;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        main { animation: arrive 320ms ease-out both; }
+        @keyframes arrive {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <svg class="mark" viewBox="0 0 96 96" role="img" aria-labelledby="offline-mark-title">
+        <title id="offline-mark-title">ASTRO SIVAM sun and moon</title>
+        <rect width="96" height="96" rx="24" fill="#111d3c" />
+        <g fill="#d9a62e">
+          <circle cx="48" cy="14" r="3.5" />
+          <circle cx="48" cy="82" r="3.5" />
+          <circle cx="14" cy="48" r="3.5" />
+          <circle cx="82" cy="48" r="3.5" />
+          <circle cx="24" cy="24" r="3.5" />
+          <circle cx="72" cy="24" r="3.5" />
+          <circle cx="24" cy="72" r="3.5" />
+          <circle cx="72" cy="72" r="3.5" />
+          <circle cx="43" cy="49" r="20" />
+          <path d="M53 30a22 22 0 1 0 0 38 19 19 0 0 1 0-38Z" fill-rule="evenodd" />
+        </g>
+      </svg>
+      <p class="eyebrow">ASTRO SIVAM</p>
+      <h1>You're offline</h1>
+      <p>
+        We couldn't load this page. Horoscope calculation tools, report previews and account updates
+        need a connection to load or sync. Reconnect, then return to your calculation and try again.
+      </p>
+      <div class="actions">
+        <a class="primary" href="">Try again</a>
+        <a href="/">Go to homepage</a>
+      </div>
+      <small>No order or payment is submitted by this offline page.</small>
+    </main>
+  </body>
+</html>

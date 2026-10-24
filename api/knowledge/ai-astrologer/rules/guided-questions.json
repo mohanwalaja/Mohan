@@ -1,11 +1,11 @@
 {
   "$schema": "./guided-questions.schema.json",
-  "version": "1.1.0",
-  "generatedOn": "2026-10-11",
+  "version": "1.2.0",
+  "generatedOn": "2026-10-24",
   "_purpose": "Guided AI-astrologer menu. Customers do NOT type their own questions: they pick one of these curated options. Every question maps to a supported answer path (life-area card, service report reading, dosha, remedy, order fact, or human complaint queue), so no unrelated question can be asked.",
-  "_page2Anchors": "Categories 1-8 mirror the eight page-2 life cards of the Birth Jathagam in order (src/services/jathagamHtmlBuilder.ts buildJathagamLifeCards), with the same icons and titles, so the chat and the PDF agree. The next three categories are the other three services: Wedding Matching (the 10 Poruthams report), Baby Naming (the Namakaran certificate) and Subha Muhurtham (the auspicious-date calendar). The remaining four cover doshas (page 1), remedies (remedies.json registry), order facts (the customer's own order row), and complaints (human handoff queue).",
+  "_page2Anchors": "Categories 1-8 mirror the eight page-2 life cards of the Birth Jathagam in order (src/services/jathagamHtmlBuilder.ts buildJathagamLifeCards), with the same icons and titles, so the chat and the PDF agree. The next three categories are the other three services: Wedding Matching (the 10 Poruthams report), Baby Naming (the Namakaran certificate) and Subha Muhurtham (the auspicious-date calendar). Five knowledge categories then cover Navagraha, Bhavas, Yogas, Gochara transits and Panchangam through exact source-entry ids. The final four cover doshas (page 1), remedies (remedies.json registry), order facts (the customer's own order row), and complaints (human handoff queue).",
   "_serviceGating": "A category that carries a `services` list is shown only to a customer who has a delivered report of one of those service types (or to an administrator). The server decides; the client only renders what it is given.",
-  "_kinds": "area = answered from the customer's chart + life-areas.json rules for that card. service = answered by reading the customer's own report for that service (porutham table, birth-pada syllables, muhurtham calendar) - never re-judged by the chat. dosha = answered from the engine dosha block of the bound order. remedy = answered from remedies.json only. order = answered from the customer's own order row only. complaint = never answered by rules; always queued to the human team with a fixed acknowledgement.",
+  "_kinds": "area = answered from the customer's chart + life-areas.json rules for that card. service = answered by reading the customer's own report for that service (porutham table, birth-pada syllables, muhurtham calendar) - never re-judged by the chat. knowledge = answered from astrology-encyclopedia.json by an exact topic id, Bhava number, or Graha profile key, with personal chart facts added where available. dosha = answered from the engine dosha block of the bound order. remedy = answered from remedies.json only. order = answered from the customer's own order row only. complaint = never answered by rules; always queued to the human team with a fixed acknowledgement.",
   "categories": [
     {
       "id": "health",
@@ -786,6 +786,360 @@
             "en": "Were these dates calculated for our place?",
             "ta": "இந்த நாட்கள் எங்கள் இடத்திற்காக கணிக்கப்பட்டவையா?",
             "hi": "क्या ये तिथियाँ हमारे स्थान के लिए गणना की गई हैं?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "planets-navagraha",
+      "icon": "🪐",
+      "title": {
+        "en": "Planets & Navagraha",
+        "ta": "கிரகங்கள் & நவக்கிரகங்கள்",
+        "hi": "ग्रह एवं नवग्रह"
+      },
+      "hint": {
+        "en": "What each planet signifies in your chart",
+        "ta": "உங்கள் ஜாதகத்தில் ஒவ்வொரு கிரகத்தின் பொருள்",
+        "hi": "आपकी कुंडली में प्रत्येक ग्रह का अर्थ"
+      },
+      "questions": [
+        {
+          "id": "planet-surya-guide",
+          "kind": "knowledge",
+          "planet": "Surya",
+          "text": {
+            "en": "What does Surya (the Sun) signify in my chart?",
+            "ta": "என் ஜாதகத்தில் சூரியன் என்னவைக் குறிக்கிறார்?",
+            "hi": "मेरी कुंडली में सूर्य क्या दर्शाते हैं?"
+          }
+        },
+        {
+          "id": "planet-chandra-guide",
+          "kind": "knowledge",
+          "planet": "Chandra",
+          "text": {
+            "en": "What does Chandra (the Moon) say about my mind and emotions?",
+            "ta": "என் மனம் மற்றும் உணர்வுகள் பற்றி சந்திரன் என்ன சொல்கிறார்?",
+            "hi": "मेरे मन और भावनाओं के बारे में चंद्रमा क्या बताते हैं?"
+          }
+        },
+        {
+          "id": "planet-sevvai-guide",
+          "kind": "knowledge",
+          "planet": "Sevvai",
+          "text": {
+            "en": "What does Sevvai (Mars) signify in my chart?",
+            "ta": "என் ஜாதகத்தில் செவ்வாய் என்னவைக் குறிக்கிறார்?",
+            "hi": "मेरी कुंडली में मंगल (सेव्वई) क्या दर्शाते हैं?"
+          }
+        },
+        {
+          "id": "planet-budha-guide",
+          "kind": "knowledge",
+          "planet": "Budha",
+          "text": {
+            "en": "What does Budha (Mercury) say about learning and communication?",
+            "ta": "கல்வி மற்றும் தொடர்பாடல் பற்றி புதன் என்ன சொல்கிறார்?",
+            "hi": "शिक्षा और संचार के बारे में बुध क्या बताते हैं?"
+          }
+        },
+        {
+          "id": "planet-guru-guide",
+          "kind": "knowledge",
+          "planet": "Guru",
+          "text": {
+            "en": "What does Guru (Jupiter) signify in my chart?",
+            "ta": "என் ஜாதகத்தில் குரு என்னவைக் குறிக்கிறார்?",
+            "hi": "मेरी कुंडली में गुरु (बृहस्पति) क्या दर्शाते हैं?"
+          }
+        },
+        {
+          "id": "planet-sukra-guide",
+          "kind": "knowledge",
+          "planet": "Sukra",
+          "text": {
+            "en": "What does Sukra (Venus) say about relationships and comforts?",
+            "ta": "உறவுகள் மற்றும் சுக வாழ்வு பற்றி சுக்கிரன் என்ன சொல்கிறார்?",
+            "hi": "संबंधों और सुख-सुविधा के बारे में शुक्र क्या बताते हैं?"
+          }
+        },
+        {
+          "id": "planet-sani-guide",
+          "kind": "knowledge",
+          "planet": "Sani",
+          "text": {
+            "en": "What does Sani (Saturn) say about duty and perseverance?",
+            "ta": "கடமை மற்றும் விடாமுயற்சி பற்றி சனி என்ன சொல்கிறார்?",
+            "hi": "कर्तव्य और धैर्य के बारे में शनि क्या बताते हैं?"
+          }
+        },
+        {
+          "id": "planet-rahu-guide",
+          "kind": "knowledge",
+          "planet": "Rahu",
+          "text": {
+            "en": "What does Rahu signify in my chart?",
+            "ta": "என் ஜாதகத்தில் ராகு என்னவைக் குறிக்கிறார்?",
+            "hi": "मेरी कुंडली में राहु क्या दर्शाता है?"
+          }
+        },
+        {
+          "id": "planet-ketu-guide",
+          "kind": "knowledge",
+          "planet": "Ketu",
+          "text": {
+            "en": "What does Ketu signify in my chart?",
+            "ta": "என் ஜாதகத்தில் கேது என்னவைக் குறிக்கிறார்?",
+            "hi": "मेरी कुंडली में केतु क्या दर्शाता है?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "houses-bhavas",
+      "icon": "🏛️",
+      "title": {
+        "en": "Houses & Bhavas",
+        "ta": "ஜாதகத்தின் 12 பாவங்கள்",
+        "hi": "कुंडली के 12 भाव"
+      },
+      "hint": {
+        "en": "The twelve areas of life in your chart",
+        "ta": "உங்கள் ஜாதகத்தின் பன்னிரண்டு வாழ்க்கைத் துறைகள்",
+        "hi": "आपकी कुंडली के जीवन-क्षेत्र"
+      },
+      "questions": [
+        {
+          "id": "bhava-overview-guide",
+          "kind": "knowledge",
+          "bhava": 0,
+          "text": {
+            "en": "What do the 12 houses in my chart represent?",
+            "ta": "என் ஜாதகத்தின் 12 பாவங்கள் என்னவைக் குறிக்கின்றன?",
+            "hi": "मेरी कुंडली के 12 भाव क्या दर्शाते हैं?"
+          }
+        },
+        {
+          "id": "bhava-lagna-guide",
+          "kind": "knowledge",
+          "bhava": 1,
+          "text": {
+            "en": "What does my 1st house (Lagna) represent?",
+            "ta": "என் 1-ஆம் பாவம் (லக்னம்) என்னவைக் குறிக்கிறது?",
+            "hi": "मेरा पहला भाव (लग्न) क्या दर्शाता है?"
+          }
+        },
+        {
+          "id": "bhava-learning-guide",
+          "kind": "knowledge",
+          "bhava": 5,
+          "text": {
+            "en": "What does my 5th house say about learning and children?",
+            "ta": "கல்வி மற்றும் குழந்தை பாக்கியம் பற்றி என் 5-ஆம் பாவம் என்ன சொல்கிறது?",
+            "hi": "शिक्षा और संतान के बारे में मेरा पाँचवाँ भाव क्या बताता है?"
+          }
+        },
+        {
+          "id": "bhava-partnership-guide",
+          "kind": "knowledge",
+          "bhava": 7,
+          "text": {
+            "en": "What does my 7th house say about partnerships?",
+            "ta": "கூட்டாண்மை மற்றும் திருமண உறவு பற்றி என் 7-ஆம் பாவம் என்ன சொல்கிறது?",
+            "hi": "साझेदारी और विवाह के बारे में मेरा सातवाँ भाव क्या बताता है?"
+          }
+        },
+        {
+          "id": "bhava-career-guide",
+          "kind": "knowledge",
+          "bhava": 10,
+          "text": {
+            "en": "What does my 10th house say about career?",
+            "ta": "தொழில் பற்றி என் 10-ஆம் பாவம் என்ன சொல்கிறது?",
+            "hi": "करियर के बारे में मेरा दसवाँ भाव क्या बताता है?"
+          }
+        },
+        {
+          "id": "bhava-foreign-guide",
+          "kind": "knowledge",
+          "bhava": 12,
+          "text": {
+            "en": "What does my 12th house say about expenses and life away from home?",
+            "ta": "செலவுகள் மற்றும் பிறந்த ஊரை விட்டு வாழ்வது பற்றி என் 12-ஆம் பாவம் என்ன சொல்கிறது?",
+            "hi": "खर्च और जन्मस्थान से दूर जीवन के बारे में मेरा 12वाँ भाव क्या बताता है?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "yogas-combinations",
+      "icon": "✨",
+      "title": {
+        "en": "Yogas & Combinations",
+        "ta": "யோகங்கள் & சிறப்பு அமைப்புகள்",
+        "hi": "योग एवं विशेष संयोजन"
+      },
+      "hint": {
+        "en": "Classical combinations, explained without fear",
+        "ta": "பயமின்றி மரபு யோக விளக்கங்கள்",
+        "hi": "भय के बिना शास्त्रीय योगों की व्याख्या"
+      },
+      "questions": [
+        {
+          "id": "yoga-gajakesari-guide",
+          "kind": "knowledge",
+          "topic": "yoga-gajakesari",
+          "text": {
+            "en": "What does Gajakesari Yoga mean in Vedic astrology?",
+            "ta": "கஜகேசரி யோகம் என்றால் என்ன?",
+            "hi": "गजकेशरी योग का अर्थ क्या है?"
+          }
+        },
+        {
+          "id": "yoga-budhaditya-guide",
+          "kind": "knowledge",
+          "topic": "yoga-budhaditya",
+          "text": {
+            "en": "What does Budhaditya Yoga mean?",
+            "ta": "புதாதித்ய யோகம் என்றால் என்ன?",
+            "hi": "बुधादित्य योग क्या होता है?"
+          }
+        },
+        {
+          "id": "yoga-raja-guide",
+          "kind": "knowledge",
+          "topic": "yoga-raja",
+          "text": {
+            "en": "What is Raja Yoga and how is it judged?",
+            "ta": "ராஜ யோகம் என்றால் என்ன? அது எப்படி மதிப்பிடப்படுகிறது?",
+            "hi": "राज योग क्या है और इसका निर्णय कैसे होता है?"
+          }
+        },
+        {
+          "id": "yoga-dhana-guide",
+          "kind": "knowledge",
+          "topic": "yoga-dhana",
+          "text": {
+            "en": "What does Dhana Yoga mean?",
+            "ta": "தன யோகம் என்றால் என்ன?",
+            "hi": "धन योग का क्या अर्थ है?"
+          }
+        },
+        {
+          "id": "yoga-mahapurusha-guide",
+          "kind": "knowledge",
+          "topic": "yoga-mahapurusha",
+          "text": {
+            "en": "What are the Pancha Mahapurusha Yogas?",
+            "ta": "பஞ்ச மகாபுருஷ யோகங்கள் யாவை?",
+            "hi": "पंच महापुरुष योग कौन से हैं?"
+          }
+        },
+        {
+          "id": "yoga-neechabhanga-guide",
+          "kind": "knowledge",
+          "topic": "yoga-neechabhanga-vipareeta-parivartana",
+          "text": {
+            "en": "What do Neecha Bhanga, Vipareeta Raja and Parivartana Yogas mean?",
+            "ta": "நீச்சபங்க, விபரீத ராஜ மற்றும் பரிவர்த்தனை யோகங்கள் என்றால் என்ன?",
+            "hi": "नीचभंग, विपरीत राज और परिवर्तन योग का क्या अर्थ है?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "transits-gochara",
+      "icon": "🌙",
+      "title": {
+        "en": "Transits & Gochara",
+        "ta": "கோசாரம் & பெயர்ச்சி",
+        "hi": "गोचर एवं ग्रह संचार"
+      },
+      "hint": {
+        "en": "Saturn, Jupiter, lunar nodes and this year",
+        "ta": "சனி, குரு, ராகு–கேது மற்றும் இந்த வருடம்",
+        "hi": "शनि, गुरु, राहु–केतु और यह वर्ष"
+      },
+      "questions": [
+        {
+          "id": "transit-saturn-guide",
+          "kind": "knowledge",
+          "topic": "transit-sadesati-ashtama-kantaka",
+          "text": {
+            "en": "What do Sade Sati, Ashtama Sani and Kantaka Sani mean?",
+            "ta": "ஏழரைச் சனி, அஷ்டம சனி மற்றும் கண்டக சனி என்றால் என்ன?",
+            "hi": "साढ़ेसाती, अष्टम शनि और कंटक शनि का क्या अर्थ है?"
+          }
+        },
+        {
+          "id": "transit-jupiter-nodes-guide",
+          "kind": "knowledge",
+          "topic": "transit-guru-rahuketu-chandrashtamam",
+          "text": {
+            "en": "What do Guru Peyarchi, Rahu–Ketu transits and Chandrashtamam indicate?",
+            "ta": "குரு பெயர்ச்சி, ராகு–கேது பெயர்ச்சி மற்றும் சந்திராஷ்டமம் என்னவைக் குறிக்கின்றன?",
+            "hi": "गुरु गोचर, राहु–केतु गोचर और चंद्राष्टम क्या दर्शाते हैं?"
+          }
+        },
+        {
+          "id": "transit-current-year-guide",
+          "kind": "area",
+          "area": "current-guidance",
+          "focus": [
+            "current-year"
+          ],
+          "timing": true,
+          "text": {
+            "en": "How do my current Dasha and transits shape this year?",
+            "ta": "என் தற்போதைய தசை மற்றும் கோசாரம் இந்த வருடத்தை எப்படி வடிவமைக்கின்றன?",
+            "hi": "मेरी वर्तमान दशा और गोचर इस वर्ष को कैसे प्रभावित करते हैं?"
+          }
+        }
+      ]
+    },
+    {
+      "id": "panchangam-timings",
+      "icon": "📿",
+      "title": {
+        "en": "Panchangam & Sacred Timings",
+        "ta": "பஞ்சாங்கம் & சுப நேரங்கள்",
+        "hi": "पंचांग एवं शुभ समय"
+      },
+      "hint": {
+        "en": "Rahu Kalam, Muhurtham and sacred days",
+        "ta": "ராகு காலம், முகூர்த்தம் மற்றும் சுப நாட்கள்",
+        "hi": "राहु काल, मुहूर्त और पवित्र दिन"
+      },
+      "questions": [
+        {
+          "id": "panchangam-daily-guide",
+          "kind": "knowledge",
+          "topic": "panchangam-rahukalam-yamagandam-gulikai",
+          "text": {
+            "en": "What are Rahu Kalam, Yamagandam, Gulikai and Nalla Neram?",
+            "ta": "ராகு காலம், எமகண்டம், குளிகை மற்றும் நல்ல நேரம் என்றால் என்ன?",
+            "hi": "राहु काल, यमगंड, गुलिक और नल्ला नेरम क्या हैं?"
+          }
+        },
+        {
+          "id": "panchangam-muhurtham-guide",
+          "kind": "knowledge",
+          "topic": "panchangam-muhurtham-selection",
+          "text": {
+            "en": "How is a Subha Muhurtham chosen?",
+            "ta": "சுப முகூர்த்தம் எப்படித் தேர்ந்தெடுக்கப்படுகிறது?",
+            "hi": "शुभ मुहूर्त कैसे चुना जाता है?"
+          }
+        },
+        {
+          "id": "panchangam-vratam-guide",
+          "kind": "knowledge",
+          "topic": "panchangam-vratam-observances",
+          "text": {
+            "en": "What is the significance of Ekadashi, Pradosham and Amavasya?",
+            "ta": "ஏகாதசி, பிரதோஷம் மற்றும் அமாவாசையின் சிறப்பு என்ன?",
+            "hi": "एकादशी, प्रदोष और अमावस्या का क्या महत्व है?"
           }
         }
       ]

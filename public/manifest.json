@@ -1,0 +1,75 @@
+{
+  "id": "/",
+  "name": "ASTRO SIVAM - Authentic Vedic Astrology",
+  "short_name": "ASTRO SIVAM",
+  "description": "Birth Jathagam, marriage compatibility, baby naming and Subha Muhurtham guidance in English, Tamil and Hindi.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "theme_color": "#fffaf2",
+  "background_color": "#fffaf2",
+  "categories": [
+    "lifestyle",
+    "education",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "/assets/images/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/images/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Birth Jathagam",
+      "short_name": "Jathagam",
+      "url": "/birth-jathagam",
+      "icons": [
+        {
+          "src": "/assets/images/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Marriage Compatibility",
+      "short_name": "Compatibility",
+      "url": "/marriage-compatibility",
+      "icons": [
+        {
+          "src": "/assets/images/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

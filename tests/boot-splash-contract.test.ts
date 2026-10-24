@@ -308,7 +308,9 @@ await check('dismissBootSplash() fades, disarms and removes the splash exactly o
 const distDir = abs('dist');
 const routeFiles = fs.existsSync(distDir)
   ? [
-      ...fs.readdirSync(distDir).filter((name) => name.endsWith('.html') && name !== '404.html'),
+      // 404.html and the self-contained PWA offline fallback are standalone
+      // documents, not React-prerendered routes with a #root/boot sequence.
+      ...fs.readdirSync(distDir).filter((name) => name.endsWith('.html') && !['404.html', 'offline.html'].includes(name)),
       ...(fs.existsSync(path.join(distDir, 'pages'))
         ? fs.readdirSync(path.join(distDir, 'pages'))
             .filter((name) => name.endsWith('.html'))

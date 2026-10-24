@@ -33,8 +33,10 @@ public_html/
 ├── favicon.ico        # Root browser ICO fallback
 ├── robots.txt         # Search crawler directives
 ├── sitemap.xml        # Canonical XML sitemap
-├── site.webmanifest   # Web app manifest
-└── sw.js              # Self-retiring service worker clean-up script
+├── manifest.json      # Canonical installable PWA manifest
+├── site.webmanifest   # Legacy manifest URL (same metadata)
+├── offline.html       # Self-contained offline calculation/page fallback
+└── sw.js              # Network-first worker; caches only offline.html
 ```
 
 All historical audit records and operator runbooks remain cleanly organised under [`docs/`](docs/) in the repository (never scattered across the web root).
@@ -82,6 +84,7 @@ Detailed runbooks live in [`docs/`](docs/):
 - [Rate Limiting & Payment Recovery](docs/RATE_LIMITING_AND_PAYMENT_RECOVERY.md)
 - [High-Quality PDF Delivery Architecture](docs/PDF_DELIVERY_QUALITY.md)
 - [Cloudflare CDN Configuration](docs/CLOUDFLARE_CDN_SETUP.md)
+- [PWA, Offline Fallback and Transport Security](docs/PWA_AND_TRANSPORT_SECURITY.md)
 
 ---
 

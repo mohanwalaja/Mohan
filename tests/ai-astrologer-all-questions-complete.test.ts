@@ -1,6 +1,6 @@
 /**
  * Exhaustive end-to-end verification of the AI Astrologer across:
- *   - All 65 curated guided options x 3 languages (en/ta/hi) x chart / no-chart (390 runs)
+ *   - Every curated guided option x 3 languages (en/ta/hi) x chart / no-chart
  *   - 110+ free-text astrology queries across English, Tamil, and Hindi
  *   - Pure script separation (0 Tamil leaks in en/hi, 0 Devanagari leaks in en/ta)
  *   - Full Ketu + Rahu remedy coverage, localized practical steps, moonNakshatraLord,
@@ -8,10 +8,17 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const guidedData = JSON.parse(fs.readFileSync(path.join(root, 'knowledge/ai-astrologer/rules/guided-questions.json'), 'utf8'));
+const guidedOptionCount = guidedData.categories.reduce(
+  (count: number, category: any) => count + category.questions.length,
+  0,
+);
+const expectedGuidedRuns = guidedOptionCount * 3 * 2;
 const raw = execFileSync(
   process.execPath,
   ['scripts/php-ai-provider-check.mjs', 'tests/fixtures/php-ai-probes/all-questions-complete.php'],
@@ -31,12 +38,12 @@ function check(name: string, fn: () => void) {
   }
 }
 
-check('all 390 guided answers (65 options x 3 languages x chart/no-chart) pass safety guardrails cleanly', () => {
-  assert.equal(probe.guidedRuns, 390);
+check(`all ${expectedGuidedRuns} guided answers (${guidedOptionCount} options x 3 languages x chart/no-chart) pass safety guardrails cleanly`, () => {
+  assert.equal(probe.guidedRuns, expectedGuidedRuns);
   assert.deepEqual(probe.guidedFailures, []);
 });
 
-check('zero cross-script leaks occur across all 390 guided answers in English, Tamil, and Hindi', () => {
+check(`zero cross-script leaks occur across all ${expectedGuidedRuns} guided answers in English, Tamil, and Hindi`, () => {
   assert.deepEqual(probe.scriptLeaks, []);
 });
 
