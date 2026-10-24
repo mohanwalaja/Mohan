@@ -51,7 +51,16 @@ createRoot(document.getElementById('root')!).render(
 const BOOT_SPLASH_GIVE_UP_MS = 3500;
 window.setTimeout(dismissBootSplash, BOOT_SPLASH_GIVE_UP_MS);
 
-// NOTE (2026-10-12): the offline service worker was removed (cache-first
-// served a stale app shell after deploys). public/sw.js now only self-retires
-// any already-installed worker; we no longer register one here.
+// PWA install + offline fallback. Registration is production-only so a worker
+// cannot interfere with Vite development or HMR. public/sw.js caches only the
+// self-contained offline document; it never restores the retired cache-first
+// app-shell strategy and never intercepts API/calculation requests.
+if (import.meta.env.PROD && 'serviceWorker' in navigator && window.isSecureContext) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {
+      // Installation is progressive enhancement: the online app still works
+      // when a browser or host policy blocks service-worker registration.
+    });
+  }, { once: true });
+}
 

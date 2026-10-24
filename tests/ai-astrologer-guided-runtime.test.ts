@@ -61,23 +61,24 @@ check('the guided menu resolves in all three languages', () => {
 });
 
 check('the three service chapters appear only for a report the account holds', () => {
-  // No delivered service report: the menu is the twelve general chapters.
-  assert.equal(out.gatedMenu.none.categories, 12);
-  assert.equal(out.gatedMenu.none.options, 49);
+  // No delivered service report: the seventeen general chapters remain,
+  // including the five source-library categories (27 additional options).
+  assert.equal(out.gatedMenu.none.categories, 17);
+  assert.equal(out.gatedMenu.none.options, 76);
   assert.ok(!(out.gatedMenu.none.ids as string[]).includes('wedding-match'));
 
   // A Wedding Matching + Subha Muhurtham report: those two chapters join.
-  assert.equal(out.gatedMenu.weddingAndMuhurtham.categories, 14);
-  assert.equal(out.gatedMenu.weddingAndMuhurtham.options, 60);
+  assert.equal(out.gatedMenu.weddingAndMuhurtham.categories, 19);
+  assert.equal(out.gatedMenu.weddingAndMuhurtham.options, 87);
   const entitled = out.gatedMenu.weddingAndMuhurtham.ids as string[];
   assert.ok(entitled.includes('wedding-match') && entitled.includes('muhurtham'));
   assert.ok(!entitled.includes('baby-naming'), 'a Baby Naming chapter needs a Baby Naming report');
 
   // All three, and the administrator view, see the whole menu.
-  assert.equal(out.gatedMenu.allThree.categories, 15);
-  assert.equal(out.gatedMenu.allThree.options, 65);
-  assert.equal(out.gatedMenu.admin.categories, 15);
-  assert.equal(out.gatedMenu.admin.options, 65);
+  assert.equal(out.gatedMenu.allThree.categories, 20);
+  assert.equal(out.gatedMenu.allThree.options, 92);
+  assert.equal(out.gatedMenu.admin.categories, 20);
+  assert.equal(out.gatedMenu.admin.options, 92);
 });
 
 check('option ids resolve server-side and unknown ids do not', () => {
@@ -90,7 +91,7 @@ check('the rebuilt chart carries dosha results for guided dosha answers', () => 
 });
 
 check('every guided reply is guard-clean with no PHP error', () => {
-  assert.equal(out.replies.length, 13);
+  assert.equal(out.replies.length, 16);
   for (const r of out.replies) {
     assert.equal(r.error ?? null, null, `${r.id} must not raise`);
     assert.equal(r.guardOk, true, `${r.id} must pass the output guard`);
@@ -110,6 +111,16 @@ check('dosha options read the rebuilt chart, not wording matches', () => {
   assert.match(reply('dosha-all').content as string, /Mars \(Kuja\) Dosha/);
   assert.match(reply('dosha-all').content as string, /Kala Sarpa Dosha/);
   assert.match(reply('dosha-kuja').content as string, /कुज/);
+});
+
+check('knowledge options resolve exact topics, Bhavas and Graha profiles', () => {
+  assert.match(reply('yoga-gajakesari-guide').content as string, /Gajakesari/i);
+  assert.match(reply('bhava-career-guide').content as string, /10-ஆம் பாவம்/);
+  assert.match(reply('planet-guru-guide').content as string, /बृहस्पति|गुरु/);
+  for (const id of ['yoga-gajakesari-guide', 'bhava-career-guide', 'planet-guru-guide']) {
+    assert.equal(reply(id).handoff, false, `${id} must resolve inside the source library`);
+    assert.ok((reply(id).sourceLine as string).length > 0, `${id} must retain its citations`);
+  }
 });
 
 check('remedy options name the deity, day, and text', () => {

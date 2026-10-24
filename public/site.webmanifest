@@ -1,40 +1,75 @@
 {
+  "id": "/",
   "name": "ASTRO SIVAM - Authentic Vedic Astrology",
   "short_name": "ASTRO SIVAM",
+  "description": "Birth Jathagam, marriage compatibility, baby naming and Subha Muhurtham guidance in English, Tamil and Hindi.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "theme_color": "#fffaf2",
+  "background_color": "#fffaf2",
+  "categories": [
+    "lifestyle",
+    "education",
+    "utilities"
+  ],
   "icons": [
-    {
-      "src": "/assets/images/favicon-16x16.png",
-      "sizes": "16x16",
-      "type": "image/png"
-    },
-    {
-      "src": "/assets/images/favicon-32x32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "/assets/images/favicon-48x48.png",
-      "sizes": "48x48",
-      "type": "image/png"
-    },
-    {
-      "src": "/assets/images/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png"
-    },
     {
       "src": "/assets/images/android-chrome-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/assets/images/android-chrome-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/images/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "theme_color": "#0b0813",
-  "background_color": "#0b0813",
-  "display": "standalone",
-  "start_url": "/"
+  "shortcuts": [
+    {
+      "name": "Birth Jathagam",
+      "short_name": "Jathagam",
+      "url": "/birth-jathagam",
+      "icons": [
+        {
+          "src": "/assets/images/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Marriage Compatibility",
+      "short_name": "Compatibility",
+      "url": "/marriage-compatibility",
+      "icons": [
+        {
+          "src": "/assets/images/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
 }

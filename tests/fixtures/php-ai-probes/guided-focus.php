@@ -47,6 +47,7 @@ foreach (($data['categories'] ?? []) as $category) {
                 'guided' => $guided,
             ]);
             $out['replies'][] = ['id' => $q['id'], 'category' => $category['id'],
+                'area' => $guided['area'] ?? null,
                 'focus' => $guided['focus'] ?? null, 'bubbles' => $r['bubbles'] ?? [], 'content' => $r['content'] ?? ''];
         } catch (Throwable $e) {
             $out['replies'][] = ['id' => $q['id'], 'category' => $category['id'], 'error' => get_class($e) . ': ' . $e->getMessage()];

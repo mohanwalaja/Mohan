@@ -85,6 +85,8 @@ const testFiles = [
   // real PHP for the client-IP spoofing matrix and the session-cookie Secure
   // flag, so a resolver "simplification" cannot pass by reading plausibly.
   'tests/cloudflare-cdn-contract.test.ts',
+  // Installable PWA, offline-only cache boundaries, API HTTPS 308 and HSTS.
+  'tests/pwa-and-https-contract.test.ts',
   'tests/jathagam-summary-parity.test.ts',
   'tests/namakaran-meanings.test.ts',
   'tests/logo-assets.test.ts',

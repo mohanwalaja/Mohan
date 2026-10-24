@@ -142,6 +142,16 @@ class AstroAiOffline
             $route = self::serviceRoute($guided, $lang, $context, $name);
             return self::finish($route['bubbles'], '', null, (bool) ($route['handoff'] ?? false), $lang);
         }
+        if ($guidedKind === 'knowledge') {
+            // Source-library options carry an exact topic, Bhava or Graha id.
+            // The translated label is presentation only: it is never relied on
+            // to guess which verified encyclopedia entry should answer.
+            $route = self::guidedKnowledgeAnswer($guided, $q, $lang, $chart, $name);
+            if ($route === null) {
+                return self::finish([self::noMatchText($lang), self::topicsLine($lang)], '', null, true, $lang);
+            }
+            return self::finish($route['bubbles'], $route['sourceLine'], $route['areaId'], false, $lang);
+        }
         if ($guidedKind === 'remedy') {
             $guidedId = (string) ($guided['id'] ?? '');
             if ($guidedId === 'remedy-rahuketu') {
@@ -1723,14 +1733,69 @@ class AstroAiOffline
     }
 
     /**
+     * Resolve one curated source-library option without matching its wording.
+     * Exactly one route is used: an encyclopedia topic id, a Bhava number
+     * (0 = all twelve), or a Graha profile key from the same verified file.
+     *
+     * @return ?array{bubbles:string[], sourceLine:string, areaId:?string}
+     */
+    private static function guidedKnowledgeAnswer(array $guided, string $q, string $lang, ?array $chart, string $name): ?array
+    {
+        $planet = trim((string) ($guided['planet'] ?? ''));
+        if ($planet !== '') {
+            if (!isset(self::PLANET_NAMES[$planet])) {
+                return null;
+            }
+            $profile = self::grahaProfileLine($planet, $lang, $chart);
+            if ($profile === '') {
+                return null;
+            }
+            $enc = json_decode((string) file_get_contents(self::kbFile('/knowledge/ai-astrologer/rules/astrology-encyclopedia.json')), true) ?: [];
+            $src = [];
+            foreach (($enc['grahas']['source'] ?? []) as $s) {
+                $id = (string) ($s['id'] ?? '');
+                if ($id !== '' && AstroAiProvider::isCitableId($id)) {
+                    $src[] = AstroAiProvider::formatCitation($s, $lang);
+                }
+            }
+            $bubbles = [$profile];
+            if ($chart === null) {
+                $bubbles[] = self::personalHint($lang);
+            }
+            return [
+                'bubbles' => $bubbles,
+                'sourceLine' => $src ? 'Source: ' . implode(' · ', array_slice(array_values(array_unique($src)), 0, 3)) : '',
+                'areaId' => null,
+            ];
+        }
+
+        $topicId = trim((string) ($guided['topic'] ?? ''));
+        $bhava = null;
+        if (isset($guided['bhava']) && is_numeric($guided['bhava'])) {
+            $candidate = (int) $guided['bhava'];
+            if ($candidate >= 0 && $candidate <= 12) {
+                $bhava = $candidate;
+            }
+        }
+        if ($topicId === '' && $bhava === null) {
+            return null;
+        }
+        return self::encyclopediaAnswer($q, $lang, $chart, $name, $topicId !== '' ? $topicId : null, $bhava);
+    }
+
+    /**
      * Multi-source Vedic & Tamil encyclopedia matcher for specific Bhavas,
      * Doshas, Yogas, Gochara transits, Panchangam windows, 10 Poruthams,
      * Navamsa/Lagna/Rasi/Nakshatra structure, Namakaranam Padas, and all 9
      * Navagraha temples — combining personal chart facts whenever attached.
      *
+     * Optional overrides are used only by guided knowledge options: an exact
+     * topic id prevents a translated label from selecting a different entry,
+     * while a Bhava override selects the requested house directly.
+     *
      * @return ?array{bubbles:string[], sourceLine:string, areaId:?string}
      */
-    private static function encyclopediaAnswer(string $q, string $lang, ?array $chart, string $name): ?array
+    private static function encyclopediaAnswer(string $q, string $lang, ?array $chart, string $name, ?string $topicId = null, ?int $bhavaOverride = null): ?array
     {
         $enc = json_decode((string) file_get_contents(self::kbFile('/knowledge/ai-astrologer/rules/astrology-encyclopedia.json')), true) ?: [];
         if ($enc === []) {
@@ -1738,7 +1803,7 @@ class AstroAiOffline
         }
 
         // 1. Explicit numbered Bhava / House query (1..12 or all 12 houses).
-        $houseNum = self::detectAskedBhava($q);
+        $houseNum = $topicId === null ? ($bhavaOverride ?? self::detectAskedBhava($q)) : null;
         if ($houseNum !== null) {
             $src = [];
             foreach (($enc['bhavas']['source'] ?? []) as $s) {
@@ -1772,10 +1837,18 @@ class AstroAiOffline
             }
         }
 
-        // 2. Explicit topic match from triggers (longest matching phrase wins).
+        // 2. Guided options select an exact topic id. Free text keeps the
+        // original trigger matching (longest matching phrase wins).
         $bestTopic = null;
         $bestLen = 0;
         foreach (($enc['topics'] ?? []) as $topic) {
+            if ($topicId !== null) {
+                if ((string) ($topic['id'] ?? '') === $topicId) {
+                    $bestTopic = $topic;
+                    break;
+                }
+                continue;
+            }
             foreach (['en', 'ta', 'hi'] as $tl) {
                 foreach (($topic['triggers'][$tl] ?? []) as $phrase) {
                     $p = mb_strtolower(trim((string) $phrase), 'UTF-8');

@@ -116,7 +116,7 @@ if (runtimeInstalled) {
     assert.equal(run.status, 0, `${run.stdout ?? ''}\n${run.stderr ?? ''}`);
     const out = JSON.parse(fs.readFileSync(OUT, 'utf8'));
     assert.ok((out.phpParsedCount as number) >= 18, `Expected mounted api/*.php files to parse, got ${out.phpParsedCount}`);
-    assert.equal(out.taMenuCount, 15);
+    assert.equal(out.taMenuCount, 20);
     assert.equal(out.taAllTamil, true, 'Every category title and guided question in Tamil menu must contain Tamil script');
     assert.equal(out.taHasDevanagari, false, 'Tamil menu must contain zero Devanagari characters');
     assert.equal(out.taOrderTitle, 'திருமணப் பொருத்தம்');

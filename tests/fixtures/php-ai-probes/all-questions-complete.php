@@ -2,7 +2,7 @@
 /**
  * Exhaustive PHP-WASM probe verifying 100% answer coverage, safety guardrails,
  * script purity, localization fidelity, and multi-source classical accuracy across:
- *   1. All 65 curated guided options x 3 languages (en/ta/hi) x chart / no-chart (390 runs)
+ *   1. Every curated guided option x 3 languages (en/ta/hi) x chart / no-chart
  *   2. 100+ free-text astrology queries across English, Tamil, and Hindi
  *   3. Honest handoff on non-astrology negative controls
  */
@@ -63,11 +63,13 @@ foreach (($guidedJson['categories'] ?? []) as $cat) {
                     'guided' => $found,
                 ]);
                 $guard = AstroAiProvider::checkReply($r['content'], $lang);
-                if (!$guard['ok'] || empty($r['bubbles']) || trim($r['content']) === '') {
+                $unresolvedKnowledge = ($q['kind'] ?? '') === 'knowledge' && !empty($r['handoff']);
+                if ($unresolvedKnowledge || !$guard['ok'] || empty($r['bubbles']) || trim($r['content']) === '') {
                     $guidedFailures[] = [
                         'id' => $id,
                         'lang' => $lang,
                         'withChart' => $withChart,
+                        'unresolvedKnowledge' => $unresolvedKnowledge,
                         'violations' => $guard['violations'],
                     ];
                 }

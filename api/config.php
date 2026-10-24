@@ -67,6 +67,12 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Permissions-Policy: geolocation=(self), camera=(), microphone=()');
+// HSTS is also set by api/.htaccess for static/Web Server responses. Repeat it
+// for HTTPS PHP responses so every config-backed API route keeps the same
+// one-year, subdomain-inclusive policy on hosts that do not read .htaccess.
+if (astro_request_is_https()) {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+}
 // CACHE SAFETY — with a CDN in front (Cloudflare), one mis-scoped cache rule is
 // enough to serve a customer's JSON to someone else: /api/services/my-orders and
 // ?action=settings return session-scoped data and carry no cache directive, so
