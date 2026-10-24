@@ -8,6 +8,7 @@ import {
   formatReviewDate,
   mergeReviews,
   publishedToDisplay,
+  shownReviewDate,
   summarizeRatings
 } from '../../services/reviews';
 import { buildReviewsJsonLd } from '../../services/structuredData';
@@ -79,7 +80,10 @@ const initials = (name: string) =>
  *   curated testimonials follow, unchanged. Until the fetch resolves — and in
  *   the prerendered HTML — the curated testimonials are what is shown.
  * - Every review links to the page of the service it is about.
- * - The date and the rating summary are visible on every screen size, and the
+ * - The rating summary is visible on every screen size. A publication date is
+ *   shown only on a Verified purchase review (shownReviewDate) — the curated
+ *   testimonials carry no date, so the six owner-entered reviews no longer
+ *   show a clustered Dec 2025–Feb 2026 set that reads as seeded — and the
  *   Review/AggregateRating JSON-LD is built from exactly the reviews displayed.
  */
 export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({ onNavigate }) => {
@@ -276,6 +280,8 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({ onNavi
         {reviews.map((review, idx) => {
           const theme = testimonialThemes[idx % testimonialThemes.length];
           const service = REVIEW_SERVICES[review.serviceCode];
+          // A date is shown only for a genuine Verified purchase review.
+          const shownDate = shownReviewDate(review);
 
           return (
             <article
@@ -343,9 +349,11 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({ onNavi
                     )}
                   </div>
                 </div>
-                <time dateTime={review.datePublished} className="shrink-0 text-right text-xs font-medium text-slate-400">
-                  {formatReviewDate(review.datePublished)}
-                </time>
+                {shownDate && (
+                  <time dateTime={shownDate} className="shrink-0 text-right text-xs font-medium text-slate-400">
+                    {formatReviewDate(shownDate)}
+                  </time>
+                )}
               </div>
             </article>
           );
