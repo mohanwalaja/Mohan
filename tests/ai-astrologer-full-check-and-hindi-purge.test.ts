@@ -7,7 +7,7 @@
  *      Hindi blog, Hindi sections in `SOURCES.md` / `VERIFICATION_LOG.md`).
  *   2. Zero unwanted / unverified / scraped sources (`tamilnavarasam.in`,
  *      undecoded `tdl...` stubs, `linked-not-opened`, `dead`) and 100% active
- *      citation coverage across all 39 verified sources (including all 9
+ *      citation coverage across all 44 active references (including all 9
  *      Tamil Nadu Navagraha Sthalams).
  *   3. All 10 unwanted / obsolete / unreferenced files permanently deleted
  *      across `knowledge/`, `api/knowledge/`, and `src/`.

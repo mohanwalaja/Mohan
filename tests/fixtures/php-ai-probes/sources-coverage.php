@@ -122,7 +122,7 @@ printf("\n%d of 8 cards fired; %d of those kept a citable source line\n", $cards
 echo "\n", $line, "\nGUARD vs THE RULES BLOCK (the important one)\n", $line, "\n";
 // Check that the local output guard still enforces reply safety independently
 // of any references present in a draft.
-$rulesBlockSources = ['EN-01', 'EN-02', 'EN-06', 'EN-09', 'EN-04', 'TA-02', 'TA-07', 'TA-25'];
+$rulesBlockSources = ['EN-01', 'EN-02', 'EN-06', 'EN-09', 'EN-04', 'TA-02', 'TA-07', 'TA-28'];
 foreach ($rulesBlockSources as $sid) {
     $draft = 'Your chart shows this period is demanding. Source: ' . $sid . '. Please see a qualified doctor if health worries you.';
     $check = AstroAiProvider::checkReply($draft, 'ta');
@@ -160,6 +160,7 @@ echo 'rule-cited ids not eligible for Tamil customer citation: ',
 
 $out = [
     'citableCount' => count($citable),
+    'citableIds' => array_keys($citable),
     'registryCount' => count($registry['sources'] ?? []),
     'rulesFired' => $totalRules,
     'questionsAsked' => count($questions),

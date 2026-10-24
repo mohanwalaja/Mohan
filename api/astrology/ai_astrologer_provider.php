@@ -82,16 +82,22 @@ class AstroAiProvider
         $sources = is_array($registry['sources'] ?? null) ? $registry['sources'] : [];
         $byVerification = [];
         $byLanguage = [];
+        $active = 0;
         foreach ($sources as $source) {
             $level = (string) ($source['verification'] ?? 'unknown');
             $byVerification[$level] = ($byVerification[$level] ?? 0) + 1;
             $lang = (string) ($source['language'] ?? 'unknown');
             $byLanguage[$lang] = ($byLanguage[$lang] ?? 0) + 1;
+            if (($source['citationStatus'] ?? 'active') === 'active') {
+                $active++;
+            }
         }
         ksort($byVerification);
         ksort($byLanguage);
         return [
             'total' => count($sources),
+            'active' => $active,
+            'nonActive' => count($sources) - $active,
             'citableTamil' => count(self::citableTamilSources()),
             'byLanguage' => $byLanguage,
             'byVerification' => $byVerification,
@@ -145,9 +151,9 @@ class AstroAiProvider
     // ------------------------------------------------------------------
 
     /**
-     * Verified Tamil-language sources, keyed by id. English, Sanskrit and
-     * Hindi entries never reach a customer reply, even when an English text
-     * informed a rule (the English is kept as internal reference only).
+     * Active verified Tamil-language sources, keyed by id. English, Sanskrit,
+     * Hindi, suppression-only and background-only entries never reach a
+     * customer reply, even when a text informed an internal safety boundary.
      */
     public static function citableTamilSources(): array
     {
@@ -161,6 +167,7 @@ class AstroAiProvider
         $out = [];
         foreach (($reg['sources'] ?? []) as $s) {
             if (($s['language'] ?? '') === 'ta'
+                && ($s['citationStatus'] ?? 'active') === 'active'
                 && in_array($s['verification'] ?? '', ['content-read', 'metadata-verified', 'catalogue-verified'], true)) {
                 $out[(string) $s['id']] = $s;
             }
@@ -577,9 +584,11 @@ class AstroAiProvider
         $stats = self::sourceRegistryStats();
         $levels = $stats['byVerification'];
         $sourceDetail = sprintf(
-            '%d verified records (%d Tamil citable, 0 Hindi books, 0 dead links): %d text-read, %d metadata-verified, %d catalogue-verified. Catalogue records are not full-text books.',
+            '%d audited records (%d active, %d Tamil citable, %d suppression/background, 0 Hindi books, 0 dead links): %d text-read, %d metadata-verified, %d catalogue-verified. Catalogue records are not full-text books.',
             $stats['total'],
+            $stats['active'],
             $stats['citableTamil'],
+            $stats['nonActive'],
             (int) ($levels['content-read'] ?? 0),
             (int) ($levels['metadata-verified'] ?? 0),
             (int) ($levels['catalogue-verified'] ?? 0)

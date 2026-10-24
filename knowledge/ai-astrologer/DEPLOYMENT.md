@@ -17,4 +17,4 @@ Fresh installations importing `api/schema.sql` already create `ai_chat_sessions`
 
 ## Verification
 
-Open **Admin Portal -> AI Astrologer** and click **Check the setup**. Every subsystem check should display **OK** with **39 verified sources · 0 external APIs**.
+Open **Admin Portal -> AI Astrologer** and click **Check the setup**. Every subsystem check should display **OK** with **47 audited records · 44 active references · 0 external APIs**. The registry also retains 3 suppression/background records that are not customer-citation eligible.

@@ -1850,6 +1850,80 @@ if ((strpos($path, 'admin/testing/payment') !== false || strpos($path, 'admin/se
     jsonResponse(['success' => $success, 'message' => $message, 'testedAt' => date('c')]);
 }
 
+// 5z. GET /api/admin/statistics — dashboard KPI summary.
+// The browser already called this route, but the router previously fell
+// through to "Admin endpoint not found". Keep its order visibility identical
+// to GET /api/admin/orders so the cards and the list cannot disagree.
+if (preg_match('#/admin/statistics/?$#', $path) && $method === 'GET') {
+    $visibility = "status NOT IN ('REJECTED','CANCELLED')
+          AND (payment_confirmed = 1
+               OR UPPER(COALESCE(NULLIF(payment_status, ''), 'PENDING_ADMIN')) = 'NOT_REQUIRED')
+          AND (payment_status IS NULL OR payment_status IN ('CAPTURED','NOT_REQUIRED','CONSUMED','VERIFIED_MANUAL'))";
+    $rows = $pdo->query(
+        "SELECT status, service_type, language, country, amount, currency, service_mode
+           FROM orders WHERE " . $visibility
+    )->fetchAll();
+
+    $completedOrders = 0;
+    $pendingApproval = 0;
+    $pendingOrders = 0;
+    $totalRevenueUSD = 0.0;
+    $totalRevenueINR = 0.0;
+    $serviceCounts = [];
+    $languageCounts = [];
+    $countryCounts = [];
+
+    foreach ($rows as $row) {
+        $status = strtoupper((string)($row['status'] ?? 'PENDING'));
+        $serviceType = strtoupper(trim((string)($row['service_type'] ?? ''))) ?: 'UNKNOWN';
+        $language = astro_normalize_report_language($row['language'] ?? 'en');
+        $country = trim((string)($row['country'] ?? '')) ?: 'Unknown';
+
+        $serviceCounts[$serviceType] = ($serviceCounts[$serviceType] ?? 0) + 1;
+        $languageCounts[$language] = ($languageCounts[$language] ?? 0) + 1;
+        $countryCounts[$country] = ($countryCounts[$country] ?? 0) + 1;
+
+        if (in_array($status, ['GENERATED', 'COMPLETED'], true)) $completedOrders++;
+        if ($status === 'PENDING_APPROVAL') $pendingApproval++;
+        if (in_array($status, ['PENDING', 'PENDING_APPROVAL'], true)) $pendingOrders++;
+
+        // Revenue is recognised for paid orders that have entered fulfilment;
+        // free charts, refunded orders and rejected/cancelled orders add zero.
+        if (($row['service_mode'] ?? 'PAID') !== 'FREE_BETA'
+            && in_array($status, ['APPROVED', 'PROCESSING', 'GENERATED', 'COMPLETED'], true)) {
+            $amount = (float)($row['amount'] ?? 0);
+            if (strtoupper((string)($row['currency'] ?? 'USD')) === 'INR') {
+                $totalRevenueINR += $amount;
+            } else {
+                $totalRevenueUSD += $amount;
+            }
+        }
+    }
+
+    $rejectedOrders = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'REJECTED'")->fetchColumn();
+    $totalUsers = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+    $settingsRow = $pdo->query("SELECT service_mode FROM system_settings ORDER BY id ASC LIMIT 1")->fetch();
+    $currentServiceMode = strtoupper((string)($settingsRow['service_mode'] ?? 'PAID')) === 'FREE_BETA' ? 'FREE_BETA' : 'PAID';
+
+    jsonResponse([
+        'success' => true,
+        'statistics' => [
+            'totalOrders' => count($rows),
+            'completedOrders' => $completedOrders,
+            'pendingApproval' => $pendingApproval,
+            'pendingOrders' => $pendingOrders,
+            'rejectedOrders' => $rejectedOrders,
+            'totalRevenueUSD' => $totalRevenueUSD,
+            'totalRevenueINR' => $totalRevenueINR,
+            'serviceCounts' => (object)$serviceCounts,
+            'languageCounts' => (object)$languageCounts,
+            'countryCounts' => (object)$countryCounts,
+            'totalUsers' => $totalUsers,
+            'currentServiceMode' => $currentServiceMode
+        ]
+    ]);
+}
+
 // 6. GET /api/admin/audit-logs
 if (strpos($path, 'admin/audit-logs') !== false && $method === 'GET') {
     $page = max(1, (int)($_GET['page'] ?? 1));
@@ -1875,11 +1949,73 @@ if (strpos($path, 'admin/audit-logs') !== false && $method === 'GET') {
     ]);
 }
 
-// 7. GET /api/admin/contact-messages
-if (strpos($path, 'admin/contact-messages') !== false && $method === 'GET') {
-    $stmt = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC");
-    $rows = $stmt->fetchAll();
-    jsonResponse(['success' => true, 'messages' => $rows]);
+// 7. Admin contact inquiries. The current client uses /admin/messages and
+// camelCase fields; retain /admin/contact-messages with its legacy raw shape.
+$messageCollectionMatches = [];
+$messageItemMatches = [];
+$isMessageCollection = preg_match('#/admin/(messages|contact-messages)/?$#', $path, $messageCollectionMatches);
+$isMessageItem = preg_match('#/admin/(?:messages|contact-messages)/([^/]+)/?$#', $path, $messageItemMatches);
+
+if ($isMessageCollection && $method === 'GET') {
+    $rows = $pdo->query("SELECT * FROM contact_messages ORDER BY created_at DESC, id ASC")->fetchAll();
+    if (($messageCollectionMatches[1] ?? '') === 'contact-messages') {
+        jsonResponse(['success' => true, 'messages' => $rows]);
+    }
+
+    $statusMap = [
+        'UNREAD' => 'NEW', 'READ' => 'REVIEWED', 'REPLIED' => 'RESPONDED',
+        'NEW' => 'NEW', 'REVIEWED' => 'REVIEWED', 'RESPONDED' => 'RESPONDED'
+    ];
+    $messages = array_map(static function ($row) use ($statusMap) {
+        $storedStatus = strtoupper((string)($row['status'] ?? 'UNREAD'));
+        return [
+            'id' => (string)$row['id'],
+            'name' => (string)$row['name'],
+            'email' => (string)$row['email'],
+            'mobile' => $row['mobile'] ?? null,
+            'subject' => (string)$row['subject'],
+            'message' => (string)$row['message'],
+            'status' => $statusMap[$storedStatus] ?? 'NEW',
+            'adminNotes' => $row['admin_notes'] ?? null,
+            'autoEmailDispatched' => in_array(strtoupper((string)($row['email_status'] ?? '')), ['SENT', 'DELIVERED'], true),
+            'dispatchedTo' => (string)($row['email_recipient'] ?? ''),
+            'emailDispatchedAt' => $row['email_dispatched_at'] ?? null,
+            'createdAt' => $row['created_at'],
+            'ip' => $row['ip_address'] ?? null
+        ];
+    }, $rows);
+    jsonResponse(['success' => true, 'count' => count($messages), 'messages' => $messages]);
+}
+
+if ($isMessageItem && $method === 'PATCH') {
+    $id = urldecode((string)$messageItemMatches[1]);
+    $body = getJsonBody();
+    $clientStatus = strtoupper(trim((string)($body['status'] ?? '')));
+    $statusMap = ['NEW' => 'UNREAD', 'REVIEWED' => 'READ', 'RESPONDED' => 'REPLIED'];
+    if (!isset($statusMap[$clientStatus])) {
+        jsonResponse(['success' => false, 'message' => 'Status must be NEW, REVIEWED or RESPONDED.'], 400);
+    }
+
+    $exists = $pdo->prepare("SELECT id FROM contact_messages WHERE id = ? LIMIT 1");
+    $exists->execute([$id]);
+    if (!$exists->fetchColumn()) {
+        jsonResponse(['success' => false, 'message' => 'Inquiry not found.'], 404);
+    }
+    $stmt = $pdo->prepare("UPDATE contact_messages SET status = ? WHERE id = ?");
+    $stmt->execute([$statusMap[$clientStatus], $id]);
+    logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'CONTACT_MESSAGE_UPDATED', "Inquiry {$id} marked {$clientStatus}.");
+    jsonResponse(['success' => true, 'message' => "Inquiry marked as {$clientStatus}.", 'status' => $clientStatus]);
+}
+
+if ($isMessageItem && $method === 'DELETE') {
+    $id = urldecode((string)$messageItemMatches[1]);
+    $stmt = $pdo->prepare("DELETE FROM contact_messages WHERE id = ?");
+    $stmt->execute([$id]);
+    if ($stmt->rowCount() === 0) {
+        jsonResponse(['success' => false, 'message' => 'Inquiry not found.'], 404);
+    }
+    logAudit($pdo, $admin['id'], $admin['name'], 'admin', 'CONTACT_MESSAGE_DELETED', "Inquiry {$id} deleted.");
+    jsonResponse(['success' => true, 'message' => 'Inquiry message removed.']);
 }
 
 // 7b. GET /api/admin/reports/financial
@@ -2307,11 +2443,62 @@ if (strpos($path, 'admin/team') !== false) {
     }
 }
 
-// 9. GET /api/admin/users
-if (strpos($path, 'admin/users') !== false && $method === 'GET') {
-    $stmt = $pdo->query("SELECT id, name, email, mobile, role, country, created_at, last_login FROM users ORDER BY created_at DESC");
-    $rows = $stmt->fetchAll();
-    jsonResponse(['success' => true, 'users' => $rows]);
+// 9. GET /api/admin/customers (current) and /api/admin/users (legacy).
+// The legacy route keeps its original raw response. The current route returns
+// the camelCase user fields and latest birth profile expected by the portal.
+$userCollectionMatches = [];
+if (preg_match('#/admin/(users|customers)/?$#', $path, $userCollectionMatches) && $method === 'GET') {
+    $rows = $pdo->query("SELECT id, name, email, mobile, role, country, created_at, last_login FROM users ORDER BY created_at DESC, id ASC")->fetchAll();
+    if (($userCollectionMatches[1] ?? '') === 'users') {
+        jsonResponse(['success' => true, 'users' => $rows]);
+    }
+
+    $profileStmt = null;
+    try {
+        $profileStmt = $pdo->prepare("SELECT * FROM birth_profiles WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 1");
+    } catch (Throwable $e) {
+        // A missing optional profile table must not hide the customer list.
+        $profileStmt = null;
+    }
+    $customers = array_map(static function ($row) use ($profileStmt) {
+        $profile = null;
+        if ($profileStmt) {
+            try {
+                $profileStmt->execute([$row['id']]);
+                $bp = $profileStmt->fetch();
+                if ($bp) {
+                    $profile = [
+                        'userId' => $bp['user_id'],
+                        'name' => $bp['name'] ?? $row['name'],
+                        'dob' => $bp['dob'],
+                        'tob' => $bp['tob'],
+                        'birthPlace' => $bp['birth_place'],
+                        'country' => $bp['country'] ?? '',
+                        'latitude' => (float)($bp['latitude'] ?? 0),
+                        'longitude' => (float)($bp['longitude'] ?? 0),
+                        'timezoneOffsetHours' => (float)($bp['timezone_offset_hours'] ?? 0),
+                        'timeZoneId' => $bp['time_zone_id'] ?? ($bp['timezone_id'] ?? null),
+                        'gender' => $bp['gender'] ?? null,
+                        'updatedAt' => $bp['updated_at'] ?? null
+                    ];
+                }
+            } catch (Throwable $e) {
+                $profile = null;
+            }
+        }
+        return [
+            'id' => $row['id'],
+            'name' => $row['name'],
+            'email' => $row['email'],
+            'mobile' => $row['mobile'] ?? '',
+            'role' => $row['role'],
+            'country' => $row['country'] ?? '',
+            'createdAt' => $row['created_at'] ?? null,
+            'lastLogin' => $row['last_login'] ?? null,
+            'birthProfile' => $profile
+        ];
+    }, $rows);
+    jsonResponse(['success' => true, 'count' => count($customers), 'users' => $customers, 'customers' => $customers]);
 }
 
 // 11. BANNED IPS MANAGEMENT (GET, POST, DELETE /api/admin/banned-ips)

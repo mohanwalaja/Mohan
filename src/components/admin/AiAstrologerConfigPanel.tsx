@@ -47,11 +47,12 @@ export const AiAstrologerConfigPanel: React.FC = () => {
         </div>
 
         <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-100">
-          <strong>Verified 39-source library (0 Hindi books · 0 unverified links):</strong> every record in the active
-          registry is cited directly by our curated chart rules or astronomical engine — 31 Tamil classical &amp;
-          Navagraha Sthalam references plus 8 foundational Sanskrit/English calculation &amp; structural works (11
-          marked content-read, 27 metadata-verified, 1 catalogue-verified). Catalogue records are bibliographic
-          authorities rather than full-text book dumps, and customer-facing source footers cite verified Tamil references only.
+          <strong>Audited 47-record registry (0 Hindi books · 0 unverified links):</strong> 44 active references are
+          cited directly by our curated chart rules or astronomical engine — 32 Tamil classical &amp; Navagraha
+          Sthalam references plus 8 English and 4 Sanskrit calculation &amp; structural works. Three records
+          are suppression/background only and cannot reach customer citations. Verification levels are 30
+          content-read, 16 metadata-verified and 1 catalogue-verified; content-read means targeted actual passages
+          were reviewed, not cover-to-cover import. Customer-facing source footers cite active Tamil references only.
         </div>
 
         <button
@@ -83,14 +84,14 @@ export const AiAstrologerConfigPanel: React.FC = () => {
           {registry && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                ['Verified sources', registry.total],
-                ['Eligible Tamil references', registry.citableTamil],
+                ['Audited records', registry.total],
+                ['Active / Tamil citable', `${registry.active} / ${registry.citableTamil}`],
                 ['Text-read records', verification?.['content-read'] ?? 0],
                 ['Metadata-verified', (verification?.['metadata-verified'] ?? 0) + (verification?.['catalogue-verified'] ?? 0)],
               ].map(([label, value]) => (
                 <div key={String(label)} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-700">
                   <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                    {label === 'Verified sources' ? <Database className="h-3 w-3" /> : null}
+                    {label === 'Audited records' ? <Database className="h-3 w-3" /> : null}
                     {label}
                   </div>
                   <div className="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">{value}</div>

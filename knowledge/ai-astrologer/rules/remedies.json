@@ -60,6 +60,11 @@
         {
           "id": "TP-01",
           "level": "content"
+        },
+        {
+          "id": "TA-24",
+          "level": "book",
+          "note": "Suryanar Kovil history and Sun-worship context only; not a predictive or Muhurtham source."
         }
       ],
       "weekdayI18n": {

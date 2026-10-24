@@ -82,6 +82,9 @@ const testFiles = [
   // Mobile admin refresh: public first-paint settings timeouts must never abort
   // authoritative admin data, and one failed section must not blank the others.
   'tests/admin-data-loading.test.ts',
+  // Real PHP handlers for the three admin reads that previously answered 404:
+  // statistics, customers and messages, plus message review/delete actions.
+  'tests/admin-read-endpoints.test.ts',
   // The CDN safety contract: two "dormant" bugs (a cacheable API response and a
   // URL->encoding map without Vary) become customer-visible incidents the moment
   // a shared edge cache sits in front of the origin. It also EXECUTES the

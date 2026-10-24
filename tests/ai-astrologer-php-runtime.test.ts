@@ -71,11 +71,17 @@ check('the runtime reports local-only mode with no blocking setup issue', () => 
   assert.match(out.externalCompletionError, /disabled/i);
 });
 
-check('runtime diagnostics expose the cleaned 39-source registry with zero Hindi books', () => {
-  assert.equal(out.sourceRegistry.total, 39);
+check('runtime diagnostics expose the audited 47-record registry with zero Hindi books', () => {
+  assert.equal(out.sourceRegistry.total, 47);
+  assert.equal(out.sourceRegistry.active, 44);
+  assert.equal(out.sourceRegistry.nonActive, 3);
   assert.equal('excluded' in out.sourceRegistry, false);
-  assert.equal(out.sourceRegistry.citableTamil, 31);
-  assert.equal(out.sourceRegistry.byVerification['content-read'], 11);
+  assert.equal(out.sourceRegistry.citableTamil, 32);
+  assert.equal(out.sourceRegistry.byVerification['content-read'], 30);
+  assert.equal(out.sourceRegistry.byVerification['metadata-verified'], 16);
+  assert.equal(out.sourceRegistry.byLanguage.ta, 35);
+  assert.equal(out.sourceRegistry.byLanguage.en, 8);
+  assert.equal(out.sourceRegistry.byLanguage.sa, 4);
 });
 
 check('local guardrails reject banned prediction language in all supported languages', () => {
@@ -137,8 +143,11 @@ check('a personal answer includes the customer\'s rebuilt report reading', () =>
 check('reviewed rule cards that fire carry an eligible Tamil reference', () => {
   assert.ok(coverage.cardsFired >= 8, `expected the coverage probe to fire all cards, got ${coverage.cardsFired}`);
   assert.equal(coverage.cardsCited, coverage.cardsFired);
-  assert.equal(coverage.citableCount, 31, `expected 31 verified Tamil citations, got ${coverage.citableCount}`);
-  assert.equal(coverage.registryCount, 39);
+  assert.equal(coverage.citableCount, 32, `expected 32 verified Tamil citations, got ${coverage.citableCount}`);
+  assert.equal(coverage.registryCount, 47);
+  for (const id of ['TA-10', 'TA-11', 'TA-25', 'SA-01', 'SA-02', 'SA-03', 'SA-04']) {
+    assert.equal(coverage.citableIds.includes(id), false, `${id} must not be customer-citation eligible`);
+  }
 });
 
 check('English-only source editions are not emitted as Tamil customer citations', () => {

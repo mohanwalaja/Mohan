@@ -87,6 +87,8 @@ $cases = [
     ['id' => 'yoga-gajakesari-guide', 'lang' => 'en', 'guided' => ['kind' => 'knowledge', 'topic' => 'yoga-gajakesari']],
     ['id' => 'bhava-career-guide', 'lang' => 'ta', 'guided' => ['kind' => 'knowledge', 'bhava' => 10]],
     ['id' => 'planet-guru-guide', 'lang' => 'hi', 'guided' => ['kind' => 'knowledge', 'planet' => 'Guru']],
+    ['id' => 'bhava-family-resources-guide', 'lang' => 'en', 'guided' => ['kind' => 'knowledge', 'bhava' => 2]],
+    ['id' => 'transit-varshaphala-guide', 'lang' => 'en', 'guided' => ['kind' => 'knowledge', 'topic' => 'transit-varshaphala-method']],
     ['id' => 'order-status', 'lang' => 'en', 'guided' => ['kind' => 'order', 'topic' => 'status']],
     ['id' => 'order-details', 'lang' => 'ta', 'guided' => ['kind' => 'order', 'topic' => 'details']],
     ['id' => 'order-payment', 'lang' => 'hi', 'guided' => ['kind' => 'order', 'topic' => 'payment']],

@@ -275,7 +275,7 @@ check('explaining a section states it in the customer\u2019s language and links 
   assert.ok(!/[\u0900-\u097F]/.test(ta.body), 'a Tamil explanation must not contain Devanagari');
   const en = explainSection(section, 'en', {});
   assert.match(en.body, /In your chart:/);
-  assert.equal(en.sourceLine, 'Source: TA-06 · TA-25');
+  assert.equal(en.sourceLine, 'Source: TA-06 · TA-27');
 });
 
 check('explainQuotedLine returns null rather than guessing', () => {

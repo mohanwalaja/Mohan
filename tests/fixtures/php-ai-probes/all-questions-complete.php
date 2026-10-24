@@ -84,7 +84,7 @@ foreach (($guidedJson['categories'] ?? []) as $cat) {
                 if ($lang === 'hi' && $hasTamil) {
                     $scriptLeaks[] = ['id' => $id, 'lang' => $lang, 'withChart' => $withChart, 'content' => $r['content']];
                 }
-                if ($withChart && in_array($id, ['remedy-rahuketu', 'remedy-personal', 'remedy-temple', 'current-year', 'current-period', 'current-star', 'current-sade-sati', 'career-overview'], true)) {
+                if ($withChart && in_array($id, ['remedy-rahuketu', 'remedy-personal', 'remedy-temple', 'current-year', 'current-period', 'current-star', 'current-sade-sati', 'current-family-journal', 'career-overview', 'bhava-family-resources-guide', 'transit-varshaphala-guide', 'yoga-dhana-guide'], true)) {
                     $samples[$id][$lang] = [
                         'content' => $r['content'],
                         'bubbles' => $r['bubbles'],
@@ -157,6 +157,8 @@ $freeQueries = [
     ['en', 'What is Sankatahara Chaturthi?'],
     ['en', 'What is Amavasya tarpanam?'],
     ['en', 'What are the 10 Poruthams in marriage matching?'],
+    ['en', 'What is Kudumpa Jothidam?'],
+    ['en', 'What is Varshaphala?'],
     ['en', 'What is Rajju Porutham?'],
     ['en', 'What is Dina Porutham?'],
     ['en', 'What is Gana Porutham?'],
@@ -202,6 +204,8 @@ $freeQueries = [
     ['ta', 'ராகு காலம் எமகண்டம் நேரம் என்ன?'],
     ['ta', 'கஜகேசரி யோகம் என்றால் என்ன?'],
     ['ta', '10 பொருத்தங்கள் யாவை?'],
+    ['ta', 'குடும்ப ஜோதிடம் என்றால் என்ன?'],
+    ['ta', 'வர்ஷபலம் என்றால் என்ன?'],
     ['ta', 'ரஜ்ஜு பொருத்தம் என்றால் என்ன?'],
     ['ta', '5-ஆம் வீடு பலன் என்ன?'],
     ['ta', 'நவக்கிரக கோயில்கள் யாவை?'],
@@ -217,6 +221,7 @@ $freeQueries = [
     ['hi', 'राहु काल कब होता है?'],
     ['hi', 'गजकेसरी योग क्या है?'],
     ['hi', 'दस पोरुत्तम क्या हैं?'],
+    ['hi', 'वर्षफल क्या है?'],
     ['hi', 'पंचम भाव का फल क्या है?'],
     ['hi', 'नौ नवग्रह मंदिर कौन से हैं?'],
 ];
@@ -254,6 +259,12 @@ foreach ($freeQueries as [$lang, $q]) {
         'What is Rahu Kalam?',
         'What is Ashtama Sani?',
         'What is Kuja Dosha?',
+        'What are the 10 Poruthams in marriage matching?',
+        'What is Kudumpa Jothidam?',
+        'குடும்ப ஜோதிடம் என்றால் என்ன?',
+        'What is Varshaphala?',
+        'வர்ஷபலம் என்றால் என்ன?',
+        'वर्षफल क्या है?',
         'Remedies for Rahu and Ketu',
         'Tell me about Guru in my chart',
     ], true)) {

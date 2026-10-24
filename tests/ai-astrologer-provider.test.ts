@@ -64,20 +64,25 @@ check('diagnostics are permanently local-only with zero outbound ping', () => {
   assert.match(endpoint, /Ignore legacy ping requests/);
 });
 
-check('source statistics match the cleaned 39-source registry with zero Hindi books or unverified links', () => {
+check('source statistics match the audited 47-record registry with zero Hindi books or unverified links', () => {
   const counts = new Map<string, number>();
   for (const source of sourceRegistry.sources) {
     const level = source.verification || 'unknown';
     counts.set(level, (counts.get(level) || 0) + 1);
   }
   assert.equal('excludedSources' in sourceRegistry, false);
-  assert.equal(sourceRegistry.sources.length, 39);
-  assert.equal(counts.get('content-read'), 11);
-  assert.equal(counts.get('metadata-verified'), 27);
+  assert.equal(sourceRegistry.sources.length, 47);
+  assert.equal(counts.get('content-read'), 30);
+  assert.equal(counts.get('metadata-verified'), 16);
   assert.equal(counts.get('catalogue-verified'), 1);
   assert.equal(counts.get('linked-not-opened') ?? 0, 0);
   assert.equal(counts.get('dead') ?? 0, 0);
-  assert.match(panel, /Verified 39-source library/i);
+  const active = sourceRegistry.sources.filter((s: any) => (s.citationStatus ?? 'active') === 'active');
+  assert.equal(active.length, 44);
+  assert.equal(active.filter((s: any) => s.language === 'ta').length, 32);
+  assert.equal(active.filter((s: any) => s.language === 'sa').length, 4);
+  assert.match(provider, /\(\$s\['citationStatus'\] \?\? 'active'\) === 'active'/);
+  assert.match(panel, /Audited 47-record registry/i);
   assert.match(panel, /0 Hindi books/i);
 });
 
@@ -142,6 +147,7 @@ check('chart-condition matching has a PHP branch for every condition in the loca
 
 check('suppressed and non-Tamil references cannot be shown as customer citations', () => {
   assert.match(provider, /\(\$s\['level'\] \?\? 'book'\) === 'suppressed'/);
+  assert.match(provider, /\(\$s\['citationStatus'\] \?\? 'active'\) === 'active'/);
   const citedIds = new Set<string>(lifeAreas.areas.flatMap((area: any) => area.rules.flatMap((rule: any) => rule.source.map((source: any) => source.id))));
   for (const id of citedIds) assert.ok(!id.startsWith('HI-'), `rule base cites excluded Hindi source ${id}`);
   assert.match(provider, /tamilOnlySourceLine/);
