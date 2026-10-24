@@ -6,9 +6,11 @@
  * itself from the SAME arrays that render the visible FAQ and review cards:
  *
  *   1. FAQPage = src/data/homeFaq.ts (5 Q&As), verbatim, in display order.
- *   2. Review per displayed review (author, datePublished, reviewBody, rating,
- *      itemReviewed = the Service node from index.html + its page URL) and an
- *      AggregateRating on the Organization that equals the visible summary.
+ *   2. Review per displayed review (author, reviewBody, rating,
+ *      itemReviewed = the Service node from index.html + its page URL, and a
+ *      datePublished only for a Verified purchase review — curated
+ *      testimonials are undated everywhere) and an AggregateRating on the
+ *      Organization that equals the visible summary.
  *   3. Homepage only — index.html is the template of EVERY prerendered page,
  *      so it must not carry either type.
  *   4. The serializer cannot be broken out of by user-written review text.
@@ -183,7 +185,7 @@ check('the breadcrumb guard fails the build on a missing, duplicated or mis-aime
   assert.deepEqual(prerender.breadcrumbProblems(route, crumb('https://astrosivam.com/contact')), []);
 });
 
-check('each review carries author, date, body, rating and the service it reviews (with its page)', () => {
+check('each curated review carries author, body, rating and its service — but no date', () => {
   const summary = summarizeRatings(CURATED_TESTIMONIALS, null);
   const data = buildReviewsJsonLd(CURATED_TESTIMONIALS, summary) as { '@graph': Array<Record<string, any>> };
   const reviews = data['@graph'].filter((node) => node['@type'] === 'Review');
@@ -193,8 +195,8 @@ check('each review carries author, date, body, rating and the service it reviews
     const source = CURATED_TESTIMONIALS[index];
     assert.equal(node.author['@type'], 'Person');
     assert.equal(node.author.name, source.authorName);
-    assert.equal(node.datePublished, source.datePublished);
-    assert.match(node.datePublished, /^\d{4}-\d{2}(-\d{2})?$/, 'datePublished must be ISO 8601');
+    assert.equal(source.datePublished, undefined, 'curated testimonials are undated');
+    assert.ok(!('datePublished' in node), 'the markup must not describe a date the visitor does not see');
     assert.equal(node.reviewBody, source.body);
     assert.deepEqual(node.reviewRating, { '@type': 'Rating', ratingValue: source.rating, bestRating: 5, worstRating: 1 });
     const service = SERVICE_SCHEMA[source.serviceCode];
@@ -236,6 +238,11 @@ check('the AggregateRating is the visible summary: curated + every published rev
   const data = buildReviewsJsonLd(merged, summary) as any;
   assert.equal(data['@graph'].find((node: any) => node.aggregateRating).aggregateRating.ratingValue, 4.4);
   assert.equal(data['@graph'].filter((node: any) => node['@type'] === 'Review').length, 8);
+  // Genuine verified reviews keep their dates in the markup; curated have none.
+  const dated = data['@graph'].filter((node: any) => node['@type'] === 'Review' && node.datePublished);
+  assert.deepEqual(dated.map((node: any) => node.datePublished), ['2026-10-12', '2026-10-10']);
+  for (const node of dated) assert.match(node.datePublished, /^\d{4}-\d{2}-\d{2}$/, 'datePublished must be ISO 8601');
+  assert.equal(data['@graph'].filter((node: any) => node['@type'] === 'Review' && !('datePublished' in node)).length, 6);
   assert.equal(buildReviewsJsonLd([], null), null, 'no reviews -> no review markup');
 });
 

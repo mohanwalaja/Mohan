@@ -555,9 +555,15 @@ export function homepageStructuredDataProblems(route, bodyHtml) {
   const rating = graph.find((n) => n.aggregateRating)?.aggregateRating;
   if (reviewNodes.length === 0) problems.push('the homepage is missing its Review JSON-LD');
   for (const node of reviewNodes) {
-    if (!node.author?.name || !node.datePublished || !node.reviewBody || !node.reviewRating?.ratingValue || !node.itemReviewed?.url) {
-      problems.push(`Review ${node['@id']} lacks author, datePublished, reviewBody, reviewRating or itemReviewed`);
+    // datePublished is optional: only a Verified purchase review is shown
+    // with a date; curated testimonials carry none. When present it must be
+    // ISO 8601 (YYYY-MM-DD, or YYYY-MM at month precision).
+    if (!node.author?.name || !node.reviewBody || !node.reviewRating?.ratingValue || !node.itemReviewed?.url) {
+      problems.push(`Review ${node['@id']} lacks author, reviewBody, reviewRating or itemReviewed`);
       continue;
+    }
+    if (node.datePublished !== undefined && !/^\d{4}-\d{2}(-\d{2})?$/.test(node.datePublished)) {
+      problems.push(`Review ${node['@id']} datePublished is not ISO 8601: ${node.datePublished}`);
     }
     if (!text.includes(node.reviewBody)) problems.push(`review body not visible on the page: ${node['@id']}`);
     if (!text.includes(node.author.name)) problems.push(`review author not visible on the page: ${node.author.name}`);

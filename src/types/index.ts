@@ -979,8 +979,12 @@ export interface DisplayReview {
   rating: number;
   title?: string;
   body: string;
-  /** ISO 8601: YYYY-MM-DD, or YYYY-MM when only the month is known. */
-  datePublished: string;
+  /**
+   * ISO 8601 (YYYY-MM-DD). Only a verified review carries one: curated
+   * testimonials intentionally have none, so no date is shown for them (see
+   * shownReviewDate in services/reviews.ts and src/data/testimonials.ts).
+   */
+  datePublished?: string;
   /** True only for reviews written through the customer's own paid, delivered order. */
   verifiedPurchase: boolean;
 }

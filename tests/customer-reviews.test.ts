@@ -7,9 +7,10 @@ import { readRepoSource } from './helpers/module-sources.js';
  * administrator publishes each review; the homepage lists published reviews
  * first, each linked to its service page.
  *
- *   1. Client logic (always runs): curated testimonials are kept verbatim
- *      (never re-dated, never labelled verified), merge order, the aggregate
- *      over every published review, the form validation mirror.
+ *   1. Client logic (always runs): curated testimonials keep their wording
+ *      but are undated (a date is shown only for a genuine verified review;
+ *      they are never re-dated, never labelled verified), merge order, the
+ *      aggregate over every published review, the form validation mirror.
  *   2. Wiring contracts (always run): routes, migration == schema == runtime
  *      DDL, client limits == server limits, dashboard + admin entry points.
  *   3. The REAL PHP routes under PHP-WASM (dev-only runtime; SKIPs when absent,
@@ -39,6 +40,7 @@ import {
   formatReviewDate,
   mergeReviews,
   publishedToDisplay,
+  shownReviewDate,
   summarizeRatings,
   textLength,
   validateReviewDraft
@@ -73,25 +75,29 @@ console.log('--- CUSTOMER REVIEWS (SEO audit 2026-10-15, finding 3) ---');
 // 1. Client logic
 // ---------------------------------------------------------------------------
 
-await check('the six curated testimonials are kept verbatim: original month, never "verified"', () => {
+await check('the six curated testimonials keep their wording but show no date, and are never "verified"', () => {
   assert.equal(CURATED_TESTIMONIALS.length, 6);
-  // Re-dating a testimonial would misrepresent it; freshness comes from real reviews.
   assert.deepEqual(
-    CURATED_TESTIMONIALS.map((t) => [t.authorName, t.datePublished]),
-    [
-      ['Rajesh & Priya Sharma', '2026-02'],
-      ['Kavita Maharaj', '2026-01'],
-      ['Amit & Deepa Prasad', '2026-02'],
-      ['Ganesh Iyer', '2026-02'],
-      ['Sunil Kumar', '2026-01'],
-      ['Meena Pillay', '2025-12']
-    ]
+    CURATED_TESTIMONIALS.map((t) => t.authorName),
+    ['Rajesh & Priya Sharma', 'Kavita Maharaj', 'Amit & Deepa Prasad', 'Ganesh Iyer', 'Sunil Kumar', 'Meena Pillay']
   );
   for (const testimonial of CURATED_TESTIMONIALS) {
     assert.equal(testimonial.verifiedPurchase, false, `${testimonial.authorName} was not submitted through an order`);
+    // No Dec 2025–Feb 2026 cluster that reads as seeded. The date is removed,
+    // never re-dated — freshness comes from real verified reviews.
+    assert.equal(testimonial.datePublished, undefined, `${testimonial.authorName} must carry no date`);
+    assert.equal(shownReviewDate(testimonial), undefined, `${testimonial.authorName} must not display a date`);
     assert.ok(testimonial.serviceCode in REVIEW_SERVICES, `${testimonial.authorName} must name a real service`);
     assert.ok(testimonial.rating >= 1 && testimonial.rating <= 5);
   }
+});
+
+await check('only a genuine verified purchase is shown with its publication date', () => {
+  assert.equal(shownReviewDate({ verifiedPurchase: true, datePublished: '2026-10-14' }), '2026-10-14');
+  assert.equal(shownReviewDate({ verifiedPurchase: false, datePublished: '2026-02' }), undefined,
+    'an unverified testimonial hides its date even if one is re-added to the data');
+  assert.equal(shownReviewDate({ verifiedPurchase: true, datePublished: undefined }), undefined);
+  assert.equal(shownReviewDate({ verifiedPurchase: false, datePublished: undefined }), undefined);
 });
 
 await check('every review links to a prerendered service page', () => {
@@ -101,20 +107,25 @@ await check('every review links to a prerendered service page', () => {
   }
   const section = read('src/components/common/TestimonialsSection.tsx');
   assert.match(section, /<RouteLink\s+route=\{service\.route\}/, 'each review card must link its service page');
-  assert.match(section, /<time dateTime=\{review\.datePublished\}/, 'the date must be machine-readable');
-  assert.doesNotMatch(section, /hidden shrink-0 text-xs font-medium text-slate-400 sm:inline/, 'the date must be visible on phones too');
+  assert.match(section, /const shownDate = shownReviewDate\(review\);/, 'the card date must go through the verified-only rule');
+  assert.match(section, /\{shownDate && \(\s*<time dateTime=\{shownDate\}/, 'a shown date must be machine-readable');
+  assert.doesNotMatch(section, /review\.datePublished/, 'the card must never render an unverified date directly');
+  assert.doesNotMatch(section, /hidden shrink-0 text-xs font-medium text-slate-400 sm:inline/, 'a shown date must be visible on phones too');
 });
 
 const verified = (id: string, datePublished: string, rating = 5): DisplayReview => ({
   id, authorName: `Customer ${id}`, serviceCode: 'BIRTH_JATHAGAM', rating, body: 'A clear and careful report.', datePublished, verifiedPurchase: true
 });
 
-await check('verified reviews come first, newest first; curated follow newest first; duplicates dropped', () => {
+await check('verified reviews come first, newest first; undated curated follow in declared order; duplicates dropped', () => {
   const merged = mergeReviews([verified('v1', '2026-09-01'), verified('v2', '2026-10-14'), verified('v1', '2026-09-01')], CURATED_TESTIMONIALS);
   assert.deepEqual(merged.slice(0, 2).map((r) => r.id), ['v2', 'v1']);
+  assert.deepEqual(merged.slice(0, 2).map((r) => shownReviewDate(r)), ['2026-10-14', '2026-09-01'],
+    'genuine verified reviews keep their dates');
   assert.equal(merged.length, 2 + CURATED_TESTIMONIALS.length);
-  const curatedDates = merged.slice(2).map((r) => r.datePublished);
-  assert.deepEqual(curatedDates, [...curatedDates].sort().reverse());
+  assert.deepEqual(merged.slice(2).map((r) => r.id), CURATED_TESTIMONIALS.map((t) => t.id),
+    'undated curated testimonials keep their declared order, not a fake chronological one');
+  assert.ok(merged.slice(2).every((r) => shownReviewDate(r) === undefined));
 });
 
 await check('the rating summary counts every published review, not just the page returned', () => {

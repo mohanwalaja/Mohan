@@ -69,12 +69,33 @@ export function publishedToDisplay(review: PublishedReview): DisplayReview | nul
   };
 }
 
-const byNewest = (a: DisplayReview, b: DisplayReview) =>
-  a.datePublished < b.datePublished ? 1 : a.datePublished > b.datePublished ? -1 : 0;
+/**
+ * The publication date a review may DISPLAY, or undefined. Only a verified
+ * purchase — a genuine review submitted through the customer's own paid,
+ * delivered order and published by an administrator — is shown with its
+ * date; an unverified curated testimonial never shows one, even if a date is
+ * re-added to its data by mistake. The card (TestimonialsSection) and the
+ * JSON-LD (structuredData) both go through this helper so the markup can
+ * never carry a date the visitor does not see.
+ */
+export function shownReviewDate(
+  review: Pick<DisplayReview, 'datePublished' | 'verifiedPurchase'>,
+): string | undefined {
+  return review.verifiedPurchase && review.datePublished ? review.datePublished : undefined;
+}
+
+/** Newest first; undated reviews keep their declared order (dated first). */
+const byNewest = (a: DisplayReview, b: DisplayReview) => {
+  if (a.datePublished === b.datePublished) return 0;
+  if (!a.datePublished) return 1;
+  if (!b.datePublished) return -1;
+  return a.datePublished < b.datePublished ? 1 : -1;
+};
 
 /**
  * Verified customer reviews first (newest first), then the curated
- * testimonials (newest first). Duplicate ids keep their first occurrence.
+ * testimonials (undated, in their declared order). Duplicate ids keep their
+ * first occurrence.
  */
 export function mergeReviews(verified: readonly DisplayReview[], curated: readonly DisplayReview[]): DisplayReview[] {
   const seen = new Set<string>();

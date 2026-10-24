@@ -1,6 +1,6 @@
 import type { DisplayReview, ReviewServiceCode } from '../types';
 import type { FaqItem } from '../data/homeFaq';
-import type { RatingSummary } from './reviews';
+import { shownReviewDate, type RatingSummary } from './reviews';
 
 /**
  * Homepage structured data (SEO audit 2026-10-15, finding 2).
@@ -130,9 +130,12 @@ export function buildWebPageJsonLd(page: { url: string; name: string; descriptio
 const reviewNodeId = (id: string) => `${SITE_ORIGIN}/#review-${String(id).replace(/[^A-Za-z0-9_-]/g, '-')}`;
 
 /**
- * One Review per displayed review (author, datePublished, reviewBody, rating,
- * and itemReviewed = the Service that was bought) plus the AggregateRating the
- * section displays, attached to the Organization. Null when there are no reviews.
+ * One Review per displayed review (author, reviewBody, rating, and
+ * itemReviewed = the Service that was bought) plus the AggregateRating the
+ * section displays, attached to the Organization. Null when there are no
+ * reviews. `datePublished` is included only where the card shows it — a
+ * verified purchase (shownReviewDate); for curated testimonials the field is
+ * omitted entirely rather than describing a date the visitor cannot see.
  */
 export function buildReviewsJsonLd(
   reviews: readonly DisplayReview[],
@@ -159,11 +162,12 @@ export function buildReviewsJsonLd(
   for (const review of reviews) {
     const service = SERVICE_SCHEMA[review.serviceCode];
     if (!service) continue;
+    const datePublished = shownReviewDate(review);
     graph.push({
       '@type': 'Review',
       '@id': reviewNodeId(review.id),
       author: { '@type': 'Person', name: review.authorName },
-      datePublished: review.datePublished,
+      ...(datePublished ? { datePublished } : {}),
       ...(review.title ? { name: review.title } : {}),
       reviewBody: review.body,
       reviewRating: { '@type': 'Rating', ratingValue: review.rating, bestRating: 5, worstRating: 1 },
