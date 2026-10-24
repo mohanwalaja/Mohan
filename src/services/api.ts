@@ -2006,7 +2006,11 @@ export const api = {
   },
 
   async getAdminSettings(): Promise<{ success: boolean; settings: SystemSettings }> {
-    const res = await fetchSettingsWithTimeout(`${API_BASE}/admin/settings`, {
+    // Admin settings are authoritative portal data, not a first-paint design
+    // preference. The public 4-second timeout aborted this request on slower
+    // mobile connections and caused the whole admin Promise.all to reject.
+    const res = await fetch(`${API_BASE}/admin/settings`, {
+      credentials: 'include',
       headers: { ...getAuthHeader() }
     });
     return safeJson(res);

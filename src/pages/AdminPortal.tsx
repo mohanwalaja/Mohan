@@ -354,7 +354,17 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const [statsRes, ordersRes, settingsRes, usersRes, logsRes, teamRes, msgsRes, bannedRes] = await Promise.all([
+      const sectionNames = [
+        'order statistics',
+        'orders',
+        'settings',
+        'customers',
+        'audit logs',
+        'astrology team',
+        'messages',
+        'blocked IP addresses'
+      ];
+      const results = await Promise.allSettled([
         api.getAdminStats(),
         api.getAdminOrders(),
         api.getAdminSettings(),
@@ -364,12 +374,24 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         api.getAdminMessages(),
         api.getAdminBannedIps()
       ]);
+      const [statsResult, ordersResult, settingsResult, usersResult, logsResult, teamResult, msgsResult, bannedResult] = results;
+      const statsRes = statsResult.status === 'fulfilled' ? statsResult.value : null;
+      const ordersRes = ordersResult.status === 'fulfilled' ? ordersResult.value : null;
+      const settingsRes = settingsResult.status === 'fulfilled' ? settingsResult.value : null;
+      const usersRes = usersResult.status === 'fulfilled' ? usersResult.value : null;
+      const logsRes = logsResult.status === 'fulfilled' ? logsResult.value : null;
+      const teamRes = teamResult.status === 'fulfilled' ? teamResult.value : null;
+      const msgsRes = msgsResult.status === 'fulfilled' ? msgsResult.value : null;
+      const bannedRes = bannedResult.status === 'fulfilled' ? bannedResult.value : null;
 
-      if (statsRes.success && statsRes.stats) setStats(statsRes.stats);
+      // Render every healthy section even when another endpoint is slow or
+      // unavailable. Promise.all used to discard all of these responses when
+      // just one request rejected (notably the admin-settings abort timeout).
+      if (statsRes?.success && statsRes.stats) setStats(statsRes.stats);
       // Defensive: API may return a non-array value for lists. Force arrays to
       // prevent .filter/.map/.length crashes during render after a page reload.
-      if (ordersRes.success && ordersRes.orders) setOrders(Array.isArray(ordersRes.orders) ? ordersRes.orders : []);
-      if (settingsRes.success && settingsRes.settings) {
+      if (ordersRes?.success && ordersRes.orders) setOrders(Array.isArray(ordersRes.orders) ? ordersRes.orders : []);
+      if (settingsRes?.success && settingsRes.settings) {
         setSettings(settingsRes.settings);
         setServiceMode(settingsRes.settings.serviceMode);
 
@@ -382,19 +404,31 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onNavigate }) => {
         ));
         setAutoEmail(settingsRes.settings.autoEmailReports);
       }
-      if (usersRes.success && usersRes.users) setUsersList(Array.isArray(usersRes.users) ? usersRes.users : []);
-      if (logsRes.success && logsRes.logs) {
+      if (usersRes?.success && usersRes.users) setUsersList(Array.isArray(usersRes.users) ? usersRes.users : []);
+      if (logsRes?.success && logsRes.logs) {
         setAuditLogs(Array.isArray(logsRes.logs) ? logsRes.logs : []);
         if (logsRes.pagination) {
           setAuditLogTotalPages(logsRes.pagination.totalPages);
           setAuditLogTotal(logsRes.pagination.total);
         }
       }
-      if (teamRes.success && teamRes.team) setTeamMembers(Array.isArray(teamRes.team) ? teamRes.team : []);
-      if (msgsRes.success && msgsRes.messages) setMessagesList(Array.isArray(msgsRes.messages) ? msgsRes.messages : []);
-      if (bannedRes.success && bannedRes.bannedIps) setBannedIps(Array.isArray(bannedRes.bannedIps) ? bannedRes.bannedIps : []);
+      if (teamRes?.success && teamRes.team) setTeamMembers(Array.isArray(teamRes.team) ? teamRes.team : []);
+      if (msgsRes?.success && msgsRes.messages) setMessagesList(Array.isArray(msgsRes.messages) ? msgsRes.messages : []);
+      if (bannedRes?.success && bannedRes.bannedIps) setBannedIps(Array.isArray(bannedRes.bannedIps) ? bannedRes.bannedIps : []);
+
+      const failedSections = results.reduce<string[]>((failures, result, index) => {
+        if (result.status === 'rejected' || !result.value.success) failures.push(sectionNames[index]);
+        return failures;
+      }, []);
+      if (failedSections.length > 0) {
+        setErrorMessage(
+          `Some admin records could not be loaded: ${failedSections.join(', ')}. ` +
+          'Loaded sections are still available. Check your connection and tap Refresh Records to retry.'
+        );
+      }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to fetch admin data');
+      console.error('Unexpected admin data loading failure', err);
+      setErrorMessage('Admin records could not be refreshed. Check your connection and tap Refresh Records to retry.');
     } finally {
       setIsLoading(false);
     }
