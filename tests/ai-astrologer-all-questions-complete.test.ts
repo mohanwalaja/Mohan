@@ -39,7 +39,9 @@ function check(name: string, fn: () => void) {
 }
 
 check(`all ${expectedGuidedRuns} guided answers (${guidedOptionCount} options x 3 languages x chart/no-chart) pass safety guardrails cleanly`, () => {
+  assert.equal(guidedOptionCount, 95);
   assert.equal(probe.guidedRuns, expectedGuidedRuns);
+  assert.equal(expectedGuidedRuns, 570);
   assert.deepEqual(probe.guidedFailures, []);
 });
 
@@ -76,15 +78,58 @@ check('practical steps, personal remedies, period focus, and no-chart dosha answ
       probe.samples['current-year'][lang].content,
       probe.samples['current-star'][lang].content,
       probe.samples['current-sade-sati'][lang].content,
+      probe.samples['current-family-journal'][lang].content,
     ]);
-    assert.equal(set.size, 4, `all 4 current-guidance options must stay distinct in ${lang}`);
+    assert.equal(set.size, 5, `all 5 current-guidance options must stay distinct in ${lang}`);
   }
   assert.ok(probe.samples['dosha-kuja-nochart'].en.content.includes('Mars'), 'dosha-kuja without chart explains classical Kuja Dosha');
   assert.ok(probe.samples['dosha-all-nochart'].ta.content.includes('செவ்வாய்'), 'dosha-all without chart summarizes classical doshas in Tamil');
 });
 
-check('all 114 free-text astrology queries across English, Tamil, and Hindi answer cleanly with zero NO_MATCH and zero guard violations', () => {
-  assert.ok(probe.freeCount >= 110);
+check('TA-26 Kudumpa Jothidam answers keep their content and Tamil source attribution', () => {
+  for (const lang of ['en', 'ta', 'hi'] as const) {
+    assert.match(probe.samples['current-family-journal'][lang].sourceLine, /TA-26/);
+  }
+  assert.match(probe.samples['current-family-journal'].en.content, /family horoscope journal/i);
+  assert.match(probe.samples['current-family-journal'].en.content, /Dasha-Bhukti and Gochara/);
+  assert.match(probe.samples['current-family-journal'].en.content, /not fear/);
+  assert.match(probe.samples['current-family-journal'].ta.content, /குடும்ப ஜாதகக் குறிப்ப/);
+  assert.match(probe.samples['current-family-journal'].hi.content, /पारिवारिक कुंडली रिकॉर्ड/);
+
+  const englishFree = probe.freeSamples['What is Kudumpa Jothidam?'];
+  const tamilFree = probe.freeSamples['குடும்ப ஜோதிடம் என்றால் என்ன?'];
+  assert.match(englishFree.sourceLine, /TA-26/);
+  assert.match(englishFree.content, /Kudumpa Jothidam recommends/);
+  assert.match(tamilFree.sourceLine, /TA-26/);
+  assert.match(tamilFree.content, /முன்னுரை/);
+
+  const matching = probe.freeSamples['What are the 10 Poruthams in marriage matching?'];
+  assert.match(matching.sourceLine, /TA-26/);
+  assert.match(matching.content, /mental compatibility/i);
+  const saturn = probe.freeSamples['What is Ashtama Sani?'];
+  assert.match(saturn.sourceLine, /TA-26/);
+  assert.match(saturn.content, /natal promise and running Dasha-Bhukti/);
+});
+
+check('TA-27/28/29 enrich Dhana, second-house and Varshaphala answers with scoped Tamil attribution', () => {
+  for (const lang of ['en', 'ta', 'hi'] as const) {
+    assert.match(probe.samples['yoga-dhana-guide'][lang].sourceLine, /TA-27/);
+    assert.match(probe.samples['yoga-dhana-guide'][lang].sourceLine, /TA-29/);
+    assert.match(probe.samples['bhava-family-resources-guide'][lang].sourceLine, /TA-27/);
+    assert.match(probe.samples['transit-varshaphala-guide'][lang].sourceLine, /TA-28/);
+    assert.match(probe.samples['transit-varshaphala-guide'][lang].sourceLine, /TA-26/);
+  }
+  assert.match(probe.samples['bhava-family-resources-guide'].en.content, /2nd House/);
+  assert.match(probe.samples['bhava-family-resources-guide'].en.content, /family|resources/i);
+  assert.match(probe.samples['transit-varshaphala-guide'].en.content, /annual-chart/);
+  for (const question of ['What is Varshaphala?', 'வர்ஷபலம் என்றால் என்ன?', 'वर्षफल क्या है?']) {
+    assert.match(probe.freeSamples[question].sourceLine, /TA-28/);
+    assert.equal(probe.freeSamples[question].handoff, false);
+  }
+});
+
+check(`all ${probe.freeCount} free-text astrology queries across English, Tamil, and Hindi answer cleanly with zero NO_MATCH and zero guard violations`, () => {
+  assert.equal(probe.freeCount, 119);
   assert.deepEqual(probe.freeGuardFailures, []);
   assert.deepEqual(probe.freeUnanswered, []);
 });

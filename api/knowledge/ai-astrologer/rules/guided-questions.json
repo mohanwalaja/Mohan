@@ -1,6 +1,6 @@
 {
   "$schema": "./guided-questions.schema.json",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "generatedOn": "2026-10-24",
   "_purpose": "Guided AI-astrologer menu. Customers do NOT type their own questions: they pick one of these curated options. Every question maps to a supported answer path (life-area card, service report reading, dosha, remedy, order fact, or human complaint queue), so no unrelated question can be asked.",
   "_page2Anchors": "Categories 1-8 mirror the eight page-2 life cards of the Birth Jathagam in order (src/services/jathagamHtmlBuilder.ts buildJathagamLifeCards), with the same icons and titles, so the chat and the PDF agree. The next three categories are the other three services: Wedding Matching (the 10 Poruthams report), Baby Naming (the Namakaran certificate) and Subha Muhurtham (the auspicious-date calendar). Five knowledge categories then cover Navagraha, Bhavas, Yogas, Gochara transits and Panchangam through exact source-entry ids. The final four cover doshas (page 1), remedies (remedies.json registry), order facts (the customer's own order row), and complaints (human handoff queue).",
@@ -497,9 +497,9 @@
         "hi": "ज्योतिषीय मार्गदर्शन"
       },
       "hint": {
-        "en": "Dasha, this year and birth star",
-        "ta": "தசை, இந்த வருடம், நட்சத்திரம்",
-        "hi": "दशा, यह वर्ष और नक्षत्र"
+        "en": "Dasha, this year, birth star and family journal",
+        "ta": "தசை, இந்த வருடம், நட்சத்திரம், குடும்ப ஜாதகக் குறிப்பு",
+        "hi": "दशा, यह वर्ष, नक्षत्र और पारिवारिक कुंडली रिकॉर्ड"
       },
       "questions": [
         {
@@ -553,6 +553,16 @@
             "en": "Am I in Sade Sati (Ezharai Sani)?",
             "ta": "நான் ஏழரைச் சனியில் இருக்கிறேனா?",
             "hi": "क्या मैं साढ़ेसाती में हूँ?"
+          }
+        },
+        {
+          "id": "current-family-journal",
+          "kind": "knowledge",
+          "topic": "family-kudumpa-jothidam-method",
+          "text": {
+            "en": "How can I keep and use a family horoscope journal?",
+            "ta": "குடும்ப ஜாதகக் குறிப்பை எப்படி வைத்துப் பயன்படுத்துவது?",
+            "hi": "पारिवारिक कुंडली रिकॉर्ड कैसे रखें और उसका उपयोग करें?"
           }
         }
       ]
@@ -931,6 +941,16 @@
           }
         },
         {
+          "id": "bhava-family-resources-guide",
+          "kind": "knowledge",
+          "bhava": 2,
+          "text": {
+            "en": "What does my 2nd house say about family, speech and resources?",
+            "ta": "குடும்பம், பேச்சு மற்றும் பொருள் வளம் பற்றி என் 2-ஆம் பாவம் என்ன சொல்கிறது?",
+            "hi": "परिवार, वाणी और संसाधनों के बारे में मेरा दूसरा भाव क्या बताता है?"
+          }
+        },
+        {
           "id": "bhava-learning-guide",
           "kind": "knowledge",
           "bhava": 5,
@@ -1094,6 +1114,16 @@
             "en": "How do my current Dasha and transits shape this year?",
             "ta": "என் தற்போதைய தசை மற்றும் கோசாரம் இந்த வருடத்தை எப்படி வடிவமைக்கின்றன?",
             "hi": "मेरी वर्तमान दशा और गोचर इस वर्ष को कैसे प्रभावित करते हैं?"
+          }
+        },
+        {
+          "id": "transit-varshaphala-guide",
+          "kind": "knowledge",
+          "topic": "transit-varshaphala-method",
+          "text": {
+            "en": "How do Varshaphala and Gochara shape my year?",
+            "ta": "வர்ஷபலம் மற்றும் கோசாரம் என் வருடத்தை எப்படி வடிவமைக்கின்றன?",
+            "hi": "वर्षफल और गोचर मेरे वर्ष को कैसे प्रभावित करते हैं?"
           }
         }
       ]

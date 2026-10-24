@@ -255,6 +255,8 @@ export const aiAstrologer = {
     ping: { attempted: boolean; ok: boolean; httpStatus: number; latencyMs: number; error: string };
     sourceRegistry?: {
       total: number;
+      active: number;
+      nonActive: number;
       citableTamil: number;
       byLanguage?: Record<string, number>;
       byVerification: Record<string, number>;

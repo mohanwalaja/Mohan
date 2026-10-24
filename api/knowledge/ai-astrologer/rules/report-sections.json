@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "generatedOn": "2026-10-09",
   "_purpose": "Local report-section reference data. The application verifies that an uploaded ASTRO SIVAM report belongs to the customer and can map supported sections back to saved chart inputs.",
-
   "ownership": {
     "_why": "An uploaded PDF is untrusted input. It must be proved to be (a) an ASTRO SIVAM report and (b) this customer's, before a single word of it is discussed.",
     "signals": [
@@ -24,7 +23,12 @@
       {
         "id": "branding",
         "strength": "necessary-not-sufficient",
-        "patterns": ["ASTRO SIVAM", "ASTRO-MUH", "ASTRO SIVAM Vedic Research Desk", "ASTRO SIVAM - OFFICIAL VEDIC REPORT"],
+        "patterns": [
+          "ASTRO SIVAM",
+          "ASTRO-MUH",
+          "ASTRO SIVAM Vedic Research Desk",
+          "ASTRO SIVAM - OFFICIAL VEDIC REPORT"
+        ],
         "where": "page 1 of every report",
         "note": "Proves the document is ours. Does NOT prove it is this customer's."
       }
@@ -43,7 +47,6 @@
       "fallbackIfExtractionFails": "Ask the customer to pick the order from their own dashboard order list instead of uploading. Never guess an order from a birth date."
     }
   },
-
   "rejection": {
     "notAstroSivam": {
       "en": "Thank you for sending this. I can only read reports that ASTRO SIVAM prepared, and this one does not look like ours - I cannot find our order reference on it. If you open your ASTRO SIVAM dashboard and choose the report you would like explained, I can walk you through any part of it.",
@@ -66,17 +69,30 @@
       "hi": "वह फ़ाइल मेरे खोलने से बड़ी है। हमारी रिपोर्ट आमतौर पर कुछ पृष्ठों की होती है - फोटो के बजाय ईमेल से मिला PDF भेज सकते हैं?"
     }
   },
-
   "reportTypes": [
     {
       "id": "BIRTH_JATHAGAM",
-      "name": { "en": "Vedic Birth Jathagam", "ta": "வேத ஜனன ஜாதகம்", "hi": "वैदिक जन्म कुंडली" },
+      "name": {
+        "en": "Vedic Birth Jathagam",
+        "ta": "வேத ஜனன ஜாதகம்",
+        "hi": "वैदिक जन्म कुंडली"
+      },
       "pages": 3,
-      "fingerprints": ["Certified Vedic Horoscope & Ephemeris", "Astrological Life Predictions", "Janma Rasi", "Dosha Analysis", "Janma Nakshatra"],
+      "fingerprints": [
+        "Certified Vedic Horoscope & Ephemeris",
+        "Astrological Life Predictions",
+        "Janma Rasi",
+        "Dosha Analysis",
+        "Janma Nakshatra"
+      ],
       "sections": [
         {
           "id": "user-particulars",
-          "title": { "en": "User Particulars", "ta": "ஜாதகர் விவரங்கள்", "hi": "जातक विवरण" },
+          "title": {
+            "en": "User Particulars",
+            "ta": "ஜாதகர் விவரங்கள்",
+            "hi": "जातक विवरण"
+          },
           "page": 1,
           "means": {
             "en": "The birth details the chart was calculated from: name, date of birth, time of birth, place of birth, time zone and the Ayanamsa used. Every other page follows from these five numbers.",
@@ -92,7 +108,11 @@
         },
         {
           "id": "planetary-positions",
-          "title": { "en": "Navagraha Positions", "ta": "நவக்கிரக நிலைகள்", "hi": "नवग्रह स्थितियाँ" },
+          "title": {
+            "en": "Navagraha Positions",
+            "ta": "நவக்கிரக நிலைகள்",
+            "hi": "नवग्रह स्थितियाँ"
+          },
           "page": 1,
           "means": {
             "en": "Where each of the nine grahas sits: its rasi (sign), its degree, the nakshatra it is in, which house that makes, and whether it is exalted, debilitated or in its own sign. This table is the raw material for everything on pages 2 and 3.",
@@ -100,11 +120,24 @@
             "hi": "नौ ग्रह प्रत्येक कहाँ हैं: राशि, अंश, कौन सा नक्षत्र, उससे कौन सा भाव बनता है, और उच्च/नीच/स्वराशि है या नहीं। पृष्ठ 2 और 3 की हर बात इसी तालिका से निकलती है।"
           },
           "chartLink": "Each row gives a planet, a sign and a house. The house decides which life area it touches; the dignity decides how well it can deliver.",
-          "source": [{ "id": "EN-01", "level": "book" }, { "id": "EN-06", "level": "book" }]
+          "source": [
+            {
+              "id": "EN-01",
+              "level": "book"
+            },
+            {
+              "id": "EN-06",
+              "level": "book"
+            }
+          ]
         },
         {
           "id": "rasi-nakshatra",
-          "title": { "en": "Janma Rasi & Janma Nakshatra", "ta": "ஜன்ம ராசி & ஜன்ம நட்சத்திரம்", "hi": "जन्म राशि एवं जन्म नक्षत्र" },
+          "title": {
+            "en": "Janma Rasi & Janma Nakshatra",
+            "ta": "ஜன்ம ராசி & ஜன்ம நட்சத்திரம்",
+            "hi": "जन्म राशि एवं जन्म नक्षत्र"
+          },
           "page": 1,
           "means": {
             "en": "Your Moon's sign is your Janma Rasi and the star it was in is your Janma Nakshatra. In Tamil practice these two - not the Sun sign - are what a panchangam and a temple priest will ask you for, and they set your starting point in the Vimshottari Dasha.",
@@ -112,11 +145,25 @@
             "hi": "आपके चंद्र की राशि जन्म राशि है और जिस नक्षत्र में वे थे वही जन्म नक्षत्र है। तमिल परंपरा में पंचांग और मंदिर के पुजारी यही दो पूछते हैं, सूर्य राशि नहीं। विंशोत्तरी दशा का प्रारंभ बिंदु भी इन्हीं से तय होता है।"
           },
           "chartLink": "The nakshatra's lord is the planet your first Mahadasha belongs to, which is why the Dasha sequence on page 3 starts where it does.",
-          "source": [{ "id": "TA-06", "level": "book" }, { "id": "TA-25", "level": "content" }]
+          "source": [
+            {
+              "id": "TA-06",
+              "level": "book"
+            },
+            {
+              "id": "TA-27",
+              "level": "book",
+              "note": "Rasi, nakshatra, dignity, aspects and karaka chapters reviewed."
+            }
+          ]
         },
         {
           "id": "dosha-analysis",
-          "title": { "en": "Dosha Analysis", "ta": "தோஷ பகுப்பாய்வு", "hi": "दोष विश्लेषण" },
+          "title": {
+            "en": "Dosha Analysis",
+            "ta": "தோஷ பகுப்பாய்வு",
+            "hi": "दोष विश्लेषण"
+          },
           "page": 1,
           "means": {
             "en": "A check for the combinations the tradition names as doshas - Kuja, Kala Sarpa, Guru Chandala, Pitru and others. A dosha is a configuration to be aware of and to work with, not a punishment. Many charts carry one and the person lives entirely normally.",
@@ -125,11 +172,24 @@
           },
           "chartLink": "Each named dosha points at a specific planet in a specific house - Kuja at Mars, Kala Sarpa at the Rahu-Ketu axis. Say which one, and it stops being abstract.",
           "guardrail": "Never present a dosha as a verdict. Never attach a frightening outcome to it.",
-          "source": [{ "id": "EN-01", "level": "book" }, { "id": "EN-09", "level": "book" }]
+          "source": [
+            {
+              "id": "EN-01",
+              "level": "book"
+            },
+            {
+              "id": "EN-09",
+              "level": "book"
+            }
+          ]
         },
         {
           "id": "life-cards",
-          "title": { "en": "Astrological Life Predictions", "ta": "ஜோதிட வாழ்க்கை கணிப்புகள்", "hi": "ज्योतिष जीवन फलादेश" },
+          "title": {
+            "en": "Astrological Life Predictions",
+            "ta": "ஜோதிட வாழ்க்கை கணிப்புகள்",
+            "hi": "ज्योतिष जीवन फलादेश"
+          },
           "page": 2,
           "means": {
             "en": "The eight life-area cards: Health & Vitality, Wealth & Finance, Education & Intellect, Career & Profession, Marriage & Relations, Property & Real Estate, Travel & Global Fortune, and Current Guidance. Each one is written from the lord of its house - the 1st for health, 2nd for wealth, 5th for education, 10th for career, 7th for marriage, 4th for property, 9th for travel - and each states a Benefit and a Caution.",
@@ -138,11 +198,24 @@
           },
           "chartLink": "The card's house lord, the house it sits in, and its dignity. The Benefit comes from strength; the Caution comes from the same position read the other way.",
           "guardrail": "The Caution text is a reason to plan, never a prediction of harm. The health card always carries the medical-safety rules.",
-          "source": [{ "id": "EN-01", "level": "book" }, { "id": "TA-02", "level": "book" }]
+          "source": [
+            {
+              "id": "EN-01",
+              "level": "book"
+            },
+            {
+              "id": "TA-02",
+              "level": "book"
+            }
+          ]
         },
         {
           "id": "current-guidance",
-          "title": { "en": "Current Guidance", "ta": "தற்போதைய வழிகாட்டல்", "hi": "ज्योतिषीय मार्गदर्शन" },
+          "title": {
+            "en": "Current Guidance",
+            "ta": "தற்போதைய வழிகாட்டல்",
+            "hi": "ज्योतिषीय मार्गदर्शन"
+          },
           "page": 2,
           "means": {
             "en": "The Dasha you are in now, what the coming year asks of you, and whether it reads as an opportunity or a period to be careful in. Dasha means the broad chapter of life a planet rules; Bhukti is the shorter section inside it.",
@@ -150,11 +223,25 @@
             "hi": "यह खंड बताता है कि आप अभी किस दशा में हैं, आगामी वर्ष आपसे क्या माँगता है, और वह अवसर है या सावधानी का काल है। दशा का अर्थ किसी ग्रह का शासित जीवन-अध्याय है, और भुक्ति उसके भीतर का छोटा भाग है।"
           },
           "chartLink": "The Vimshottari sequence starting from the birth nakshatra, and the transit position of Guru and Sani counted from the natal Moon.",
-          "source": [{ "id": "EN-01", "level": "book" }, { "id": "EN-02", "level": "chapter", "note": "Adhyaya XXVI - transits from the natal Moon." }]
+          "source": [
+            {
+              "id": "EN-01",
+              "level": "book"
+            },
+            {
+              "id": "EN-02",
+              "level": "chapter",
+              "note": "Adhyaya XXVI - transits from the natal Moon."
+            }
+          ]
         },
         {
           "id": "remedies",
-          "title": { "en": "Parikaram / Remedies", "ta": "பரிகாரங்கள்", "hi": "उपाय / परिहार" },
+          "title": {
+            "en": "Parikaram / Remedies",
+            "ta": "பரிகாரங்கள்",
+            "hi": "उपाय / परिहार"
+          },
           "page": 3,
           "means": {
             "en": "The practices suggested for the doshas and afflictions found earlier: mantras and japa, the Navagraha temples to visit, charity, fasting days and simple lifestyle changes. They are meant to steady a period, not to avert a disaster.",
@@ -163,11 +250,25 @@
           },
           "chartLink": "Each remedy is keyed to the graha that caused the affliction, so the remedy section and the Navagraha table on page 1 describe the same planet from two directions.",
           "guardrail": "Only the remedies in rules/remedies.json may be discussed. No gemstones, no animal dana, no paid puja, no fear framing.",
-          "source": [{ "id": "TA-07", "level": "passage", "page": "15-18" }, { "id": "TP-03", "level": "content" }]
+          "source": [
+            {
+              "id": "TA-07",
+              "level": "passage",
+              "page": "15-18"
+            },
+            {
+              "id": "TP-03",
+              "level": "content"
+            }
+          ]
         },
         {
           "id": "navagraha-page",
-          "title": { "en": "Navagraha Guidance", "ta": "நவக்கிரக வழிகாட்டல்", "hi": "नवग्रह मार्गदर्शन" },
+          "title": {
+            "en": "Navagraha Guidance",
+            "ta": "நவக்கிரக வழிகாட்டல்",
+            "hi": "नवग्रह मार्गदर्शन"
+          },
           "page": 3,
           "means": {
             "en": "Why the Navagrahas bring difficulties at all, and the ways to face planetary doshas - the two headings used on this page. It is the reasoning behind the remedies, not a separate set of predictions.",
@@ -175,19 +276,42 @@
             "hi": "नवग्रह कष्ट क्यों देते हैं और ग्रह दोषों से निपटने के उपाय क्या हैं — यही इस पृष्ठ की दो शीर्षक पंक्तियाँ हैं। यह उपायों के पीछे का तर्क है, अलग भविष्यवाणी-समूह नहीं है।"
           },
           "chartLink": "The same grahas as the page 1 table, described by their nature rather than their position.",
-          "source": [{ "id": "EN-01", "level": "book" }, { "id": "TA-14", "level": "book" }]
+          "source": [
+            {
+              "id": "EN-01",
+              "level": "book"
+            },
+            {
+              "id": "TA-14",
+              "level": "book"
+            }
+          ]
         }
       ]
     },
     {
       "id": "WEDDING_MATCHING",
-      "name": { "en": "Wedding Compatibility", "ta": "திருமண பொருத்தம்", "hi": "विवाह मिलान" },
+      "name": {
+        "en": "Wedding Compatibility",
+        "ta": "திருமண பொருத்தம்",
+        "hi": "विवाह मिलान"
+      },
       "pages": 2,
-      "fingerprints": ["Bride Profile", "Groom Profile", "Dosha Balance", "FINAL RECOMMENDATION", "Auspicious Match"],
+      "fingerprints": [
+        "Bride Profile",
+        "Groom Profile",
+        "Dosha Balance",
+        "FINAL RECOMMENDATION",
+        "Auspicious Match"
+      ],
       "sections": [
         {
           "id": "bride-groom-profiles",
-          "title": { "en": "Bride Profile & Groom Profile", "ta": "மணப்பெண் & மணமகன் விவரங்கள்", "hi": "वधू एवं वर विवरण" },
+          "title": {
+            "en": "Bride Profile & Groom Profile",
+            "ta": "மணப்பெண் & மணமகன் விவரங்கள்",
+            "hi": "वधू एवं वर विवरण"
+          },
           "page": 1,
           "means": {
             "en": "Both birth details side by side, and each person's Rasi, nakshatra and nakshatra lord. Matching starts from these two charts, never from names or family details.",
@@ -198,7 +322,11 @@
         },
         {
           "id": "kuta-matching",
-          "title": { "en": "Porutham / Kuta Matching", "ta": "பொருத்தம் (Kuta)", "hi": "पोरुतम / कूट मिलान" },
+          "title": {
+            "en": "Porutham / Kuta Matching",
+            "ta": "பொருத்தம் (Kuta)",
+            "hi": "पोरुतम / कूट मिलान"
+          },
           "page": 1,
           "means": {
             "en": "The ten poruthams scored one by one, with the total out of 36. Each porutham looks at a different thing - health, longevity, temperament, family harmony, progeny, prosperity - so a low total is not one failure but a set of specific points to look at.",
@@ -206,11 +334,24 @@
             "hi": "यहाँ दस पोरुतम एक-एक करके अंकित होते हैं, और कुल 36 में से देखा जाता है। हर पोरुतम अलग पक्ष देखता है — स्वास्थ्य, आयु, स्वभाव, पारिवारिक सद्भाव, संतान और समृद्धि — इसलिए कम कुल एक असफलता नहीं, बल्कि कुछ विशेष बिंदु देखने का संकेत है।"
           },
           "chartLink": "Nakshatra-to-nakshatra relationships between the two charts, plus Rasi lord compatibility.",
-          "source": [{ "id": "EN-01", "level": "book" }, { "id": "TA-16", "level": "book" }]
+          "source": [
+            {
+              "id": "EN-01",
+              "level": "book"
+            },
+            {
+              "id": "TA-16",
+              "level": "book"
+            }
+          ]
         },
         {
           "id": "dosha-balance",
-          "title": { "en": "Dosha Balance", "ta": "தோஷ சமநிலை", "hi": "दोष संतुलन" },
+          "title": {
+            "en": "Dosha Balance",
+            "ta": "தோஷ சமநிலை",
+            "hi": "दोष संतुलन"
+          },
           "page": 1,
           "means": {
             "en": "Whether the doshas in the two charts balance each other. This is the section most often misread: a dosha in one chart is frequently offset by the other chart, which is exactly why both must be looked at together.",
@@ -219,11 +360,24 @@
           },
           "chartLink": "Kuja dosha position in each chart, compared. Balanced / Afflicted / Imbalance are the three labels used.",
           "guardrail": "Never say a match should not happen. Present the balance and let the family decide with a human astrologer.",
-          "source": [{ "id": "EN-01", "level": "book" }, { "id": "EN-09", "level": "book" }]
+          "source": [
+            {
+              "id": "EN-01",
+              "level": "book"
+            },
+            {
+              "id": "EN-09",
+              "level": "book"
+            }
+          ]
         },
         {
           "id": "final-recommendation",
-          "title": { "en": "Final Recommendation", "ta": "இறுதி பரிந்துரை", "hi": "अंतिम सिफारिश" },
+          "title": {
+            "en": "Final Recommendation",
+            "ta": "இறுதி பரிந்துரை",
+            "hi": "अंतिम सिफारिश"
+          },
           "page": 2,
           "means": {
             "en": "The overall reading of the match, plus the disclaimer page. It summarises the porutham score and the dosha balance; it does not decide the marriage for anyone.",
@@ -237,13 +391,27 @@
     },
     {
       "id": "BABY_NAMING",
-      "name": { "en": "Baby Naming", "ta": "குழந்தை பெயர் சூட்டல்", "hi": "बाल नामकरण" },
+      "name": {
+        "en": "Baby Naming",
+        "ta": "குழந்தை பெயர் சூட்டல்",
+        "hi": "बाल नामकरण"
+      },
       "pages": 1,
-      "fingerprints": ["JANMA PADA", "Baby Name", "Deva Gana", "Janma Nakshatra", "CALCULATION VERIFIED"],
+      "fingerprints": [
+        "JANMA PADA",
+        "Baby Name",
+        "Deva Gana",
+        "Janma Nakshatra",
+        "CALCULATION VERIFIED"
+      ],
       "sections": [
         {
           "id": "janma-pada",
-          "title": { "en": "Janma Nakshatra & Janma Pada", "ta": "ஜன்ம நட்சத்திரம் & ஜன்ம பாதம்", "hi": "जन्म नक्षत्र एवं जन्म पाद" },
+          "title": {
+            "en": "Janma Nakshatra & Janma Pada",
+            "ta": "ஜன்ம நட்சத்திரம் & ஜன்ம பாதம்",
+            "hi": "जन्म नक्षत्र एवं जन्म पाद"
+          },
           "page": 1,
           "means": {
             "en": "The baby's birth star, and which of its four padams the Moon was in. Each nakshatra is divided into four padams, and each padam gives a different starting syllable - that is why two babies with the same birth star can have different recommended letters.",
@@ -251,11 +419,20 @@
             "hi": "शिशु का जन्म नक्षत्र, और चंद्र उसके चार पादों में से किसमें था। हर नक्षत्र चार पादों में बँटता है और हर पाद अलग आरंभिक अक्षर देता है - इसलिए एक ही नक्षत्र में जन्मे दो शिशुओं के लिए अलग अक्षर सुझाए जाते हैं।"
           },
           "chartLink": "The Moon's exact degree decides the padam. This is the single number the whole naming recommendation rests on.",
-          "source": [{ "id": "TA-06", "level": "book" }, { "id": "TA-11", "level": "book" }]
+          "source": [
+            {
+              "id": "TA-06",
+              "level": "book"
+            }
+          ]
         },
         {
           "id": "starting-syllables",
-          "title": { "en": "Recommended Starting Syllables", "ta": "பரிந்துரைக்கப்படும் தொடக்க எழுத்துக்கள்", "hi": "सुझाए गए आरंभिक अक्षर" },
+          "title": {
+            "en": "Recommended Starting Syllables",
+            "ta": "பரிந்துரைக்கப்படும் தொடக்க எழுத்துக்கள்",
+            "hi": "सुझाए गए आरंभिक अक्षर"
+          },
           "page": 1,
           "means": {
             "en": "The syllables the tradition gives for that padam, and names built from them. The syllable is the fixed part; the name around it is a suggestion.",
@@ -267,7 +444,11 @@
         },
         {
           "id": "guna-and-nakshatra-lord",
-          "title": { "en": "Gana, Rasi and Nakshatra Lord", "ta": "கணம், ராசி, நட்சத்திர அதிபதி", "hi": "गण, राशि और नक्षत्र स्वामी" },
+          "title": {
+            "en": "Gana, Rasi and Nakshatra Lord",
+            "ta": "கணம், ராசி, நட்சத்திர அதிபதி",
+            "hi": "गण, राशि और नक्षत्र स्वामी"
+          },
           "page": 1,
           "means": {
             "en": "Supporting details: the gana (Deva, Manushya or Asura), the Moon's sign, and the planet that rules the birth star. These shape the character reading that accompanies the names.",
@@ -275,19 +456,44 @@
             "hi": "सहायक विवरण: गण (देव, मनुष्य या असुर), चंद्र राशि, और जन्म नक्षत्र का स्वामी ग्रह। नामों के साथ आने वाला स्वभाव-पाठ इन्हीं से बनता है।"
           },
           "chartLink": "Gana comes from the nakshatra; the lord is that nakshatra's ruling planet.",
-          "source": [{ "id": "TA-11", "level": "book" }]
+          "source": [
+            {
+              "id": "TA-06",
+              "level": "book",
+              "note": "Nakshatra-lord and Dasha framework only; no unverified Gana or naming-syllable table is claimed."
+            },
+            {
+              "id": "TA-26",
+              "level": "book",
+              "note": "Gana is one of the customary ten Poruthams discussed on printed pp.138-139; mental compatibility and consent remain primary."
+            }
+          ]
         }
       ]
     },
     {
       "id": "MUHURTHAM",
-      "name": { "en": "Subha Muhurtham", "ta": "சுப முஹூர்த்தம்", "hi": "शुभ मुहूर्त" },
+      "name": {
+        "en": "Subha Muhurtham",
+        "ta": "சுப முஹூர்த்தம்",
+        "hi": "शुभ मुहूर्त"
+      },
       "pages": 2,
-      "fingerprints": ["ASTRO-MUH", "CALCULATION WINDOW", "DATE & DAY", "Chandrashtama", "BRIDE & GROOM PARTICULARS"],
+      "fingerprints": [
+        "ASTRO-MUH",
+        "CALCULATION WINDOW",
+        "DATE & DAY",
+        "Chandrashtama",
+        "BRIDE & GROOM PARTICULARS"
+      ],
       "sections": [
         {
           "id": "calculation-window",
-          "title": { "en": "Calculation Window", "ta": "கணக்கீட்டு காலம்", "hi": "गणना अवधि" },
+          "title": {
+            "en": "Calculation Window",
+            "ta": "கணக்கீட்டு காலம்",
+            "hi": "गणना अवधि"
+          },
           "page": 1,
           "means": {
             "en": "The date range the auspicious times were searched within, and the panchangam basis used. Muhurtham is always relative to a window - the same event asked for a different month gives different dates.",
@@ -295,11 +501,25 @@
             "hi": "यहाँ वह तिथि-सीमा दी गई है जिसके भीतर शुभ समय खोजे गए हैं, तथा प्रयुक्त पंचांग आधार बताया गया है। मुहूर्त सदैव किसी अवधि के सापेक्ष होता है — वही कार्यक्रम दूसरे महीने के लिए पूछने पर भिन्न तिथियाँ मिलती हैं।"
           },
           "chartLink": "The window plus the panchangam system. See the Drik vs Vakya explanation if the customer's temple calendar differs.",
-          "source": [{ "id": "TA-25", "level": "content" }, { "id": "TA-14", "level": "book" }]
+          "source": [
+            {
+              "id": "TA-14",
+              "level": "book"
+            },
+            {
+              "id": "TA-12",
+              "level": "book",
+              "note": "Published Panchangam/Muhurtha convention reference; not a current-date calculation by itself."
+            }
+          ]
         },
         {
           "id": "particulars",
-          "title": { "en": "Bride & Groom Particulars", "ta": "மணப்பெண் & மணமகன் விவரங்கள்", "hi": "वधू एवं वर विवरण" },
+          "title": {
+            "en": "Bride & Groom Particulars",
+            "ta": "மணப்பெண் & மணமகன் விவரங்கள்",
+            "hi": "वधू एवं वर विवरण"
+          },
           "page": 1,
           "means": {
             "en": "The birth details of the people the muhurtham is being chosen for, and the birth place used for the Janma Nakshatra. A muhurtham is chosen for specific people, so these details matter.",
@@ -310,7 +530,11 @@
         },
         {
           "id": "dates-and-days",
-          "title": { "en": "Date & Day - Selected Auspicious Times", "ta": "தேதி & நாள் - தேர்ந்தெடுக்கப்பட்ட சுப நேரங்கள்", "hi": "तिथि एवं वार - चुने गए शुभ समय" },
+          "title": {
+            "en": "Date & Day - Selected Auspicious Times",
+            "ta": "தேதி & நாள் - தேர்ந்தெடுக்கப்பட்ட சுப நேரங்கள்",
+            "hi": "तिथि एवं वार - चुने गए शुभ समय"
+          },
           "page": 2,
           "means": {
             "en": "The clean dates, each with its weekday, the auspicious time window, and what was checked for it. Only dates that pass every check are listed - that is why there may be fewer than you expected.",
@@ -318,11 +542,25 @@
             "hi": "यहाँ शुद्ध तिथियाँ दी गई हैं, और प्रत्येक के साथ वार, शुभ समय-सीमा तथा जाँचे गए बिंदु बताए गए हैं। केवल वही तिथियाँ सूचीबद्ध हैं जो हर जाँच में उत्तीर्ण हुई हैं — अपेक्षा से कम होने का कारण यही है।"
           },
           "chartLink": "Each date is tested against the panchangam and against both nakshatras.",
-          "source": [{ "id": "TA-14", "level": "book" }, { "id": "TA-24", "level": "book" }]
+          "source": [
+            {
+              "id": "TA-14",
+              "level": "book"
+            },
+            {
+              "id": "TA-28",
+              "level": "book",
+              "note": "Reviewed Muhurtha chapters; Sun-temple history and deterministic omens are not used for date selection."
+            }
+          ]
         },
         {
           "id": "chandrashtama",
-          "title": { "en": "Chandrashtama Check", "ta": "சந்த்ராஷ்டம பரிசோதனை", "hi": "चंद्राष्टम जाँच" },
+          "title": {
+            "en": "Chandrashtama Check",
+            "ta": "சந்த்ராஷ்டம பரிசோதனை",
+            "hi": "चंद्राष्टम जाँच"
+          },
           "page": 2,
           "means": {
             "en": "Whether the Moon was in the eighth sign from either person's birth star on that date. Dates where it is are left out. This is the check most often asked about, so it is stated explicitly rather than left implied.",
@@ -330,12 +568,20 @@
             "hi": "यह देखा जाता है कि उस तिथि को चंद्र किसी एक के जन्म नक्षत्र से आठवीं राशि में था या नहीं। जहाँ चंद्राष्टम था वे तिथियाँ छोड़ दी जाती हैं। यह सबसे अधिक पूछी जाने वाली जाँच है, इसलिए इसे स्पष्ट रूप से लिखा जाता है।"
           },
           "chartLink": "Moon's transit sign counted from each person's janma nakshatra rasi.",
-          "source": [{ "id": "TA-04", "level": "book" }, { "id": "TA-14", "level": "book" }]
+          "source": [
+            {
+              "id": "TA-04",
+              "level": "book"
+            },
+            {
+              "id": "TA-14",
+              "level": "book"
+            }
+          ]
         }
       ]
     }
   ],
-
   "quotedLine": {
     "_purpose": "Handling 'what does this line mean?' - the customer pastes or types a line from their report.",
     "steps": [

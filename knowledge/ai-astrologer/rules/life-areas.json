@@ -413,7 +413,7 @@
             "id": "TA-10",
             "level": "suppressed"
           },
-          "reason": "Usable only for spiritual framing, always paired with 'see a qualified doctor'. Never used to name a disease or a medicine."
+          "reason": "Non-astrology Siddha medical treatment book. Retained only to enforce exclusion from astrology and remedy answers; never used for spiritual framing, diagnosis, medicine or treatment."
         }
       ]
     },
@@ -2556,9 +2556,9 @@
               "level": "book"
             },
             {
-              "id": "TA-11",
+              "id": "TA-04",
               "level": "book",
-              "note": "நட்சத்திரம்-wise நவக்கிரக பலன்."
+              "note": "Vimshottari Dasha/Bhukti and birth-nakshatra framework; not a naming-syllable or Gana table."
             }
           ],
           "practical": []
@@ -2577,16 +2577,21 @@
             ]
           },
           "meaning": {
-            "en": "Two classical Tamil calendar systems exist side by side. Thirukkanitham (Drik) computes planetary positions by direct astronomical observation; Vakyam (Vakya) uses the traditional mnemonic tables inherited from the classical texts. Chinthamani Ragoonatha Chary (1822-1880), who worked at the Madras Observatory from 1861, began publishing the Thirukkanitha panchangam in 1869 to align tables with astronomical observation, which was later accepted at the Kumbakonam Sankara Mutt scholars assembly. A difference of a few minutes in a planet position, or a day in a festival date, is the normal result of choosing one system - not an error in either.",
-            "ta": "வாடிக்கையாளர் ஜாதகம் தங்கள் கோயில் பஞ்சாங்கத்துடன் வேறுபடுகிறது என்றால், நம்முடையதை நியாயப்படுத்துவதற்கு பதிலாக இரண்டு தமிழ் முறைகளையும் விளக்க வேண்டும். திருக்கணிதம் (Drik) கோள்களின் நிலையை நேரடி வானியல் கணக்கீட்டால் கணிக்கிறது; வாக்கியம் (Vakya) மரபு சூத்திர அட்டவணைகளை பயன்படுத்துகிறது. சிந்தாமணி ரகுநாத சாரி (1822-1880) 1861-1891 வரை சென்னை வானாய்வு மையத்தில் பணியாற்றியவர்; வாக்கிய முறையின் வானியல் முரண்பாடுகளை சரிசெய்ய 1869 முதல் திருக்கணித பஞ்சாங்கத்தை வெளியிடத் தொடங்கினார்; கும்பகோணம் சங்கர மட அறிஞர் கூட்டத்திற்குப் பிறகு இது அங்கீகரிக்கப்பட்டது. கோள் நிலையில் சில நிமிட வித்தியாசம் அல்லது திருவிழா தேதியில் ஒரு நாள் வேறுபாடு என்பது ஒரு முறையை தேர்வு செய்ததின் இயல்பான விளைவு - எதிலும் தவறு அல்ல.",
-            "hi": "यदि ग्राहक कहे कि कुंडली उनके मंदिर के पंचांग से अलग है, तो अपना पक्ष सही ठहराने के बजाय दोनों तमिल पद्धतियाँ समझाएँ। तिरुक्कणितम् (Drik) ग्रह स्थिति सीधी खगोलीय गणना से निकालता है; वाक्यम् (Vakya) पारंपरिक सूत्र-सारणियाँ उपयोग करता है। चिंतामणि रघुनाथ शास्त्री (1822-1880), जो 1861-1891 तक मद्रास वेधशाला में रहे, ने वाक्य पद्धति की खगोलीय विसंगतियाँ सुधारने के लिए 1869 से तिरुक्कणित पंचांग प्रकाशित करना शुरू किया; कुम्भकोणम् शंकर मठ की विद्वान सभा के बाद इसे स्वीकृति मिली। ग्रह स्थिति में कुछ मिनट या उत्सव तिथि में एक दिन का अंतर एक पद्धति चुनने का स्वाभाविक परिणाम है — किसी में त्रुटि नहीं है।"
+            "en": "If the report differs from a family or temple Panchangam, compare the calculation convention before assuming an error. This report uses its calculated birth settings; traditional Tamil Panchangams may use different Vakya tables, Ayanamsha, local-time or festival conventions. Check the method, birth place, time zone and Ayanamsha first. A small difference in planetary longitude or a festival date is a convention difference to investigate, not proof that either side is careless.",
+            "ta": "அறிக்கை குடும்பம் அல்லது கோயில் பஞ்சாங்கத்திலிருந்து வேறுபட்டால், தவறு என முடிவு செய்யும் முன் கணக்கீட்டு முறையை ஒப்பிடவும். இந்த அறிக்கை கணக்கிடப்பட்ட பிறப்பு அமைப்புகளைப் பயன்படுத்துகிறது; பாரம்பரிய தமிழ் பஞ்சாங்கங்கள் வெவ்வேறு வாக்கிய அட்டவணைகள், அயனாம்சம், உள்ளூர் நேரம் அல்லது திருவிழா முறைகளைப் பின்பற்றலாம். முறை, பிறந்த ஊர், நேர மண்டலம் மற்றும் அயனாம்சத்தை முதலில் சரிபார்க்கவும். கோள் நிலையில் சிறிய வேறுபாடு அல்லது திருவிழா தேதியில் மாற்றம் ஆராய்ய வேண்டிய முறை வேறுபாடு; எந்தப் பக்கமும் அக்கறையற்றது என்பதற்கான ஆதாரம் அல்ல.",
+            "hi": "यदि रिपोर्ट पारिवारिक या मंदिर के पंचांग से अलग हो, तो त्रुटि मानने से पहले गणना-पद्धति की तुलना करें। यह रिपोर्ट परिकलित जन्म-सेटिंग उपयोग करती है; पारंपरिक तमिल पंचांग अलग वाक्य-सारणियाँ, अयनांश, स्थानीय समय या उत्सव-पद्धतियाँ अपना सकते हैं। पहले पद्धति, जन्मस्थान, समय-क्षेत्र और अयनांश जाँचें। ग्रह-स्थिति का छोटा अंतर या उत्सव-तिथि का भिन्न होना जाँचने योग्य पद्धति-अंतर है, किसी भी पक्ष की लापरवाही का प्रमाण नहीं।"
           },
           "easing": "Not a timing rule.",
           "source": [
             {
-              "id": "TA-25",
-              "level": "content",
-              "note": "Page read in full; the 1869 date, the Madras Observatory service years and the Kumbakonam acceptance are all on the page."
+              "id": "TA-12",
+              "level": "book",
+              "note": "Published Panchangam/Muhurtha convention reference; used for convention comparison, not a stand-alone current forecast."
+            },
+            {
+              "id": "TA-14",
+              "level": "book",
+              "note": "Traditional Vakya/Panchangam context; noisy numeric OCR is not imported."
             }
           ],
           "practical": [
